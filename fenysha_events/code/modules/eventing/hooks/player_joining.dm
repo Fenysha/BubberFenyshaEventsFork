@@ -15,7 +15,7 @@
 /mob/dead/new_player
 	var/mob/living/to_transfer = null
 
-/mob/dead/new_player/create_character(atom/destination)
+/mob/dead/new_player/create_character(atom/destination, forced_slot)
 	. = ..()
 	to_transfer = .
 
