@@ -97,6 +97,11 @@ TimeoutStartSec=900
 RuntimeMaxSec=${RESTART_EVERY_SEC}
 
 ExecStartPre=-${DOCKER_BIN} rm -f ${CONTAINER}
+# Re-assert volume ownership on every start. Docker creates a named volume
+# root-owned, and the image runs unprivileged - so if this volume is ever
+# recreated (deleted, or caught by a volume prune) the service would otherwise
+# crash-loop on a PermissionError that reports itself as an invalid port.
+ExecStartPre=${DOCKER_BIN} run --rm -u root -v ${VOLUME}:/data --entrypoint chown ${IMAGE} -R ${LT_UID}:${LT_GID} /data
 ExecStart=${DOCKER_BIN} run --rm --name ${CONTAINER} \\
 	-p ${BIND_ADDR}:${BIND_PORT}:5000 \\
 	--memory=${MEM_LIMIT} --memory-swap=${MEM_LIMIT} \\
