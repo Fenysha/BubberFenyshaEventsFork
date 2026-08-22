@@ -155,6 +155,8 @@
 #include "code\modules\triggers\trigger_types\take_damage.dm"
 #include "code\modules\triggers\trigger_types\time.dm"
 #include "code\modules\weather\SSweather_sounds.dm"
+#include "code\modules\whitelist\whitelist_db.dm"
+#include "code\modules\whitelist\whitelist_verbs.dm"
 /// MOD_INCLUDE_END
 // BEGIN_INTERNALS
 // END_INTERNALS
