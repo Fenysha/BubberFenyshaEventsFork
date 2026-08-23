@@ -39,7 +39,9 @@
 	ui = new /datum/tgui(user, src, "PrivacyPolicy")
 	ui.open()
 
+
 /client/proc/show_privacy_policy()
+#if !defined(NOERP)
 	if(!CONFIG_GET(flag/sql_enabled))
 		return
 
@@ -51,3 +53,4 @@
 
 	var/datum/privacy_policy_ui/ui = new(src)
 	ui.ui_interact(mob)
+#endif
