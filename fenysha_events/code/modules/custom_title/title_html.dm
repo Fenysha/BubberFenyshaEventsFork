@@ -9,7 +9,7 @@
             <div class="terminal_text" id="terminal"></div>
             <svg class="progress_ring" width="60" height="60">
                 <circle class="progress_ring_bg" stroke="rgba(240, 211, 11, 1)" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
-                <circle class="progress_ring_circle" id="progress_circle" stroke="#f0d30b" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
+                <circle class="progress_ring_circle" id="progress_circle" stroke="#a19020" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
             </svg>
         </div>
         "}

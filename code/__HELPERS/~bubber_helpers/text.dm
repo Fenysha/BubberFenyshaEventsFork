@@ -14,4 +14,8 @@
 	if(attraction_set)
 		label += "Sexuality"
 		values += attraction
-	return "[english_list(label, and_text = "/")]: [span_revenboldnotice(english_list(values, and_text = ", "))]"
+	var/res = "[english_list(label, and_text = "/")]: [span_revenboldnotice(english_list(values, and_text = ", "))]"
+#if defined(NOERP)
+	res = ""
+#endif
+	return res

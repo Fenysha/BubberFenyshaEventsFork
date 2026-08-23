@@ -14,5 +14,5 @@
 		msg += ". Yell at your server host!"
 		INIT_ANNOUNCE(msg)
 #endif
-
+	current_map_handler.map_loaded = TRUE
 #undef INIT_ANNOUNCE

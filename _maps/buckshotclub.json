@@ -1,0 +1,26 @@
+{
+	"version": 1,
+	"map_name": "Buckshot club",
+	"map_path": "modular_events",
+	"map_file": "buckshotclub.dmm",
+	"space_ruin_levels": 0,
+	"space_empty_levels": 0,
+	"planetary": 1,
+	"traits": [
+		{
+			"Mining": false,
+			"Linkage": null,
+			"Gravity": true,
+			"No Parallax": true
+		}
+	],
+	"minetype": "none",
+	"job_changes": {
+		"Captain": {
+			"special_charter": "train"
+		}
+	},
+	"custom_manifest": {
+		"/datum/job/buckshot_player": -1
+	}
+}

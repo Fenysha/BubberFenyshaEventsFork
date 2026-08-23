@@ -124,6 +124,7 @@ SUBSYSTEM_DEF(mapping)
 	critical_planes = list()
 	create_plane_offsets(0, 0)
 	initialize_biomes()
+	load_map_handler(current_map) // FENYSHA EVENETS ADD MAP HANDLERS
 	loadWorld()
 	determine_fake_sale()
 	require_area_resort()
@@ -455,8 +456,9 @@ Used by the AI doomsday and the self-destruct nuke.
 	// load the station
 	station_start = world.maxz + 1
 	INIT_ANNOUNCE("Loading [current_map.map_name]...")
+	current_map_handler.before_station_load() // FENYSHA EVENTS ADD
 	LoadGroup(FailedZs, "Station", current_map.map_path, current_map.map_file, current_map.traits, ZTRAITS_STATION, height_autosetup = current_map.height_autosetup)
-
+	current_map_handler.after_station_load() // FENYSHA EVENTS ADD
 	if(SSdbcore.Connect())
 		var/datum/db_query/query_round_map_name = SSdbcore.NewQuery({"
 			UPDATE [format_table_name("round")] SET map_name = :map_name WHERE id = :round_id
