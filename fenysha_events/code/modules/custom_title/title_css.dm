@@ -40,14 +40,15 @@
 
                 /* загрузчик */
                 .container_loading {
-                    position: absolute;
-                    bottom: 5vmin;
-                    right: 5vmin;
-                    display: flex;
-                    align-items: center;
-                    z-index: 2;
-                    transition: transform 0.1s ease-out;
-                }
+					display: flex;
+					flex-direction: row;
+					align-items: center;
+					justify-content: flex-end;
+					gap: 15px;
+					position: absolute;
+					bottom: 40px;
+					right: 40px;
+				}
 
                 .progress_ring {
                     transform: rotate(-90deg);
@@ -59,15 +60,11 @@
                 }
 
                 .terminal_text {
-                    font-family: "Fixedsys";
-                    font-weight: lighter;
-                    color: #00ff00;
-                    text-shadow: 1px 1px 2px black;
-                    font-size: 2.5vmin;
-                    margin-left: 2vmin;
-                    text-align: left;
-                    white-space: nowrap;
-                }
+					text-align: right;
+					font-family: "Fixedsys", monospace;
+					font-size: 1.8vmin;
+					color: #f0d30b;
+				}
 
                 /* блок с кнопками */
                 .container_nav {

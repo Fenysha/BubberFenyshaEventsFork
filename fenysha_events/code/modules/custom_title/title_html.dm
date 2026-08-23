@@ -6,11 +6,11 @@
         dat += {"<img src="loading_screen.gif" class="bg" id="bg_layer" alt="">"}
         dat += {"
         <div class="container_loading" id="parallax_loader">
-            <svg class="progress_ring" width="60" height="60">
-                <circle class="progress_ring_bg" stroke="rgba(0, 255, 0, 0.2)" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
-                <circle class="progress_ring_circle" id="progress_circle" stroke="#00ff00" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
-            </svg>
             <div class="terminal_text" id="terminal"></div>
+            <svg class="progress_ring" width="60" height="60">
+                <circle class="progress_ring_bg" stroke="rgba(240, 211, 11, 1)" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
+                <circle class="progress_ring_circle" id="progress_circle" stroke="#f0d30b" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
+            </svg>
         </div>
         "}
 
@@ -34,7 +34,7 @@
                     terminal_lines.shift();
                 }
                 var last_msg = terminal_lines.slice(-1);
-                terminal.innerText = last_msg.length ? last_msg.pop() : '';
+                terminal.innerHTML = last_msg.length ? last_msg.pop() : '';
             }
 
             append_terminal_text();

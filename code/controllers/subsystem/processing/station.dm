@@ -50,6 +50,7 @@ PROCESSING_SUBSYSTEM_DEF(station)
 	var/is_planetary = SSmapping.is_planetary()
 
 	// FENYSHA EVENTS ADD START: sefety
+	var/max_iterations = 50
 	while(possible.len && goal_weights < goal_budget && max_iterations > 0)
 		max_iterations--
 		CHECK_TICK
