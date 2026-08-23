@@ -20,6 +20,7 @@
 			"special_charter": "train"
 		}
 	},
+	"map_handler": "/datum/map_handler/buckshot_roulette",
 	"custom_manifest": {
 		"/datum/job/buckshot_player": -1
 	}

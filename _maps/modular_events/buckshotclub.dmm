@@ -516,6 +516,13 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/misc/asphalt,
 /area/centcom/buckshot_club/outdoors)
+"fn" = (
+/obj/effect/mapping_helpers/broken_floor,
+/obj/machinery/door/airlock/bathroom{
+	name = "Unisex Bathroom"
+	},
+/turf/open/floor/iron/white/small,
+/area/centcom/buckshot_club)
 "fp" = (
 /obj/effect/turf_decal/siding/dark{
 	dir = 5
@@ -731,6 +738,11 @@
 	pixel_y = -13
 	},
 /turf/open/indestructible/dark/textured,
+/area/centcom/buckshot_club)
+"hl" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/machinery/light/dim/directional/north,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "hm" = (
 /obj/effect/turf_decal/siding/thinplating/dark,
@@ -959,6 +971,11 @@
 /obj/structure/fence/interlink,
 /turf/open/misc/grass/planet,
 /area/centcom/buckshot_club/outdoors)
+"ju" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/iron/white/small,
+/area/centcom/buckshot_club)
 "jw" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/misc/grass/planet,
@@ -1749,8 +1766,9 @@
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "qB" = (
-/obj/effect/turf_decal/siding/thinplating/dark,
-/turf/open/indestructible/dark,
+/obj/structure/mirror/broken/directional/east,
+/obj/structure/sink/directional/west,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "qC" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -1773,6 +1791,10 @@
 /obj/structure/shipping_container/nanotrasen,
 /turf/open/misc/asphalt,
 /area/centcom/buckshot_club/outdoors)
+"qJ" = (
+/obj/effect/decal/cleanable/blood/gibs/old,
+/turf/open/floor/iron/white/small,
+/area/centcom/buckshot_club)
 "qK" = (
 /obj/machinery/vending/coffee{
 	default_price = 0;
@@ -1798,6 +1820,10 @@
 /obj/structure/table/reinforced/rglass,
 /obj/machinery/light/directional/east,
 /turf/open/floor/wood,
+/area/centcom/buckshot_club)
+"qQ" = (
+/obj/structure/toilet,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "qU" = (
 /obj/structure/window/reinforced/tinted/spawner/directional/south,
@@ -2092,6 +2118,10 @@
 	},
 /turf/open/indestructible/dark/textured,
 /area/centcom/buckshot_club)
+"tl" = (
+/obj/item/reagent_containers/heroin,
+/turf/open/indestructible/plating,
+/area/centcom/buckshot_club)
 "tn" = (
 /obj/structure/table/reinforced,
 /obj/machinery/light/cold/dim/directional/west,
@@ -2258,6 +2288,18 @@
 	dir = 4
 	},
 /turf/open/indestructible/dark/textured,
+/area/centcom/buckshot_club)
+"uz" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/blood/gibs/old,
+/turf/open/floor/iron/white/small,
+/area/centcom/buckshot_club)
+"uA" = (
+/obj/machinery/door/airlock/bathroom{
+	name = "Unisex Bathroom"
+	},
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "uB" = (
 /obj/machinery/light/red/dim/directional/south,
@@ -2599,6 +2641,10 @@
 /obj/structure/railing/unbreakable,
 /turf/open/misc/asphalt,
 /area/centcom/buckshot_club/outdoors)
+"xI" = (
+/obj/effect/mapping_helpers/broken_floor,
+/turf/closed/wall/city/siding/red,
+/area/centcom/buckshot_club)
 "xP" = (
 /obj/effect/mob_spawn/corpse/human/assistant,
 /obj/structure/bed/maint,
@@ -2994,6 +3040,14 @@
 /obj/item/reagent_containers/syringe,
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/indestructible/dark/textured,
+/area/centcom/buckshot_club)
+"BH" = (
+/obj/structure/mirror/broken/directional/east,
+/obj/structure/mirror/broken/directional/east,
+/obj/structure/sink/directional/west,
+/obj/item/reagent_containers/heroin,
+/obj/item/reagent_containers/applicator/pill/style/happy,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "BK" = (
 /obj/effect/turf_decal/siding/dark{
@@ -3615,11 +3669,6 @@
 /obj/effect/turf_decal/bot_white,
 /turf/open/indestructible/dark/textured,
 /area/centcom/buckshot_club)
-"Hu" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/landmark/observer_start,
-/turf/open/indestructible/dark/textured,
-/area/centcom/buckshot_club)
 "Hv" = (
 /obj/structure/chair/buckshot{
 	dir = 8
@@ -3714,6 +3763,11 @@
 /obj/structure/flora/bush/sparsegrass,
 /turf/open/misc/grass/planet,
 /area/centcom/buckshot_club/outdoors)
+"Il" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/landmark/observer_start,
+/turf/open/indestructible/dark/textured,
+/area/centcom/buckshot_club)
 "Ip" = (
 /obj/effect/turf_decal/arrows{
 	dir = 1
@@ -3774,9 +3828,20 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
+"IZ" = (
+/obj/effect/mapping_helpers/broken_floor,
+/obj/structure/toilet,
+/turf/open/floor/iron/white/small,
+/area/centcom/buckshot_club)
 "Jd" = (
 /obj/machinery/light/dim/directional/north,
 /turf/open/indestructible/dark/smooth_large,
+/area/centcom/buckshot_club)
+"Je" = (
+/obj/effect/mapping_helpers/broken_floor,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "Jf" = (
 /obj/machinery/light/small/directional/west,
@@ -3851,10 +3916,8 @@
 /turf/open/indestructible/dark,
 /area/centcom/buckshot_club)
 "JH" = (
-/obj/effect/turf_decal/siding/thinplating/dark{
-	dir = 4
-	},
-/turf/open/indestructible/dark,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "JI" = (
 /obj/structure/toilet{
@@ -4073,6 +4136,12 @@
 /obj/structure/chair/buckshot,
 /obj/machinery/light/red/dim/directional/north,
 /turf/open/floor/iron/smooth,
+/area/centcom/buckshot_club)
+"Lt" = (
+/obj/effect/mapping_helpers/broken_floor,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/blood/gibs/old,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "Lw" = (
 /obj/effect/turf_decal/tile/dark{
@@ -4348,6 +4417,12 @@
 	},
 /turf/open/indestructible/dark/textured,
 /area/centcom/buckshot_club)
+"OY" = (
+/obj/structure/toilet{
+	dir = 4
+	},
+/turf/open/floor/iron/white/small,
+/area/centcom/buckshot_club)
 "OZ" = (
 /obj/structure/flora/tree/jungle/style_random,
 /turf/open/misc/grass/planet,
@@ -4595,6 +4670,7 @@
 "QF" = (
 /obj/machinery/door/airlock,
 /obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/mapping_helpers/airlock/access/all/admin,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "QI" = (
@@ -4705,6 +4781,9 @@
 /obj/structure/rack/gunrack,
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/smooth_large,
+/area/centcom/buckshot_club)
+"Rr" = (
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "Rw" = (
 /obj/structure/window/reinforced/spawner/directional/south,
@@ -4954,6 +5033,11 @@
 	target_turf_x = 26;
 	target_turf_y = 28
 	},
+/area/centcom/buckshot_club)
+"TD" = (
+/obj/effect/mapping_helpers/broken_floor,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "TE" = (
 /obj/effect/decal/cleanable/rubble,
@@ -7370,7 +7454,7 @@ Qd
 Qd
 JX
 Hk
-Hu
+Il
 vV
 Ne
 tK
@@ -13173,7 +13257,7 @@ AD
 AD
 AD
 AD
-AD
+tl
 AD
 AD
 AD
@@ -13745,12 +13829,12 @@ Um
 Um
 WS
 Hk
-AD
-AD
-AD
-AD
-AD
-AD
+QJ
+Hk
+OY
+Hk
+Rr
+Rr
 Hk
 Jd
 ER
@@ -13817,12 +13901,12 @@ Um
 Um
 WS
 Hk
-AD
-AD
-AD
-AD
-AD
-AD
+QJ
+Hk
+fn
+Hk
+JH
+Rr
 Hk
 FC
 Ef
@@ -13889,12 +13973,12 @@ Um
 Um
 WS
 Hk
-AD
-AD
-AD
-AD
-AD
-AD
+QJ
+Hk
+Rr
+wP
+uz
+wP
 Hk
 tK
 wB
@@ -13961,12 +14045,12 @@ Um
 Um
 WS
 Hk
-AD
-AD
-AD
-AD
-AD
-AD
+Hk
+Hk
+JH
+JH
+TD
+Rr
 Gl
 wI
 wB
@@ -14033,12 +14117,12 @@ Um
 Um
 WS
 Hk
-AD
-AD
-AD
-AD
-AD
-AD
+IZ
+uA
+JH
+Je
+JH
+JH
 Hk
 Vz
 yV
@@ -14105,12 +14189,12 @@ Um
 Um
 WS
 Hk
-AD
-AD
-AD
-AD
-AD
-AD
+Hk
+Hk
+hl
+ju
+JH
+ju
 Hk
 ri
 gh
@@ -14177,12 +14261,12 @@ Um
 Um
 WS
 Hk
-AD
-AD
-AD
-AD
-AD
-AD
+qQ
+uA
+qJ
+Je
+Lt
+TD
 Hk
 FC
 yV
@@ -14249,13 +14333,13 @@ Um
 Um
 WS
 Hk
-AD
-AD
-AD
-AD
-AD
-AD
 Hk
+xI
+Rr
+ju
+Rr
+wP
+xI
 Ll
 yV
 LA
@@ -14321,12 +14405,12 @@ Um
 Um
 WS
 Hk
-AD
-AD
-AD
-AD
-AD
-AD
+IZ
+uA
+qB
+BH
+qB
+qB
 Hk
 Yc
 Du
@@ -14616,9 +14700,9 @@ Hk
 mD
 mD
 mD
-JH
-JH
-JH
+mD
+mD
+mD
 mD
 mD
 Hk
@@ -14687,7 +14771,7 @@ AD
 Hk
 wI
 wI
-ot
+wI
 wI
 wI
 wI
@@ -14759,7 +14843,7 @@ AD
 Hk
 mD
 mD
-qB
+mD
 mD
 jV
 mD
@@ -14831,7 +14915,7 @@ AD
 Hk
 wI
 wI
-ot
+wI
 wI
 wI
 wI
