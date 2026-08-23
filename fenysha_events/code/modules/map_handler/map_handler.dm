@@ -63,6 +63,16 @@
 /datum/map_handler/proc/after_station_load()
 	return
 
+/datum/map_handler/proc/on_enter_pregame()
+	SHOULD_NOT_SLEEP(TRUE)
+
+	return
+
+/datum/map_handler/proc/on_round_start()
+	SHOULD_NOT_SLEEP(TRUE)
+
+	return
+
 /datum/map_handler/proc/on_job_ocupation_done()
 	SIGNAL_HANDLER
 	UnregisterSignal(SSjob, COMSIG_OCCUPATIONS_SETUP) // Changing ocupations only for first time
@@ -179,3 +189,37 @@
 
 /datum/map_handler/default
 
+
+/datum/map_handler/buckshot_roulette/initialize()
+	. = ..()
+	RegisterSignal(SSdcs, COMSIG_GLOBAL_PLAYER_SETUP_FINISHED, PROC_REF(on_player_join))
+
+/datum/map_handler/buckshot_roulette/proc/on_player_join(datum/dcs, mob/living/joining)
+	SIGNAL_HANDLER
+
+	INVOKE_ASYNC(src, PROC_REF(teleport_to_club), joining)
+
+/datum/map_handler/buckshot_roulette/proc/teleport_to_club(mob/living/joining)
+	var/job_spawn_title = joining?.mind?.assigned_role?.title
+	var/obj/effect/landmark/start/spawnpoint
+	var/obj/effect/landmark/reserv_spawnpoint = null
+	for(var/obj/effect/landmark/start/spawn_point as anything in GLOB.start_landmarks_list)
+		if(spawn_point.name == job_spawn_title)
+			spawnpoint = spawn_point
+	if(!spawnpoint)
+		reserv_spawnpoint = locate(/obj/effect/landmark/observer_start) in GLOB.landmarks_list
+	var/turf/target_turf = spawnpoint ? get_turf(spawnpoint) : get_turf(reserv_spawnpoint)
+	if(!target_turf)
+		message_admins("Failed to spawn new character for [ADMIN_LOOKUPFLW(joining)]")
+		return
+	joining.forceMove(target_turf)
+
+/datum/map_handler/buckshot_roulette/on_enter_pregame()
+	set_station_name("Buckshot roulette club")
+	addtimer(CALLBACK(src, PROC_REF(update_lobby)), 2 SECONDS)
+
+/datum/map_handler/buckshot_roulette/proc/update_lobby()
+	SStitle.change_title_screen('fenysha_events/icons/lobby/buckshot.png')
+	SSticker.set_lobby_music('fenysha_events/sounds/ost/backshot_roulette/buckshot_ost_gate_modded.ogg', override = TRUE)
+	for(var/client/C in GLOB.clients)
+		C?.playtitlemusic(volume_multiplier = 1)

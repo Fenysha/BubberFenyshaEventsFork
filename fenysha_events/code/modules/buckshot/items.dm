@@ -266,9 +266,8 @@
 /obj/item/buckshot_game/saw
 	name = "hand saw"
 	desc = "A hand saw."
-	icon = 'icons/obj/weapons/sword.dmi'
-	icon_state = "tanto"
-	inhand_icon_state = "tantohand"
+	icon_state = "bonesaw"
+	icon = 'modular_skyrat/modules/exp_corps/icons/bonesaw.dmi'
 	lefthand_file = 'icons/mob/inhands/weapons/swords_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
 	worn_icon_state = "knife"
