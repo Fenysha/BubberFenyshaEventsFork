@@ -714,7 +714,8 @@
 	SIGNAL_HANDLER
 	if(user != owner)
 		return
-	talk_tuah(pick(hurt_lines))
+	ASYNC /// FENYSHA EVENTS ADD Modular async call
+		talk_tuah(pick(hurt_lines))
 
 /datum/brain_trauma/special/axedoration/proc/talk_tuah(sent_message = "Hello World.")
 	owner.Hear(GLOB.bridge_axe, owner.get_selected_language(), sent_message)

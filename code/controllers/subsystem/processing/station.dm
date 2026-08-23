@@ -48,9 +48,16 @@ PROCESSING_SUBSYSTEM_DEF(station)
 	var/goal_weights = 0
 	var/chosen_goals = list()
 	var/is_planetary = SSmapping.is_planetary()
-	while(possible.len && goal_weights < goal_budget)
+
+	// FENYSHA EVENTS ADD START: sefety
+	while(possible.len && goal_weights < goal_budget && max_iterations > 0)
+		max_iterations--
+		CHECK_TICK
+	// FENYSHA EVENTS ADD END
+	// FENYSHA EVENTS REMOVE: Старый заголовок цикла while(possible.len && goal_weights < goal_budget)
 		var/datum/station_goal/picked = pick_n_take(possible)
-		if(picked::requires_space && is_planetary)
+		// FENYSHA EVENTS EDIT: sefety for events maps
+		if(initial(picked.requires_space) && is_planetary)
 			continue
 
 		goal_weights += initial(picked.weight)
@@ -79,18 +86,22 @@ PROCESSING_SUBSYSTEM_DEF(station)
 		var/forced_traits_contents = file2text(FUTURE_STATION_TRAITS_FILE)
 		fdel(FUTURE_STATION_TRAITS_FILE)
 
-		var/list/forced_traits_text_paths = json_decode(forced_traits_contents)
-		forced_traits_text_paths = SANITIZE_LIST(forced_traits_text_paths)
+		// FENYSHA EVENTS EDIT START: sefety
+		if(forced_traits_contents)
+			var/list/forced_traits_text_paths = json_decode(forced_traits_contents)
+			if(islist(forced_traits_text_paths))
+				forced_traits_text_paths = SANITIZE_LIST(forced_traits_text_paths)
 
-		for (var/trait_text_path in forced_traits_text_paths)
-			var/station_trait_path = text2path(trait_text_path)
-			if (!ispath(station_trait_path, /datum/station_trait) || station_trait_path == /datum/station_trait)
-				var/message = "Invalid station trait path [station_trait_path] was requested in the future station traits!"
-				log_game(message)
-				message_admins(message)
-				continue
+				for (var/trait_text_path in forced_traits_text_paths)
+					var/station_trait_path = text2path(trait_text_path)
+					if (!ispath(station_trait_path, /datum/station_trait) || station_trait_path == /datum/station_trait)
+						var/message = "Invalid station trait path [station_trait_path] was requested in the future station traits!"
+						log_game(message)
+						message_admins(message)
+						continue
 
-			setup_trait(station_trait_path)
+					setup_trait(station_trait_path)
+		// FENYSHA EVENTS EDIT END
 
 		return
 
@@ -140,11 +151,18 @@ PROCESSING_SUBSYSTEM_DEF(station)
  * All until the whole budget is spent or no more traits can be picked with it.
  */
 /datum/controller/subsystem/processing/station/proc/pick_traits(trait_sign, budget)
-	if(!budget)
+	if(budget <= 0) // FENYSHA EVENTS EDIT: !budget => budget <= 0
 		return
 	///A list of traits of the same trait sign
 	var/list/selectable_traits = selectable_traits_by_types[trait_sign]
-	while(budget)
+
+	// FENYSHA EVENTS ADD START: Sefety
+	var/safety_limit = 50
+	while(budget > 0 && safety_limit > 0)
+		safety_limit--
+		CHECK_TICK
+	// FENYSHA EVENTS ADD END
+	// FENYSHA EVENTS REMOVE: Старый заголовок цикла while(budget)
 		///Remove any station trait with a cost bigger than the budget
 		for(var/datum/station_trait/proto_trait as anything in selectable_traits)
 			if(initial(proto_trait.cost) > budget)
@@ -155,7 +173,14 @@ PROCESSING_SUBSYSTEM_DEF(station)
 		//Rolls from the table for the specific trait type
 		var/datum/station_trait/trait_type = pick_weight(selectable_traits)
 		selectable_traits -= trait_type
-		budget -= initial(trait_type.cost)
+
+		// FENYSHA EVENTS EDIT START: Защита от нулевой/отрицательной стоимости, вызывающей бесконечный цикл
+		var/trait_cost = initial(trait_type.cost)
+		if(trait_cost <= 0)
+			trait_cost = 1
+		budget -= trait_cost
+		// FENYSHA EVENTS EDIT END
+
 		setup_trait(trait_type)
 
 ///Creates a given trait of a specific type, while also removing any blacklisted ones from the future pool.

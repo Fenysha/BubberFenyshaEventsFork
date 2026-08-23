@@ -405,7 +405,7 @@ SUBSYSTEM_DEF(daylight)
 		SEND_SIGNAL(src, COMSIG_DAYLIGHT_UPDATED, current_intensity, current_color)
 
 /datum/controller/subsystem/daylight/proc/get_cycle_progress()
-	return round_timestamp() / (24 HOURS)
+	return STATION_TIME_PASSED() / (24 HOURS)
 
 /datum/controller/subsystem/daylight/proc/resolve_phase()
 	var/time_now = STATION_TIME_PASSED()

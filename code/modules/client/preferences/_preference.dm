@@ -69,6 +69,8 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 
 	for (var/preference_type in GLOB.preference_entries)
 		var/datum/preference/preference = GLOB.preference_entries[preference_type]
+		if(!preference.is_preference_enabled())
+			continue
 		LAZYADD(preferences[preference.priority], preference)
 
 	var/list/flattened = list()

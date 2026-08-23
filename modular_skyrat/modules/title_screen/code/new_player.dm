@@ -79,7 +79,9 @@
 
 	if(href_list["character_directory"])
 		play_lobby_button_sound()
+#if !defined(NOERP)
 		client.show_character_directory()
+#endif
 		return
 
 	if(href_list["toggle_antag"])

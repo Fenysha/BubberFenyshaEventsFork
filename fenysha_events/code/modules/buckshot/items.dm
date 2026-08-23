@@ -4,30 +4,30 @@
 
 /obj/item/buckshot_game
 	name = "buckshot game item"
-	// Описание предмета для игры
+	// Description of the item used in the game
 	var/use_desc = "This item is used to manage a game of buckshot roulette."
-	// Владелец предмета
+	// Owner of the item
 	var/mob/living/carbon/human/owner_player = null
-	// Пати к которой привязан предмет
+	// Party this item is linked to
 	var/datum/buckshot_roulette_party/party = null
-	// Можно ли применить предмет к мертому игроку
+	// Can the item be used on a dead player
 	var/use_on_death = FALSE
-	// Цель применения этого предмета
+	// Target type for this item
 	var/potential_target = ITEM_TARGET_MOB
-	// Может ли предмет быть украден
+	// Can the item be stolen
 	var/can_be_stolen = TRUE
-	// Звук при использовании предмета
+	// Sound played when using the item
 	var/use_sound
-	// Время для использования предмета
+	// Time required to use the item
 	var/use_time = 3 SECONDS
-	// Текст при использовании предмета
-	// %user% - игрок, который использует предмет
-	// %item% - используемый предмет
-	// %itemtarget% - цель использования (игрок или дробовик)
-	var/use_text = "%user% использует %item% на %itemtarget%"
+	// Message broadcast when using the item
+	// %user% - player using the item
+	// %item% - the item being used
+	// %itemtarget% - target of the item (player or shotgun)
+	var/use_text = "%user% uses %item% on %itemtarget%"
 
 	w_class = WEIGHT_CLASS_HUGE
-	obj_flags = INDESTRUCTIBLE|BOMB_PROOF|LAVA_PROOF|FIRE_PROOF
+	obj_flags = INDESTRUCTIBLE | BOMB_PROOF | LAVA_PROOF | FIRE_PROOF
 	VAR_PROTECTED/using = FALSE
 
 /obj/item/buckshot_game/Initialize(mapload, mob/living/carbon/human/owner, datum/buckshot_roulette_party/party_instance)
@@ -43,10 +43,10 @@
 /obj/item/buckshot_game/proc/get_target_desc()
 	switch(potential_target)
 		if(ITEM_TARGET_MOB)
-			return "Используется на себе или других игроках!"
+			return "Used on yourself or other players!"
 		if(ITEM_TARGET_SHOTGUN)
-			return "Используется на дробовике."
-	return "Неизвестная цель."
+			return "Used on the shotgun."
+	return "Unknown target."
 
 /obj/item/buckshot_game/proc/get_use_text(mob/living/user, atom/target)
 	var/final_string = use_text
@@ -63,7 +63,7 @@
 	if(party.game_started)
 		return FALSE
 	if(user != owner_player)
-		to_chat(user, span_warning("Это не твой предмет!"))
+		to_chat(user, span_warning("This is not your item!"))
 		return FALSE
 
 /obj/item/buckshot_game/ranged_interact_with_atom(atom/interacting_with, mob/living/user, list/modifiers)
@@ -89,14 +89,14 @@
 
 	var/able_to_use = TRUE
 
-	if(!party.game_started)
-		to_chat(user, span_warning("Игра еще не началась!"))
+	if(!party || !party.game_started)
+		to_chat(user, span_warning("The game has not started yet!"))
 		able_to_use = FALSE
 	if(user != owner_player)
-		to_chat(user, span_warning("Это не твой предмет!"))
+		to_chat(user, span_warning("This is not your item!"))
 		able_to_use = FALSE
-	if(party.current_turn_player != user)
-		to_chat(user, span_warning("Сейчас не твой ход!"))
+	if(party && party.current_turn_player != user)
+		to_chat(user, span_warning("It is not your turn!"))
 		able_to_use = FALSE
 	if(!is_valid_target(target, user))
 		able_to_use = FALSE
@@ -109,10 +109,10 @@
 	if(istype(target, /mob/living/carbon/human) && potential_target == ITEM_TARGET_MOB)
 		var/mob/living/carbon/human/player = target
 		if(!party.is_participant(player))
-			to_chat(user, span_warning("Этот игрок не участвует в игре!"))
+			to_chat(user, span_warning("This player is not participating in the game!"))
 			return
 		if(player.stat == DEAD && !use_on_death)
-			to_chat(user, span_warning("Нельзя использовать предмет на мертвого игрока!"))
+			to_chat(user, span_warning("You cannot use this item on a dead player!"))
 			return
 
 		using = TRUE
@@ -178,16 +178,15 @@
 	return
 
 
-
 /obj/item/buckshot_game/cigarettes
 	name = "premium cigarettes"
 	desc = "A pack of cigarettes."
 	icon = 'icons/obj/cigarettes.dmi'
 	icon_state = "robust"
-	use_desc = "Восстанавливают один заряд CRT механизма."
+	use_desc = "Restores one charge to the CRT mechanism."
 
 	use_sound = 'fenysha_events/sounds/effects/buckshot/item_cigarettes.ogg'
-	use_text = "%user% выкуривает сигарету."
+	use_text = "%user% smokes a cigarette."
 	use_time = 4 SECONDS
 	potential_target = ITEM_TARGET_MOB
 
@@ -199,10 +198,10 @@
 	var/mob/living/carbon/human/player = target
 	var/datum/component/buckshot_roulette_participant/participant = player.GetComponent(/datum/component/buckshot_roulette_participant)
 	if(!participant)
-		to_chat(player, span_warning("Вы не участвуете в игре!"))
+		to_chat(player, span_warning("You are not participating in the game!"))
 		return FALSE
 	if(participant.lives >= 3)
-		to_chat(player, span_warning("У вас уже максимальное количество жизней!"))
+		to_chat(player, span_warning("You already have maximum lives!"))
 		return FALSE
 	return TRUE
 
@@ -214,13 +213,13 @@
 
 
 /obj/item/buckshot_game/glass
-	name = "Magnifying glass"
-	desc = "A Magnifying glass."
-	use_desc = "Позволяет проверить какой патрон заряжен в пробовике."
+	name = "magnifying glass"
+	desc = "A magnifying glass."
+	use_desc = "Allows you to inspect the current round chambered in the shotgun."
 	icon = 'modular_skyrat/modules/primitive_production/icons/prim_fun.dmi'
 	icon_state = "magnifying_glass"
 
-	use_text = "%user% использует лупу, чтобы проверить патрон в дробовике."
+	use_text = "%user% uses a magnifying glass to check the chambered round."
 	use_sound = 'fenysha_events/sounds/effects/buckshot/item_magnifier.ogg'
 	use_time = 4 SECONDS
 	potential_target = ITEM_TARGET_SHOTGUN
@@ -230,19 +229,19 @@
 		return FALSE
 	var/obj/item/gun/ballistic/shotgun/buckshot_game/gun = target
 	if(!gun.chambered)
-		to_chat(user, span_warning("В пробовике нет патрона!"))
+		to_chat(user, span_warning("There is no round in the chamber!"))
 		return FALSE
 	return TRUE
 
 /obj/item/buckshot_game/glass/use_on_shotgun(obj/item/gun/ballistic/shotgun/buckshot_game/gun, mob/living/carbon/human/player)
 	var/obj/item/ammo_casing/shotgun/buckshot/round = gun.chambered
-	var/msg = "В дробовике заряжен "
+	var/msg = "The chambered round is "
 	if(istype(round, /obj/item/ammo_casing/shotgun/buckshot/live))
-		msg += "боевой патрон."
+		msg += "a live shell."
 	else if(istype(round, /obj/item/ammo_casing/shotgun/buckshot/blank))
-		msg += "холостой патрон."
+		msg += "a blank shell."
 	else
-		msg += "неизвестный патрон."
+		msg += "an unknown shell."
 	to_chat(player, span_notice(msg))
 	qdel(src)
 
@@ -252,16 +251,17 @@
 	desc = "Canned beer. In space."
 	icon = 'icons/obj/drinks/soda.dmi'
 	icon_state = "space_beer"
-	use_desc = "Позволяет передергнуть затвор дробовика."
+	use_desc = "Racks the shotgun action to rack out the current round."
 
 	use_sound = 'fenysha_events/sounds/effects/buckshot/item_beer.ogg'
-	use_text = "%user% использует пиво, чтобы передернуть затвор дробовика."
+	use_text = "%user% drinks a beer and racks the shotgun action."
 	use_time = 5 SECONDS
 	potential_target = ITEM_TARGET_SHOTGUN
 
 /obj/item/buckshot_game/beer/use_on_shotgun(obj/item/gun/ballistic/shotgun/buckshot_game/gun, mob/living/carbon/human/player)
 	gun.rack(player)
 	qdel(src)
+
 
 /obj/item/buckshot_game/saw
 	name = "hand saw"
@@ -273,9 +273,9 @@
 	righthand_file = 'icons/mob/inhands/weapons/swords_righthand.dmi'
 	worn_icon_state = "knife"
 
-	use_desc = "Позволяет отрезать ствол дробовика, двойной урон!"
+	use_desc = "Saws off the shotgun barrel, doubling the damage of the next shot!"
 	use_sound = 'fenysha_events/sounds/effects/buckshot/handsaw.ogg'
-	use_text = "%user% использует пилу, чтобы отрезать ствол дробовика."
+	use_text = "%user% uses a saw to shorten the shotgun barrel."
 	use_time = 4 SECONDS
 	potential_target = ITEM_TARGET_SHOTGUN
 
@@ -284,13 +284,14 @@
 		return FALSE
 	var/obj/item/gun/ballistic/shotgun/buckshot_game/gun = target
 	if(gun.sawed_off)
-		to_chat(user, span_warning("Дробовик уже отрезан!"))
+		to_chat(user, span_warning("The shotgun is already sawed-off!"))
 		return FALSE
 	return TRUE
 
-/obj/item/buckshot_game/saw/use_on_shotgun(obj/item/gun/ballistic/shotgun/buckshot_game/gun, mob/living/carbon/human/player, del_on_fail)
+/obj/item/buckshot_game/saw/use_on_shotgun(obj/item/gun/ballistic/shotgun/buckshot_game/gun, mob/living/carbon/human/player)
 	gun.saw_off(player)
 	qdel(src)
+
 
 /obj/item/restraints/handcuffs/buckshot_game
 	breakouttime = 2 MINUTES
@@ -303,9 +304,11 @@
 
 /obj/item/restraints/handcuffs/buckshot_game/Destroy(force)
 	playsound(get_turf(src), 'fenysha_events/sounds/effects/buckshot/handcuffs_off.ogg', 50, 1)
-	REMOVE_TRAIT(player, TRAIT_BUCKSHOT_SKIPTURN, REF(src))
-	to_chat(player, span_notice("Вы освобождены от наручников!"))
-	UnregisterSignal(party, COMSIG_BUCKSHOT_NEXT_TURN)
+	if(player)
+		REMOVE_TRAIT(player, TRAIT_BUCKSHOT_SKIPTURN, REF(src))
+		to_chat(player, span_notice("You are freed from the handcuffs!"))
+	if(party)
+		UnregisterSignal(party, COMSIG_BUCKSHOT_NEXT_TURN)
 	. = ..()
 
 /obj/item/restraints/handcuffs/buckshot_game/proc/apply(mob/living/carbon/target)
@@ -314,17 +317,20 @@
 
 	player = target
 	ADD_TRAIT(player, TRAIT_BUCKSHOT_SKIPTURN, REF(src))
-	RegisterSignal(party, COMSIG_BUCKSHOT_NEXT_TURN, PROC_REF(on_next_turn))
+	if(party)
+		RegisterSignal(party, COMSIG_BUCKSHOT_NEXT_TURN, PROC_REF(on_next_turn))
 	addtimer(CALLBACK(src, PROC_REF(release)), breakouttime)
 
 /obj/item/restraints/handcuffs/buckshot_game/proc/release()
-	player.dropItemToGround(src, TRUE, TRUE, FALSE)
-	player.set_handcuffed(null)
-	player.update_handcuffed()
+	if(player)
+		player.dropItemToGround(src, TRUE, TRUE, FALSE)
+		player.set_handcuffed(null)
+		player.update_handcuffed()
 
 /obj/item/restraints/handcuffs/buckshot_game/proc/on_next_turn()
 	SIGNAL_HANDLER
 	release()
+
 
 /obj/item/buckshot_game/handcuffs
 	name = "handcuffs"
@@ -335,11 +341,11 @@
 	icon = 'icons/obj/weapons/restraints.dmi'
 	lefthand_file = 'icons/mob/inhands/equipment/security_lefthand.dmi'
 	righthand_file = 'icons/mob/inhands/equipment/security_righthand.dmi'
-	use_desc = "Одень на игрока, чтобы заставить его пропустить следующий ход!"
+	use_desc = "Apply to a player to force them to skip their next turn!"
 
 	potential_target = ITEM_TARGET_MOB
 	use_sound = 'fenysha_events/sounds/effects/buckshot/handcuffs.ogg'
-	use_text = "%user% надевает наручники на %itemtarget%, заставляя его пропустить следующий ход."
+	use_text = "%user% puts handcuffs on %itemtarget%, forcing them to skip their next turn."
 	use_time = 3 SECONDS
 	can_be_stolen = FALSE
 
@@ -350,17 +356,17 @@
 		return FALSE
 	var/mob/living/carbon/human/player = target
 	if(!party.is_participant(player))
-		to_chat(user, span_warning("Этот игрок не участвует в игре!"))
+		to_chat(user, span_warning("This player is not participating in the game!"))
 		return FALSE
 	if(player.stat == DEAD)
-		to_chat(user, span_warning("Нельзя использовать наручники на мертвого игрока!"))
+		to_chat(user, span_warning("You cannot use handcuffs on a dead player!"))
 		return FALSE
 	if(HAS_TRAIT(player, TRAIT_BUCKSHOT_SKIPTURN))
-		to_chat(user, span_warning("Этот игрок уже в наручниках!"))
+		to_chat(user, span_warning("This player is already handcuffed!"))
 		return FALSE
 	var/datum/component/buckshot_roulette_participant/participant = player.GetComponent(/datum/component/buckshot_roulette_participant)
-	if(participant.player_completely_dead())
-		to_chat(user, span_warning("Нельзя использовать наручники на игрока, который выбыл!"))
+	if(participant && participant.player_completely_dead())
+		to_chat(user, span_warning("You cannot use handcuffs on an eliminated player!"))
 		return FALSE
 	return TRUE
 
@@ -377,8 +383,8 @@
 	icon = 'modular_skyrat/modules/deforest_medical_items/icons/injectors.dmi'
 	base_icon_state = "adrenaline"
 	icon_state = "adrenaline"
-	use_desc = "Позволяет украсть и сразу использовать предмет у другого игрока."
-	use_text = "%user% вводит адреналин и забирает чужой предмет."
+	use_desc = "Allows you to steal and immediately use another player's item."
+	use_text = "%user% injects adrenaline and steals an item."
 	use_sound = 'fenysha_events/sounds/effects/buckshot/adrenaline.ogg'
 	use_time = 2 SECONDS
 	potential_target = ITEM_TARGET_ITEM
@@ -390,13 +396,13 @@
 
 	var/obj/item/buckshot_game/other_item = target
 	if(other_item.owner_player == user)
-		to_chat(user, span_warning("Нельзя украсть свой предмет адреналином!"))
+		to_chat(user, span_warning("You cannot steal your own item with adrenaline!"))
 		return FALSE
 	if(!other_item.can_be_stolen)
-		to_chat(user, span_warning("Этот предмет нельзя украсть адреналином!"))
+		to_chat(user, span_warning("This item cannot be stolen with adrenaline!"))
 		return FALSE
 	if(!other_item.owner_player)
-		to_chat(user, span_warning("Этот предмет не принадлежит игроку!"))
+		to_chat(user, span_warning("This item does not belong to a player!"))
 		return FALSE
 
 	return TRUE
@@ -435,27 +441,25 @@
 
 /obj/item/buckshot_game/inverter
 	name = "inverter"
-	desc = "A strange device that seems to invert the effects of items."
+	desc = "A strange device that inverts the state of the chambered round."
 	icon = 'icons/obj/devices/syndie_gadget.dmi'
 	icon_state = "desynchronizer"
 	inhand_icon_state = "electronic"
 
-	use_desc = "Меняет тип патрона заряженного в дробовике на противоположный."
-	use_text = "%user% использует инвертер на патроннике меняя тип заряженного патрона."
+	use_desc = "Swaps the chambered shotgun round to its opposite type."
+	use_text = "%user% uses the inverter on the shotgun chamber, altering the shell."
 	use_sound = 'fenysha_events/sounds/effects/buckshot/inverter.ogg'
 	use_time = 4 SECONDS
 	potential_target = ITEM_TARGET_SHOTGUN
-
 
 /obj/item/buckshot_game/inverter/is_valid_target(atom/target, mob/living/user)
 	if(!istype(target, /obj/item/gun/ballistic/shotgun/buckshot_game))
 		return FALSE
 	var/obj/item/gun/ballistic/shotgun/buckshot_game/gun = target
 	if(!gun.chambered)
-		to_chat(user, span_warning("В пробовике нет патрона!"))
+		to_chat(user, span_warning("There is no round in the chamber!"))
 		return FALSE
 	return TRUE
-
 
 /obj/item/buckshot_game/inverter/use_on_shotgun(obj/item/gun/ballistic/shotgun/buckshot_game/gun, mob/living/carbon/human/player)
 	if(!gun.chambered)
@@ -480,9 +484,9 @@
 	icon = 'icons/obj/antags/syndicate_tools.dmi'
 	icon_state = "suspiciousphone"
 
-	use_desc = "Показывает случайный патрон в дробовике."
+	use_desc = "Reveals information about a random shell inside the shotgun."
 	use_sound = 'fenysha_events/sounds/effects/buckshot/item_phone.ogg'
-	use_text = "%user% использует телефон, чтобы проверить патроны в дробовике."
+	use_text = "%user% uses a burner phone to inspect the shotgun shells."
 	use_time = 7 SECONDS
 	potential_target = ITEM_TARGET_SHOTGUN
 
@@ -494,11 +498,10 @@
 	var/rounds_left = (gun.chambered ? 1 : 0) + length(gun.chambers)
 
 	if(rounds_left < 2)
-		to_chat(user, span_warning("Как печально..."))
+		to_chat(user, span_warning("How unfortunate..."))
 		return FALSE
 
 	return TRUE
-
 
 /obj/item/buckshot_game/burner_phone/use_on_shotgun(obj/item/gun/ballistic/shotgun/buckshot_game/gun, mob/living/carbon/human/player)
 	var/list/all_rounds = list()
@@ -509,7 +512,7 @@
 		all_rounds += gun.chambers
 
 	if(!length(all_rounds))
-		to_chat(player, span_warning("Как печально..."))
+		to_chat(player, span_warning("How unfortunate..."))
 		return
 
 	var/index = rand(1, length(all_rounds))
@@ -517,20 +520,21 @@
 
 	var/location_text = ""
 	if(index == 1)
-		location_text = "в текущем патроннике"
+		location_text = "in the current chamber"
 	else
-		location_text = "в [index]-м патроне магазина"
+		location_text = "at position [index] in the magazine"
 
 	var/type_text = ""
 	if(istype(round, /obj/item/ammo_casing/shotgun/buckshot/live))
-		type_text = "боевой"
+		type_text = "live shell"
 	else if(istype(round, /obj/item/ammo_casing/shotgun/buckshot/blank))
-		type_text = "холостой"
+		type_text = "blank shell"
 	else
-		type_text = "неизвестный"
+		type_text = "unknown shell"
 
-	to_chat(player, span_notice("Телефон показывает: [location_text], [type_text] патрон."))
+	to_chat(player, span_notice("The phone reveals: [location_text], [type_text]."))
 	qdel(src)
+
 
 /obj/item/buckshot_game/expired_medicine
 	name = "expired medicine"
@@ -538,9 +542,9 @@
 	icon = 'modular_skyrat/modules/deforest_medical_items/icons/stack_items.dmi'
 	base_icon_state = "synth_patch"
 	icon_state = "synth_patch"
-	use_desc = "50/50: либо даёт 2 заряда, либо забирает 1. Если забирает последнюю жизнь - эффект смертелен."
+	use_desc = "50/50 chance: Grants 2 charges or removes 1 charge. Removes life fatally if on the last charge."
 	use_sound = 'fenysha_events/sounds/effects/buckshot/item_medicine.ogg'
-	use_text = "%user% использует просроченное лекарство."
+	use_text = "%user% uses expired medicine."
 	use_time = 4.5 SECONDS
 	potential_target = ITEM_TARGET_MOB
 
@@ -548,13 +552,13 @@
 	if(!ishuman(target))
 		return FALSE
 	if(target != user)
-		to_chat(user, span_warning("Это лекарство можно использовать только на себе!"))
+		to_chat(user, span_warning("This medicine can only be used on yourself!"))
 		return FALSE
 
 	var/mob/living/carbon/human/player = target
 	var/datum/component/buckshot_roulette_participant/participant = player.GetComponent(/datum/component/buckshot_roulette_participant)
 	if(!participant)
-		to_chat(user, span_warning("Вы не участвуете в игре!"))
+		to_chat(user, span_warning("You are not participating in the game!"))
 		return FALSE
 
 	return TRUE
@@ -567,16 +571,17 @@
 
 	if(prob(50))
 		participant.add_lives(2)
-		to_chat(player, span_notice("Лекарство сработало. Вы получили 2 заряда."))
+		to_chat(player, span_notice("The medicine worked. You gained 2 charges."))
 	else
 		playsound(get_turf(player), 'fenysha_events/sounds/effects/buckshot/death_medicine.ogg', 100, 1)
 
 		if(participant.lives <= 0)
-			to_chat(player, span_warning("Лекарство оказалось смертельным. Вы выбываете из игры!"))
+			to_chat(player, span_warning("The medicine was lethal. You are eliminated from the game!"))
 			player.death()
-			party.start_next_turn()
+			if(party)
+				party.start_next_turn()
 		else
 			participant.add_lives(-1, TRUE)
-			to_chat(player, span_warning("Лекарство оказалось просроченным. Вы потеряли 1 заряд."))
+			to_chat(player, span_warning("The medicine was expired. You lost 1 charge."))
 
 	qdel(src)

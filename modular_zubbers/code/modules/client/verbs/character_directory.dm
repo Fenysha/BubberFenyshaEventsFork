@@ -154,6 +154,7 @@ GLOBAL_DATUM(character_directory, /datum/character_directory)
 /client
 	COOLDOWN_DECLARE(char_directory_cooldown)
 
+#if !defined(NOERP)
 //Make a verb to open the character directory
 GAME_VERB_DESC(/client, show_character_directory, "Character Directory", "Shows a listing of all active characters, along with their associated OOC notes, flavor text, and more.", "OOC")
 	// This is primarily to stop malicious users from trying to lag the server by spamming this verb
@@ -166,6 +167,7 @@ GAME_VERB_DESC(/client, show_character_directory, "Character Directory", "Shows 
 	if(!GLOB.character_directory)
 		GLOB.character_directory = new
 	GLOB.character_directory.ui_interact(mob)
+#endif
 
 // This is a global singleton. Keep in mind that all operations should occur on user, not src.
 /datum/character_directory

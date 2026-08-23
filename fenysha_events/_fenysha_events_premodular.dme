@@ -9,5 +9,4 @@
  * EVENTS CODE
  */
 
-#include "code\modules\erotic_removeval\prefs.dm"
 #include "code\modules\erotic_removeval\living.dm"
