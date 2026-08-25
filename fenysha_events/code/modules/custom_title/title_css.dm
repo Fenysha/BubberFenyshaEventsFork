@@ -13,8 +13,8 @@
                     overflow: hidden;
                     text-align: center;
                     background-color: black;
-					image-rendering: pixelated;
-					text-rendering: geometricPrecision;
+                    image-rendering: pixelated;
+                    text-rendering: geometricPrecision;
                     -ms-user-select: none;
                     cursor: default;
                     width: 100%;
@@ -38,17 +38,85 @@
                     transition: transform 0.1s ease-out;
                 }
 
+                .shell_container {
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    top: 0;
+                    left: 0;
+                    pointer-events: none;
+                    z-index: 0;
+                    overflow: hidden;
+                }
+
+                .shell_layer {
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    top: 0;
+                    left: 0;
+                    pointer-events: none;
+                    overflow: hidden;
+                    transition: transform 0.12s ease-out;
+                }
+
+                .shell_layer_back  { z-index: 1; }
+                .shell_layer_mid   { z-index: 2; }
+                .shell_layer_front { z-index: 3; }
+
+                .shell {
+                    position: absolute;
+                    top: 0;
+                    background-size: contain;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    animation-timing-function: linear;
+                    animation-fill-mode: forwards;
+                    will-change: transform;
+                }
+
+                .shell_back {
+                    width: 4vmin;
+                    height: 4vmin;
+                    filter: blur(2px);
+                }
+
+                .shell_mid {
+                    width: 8vmin;
+                    height: 8vmin;
+                }
+
+                .shell_front {
+                    width: 14vmin;
+                    height: 14vmin;
+                }
+
+                @keyframes shell_fall {
+                    0%   { transform: translate(0vmin, -20vh) rotate(0deg); }
+                    100% { transform: translate(var(--drift-x, 0vmin), 120vh) rotate(var(--rot, 720deg)); }
+                }
+
+                .cache_helper {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    top: -10px;
+                    left: -10px;
+                    opacity: 0;
+                    pointer-events: none;
+                }
+
                 /* загрузчик */
                 .container_loading {
-					display: flex;
-					flex-direction: row;
-					align-items: center;
-					justify-content: flex-end;
-					gap: 15px;
-					position: absolute;
-					bottom: 40px;
-					right: 40px;
-				}
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 15px;
+                    position: absolute;
+                    bottom: 40px;
+                    right: 40px;
+                }
 
                 .progress_ring {
                     transform: rotate(-90deg);
@@ -60,11 +128,11 @@
                 }
 
                 .terminal_text {
-					text-align: right;
-					font-family: "Fixedsys", monospace;
-					font-size: 1.8vmin;
-					color: #f0d30b;
-				}
+                    text-align: right;
+                    font-family: "Fixedsys", monospace;
+                    font-size: 1.8vmin;
+                    color: #f0d30b;
+                }
 
                 /* блок с кнопками */
                 .container_nav {
@@ -74,7 +142,7 @@
                     top: 50%;
                     right: 5vmin;
                     transform: translateY(-50%);
-                    z-index: 1;
+                    z-index: 4;
                     padding: 0;
                     background: transparent;
                     border: none;
@@ -89,20 +157,20 @@
                     margin: 1.5vmin 0;
                 }
 
-				.character_display {
-					margin-top: 2vmin;
-					font-family: "Fixedsys";
-					font-size: 2vmin;
-					color: #88aabb;
-					text-align: right;
-					text-shadow: 1px 1px 2px black;
-				}
+                .character_display {
+                    margin-top: 2vmin;
+                    font-family: "Fixedsys";
+                    font-size: 2vmin;
+                    color: #88aabb;
+                                        text-align: right;
+                    text-shadow: 1px 1px 2px black;
+                }
 
-				.character_name {
-					font-size: 3vmin;
-					color: #ffffff;
-					font-weight: bold;
-				}
+                .character_name {
+                    font-size: 3vmin;
+                    color: #ffffff;
+                    font-weight: bold;
+                }
 
                 /* Кнопки  */
                 .menu_button {
@@ -152,7 +220,7 @@
                     top: 10vmin;
                     left: 50%;
                     transform: translateX(-50%);
-                    z-index: 1;
+                    z-index: 4;
                 }
 
                 .menu_notice {
