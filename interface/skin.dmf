@@ -335,6 +335,7 @@ window "inputwindow"
 		anchor2 = 100,100
 		is-default = true
 		border = line
+		font-family = "Verdana"
 		saved-params = "command"
 
 window "inputbuttons"

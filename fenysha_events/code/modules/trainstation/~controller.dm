@@ -115,8 +115,8 @@ SUBSYSTEM_DEF(train_controller)
  */
 
 /datum/controller/subsystem/train_controller/Initialize()
-	var/list/map_traits = SSmapping.current_map.traits[1]
-	if(!map_traits || !islist(map_traits))
+	var/list/map_traits = SSmapping.current_map?.traits?[1]
+	if(isnull(map_traits) || !islist(map_traits))
 		return
 	var/is_trainstation = map_traits[ZTRAIT_TRAINSTATION] || FALSE
 	if(!is_trainstation)

@@ -8,7 +8,19 @@
 
 // Anchor plane: a plane master that draws nothing - its only job is to put the shared daylight source onto each
 // viewer's screen, so the source renders and publishes its render target per-client.
-#define RENDER_PLANE_DAYLIGHT 18
+// NOTE: this MUST NOT collide with a plane in code/__DEFINES/layers.dm.
+// It was 18, which is RENDER_PLANE_PARTICLE_WEATHER - two plane masters on
+// the same plane fight, so this anchor never rendered, the wash source never
+// published its render_target, and every per-turf daylight overlay drew
+// nothing. Ambient luminosity still shifted (that is a separate mechanism),
+// which is exactly why it looked like "the light is doing something, but
+// there is no daylight". 27 is an unused gap between WEATHER_GLOW_PLANE (26)
+// and PIPECRAWL_IMAGES_PLANE (30).
+#define RENDER_PLANE_DAYLIGHT 27
+
+/// Where on the 24h clock a round begins. 12 HOURS = noon, matching the
+/// SPLURT default (SSticker.gametime_offset was 432000 ds = 12 hours).
+#define DAYLIGHT_CLOCK_OFFSET (12 HOURS)
 
 /area
 	var/daylight = FALSE
@@ -51,7 +63,12 @@
 /area/proc/set_virtual_lighting(intensity = 1)
 	var/list/z_offsets = SSmapping.z_level_to_plane_offset
 	for (var/area_zlevel in 1 to get_highest_zlevel())
-		if(z_offsets[area_zlevel])
+		// Bounds check, NOT a truthiness check. z_level_to_plane_offset is 0
+		// for every single-z map and for the bottom level of every multi-z
+		// stack, so testing the value itself silently skipped exactly those -
+		// which is why a single-z planetary map like the buckshot club got no
+		// light at all while the multi-z trainstation worked.
+		if(area_zlevel <= length(z_offsets))
 			for(var/turf/area_turf as anything in get_turfs_by_zlevel(area_zlevel))
 				area_turf.luminosity = intensity
 
@@ -74,14 +91,24 @@
 /// Because it's a render_source mirror, animating that one source updates the daylight on every turf at once.
 /// `strength` (0-255) scales it: 255 on full daylight turfs, less on the leak rings that feather into indoors.
 /// Cached per strength so add_overlay/cut_overlay always match.
-/proc/get_daylight_overlay_appearance(strength = 255)
+/// `reference` is the turf the overlay will live on. It is REQUIRED on any
+/// multi-z map: planes are offset per z-level, so an appearance built with a
+/// raw LIGHTING_PLANE lands on the offset-0 lighting plane and never affects
+/// turfs on any other level. That is invisible rather than misplaced, which is
+/// why the area could report every turf painted while nothing was lit.
+/proc/get_daylight_overlay_appearance(strength = 255, turf/reference)
 	var/static/list/cached = list()
-	var/cache_key = "[strength]"
+	var/plane_offset = 0
+	if(SSmapping.max_plane_offset && reference?.z)
+		plane_offset = GET_Z_PLANE_OFFSET(reference.z)
+	// Cached per offset as well as per strength, so add_overlay and cut_overlay
+	// always hand back the identical appearance for a given turf.
+	var/cache_key = "[strength]-[plane_offset]"
 	. = cached[cache_key]
 	if(.)
 		return
 	var/mutable_appearance/light = new /mutable_appearance()
-	light.plane = LIGHTING_PLANE
+	light.plane = GET_NEW_PLANE(LIGHTING_PLANE, plane_offset)
 	light.layer = LIGHTING_PRIMARY_LAYER
 	light.blend_mode = BLEND_ADD
 	light.render_source = DAYLIGHT_WASH_RENDER_TARGET
@@ -94,10 +121,11 @@
 	if(daylight_lit)
 		return
 	daylight_lit = TRUE
-	var/mutable_appearance/light = get_daylight_overlay_appearance()
 	var/list/own_turfs = list()
 	for(var/turf/area_turf in src)
-		area_turf.add_overlay(light)
+		// Per turf, not hoisted: an area can span z-levels, and the plane
+		// offset differs per level. The lookup is cached, so this is cheap.
+		area_turf.add_overlay(get_daylight_overlay_appearance(255, area_turf))
 		own_turfs += area_turf
 		CHECK_TICK
 	leak_daylight(own_turfs)
@@ -114,7 +142,6 @@
 		visited[seed_turf] = TRUE
 	var/list/frontier = source_turfs
 	for(var/ring in 1 to length(leak_falloff))
-		var/mutable_appearance/leak_light = get_daylight_overlay_appearance(leak_falloff[ring])
 		var/list/next_frontier = list()
 		for(var/turf/frontier_turf as anything in frontier)
 			if(frontier_turf.opacity) // light can't pass this tile (wall / closed door) - don't propagate past it
@@ -127,6 +154,9 @@
 				var/area/neighbor_area = neighbor.loc
 				if(neighbor_area?.daylight) // already a fully-lit daylight area, leave it alone
 					continue
+				// Built against the neighbour, so it lands on that turf's
+				// plane. Stored so clear_daylight_overlay() cuts the same one.
+				var/mutable_appearance/leak_light = get_daylight_overlay_appearance(leak_falloff[ring], neighbor)
 				neighbor.add_overlay(leak_light)
 				daylight_leaked[neighbor] = leak_light
 				next_frontier += neighbor
@@ -138,9 +168,9 @@
 	if(!daylight_lit)
 		return
 	daylight_lit = FALSE
-	var/mutable_appearance/light = get_daylight_overlay_appearance()
 	for(var/turf/area_turf in src)
-		area_turf.cut_overlay(light)
+		// Must match what apply_daylight_overlay() added for this exact turf.
+		area_turf.cut_overlay(get_daylight_overlay_appearance(255, area_turf))
 		CHECK_TICK
 	for(var/turf/leaked_turf as anything in daylight_leaked)
 		leaked_turf.cut_overlay(daylight_leaked[leaked_turf])
@@ -323,11 +353,11 @@ SUBSYSTEM_DEF(daylight)
 /datum/controller/subsystem/daylight/proc/handle_loaded_turfs(list/turfs)
 	if(!setup_complete || !length(turfs))
 		return
-	var/mutable_appearance/light = get_daylight_overlay_appearance()
 	for(var/turf/loaded_turf as anything in turfs)
 		var/area/loaded_area = loaded_turf.loc
 		if(!loaded_area?.daylight)
 			continue
+		var/mutable_appearance/light = get_daylight_overlay_appearance(255, loaded_turf)
 		if(!loaded_area.daylight_lit)
 			loaded_area.apply_daylight_overlay() // brand-new daylight area: light it fully (and feather inward)
 			continue
@@ -345,7 +375,7 @@ SUBSYSTEM_DEF(daylight)
 	var/area/turf_area = changed.loc
 	if(!turf_area?.daylight)
 		return
-	var/mutable_appearance/light = get_daylight_overlay_appearance()
+	var/mutable_appearance/light = get_daylight_overlay_appearance(255, changed)
 	changed.cut_overlay(light) // guard against doubling if it somehow already has it
 	changed.add_overlay(light)
 
@@ -404,11 +434,32 @@ SUBSYSTEM_DEF(daylight)
 			E.apply_current_state()
 		SEND_SIGNAL(src, COMSIG_DAYLIGHT_UPDATED, current_intensity, current_color)
 
+/**
+ * The station clock, in deciseconds within a 24 hour day.
+ *
+ * SPLURT's core carries station_time(), SSticker.gametime_offset and
+ * SSticker.station_time_rate_multiplier. Bubberstation has none of them, so
+ * the port fell back to STATION_TIME_PASSED() - raw elapsed round time. That
+ * broke the cycle outright: the phase table is written as times of day (Dawn
+ * at 4 HOURS, Daytime at 5.5 HOURS), so a round starting at 0 matched no
+ * phase at all and fell through to the Midnight fallback at 0.08 intensity,
+ * where it would sit for the first four hours of the round.
+ *
+ * This reimplements the same formula locally rather than adding a clock to
+ * core:
+ *   - the rate multiplier compresses a full day into `daylight_cycle` real
+ *     minutes (60 by default, so 1440/60 = 24x)
+ *   - the offset is where the round starts on that clock
+ */
+/datum/controller/subsystem/daylight/proc/station_clock()
+	var/rate = daylight_cycle > 0 ? (1440 / daylight_cycle) : 1
+	return ((STATION_TIME_PASSED() * rate) + DAYLIGHT_CLOCK_OFFSET) % (24 HOURS)
+
 /datum/controller/subsystem/daylight/proc/get_cycle_progress()
-	return STATION_TIME_PASSED() / (24 HOURS)
+	return station_clock() / (24 HOURS)
 
 /datum/controller/subsystem/daylight/proc/resolve_phase()
-	var/time_now = STATION_TIME_PASSED()
+	var/time_now = station_clock()
 	var/datum/daylight_phase/new_current
 	var/datum/daylight_phase/new_next
 
@@ -434,7 +485,7 @@ SUBSYSTEM_DEF(daylight)
 	if(duration <= 0)
 		duration += full_day
 
-	var/elapsed = STATION_TIME_PASSED() - current_phase.start_time
+	var/elapsed = station_clock() - current_phase.start_time
 	if(elapsed < 0)
 		elapsed += full_day
 

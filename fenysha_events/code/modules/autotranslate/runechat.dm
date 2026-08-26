@@ -41,11 +41,19 @@
 /datum/chatmessage/proc/can_retext()
 	return !isnull(message) && !isnull(owned_by) && !isnull(translate_wrapper_open)
 
-/// Renders body text through the captured wrapper.
+/**
+ * Renders body text through the captured wrapper.
+ *
+ * Mirrors what generate_image() does to the original, including the Cyrillic
+ * font swap - otherwise a translated line would render in a different face
+ * from the one the box was measured against, or an English original would
+ * morph into Russian and lose its glyphs halfway through.
+ */
 /datum/chatmessage/proc/render_body(body)
 	var/mob/viewer = owned_by?.mob
-	var/emphasised = viewer ? viewer.apply_message_emphasis(body) : body
-	return "[translate_wrapper_open][translate_prefix][emphasised][translate_wrapper_close]"
+	var/combined = "[translate_prefix][body]"
+	var/emphasised = viewer ? viewer.apply_message_emphasis(combined) : combined
+	return "[translate_wrapper_open][runechat_apply_script_font(emphasised)][translate_wrapper_close]"
 
 /**
  * Swaps the displayed body text.
