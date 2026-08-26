@@ -162,7 +162,7 @@
                     font-family: "Fixedsys";
                     font-size: 2vmin;
                     color: #88aabb;
-                                        text-align: right;
+                    text-align: right;
                     text-shadow: 1px 1px 2px black;
                 }
 
