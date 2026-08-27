@@ -111,10 +111,39 @@
 	light.plane = GET_NEW_PLANE(LIGHTING_PLANE, plane_offset)
 	light.layer = LIGHTING_PRIMARY_LAYER
 	light.blend_mode = BLEND_ADD
+	// Without these the wash inherits its holder's colour and alpha - ie the
+	// darkness it is meant to brighten - so it goes dark exactly where the
+	// lighting under it is dark. Matches /area/proc/add_base_lighting().
+	light.appearance_flags = RESET_TRANSFORM | RESET_ALPHA | RESET_COLOR
 	light.render_source = DAYLIGHT_WASH_RENDER_TARGET
 	light.alpha = strength
 	cached[cache_key] = light
 	return light
+
+/**
+ * Where the daylight overlay actually has to live.
+ *
+ * SPLURT's lighting was a /datum/lighting_object that pushed a
+ * mutable_appearance into the turf's UNDERLAY slot, so the darkness and a
+ * turf overlay shared one appearance tree and BLEND_ADD composited the wash
+ * straight against the darkness beneath it.
+ *
+ * Bubberstation runs the newer upstream lighting, where darkness is a
+ * separate /atom/movable/lighting_object sitting on the turf. Adding the wash
+ * to the turf therefore puts it in a *different* appearance tree from the
+ * thing it is supposed to brighten: BLEND_ADD stops compositing against the
+ * darkness and blends into the plane buffer instead, so the result depends on
+ * draw order between two unrelated objects. That is what produced the banding,
+ * and why it showed on HIGH_TURF_LAYER grass but not on asphalt.
+ *
+ * Attaching to the lighting object puts them back in one tree. Falls back to
+ * the turf when there is no lighting object (static_lighting = FALSE areas),
+ * where there is no darkness to composite against anyway.
+ */
+/proc/daylight_overlay_holder(turf/target)
+	if(isnull(target))
+		return null
+	return target.lighting_object || target
 
 /// Adds the daylight light overlay to every turf in this area, then feathers it a little into adjacent indoors.
 /area/proc/apply_daylight_overlay()
@@ -125,7 +154,8 @@
 	for(var/turf/area_turf in src)
 		// Per turf, not hoisted: an area can span z-levels, and the plane
 		// offset differs per level. The lookup is cached, so this is cheap.
-		area_turf.add_overlay(get_daylight_overlay_appearance(255, area_turf))
+		var/atom/holder = daylight_overlay_holder(area_turf)
+		holder?.add_overlay(get_daylight_overlay_appearance(255, area_turf))
 		own_turfs += area_turf
 		CHECK_TICK
 	leak_daylight(own_turfs)
@@ -157,7 +187,8 @@
 				// Built against the neighbour, so it lands on that turf's
 				// plane. Stored so clear_daylight_overlay() cuts the same one.
 				var/mutable_appearance/leak_light = get_daylight_overlay_appearance(leak_falloff[ring], neighbor)
-				neighbor.add_overlay(leak_light)
+				var/atom/leak_holder = daylight_overlay_holder(neighbor)
+				leak_holder?.add_overlay(leak_light)
 				daylight_leaked[neighbor] = leak_light
 				next_frontier += neighbor
 		frontier = next_frontier
@@ -169,11 +200,13 @@
 		return
 	daylight_lit = FALSE
 	for(var/turf/area_turf in src)
-		// Must match what apply_daylight_overlay() added for this exact turf.
-		area_turf.cut_overlay(get_daylight_overlay_appearance(255, area_turf))
+		// Must match what apply_daylight_overlay() added, on the same holder.
+		var/atom/holder = daylight_overlay_holder(area_turf)
+		holder?.cut_overlay(get_daylight_overlay_appearance(255, area_turf))
 		CHECK_TICK
 	for(var/turf/leaked_turf as anything in daylight_leaked)
-		leaked_turf.cut_overlay(daylight_leaked[leaked_turf])
+		var/atom/leak_holder = daylight_overlay_holder(leaked_turf)
+		leak_holder?.cut_overlay(daylight_leaked[leaked_turf])
 		CHECK_TICK
 	daylight_leaked = null
 
@@ -362,8 +395,9 @@ SUBSYSTEM_DEF(daylight)
 			loaded_area.apply_daylight_overlay() // brand-new daylight area: light it fully (and feather inward)
 			continue
 		// Turf added to an already-lit area: ensure it carries the overlay exactly once (cut guards re-runs).
-		loaded_turf.cut_overlay(light)
-		loaded_turf.add_overlay(light)
+		var/atom/loaded_holder = daylight_overlay_holder(loaded_turf)
+		loaded_holder?.cut_overlay(light)
+		loaded_holder?.add_overlay(light)
 		CHECK_TICK
 
 /// Re-applies (or removes) the daylight overlay on a single turf - called from /turf/AfterChange so that a turf
@@ -376,8 +410,12 @@ SUBSYSTEM_DEF(daylight)
 	if(!turf_area?.daylight)
 		return
 	var/mutable_appearance/light = get_daylight_overlay_appearance(255, changed)
-	changed.cut_overlay(light) // guard against doubling if it somehow already has it
-	changed.add_overlay(light)
+	// Also the reattach path: a turf change destroys and rebuilds its lighting
+	// object, taking the daylight overlay with it, so this must re-add to the
+	// NEW holder rather than the turf.
+	var/atom/changed_holder = daylight_overlay_holder(changed)
+	changed_holder?.cut_overlay(light) // guard against doubling if it somehow already has it
+	changed_holder?.add_overlay(light)
 
 /datum/controller/subsystem/daylight/proc/register_emitter(obj/effect/light_emitter/daylight/emitter)
 	if(!emitter || QDELETED(emitter) || (emitter in all_emitters))
