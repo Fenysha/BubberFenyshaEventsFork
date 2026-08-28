@@ -174,6 +174,15 @@
 	var/dat = get_title_html()
 
 	src << browse(SStitle.current_title_screen, "file=loading_screen.gif;display=0")
+
+	// FENYSHA EDIT
+	for(var/shell_file in SStitle.shell_cache)
+		var/shell_path = "[shell_file]"
+		var/list/shell_parts = splittext(shell_path, "/")
+		var/shell_name = shell_parts[shell_parts.len]
+		src << browse(shell_file, "file=[shell_name];display=0")
+	// FENYSHA EDIT END
+
 	src << browse(dat, "window=title_browser")
 
 /datum/asset/simple/lobby

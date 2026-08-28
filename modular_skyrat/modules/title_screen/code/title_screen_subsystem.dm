@@ -26,6 +26,25 @@ SUBSYSTEM_DEF(title)
 	/// A list of station traits that have lobby buttons
 	var/list/available_lobby_station_traits = list()
 
+// FENYSHA EDIT
+	var/static/list/shell_cache = list(
+	    'fenysha_events/code/modules/custom_title/red_shell_0.png',
+	    'fenysha_events/code/modules/custom_title/red_shell_1.png',
+	    'fenysha_events/code/modules/custom_title/red_shell_2.png',
+	    'fenysha_events/code/modules/custom_title/red_shell_3.png',
+	    'fenysha_events/code/modules/custom_title/red_shell_4.png',
+	    'fenysha_events/code/modules/custom_title/red_shell_5.png',
+	    'fenysha_events/code/modules/custom_title/red_shell_6.png',
+	    'fenysha_events/code/modules/custom_title/blue_shell_0.png',
+	    'fenysha_events/code/modules/custom_title/blue_shell_1.png',
+	    'fenysha_events/code/modules/custom_title/blue_shell_2.png',
+	    'fenysha_events/code/modules/custom_title/blue_shell_3.png',
+	    'fenysha_events/code/modules/custom_title/blue_shell_4.png',
+	    'fenysha_events/code/modules/custom_title/blue_shell_5.png',
+	    'fenysha_events/code/modules/custom_title/blue_shell_6.png'
+	)
+// FENYSHA EDIT END
+
 /datum/controller/subsystem/title/Initialize()
 	var/dat
 	if(!fexists("[global.config.directory]/bubbers/bubbers_title.txt"))

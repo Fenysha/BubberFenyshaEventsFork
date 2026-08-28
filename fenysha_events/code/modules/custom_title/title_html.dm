@@ -77,6 +77,14 @@
 
     else
         dat += {"<img src="loading_screen.gif" class="bg" id="bg_layer" alt="">"}
+        dat += {"
+        <div class="shell_container" id="shell_container">
+            <div class="shell_layer shell_layer_back"  id="shell_layer_back"></div>
+            <div class="shell_layer shell_layer_mid"   id="shell_layer_mid"></div>
+            <div class="shell_layer shell_layer_front" id="shell_layer_front"></div>
+        </div>
+        <div class="cache_helper" id="shell_cache_helper"></div>
+        "}
 
         if(SStitle.current_notice)
             dat += {"
@@ -154,6 +162,28 @@
                 }
             }
 
+            var layer_back  = document.getElementById("shell_layer_back");
+            var layer_mid   = document.getElementById("shell_layer_mid");
+            var layer_front = document.getElementById("shell_layer_front");
+
+            var SHELL_FILES = \[
+                "red_shell_0.png", "red_shell_1.png", "red_shell_2.png",
+                "red_shell_3.png", "red_shell_4.png", "red_shell_5.png",
+                "red_shell_6.png",
+                "blue_shell_0.png", "blue_shell_1.png", "blue_shell_2.png",
+                "blue_shell_3.png", "blue_shell_4.png", "blue_shell_5.png",
+                "blue_shell_6.png"
+            \];
+
+            var cache_helper = document.getElementById("shell_cache_helper");
+            if (cache_helper) {
+                for (var i = 0; i < SHELL_FILES.length; i++) {
+                    var img = document.createElement("img");
+                    img.src = SHELL_FILES\[i\];
+                    cache_helper.appendChild(img);
+                }
+            }
+
             document.addEventListener("mousemove", function(e) {
                 var cx = window.innerWidth / 2;
                 var cy = window.innerHeight / 2;
@@ -173,7 +203,49 @@
                 if (bg) {
                     bg.style.transform = "translate(calc(-50% + " + (-dx * 10) + "px), calc(-50% + " + (-dy * 10) + "px))";
                 }
+                if (layer_back) {
+                    layer_back.style.transform  = "translate(" + (-dx * 3)  + "px, " + (-dy * 3)  + "px)";
+                }
+                if (layer_mid) {
+                    layer_mid.style.transform   = "translate(" + (-dx * 7)  + "px, " + (-dy * 7)  + "px)";
+                }
+                if (layer_front) {
+                    layer_front.style.transform = "translate(" + (-dx * 14) + "px, " + (-dy * 14) + "px)";
+                }
             });
+
+            var SHELL_DEPTH = \[
+                { layer: layer_back,  cls: "shell_back",  duration: 18, left_max: 96 },
+                { layer: layer_mid,   cls: "shell_mid",   duration: 12, left_max: 94 },
+                { layer: layer_front, cls: "shell_front", duration: 9,  left_max: 90 }
+            \];
+
+            function spawn_shell() {
+                if (!layer_back || !layer_mid || !layer_front) return;
+
+                var d = SHELL_DEPTH\[Math.floor(Math.random() * SHELL_DEPTH.length)\];
+                var shell = document.createElement("div");
+                shell.className = "shell " + d.cls;
+                shell.style.backgroundImage = "url('" +
+                    SHELL_FILES\[Math.floor(Math.random() * SHELL_FILES.length)\] + "')";
+                shell.style.left = (Math.random() * d.left_max) + "%";
+
+                var rot = (1 + Math.floor(Math.random() * 4)) * 180;
+                if (Math.random() < 0.5) rot = -rot;
+                shell.style.setProperty("--rot", rot + "deg");
+
+                shell.style.setProperty("--drift-x", (Math.random() * 30 - 15) + "vmin");
+
+                var duration = d.duration + (Math.random() * 2 - 1);
+                shell.style.animationName = "shell_fall";
+                shell.style.animationDuration = duration + "s";
+                d.layer.appendChild(shell);
+
+                setTimeout(function() {
+                    if (shell.parentNode) shell.parentNode.removeChild(shell);
+                }, duration * 1000 + 100);
+            }
+            setInterval(spawn_shell, 300 + Math.random() * 300);
         </script>
         "}
 
