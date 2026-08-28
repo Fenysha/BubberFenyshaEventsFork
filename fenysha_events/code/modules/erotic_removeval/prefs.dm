@@ -104,4 +104,6 @@
 /datum/preference/toggle/art_ref_nsfw
 	preference_enabled = FALSE
 
+/datum/preference/toggle/master_erp_preferences
+	preference_enabled = FALSE
 #endif

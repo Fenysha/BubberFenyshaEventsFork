@@ -5,7 +5,7 @@
 	"map_file": "buckshotclub.dmm",
 	"space_ruin_levels": 0,
 	"space_empty_levels": 0,
-	"planetary": 1,
+	"planetary": 0,
 	"traits": [
 		{
 			"Mining": false,
@@ -15,11 +15,6 @@
 		}
 	],
 	"minetype": "none",
-	"job_changes": {
-		"Captain": {
-			"special_charter": "train"
-		}
-	},
 	"map_handler": "/datum/map_handler/buckshot_roulette",
 	"custom_manifest": {
 		"/datum/job/buckshot_player": -1

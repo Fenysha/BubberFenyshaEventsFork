@@ -1,9 +1,23 @@
 //MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
 "ae" = (
-/obj/structure/table,
-/obj/machinery/light/floor,
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/smooth_large,
+/obj/structure/fluff/metalpole/anchor{
+	dir = 10
+	},
+/obj/structure/fluff/metalpole/anchor,
+/obj/structure/marker_beacon/burgundy,
+/turf/open/floor/black{
+	name = "void"
+	},
+/area/centcom/buckshot_club)
+"ag" = (
+/obj/effect/decal/cleanable/crayon/e{
+	pixel_x = 9;
+	pixel_y = -14
+	},
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "ai" = (
 /turf/open/mirage{
@@ -21,12 +35,30 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"an" = (
+/obj/machinery/button/auto_detect/directional/west,
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/black{
+	name = "void"
+	},
+/area/centcom/buckshot_club)
 "at" = (
 /obj/effect/turf_decal/siding/thinplating/dark,
 /obj/structure/chair{
 	dir = 2
 	},
 /turf/open/indestructible/dark/smooth_large,
+/area/centcom/buckshot_club)
+"av" = (
+/obj/structure/broken_flooring/plating/always_floorplane/directional/north,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "ax" = (
 /obj/effect/decal/cleanable/dirt,
@@ -40,12 +72,6 @@
 /obj/structure/broken_flooring/plating/always_floorplane/directional/east,
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
-"aA" = (
-/obj/effect/turf_decal/arrows{
-	dir = 4
-	},
-/turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "aD" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -61,6 +87,17 @@
 /obj/structure/chair/sofa/corp,
 /turf/open/floor/iron/checker,
 /area/centcom/buckshot_club)
+"aH" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/directional/east,
+/obj/structure/fluff/paper/stack{
+	layer = 2;
+	pixel_x = 5;
+	pixel_y = -5
+	},
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "aL" = (
 /obj/structure/chair/buckshot{
 	dir = 1
@@ -72,6 +109,17 @@
 /obj/effect/turf_decal/tile/dark{
 	dir = 4
 	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"aV" = (
+/obj/machinery/light/dim/directional/south,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/dark,
+/area/centcom/buckshot_club)
+"aX" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/singular,
+/obj/effect/spawner/random/trash/cigpack,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "aZ" = (
@@ -92,9 +140,15 @@
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
 "bq" = (
-/obj/structure/rack/shelf,
-/obj/effect/spawner/random/entertainment/plushie_delux,
-/turf/open/floor/iron/dark/textured,
+/obj/structure/railing/unbreakable{
+	dir = 1
+	},
+/obj/effect/turf_decal/siding/dark{
+	dir = 1
+	},
+/obj/effect/mapping_helpers/broken_floor,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/dark,
 /area/centcom/buckshot_club)
 "bs" = (
 /obj/effect/turf_decal/siding{
@@ -102,12 +156,11 @@
 	},
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
-"bu" = (
-/obj/structure/flora/bush/large/style_2,
-/obj/structure/flora/bush/large/style_2,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"bC" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/spawner/random/trash/grille_or_waste,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "bM" = (
 /obj/effect/turf_decal/siding/thinplating/dark/end{
 	dir = 1
@@ -126,14 +179,21 @@
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "bO" = (
-/obj/structure/chair,
-/turf/open/indestructible/dark/smooth_large,
+/obj/effect/spawner/random/trash/box,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "bT" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/turf_decal/tile/dark{
 	dir = 1
 	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"bU" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/turf_decal/tile/dark,
+/obj/effect/spawner/random/trash/grille_or_waste,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "bY" = (
@@ -163,11 +223,6 @@
 /obj/structure/medieval/stone_arch{
 	color = "#b77e69"
 	},
-/turf/open/indestructible/plating,
-/area/centcom/buckshot_club)
-"cd" = (
-/obj/effect/decal/cleanable/dirt,
-/obj/machinery/light/small/dim/directional/west,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "ch" = (
@@ -245,16 +300,38 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "cM" = (
-/obj/structure/table/reinforced/rglass,
-/obj/effect/spawner/random/food_or_drink/donkpockets{
-	pixel_y = -1
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
 	},
-/turf/open/floor/wood,
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 255
+	},
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/plating/elevatorshaft,
 /area/centcom/buckshot_club)
 "cS" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt,
-/turf/open/indestructible/dark/smooth_large,
+/obj/structure/fluff/paper/stack{
+	dir = 8;
+	pixel_x = -10;
+	pixel_y = 1
+	},
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "cV" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -263,10 +340,16 @@
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "de" = (
-/obj/effect/turf_decal/siding/thinplating/dark{
-	dir = 6
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/reagent_containers/cup/soda_cans/volt_energy{
+	pixel_x = -5;
+	pixel_y = 19
 	},
-/turf/open/indestructible/dark,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "di" = (
 /obj/structure/prop/general/hospitalcurtain{
@@ -274,18 +357,10 @@
 	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"dk" = (
-/turf/closed/indestructible/hotelwall,
-/area/centcom/buckshot_club/outdoors)
 "dn" = (
 /obj/effect/spawner/random/vending/colavend,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"dq" = (
-/obj/structure/flora/bush/large/style_2,
-/obj/structure/flora/bush/large/style_2,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "dr" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/turf_decal/siding/dark{
@@ -304,8 +379,9 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "dA" = (
-/obj/structure/fake_stairs/directional/north,
-/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/turf_decal/vg_decals/numbers/two,
+/obj/effect/turf_decal/bot_white,
+/obj/effect/turf_decal/tile/dark,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "dC" = (
@@ -315,32 +391,24 @@
 	},
 /turf/open/floor/iron/checker,
 /area/centcom/buckshot_club)
-"dG" = (
-/obj/effect/decal/cleanable/dirt,
-/obj/structure/grille/broken,
-/obj/effect/decal/cleanable/glass,
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
 "dK" = (
-/obj/effect/decal/cleanable/blood/old,
-/obj/effect/turf_decal/siding/dark{
-	dir = 4
-	},
-/obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/decal/cleanable/dirt,
-/turf/open/indestructible/dark/smooth_large,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "dP" = (
-/obj/structure/window/spawner/directional/south,
-/turf/open/floor/wood,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/effect/spawner/random/trash/graffiti,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "dR" = (
-/obj/structure/fence/interlink{
-	dir = 4
-	},
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "dS" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/structure/barricade/wooden,
@@ -434,13 +502,26 @@
 /obj/effect/spawner/random/maintenance,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"ew" = (
-/obj/structure/flora/tree/jungle/style_5,
-/obj/structure/flora/tree/jungle/style_5,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"eq" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/spawner/random/decoration/glowstick/on,
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"ev" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/reagent_containers/cup/glass/waterbottle{
+	pixel_x = -8;
+	pixel_y = -6
+	},
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "eH" = (
 /obj/effect/turf_decal/tile/purple/anticorner/contrasted,
+/obj/machinery/button/auto_detect/directional/east,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "eN" = (
@@ -448,12 +529,14 @@
 /turf/open/floor/iron/checker,
 /area/centcom/buckshot_club)
 "eQ" = (
+/obj/structure/railing/unbreakable,
+/obj/structure/fake_stairs{
+	dir = 4
+	},
 /obj/effect/light_emitter/interlink{
 	name = "Buckshot club";
 	light_color = "#110148"
 	},
-/obj/structure/stairs/east,
-/obj/structure/railing/unbreakable,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "eR" = (
@@ -469,20 +552,9 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "eS" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 1
-	},
-/obj/machinery/light/red/dim/directional/south,
-/obj/effect/turf_decal/siding/dark,
-/turf/open/floor/black,
+/obj/structure/broken_flooring/plating/directional/east,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
-"eV" = (
-/obj/effect/turf_decal/siding/dark{
-	dir = 4
-	},
-/obj/effect/turf_decal/delivery/white,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "eY" = (
 /obj/effect/light_emitter/interlink{
 	name = "Buckshot club";
@@ -492,10 +564,14 @@
 /obj/structure/table/reinforced,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"fe" = (
-/obj/effect/decal/cleanable/dirt,
-/obj/item/reagent_containers/cup/glass/bottle/vodka,
-/turf/open/floor/iron/dark/textured,
+"fc" = (
+/obj/effect/mapping_helpers/broken_floor,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/dark/smooth_large,
+/area/centcom/buckshot_club)
+"ff" = (
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "fh" = (
 /obj/effect/decal/cleanable/dirt,
@@ -518,10 +594,14 @@
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "fm" = (
-/obj/structure/shipping_container/tiger_coop,
 /obj/effect/decal/cleanable/dirt/dust,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/obj/structure/fluff/paper/stack{
+	dir = 8;
+	pixel_x = -9;
+	pixel_y = 19
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "fp" = (
 /obj/effect/turf_decal/siding/dark{
 	dir = 5
@@ -536,29 +616,15 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "fs" = (
-/obj/machinery/door/airlock/colony_prefab{
-	name = "Party 2";
-	color = "#A9A9A9";
-	id_tag = "roulette_2"
-	},
-/turf/open/floor/iron/dark/textured,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/machinery/washing_machine,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "fu" = (
-/obj/structure/table,
-/obj/item/folder/blue,
-/obj/item/folder/red{
-	pixel_x = 4;
-	pixel_y = 5
-	},
-/obj/item/pen{
-	pixel_x = -2;
-	pixel_y = 0
-	},
-/obj/item/reagent_containers/cup/glass/mug/britcup{
-	pixel_x = 6;
-	pixel_y = -4
-	},
-/turf/open/floor/carpet/black,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/singular,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "fv" = (
 /obj/structure/medieval/stone_arch{
@@ -577,21 +643,14 @@
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
 "fx" = (
-/obj/effect/turf_decal/delivery/red,
-/turf/open/indestructible/dark/smooth_large,
+/obj/effect/decal/cleanable/dirt,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "fG" = (
 /obj/effect/turf_decal/tile/dark_blue/half/contrasted{
 	dir = 1
 	},
 /obj/structure/mirror/broken/directional/north,
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
-"fP" = (
-/obj/structure/chair/buckshot{
-	dir = 4
-	},
-/obj/effect/decal/cleanable/dirt,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "fQ" = (
@@ -602,8 +661,14 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "fY" = (
-/obj/item/sticker/syndicate/bomb,
-/turf/open/floor/iron/smooth,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/stack/rods{
+	pixel_x = 15;
+	pixel_y = 6
+	},
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "gb" = (
 /obj/structure/broken_flooring/plating/always_floorplane/directional/south,
@@ -637,6 +702,10 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
+"gn" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/cordon/secret,
+/area/centcom/buckshot_club)
 "go" = (
 /obj/item/reagent_containers/syringe/contraband/krokodil,
 /obj/effect/spawner/random/trash/botanical_waste,
@@ -646,16 +715,6 @@
 /obj/effect/turf_decal/siding/dark/end,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"gz" = (
-/obj/structure/prop/vehicle/kellandminingvan,
-/obj/effect/turf_decal/delivery/white,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"gA" = (
-/obj/structure/flora/tree/jungle/style_random,
-/obj/structure/flora/bush/large/style_3,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "gH" = (
 /obj/effect/turf_decal/stripes{
 	dir = 4
@@ -673,11 +732,12 @@
 	target_turf_y = 28
 	},
 /area/centcom/buckshot_club)
-"gJ" = (
-/obj/structure/flora/bush/sparsegrass,
-/obj/structure/flora/bush/style_4,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"gT" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "gU" = (
 /obj/effect/turf_decal/siding/white,
 /obj/machinery/atmospherics/pipe/smart/manifold4w/pink/hidden,
@@ -686,10 +746,6 @@
 	name = "Stall"
 	},
 /turf/open/floor/iron/dark,
-/area/centcom/buckshot_club)
-"hc" = (
-/obj/effect/turf_decal/stripes/white/line,
-/turf/open/floor/wood,
 /area/centcom/buckshot_club)
 "hd" = (
 /obj/structure/sink/directional/south,
@@ -738,14 +794,15 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"hk" = (
+/obj/effect/spawner/random/trash/box,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "hm" = (
 /obj/effect/turf_decal/siding/thinplating/dark,
 /obj/machinery/light/small/dim/directional/south,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"hr" = (
-/turf/closed/indestructible/rock,
-/area/centcom/buckshot_club/outdoors)
 "hs" = (
 /obj/effect/turf_decal/siding/dark{
 	dir = 1
@@ -777,21 +834,28 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"hH" = (
-/obj/structure/fence/interlink{
+"hI" = (
+/obj/effect/turf_decal/tile/dark,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/glitter,
+/obj/structure/railing/unbreakable{
 	dir = 4
 	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"hL" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
-	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 1
-	},
-/obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"hL" = (
+/obj/structure/fluff/metalpole/anchor{
+	dir = 10
+	},
+/obj/structure/fluff/metalpole/anchor,
+/obj/structure/fluff/metalpole{
+	dir = 6;
+	color = "#FFFFFF";
+	alpha = 25
+	},
+/turf/open/floor/black{
+	name = "void"
+	},
 /area/centcom/buckshot_club)
 "hM" = (
 /obj/effect/decal/cleanable/glitter,
@@ -804,6 +868,13 @@
 	dir = 4
 	},
 /obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"hP" = (
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/machinery/light/dim/directional/north,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "hR" = (
@@ -821,10 +892,16 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"ia" = (
-/obj/effect/decal/cleanable/vomit/toxic,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+"hW" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/singular,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
+"hX" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/spawner/random/trash/graffiti,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "id" = (
 /obj/structure/window/reinforced/spawner/directional/north,
 /obj/structure/table/wood,
@@ -853,10 +930,13 @@
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "ij" = (
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/effect/decal/cleanable/dirt/dust,
 /obj/structure/railing/unbreakable{
 	dir = 8
 	},
-/obj/structure/fake_stairs/directional/north,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "ik" = (
@@ -864,11 +944,25 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "il" = (
-/obj/machinery/door/airlock/colony_prefab{
-	name = "Waiting room";
-	color = "#A9A9A9"
+/obj/structure/fans/tiny/invisible{
+	density = 1
 	},
-/turf/open/indestructible/dark/smooth_large,
+/turf/open/openspace,
+/area/centcom/buckshot_club)
+"im" = (
+/obj/effect/turf_decal/tile/dark,
+/obj/structure/railing/unbreakable{
+	dir = 4
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"ip" = (
+/obj/effect/turf_decal/vg_decals/numbers/seven,
+/obj/effect/turf_decal/bot_white,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "iu" = (
 /obj/effect/decal/cleanable/dirt,
@@ -885,12 +979,6 @@
 /obj/effect/decal/cleanable/dirt,
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
-"iE" = (
-/obj/structure/fence/interlink{
-	dir = 4
-	},
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "iG" = (
 /obj/item/trash/empty_side_pack/nt{
 	pixel_x = -10;
@@ -902,25 +990,6 @@
 	},
 /obj/machinery/light/dim/directional/south,
 /turf/open/indestructible/plating,
-/area/centcom/buckshot_club)
-"iH" = (
-/obj/structure/prop/vehicle/meridiancar_1{
-	dir = 8
-	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 8
-	},
-/obj/effect/turf_decal/delivery/white,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"iL" = (
-/obj/structure/window/spawner/directional/south,
-/obj/structure/reagent_dispensers/water_cooler,
-/obj/machinery/light/directional/west,
-/obj/effect/turf_decal/stripes/white/corner{
-	dir = 8
-	},
-/turf/open/floor/wood,
 /area/centcom/buckshot_club)
 "iQ" = (
 /obj/effect/decal/cleanable/dirt,
@@ -947,6 +1016,14 @@
 	},
 /turf/open/floor/iron/white,
 /area/centcom/buckshot_club)
+"jf" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/effect/spawner/random/trash/cigbutt,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "jg" = (
 /obj/structure/toilet,
 /turf/open/floor/iron/white/small,
@@ -965,14 +1042,13 @@
 /obj/effect/decal/cleanable/dirt,
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
-"jn" = (
-/obj/structure/fence/interlink,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
-"jw" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"jv" = (
+/obj/structure/railing/unbreakable{
+	dir = 8
+	},
+/obj/machinery/light/small/red/dim/directional/north,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "jx" = (
 /obj/effect/mapping_helpers/broken_floor,
 /obj/effect/turf_decal/siding/dark{
@@ -981,10 +1057,13 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"jA" = (
-/obj/structure/flora/tree/jungle/style_4,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"jz" = (
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/effect/spawner/random/trash/cigbutt,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "jB" = (
 /obj/effect/turf_decal/siding/thinplating/dark/end{
 	dir = 4
@@ -992,13 +1071,6 @@
 /obj/effect/decal/cleanable/dirt,
 /obj/machinery/light/red/dim/directional/north,
 /turf/open/indestructible/dark,
-/area/centcom/buckshot_club)
-"jD" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 8
-	},
-/obj/effect/decal/cleanable/glitter,
-/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "jF" = (
 /obj/effect/turf_decal/siding/thinplating/dark/end{
@@ -1016,6 +1088,16 @@
 /obj/structure/marker_beacon/burgundy,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
+"jH" = (
+/obj/structure/railing/unbreakable{
+	dir = 1
+	},
+/obj/effect/turf_decal/siding/dark{
+	dir = 1
+	},
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/dark,
+/area/centcom/buckshot_club)
 "jI" = (
 /obj/effect/turf_decal/siding/corner{
 	dir = 4
@@ -1024,8 +1106,16 @@
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "jJ" = (
-/obj/structure/railing/unbreakable,
-/turf/open/floor/iron/dark/textured,
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/structure/broken_flooring/plating/directional/south,
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/plating/elevatorshaft,
 /area/centcom/buckshot_club)
 "jL" = (
 /obj/structure/medieval/stone_arch{
@@ -1066,6 +1156,7 @@
 /area/centcom/buckshot_club)
 "jV" = (
 /obj/structure/table/buckshot,
+/obj/effect/decal/cleanable/dirt/dust,
 /turf/open/indestructible/dark,
 /area/centcom/buckshot_club)
 "ke" = (
@@ -1084,12 +1175,6 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"ki" = (
-/obj/structure/flora/tree/jungle/style_random,
-/obj/structure/flora/bush/large/style_2,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "kr" = (
 /turf/open/mirage{
 	dir = 2;
@@ -1099,11 +1184,8 @@
 	},
 /area/centcom/buckshot_club)
 "ks" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
-	},
-/obj/effect/decal/cleanable/plastic,
-/turf/open/floor/iron/dark/textured,
+/obj/effect/decal/cleanable/blood/old,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "kw" = (
 /obj/effect/turf_decal/siding,
@@ -1125,15 +1207,28 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"kC" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "kD" = (
 /obj/structure/sign/poster/contraband/random/directional/south,
 /obj/effect/decal/cleanable/vomit/old,
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
 "kI" = (
-/obj/structure/prop/city/trafficlight,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+/obj/structure/fluff/metalpole/anchor{
+	dir = 10
+	},
+/obj/structure/fluff/metalpole/anchor,
+/obj/structure/marker_beacon/burgundy,
+/turf/closed/indestructible/hotelwall{
+	color = "#000000";
+	name = "darkness"
+	},
+/area/centcom/buckshot_club)
 "kK" = (
 /obj/effect/turf_decal/siding/thinplating/dark{
 	dir = 10
@@ -1153,11 +1248,6 @@
 /obj/effect/turf_decal/tile/red/opposingcorners,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"kU" = (
-/obj/structure/flora/bush/sparsegrass,
-/obj/structure/fence/interlink,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "kV" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -1169,13 +1259,6 @@
 /obj/effect/mapping_helpers/mob_buckler,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"lb" = (
-/obj/effect/turf_decal/siding{
-	dir = 8
-	},
-/obj/effect/decal/cleanable/glitter,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "ld" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/mapping_helpers/broken_floor,
@@ -1206,6 +1289,17 @@
 /obj/effect/decal/cleanable/generic,
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
+"lr" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/side/always_floorplane/directional,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
+"lx" = (
+/obj/effect/turf_decal/siding/dark{
+	dir = 1
+	},
+/turf/open/indestructible/dark,
+/area/centcom/buckshot_club)
 "lA" = (
 /obj/structure/chair/buckshot{
 	dir = 8
@@ -1229,6 +1323,12 @@
 /obj/effect/mapping_helpers/broken_floor,
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/white/small,
+/area/centcom/buckshot_club)
+"lF" = (
+/obj/effect/turf_decal/siding/dark{
+	dir = 8
+	},
+/turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "lG" = (
 /obj/effect/mapping_helpers/broken_floor,
@@ -1254,11 +1354,11 @@
 	},
 /area/centcom/buckshot_club)
 "lR" = (
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/turf_decal/siding/dark{
-	dir = 10
-	},
 /obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "lS" = (
@@ -1269,9 +1369,10 @@
 	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"lX" = (
-/obj/effect/turf_decal/tile/dark,
+"lZ" = (
 /obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/singular/directional/east,
+/obj/effect/landmark/start/test_subject,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "mc" = (
@@ -1310,19 +1411,9 @@
 "mn" = (
 /obj/machinery/light/directional/west,
 /obj/effect/decal/cleanable/glitter,
-/obj/effect/decal/cleanable/dirt,
 /obj/effect/turf_decal/siding/dark{
 	dir = 8
 	},
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
-"mo" = (
-/obj/structure/flora/tree/jungle,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
-"mq" = (
-/obj/effect/decal/cleanable/dirt,
-/obj/structure/grille,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "mw" = (
@@ -1336,10 +1427,8 @@
 /turf/open/indestructible/dark,
 /area/centcom/buckshot_club)
 "mI" = (
-/obj/structure/railing/unbreakable,
-/obj/machinery/light/cold/dim/directional/north,
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/indestructible/dark/smooth_large,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/west,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "mK" = (
 /obj/effect/turf_decal/siding{
@@ -1349,9 +1438,6 @@
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "mO" = (
-/obj/machinery/button/door/directional/east{
-	id = "roulette_1"
-	},
 /obj/effect/turf_decal/tile/yellow/half/contrasted{
 	dir = 4
 	},
@@ -1380,20 +1466,6 @@
 	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"mW" = (
-/obj/effect/decal/cleanable/generic,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"nb" = (
-/obj/structure/prop/vehicle/suv{
-	dir = 8
-	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 8
-	},
-/obj/effect/turf_decal/delivery/white,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "nd" = (
 /obj/structure/decorative{
 	icon = 'icons/obj/stack_objects.dmi';
@@ -1414,15 +1486,22 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"nj" = (
-/obj/structure/bed/medical/emergency,
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/smooth_large,
-/area/centcom/buckshot_club)
 "nk" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/machinery/light/dim/directional/south,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"nl" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/item/trash/fleet_ration{
+	pixel_x = 2;
+	pixel_y = 7
+	},
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/effect/spawner/random/trash/grille_or_waste,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "nx" = (
@@ -1457,6 +1536,13 @@
 	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
+"ny" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/west,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "nA" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -1472,10 +1558,34 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "nD" = (
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/vomit/old,
-/turf/open/floor/iron/dark/textured,
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/structure/broken_flooring/plating/directional/west,
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/plating/elevatorshaft,
+/area/centcom/buckshot_club)
+"nF" = (
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/structure/fluff/metalpole{
+	dir = 6;
+	color = "#FFFFFF";
+	alpha = 25
+	},
+/turf/open/floor/plating/elevatorshaft,
 /area/centcom/buckshot_club)
 "nH" = (
 /obj/effect/decal/cleanable/crayon/e{
@@ -1504,23 +1614,18 @@
 /turf/open/floor/light/colour_cycle,
 /area/centcom/buckshot_club)
 "oe" = (
-/obj/machinery/door/airlock/colony_prefab{
-	name = "Party 1";
-	color = "#A9A9A9";
-	id_tag = "roulette_1"
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
 	},
-/turf/open/floor/iron/dark/textured,
+/turf/open/floor/plating/elevatorshaft,
 /area/centcom/buckshot_club)
 "ol" = (
 /obj/structure/fake_stairs/directional/north,
 /obj/structure/railing/unbreakable{
 	dir = 8
 	},
-/turf/open/indestructible/plating,
-/area/centcom/buckshot_club)
-"oq" = (
-/obj/effect/decal/cleanable/glitter,
-/obj/effect/decal/cleanable/dirt,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "os" = (
@@ -1537,17 +1642,11 @@
 /obj/effect/turf_decal/siding/thinplating/dark,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"ox" = (
+"ou" = (
 /obj/effect/decal/cleanable/dirt/dust,
-/obj/structure/prop/vehicle/meridiancar_1{
-	dir = 8
-	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 8
-	},
-/obj/effect/turf_decal/delivery/white,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/landmark/start/test_subject,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "oC" = (
 /obj/structure/window/reinforced/spawner/directional/west,
 /obj/machinery/door/window,
@@ -1559,11 +1658,6 @@
 /area/centcom/buckshot_club)
 "oE" = (
 /obj/structure/fake_stairs/directional/north,
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
-"oJ" = (
-/obj/effect/decal/cleanable/blood/splatter,
-/obj/effect/decal/cleanable/dirt,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "oK" = (
@@ -1580,57 +1674,59 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
+"oQ" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/stack/rods{
+	pixel_x = 3;
+	pixel_y = -9
+	},
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "oR" = (
-/obj/effect/decal/cleanable/glass,
-/obj/structure/rack/gunrack,
-/obj/item/gun/ballistic/automatic/c20r/toy/unrestricted,
-/obj/item/gun/ballistic/automatic/c20r/toy/unrestricted,
-/obj/machinery/light/broken/directional/north,
-/turf/open/floor/iron/smooth,
+/obj/effect/spawner/random/structure/grille,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
+"oU" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/singular/directional/east,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"oV" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/fluff/paper/stack{
+	layer = 2;
+	pixel_x = 5;
+	pixel_y = -5
+	},
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "pd" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"pf" = (
-/obj/machinery/light/cold/dim/directional/north,
-/obj/structure/chair/plastic,
-/turf/open/floor/carpet/black,
-/area/centcom/buckshot_club)
 "pj" = (
 /obj/effect/decal/cleanable/blood/splatter,
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
-"pk" = (
-/obj/structure/fence/interlink{
-	dir = 4
-	},
-/obj/structure/fence/interlink{
-	dir = 4
-	},
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "pn" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/turf_decal/vg_decals/numbers/nine,
 /obj/effect/turf_decal/bot_white,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"po" = (
-/obj/structure/flora/tree/jungle/style_4,
-/obj/structure/flora/bush/large/style_2,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"pr" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/directional/east,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "ps" = (
 /obj/structure/fake_stairs/directional/north,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"pv" = (
-/obj/structure/flora/bush/large/style_2,
-/obj/structure/flora/tree/jungle/style_2,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "py" = (
 /obj/structure/broken_flooring/plating/always_floorplane/directional/south,
 /obj/structure/broken_flooring/plating/always_floorplane/directional/north,
@@ -1705,13 +1801,24 @@
 	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
+"pP" = (
+/obj/machinery/button/auto_detect/directional/east,
+/turf/open/floor/iron/smooth,
+/area/centcom/buckshot_club)
 "pQ" = (
 /turf/open/floor/iron/checker,
 /area/centcom/buckshot_club)
+"pU" = (
+/obj/machinery/light/small/red/dim/directional/east,
+/turf/open/floor/catwalk_floor,
+/area/centcom/buckshot_club)
 "pV" = (
-/obj/structure/prop/vehicle/hyperdynevan,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/railing/unbreakable{
+	dir = 4
+	},
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "pY" = (
 /obj/effect/turf_decal/vg_decals/numbers/two,
 /obj/effect/turf_decal/bot_white,
@@ -1728,11 +1835,6 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"qb" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/structure/prop/city/phonebox_closed_light,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "qc" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -1740,14 +1842,29 @@
 /obj/effect/spawner/random/decoration/glowstick/on,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"qg" = (
-/obj/structure/flora/bush/large/style_2,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"qd" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/machinery/light/dim/directional/north,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "qh" = (
-/obj/structure/table/reinforced,
-/obj/machinery/door/window/right/directional/south,
-/obj/item/paper_bin,
+/obj/effect/decal/cleanable/dirt,
+/obj/item/toy/crayon/spraycan{
+	pixel_x = 3;
+	pixel_y = 23
+	},
+/obj/item/reagent_containers/cup/soda_cans/melon_soda{
+	pixel_x = 13;
+	pixel_y = 16
+	},
+/obj/effect/turf_decal/vg_decals/numbers/one,
+/obj/effect/turf_decal/bot_white,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "qi" = (
@@ -1788,12 +1905,6 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
-"qC" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/glitter,
-/turf/open/indestructible/dark/smooth_large,
-/area/centcom/buckshot_club)
 "qD" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/turf_decal/siding/dark{
@@ -1805,10 +1916,6 @@
 /obj/structure/lattice,
 /turf/closed/wall/city/siding/red,
 /area/centcom/buckshot_club)
-"qI" = (
-/obj/structure/shipping_container/nanotrasen,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "qK" = (
 /obj/machinery/vending/coffee{
 	default_price = 0;
@@ -1829,11 +1936,9 @@
 /obj/structure/stairs/north,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"qP" = (
-/obj/machinery/coffeemaker/impressa,
-/obj/structure/table/reinforced/rglass,
-/obj/machinery/light/directional/east,
-/turf/open/floor/wood,
+"qR" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "qU" = (
 /obj/structure/window/reinforced/tinted/spawner/directional/south,
@@ -1849,10 +1954,10 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "qY" = (
-/obj/structure/flora/bush/sparsegrass,
-/obj/structure/flora/tree/jungle/style_2,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/always_floorplane,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "rd" = (
 /obj/effect/turf_decal/siding/thinplating/dark/end,
 /obj/effect/decal/cleanable/dirt,
@@ -1901,6 +2006,13 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
+"rp" = (
+/obj/structure/railing/unbreakable{
+	dir = 8
+	},
+/obj/machinery/light/small/red/dim/directional/south,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "rt" = (
 /obj/effect/turf_decal/tile/purple/half/contrasted{
 	dir = 1
@@ -1909,14 +2021,8 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "rv" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 2
-	},
-/obj/machinery/light/small/red/dim/directional/north,
-/obj/effect/turf_decal/siding/dark{
-	dir = 5
-	},
-/turf/open/floor/black,
+/obj/structure/broken_flooring/singular,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "rC" = (
 /obj/effect/turf_decal/trimline/dark_blue/end,
@@ -1933,16 +2039,29 @@
 /obj/structure/sign/poster/contraband/random/directional/west,
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
-"rJ" = (
-/turf/open/floor/wood,
+"rF" = (
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/railing/unbreakable{
+	dir = 8
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"rK" = (
+/obj/machinery/door/airlock/maintenance_hatch,
+/turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "rN" = (
-/obj/item/sticker/syndicate/c4,
-/turf/open/floor/iron/smooth,
-/area/centcom/buckshot_club)
-"rS" = (
-/obj/machinery/light/cold/dim/directional/south,
-/turf/open/floor/carpet/black,
+/obj/effect/turf_decal/siding/thinplating/dark/end{
+	dir = 4
+	},
+/obj/effect/decal/cleanable/dirt,
+/obj/machinery/light/red/dim/directional/north,
+/obj/machinery/button/auto_detect/directional/north,
+/turf/open/indestructible/dark,
 /area/centcom/buckshot_club)
 "rU" = (
 /obj/structure/window/reinforced/tinted/spawner/directional/west,
@@ -1954,37 +2073,18 @@
 /turf/open/floor/iron/checker,
 /area/centcom/buckshot_club)
 "rV" = (
+/obj/effect/turf_decal/tile/dark,
+/obj/effect/decal/cleanable/dirt/dust,
 /obj/structure/railing/unbreakable{
 	dir = 4
 	},
-/obj/structure/fake_stairs/directional/north,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"rX" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/turf_decal/siding{
-	dir = 8
-	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"sb" = (
-/obj/structure/fence/interlink{
-	dir = 4
-	},
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "sc" = (
-/obj/machinery/light/directional/north,
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
-	},
+/obj/structure/broken_flooring/plating/always_floorplane/directional/north,
+/obj/effect/turf_decal/tile/dark,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"sn" = (
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "so" = (
 /obj/effect/step_trigger/teleporter/offset{
 	teleport_x_offset = -33;
@@ -2005,28 +2105,10 @@
 	target_turf_y = -10
 	},
 /area/centcom/buckshot_club)
-"sq" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 2
-	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 1
-	},
-/turf/open/floor/black,
-/area/centcom/buckshot_club)
 "sr" = (
-/obj/machinery/light/directional/north,
-/obj/effect/decal/cleanable/glitter,
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
-	},
-/obj/structure/table,
-/turf/open/floor/iron/dark/textured,
+/obj/machinery/light/small/red/dim/directional/north,
+/turf/open/floor/catwalk_floor,
 /area/centcom/buckshot_club)
-"ss" = (
-/obj/structure/flora/tree/jungle/style_5,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "sx" = (
 /obj/effect/turf_decal/tile/dark_blue/anticorner/contrasted{
 	dir = 4
@@ -2039,30 +2121,16 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "sA" = (
-/obj/effect/decal/cleanable/blood/old,
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
+/obj/structure/fluff/paper/stack{
+	layer = 2;
+	pixel_x = 5;
+	pixel_y = -5
 	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 1
-	},
-/obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"sD" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/turf_decal/siding/dark{
-	dir = 8
-	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"sG" = (
-/obj/machinery/door/airlock/colony_prefab{
-	name = "Party 3";
-	color = "#A9A9A9";
-	id_tag = "roulette_3"
-	},
-/turf/open/floor/iron/dark/textured,
+"sH" = (
+/obj/structure/broken_flooring/plating/directional/north,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "sI" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -2074,6 +2142,17 @@
 	dir = 6
 	},
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"sM" = (
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/turf/closed/indestructible/hotelwall{
+	color = "#000000";
+	name = "darkness"
+	},
 /area/centcom/buckshot_club)
 "sO" = (
 /obj/effect/turf_decal/siding/thinplating/dark/end{
@@ -2088,10 +2167,16 @@
 /obj/structure/marker_beacon/burgundy,
 /turf/open/indestructible/dark,
 /area/centcom/buckshot_club)
-"sY" = (
-/obj/structure/table,
-/obj/item/storage/box/lights/mixed,
-/turf/open/floor/wood,
+"sQ" = (
+/obj/machinery/light/red/directional/north,
+/turf/open/floor/iron/smooth,
+/area/centcom/buckshot_club)
+"sS" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/west,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "sZ" = (
 /obj/effect/turf_decal/siding/thinplating/dark,
@@ -2105,21 +2190,23 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"tf" = (
-/obj/structure/flora/tree/jungle/style_random,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"td" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/directional/east,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "tg" = (
 /obj/effect/decal/cleanable/vomit/old,
 /obj/effect/spawner/random/trash/garbage,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "th" = (
-/obj/structure/fence/interlink,
-/obj/structure/fence/interlink,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "tj" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/item/stack/rods{
@@ -2129,22 +2216,41 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "tn" = (
-/obj/structure/table/reinforced,
-/obj/machinery/light/cold/dim/directional/west,
-/obj/item/gun/ballistic/automatic/pistol/toy,
-/turf/open/floor/iron/dark/textured,
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 255
+	},
+/turf/open/floor/plating/elevatorshaft,
 /area/centcom/buckshot_club)
 "tp" = (
-/obj/structure/chair/office{
-	dir = 8
+/obj/structure/fluff/metalpole{
+	dir = 6;
+	color = "#FFFFFF";
+	alpha = 25
 	},
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/carpet/black,
+/turf/open/floor/black{
+	name = "void"
+	},
 /area/centcom/buckshot_club)
 "tq" = (
-/obj/structure/rack/shelf,
-/obj/effect/spawner/random/entertainment/plushie,
-/turf/open/floor/iron/dark/textured,
+/obj/effect/spawner/random/trash/deluxe_garbage,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "ts" = (
 /obj/effect/light_emitter/interlink{
@@ -2161,13 +2267,6 @@
 	anchored = 1
 	},
 /turf/open/indestructible/plating,
-/area/centcom/buckshot_club)
-"tv" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 8
-	},
-/obj/effect/decal/cleanable/plastic,
-/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "tG" = (
 /obj/effect/turf_decal/tile/brown/half/contrasted,
@@ -2187,6 +2286,10 @@
 	},
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"tI" = (
+/obj/structure/broken_flooring/plating/directional/east,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "tK" = (
@@ -2211,20 +2314,20 @@
 /turf/open/floor/iron/white,
 /area/centcom/buckshot_club)
 "tY" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
-	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 9
-	},
 /obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/dark/textured,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "tZ" = (
 /obj/effect/turf_decal/tile/dark{
 	dir = 1
 	},
 /obj/machinery/light/directional/north,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"ua" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/spawner/random/trash/box,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "ue" = (
@@ -2234,25 +2337,10 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"uf" = (
-/obj/structure/table/reinforced/rglass,
-/obj/item/kirbyplants/fern{
-	pixel_y = 14;
-	pixel_x = -5
-	},
-/obj/item/folder/white{
-	pixel_x = 4;
-	pixel_y = -3
-	},
-/turf/open/floor/wood,
+"ug" = (
+/obj/machinery/light/red/directional/north,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"ui" = (
-/obj/structure/railing/unbreakable,
-/obj/structure/railing/unbreakable{
-	dir = 8
-	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "uj" = (
 /obj/structure/broken_flooring/plating/always_floorplane/directional/east,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -2267,11 +2355,6 @@
 /obj/structure/bed/maint,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"um" = (
-/obj/structure/flora/tree/jungle/style_3,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "uo" = (
 /obj/structure/broken_flooring/plating/always_floorplane/directional/west,
 /obj/item/storage/medkit/civil_defense{
@@ -2288,6 +2371,28 @@
 /obj/item/reagent_containers/heroin,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
+"us" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
+"ut" = (
+/obj/structure/broken_flooring/plating/always_floorplane/directional/west,
+/obj/effect/decal/cleanable/dirt,
+/obj/item/paper/fluff{
+	icon_state = "scrap_mud";
+	name = "крик маппера этой хуйни блять";
+	pixel_x = -5;
+	pixel_y = -4;
+	default_raw_text = "<font size=5>СУКА ЕБАНЫЙ ПИ----С НА ФЕНЮШЕ КАК ЖЕ ТЫ МЕНЯ ЗАЕБАЛ СО СВОИМИ ПРОСЬБАМИ ПОМОЧЬ В ПОСЛЕДНИЙ НАХУЙ МОМЕНТ, ЭТО ПИЗДЕЦ БЛЯТЬ, ОООООО ПРИВЕТ ПРИВЕТ ДЕДЛАЙН ЗАВТРА, ДЕДЛАЙН СЕГОДНЯ, ДЕДЛАЙН ВЧЕРА НАХУЙ, В ЧЕМ ПРОБЛЕМА НАПИСАТЬ НАХУЙ ЗА НЕДЕЛЮ ВМЕСТО ТОГО ЧТОБЫ ЕБАТЬ МНЕ МОЗГИ КОГДА У ТЕБЯ УЖЕ ВСЁ ВОТ-ВОТ НАХУЙ НАЧНЁТСЯ ЁБАНЫЙ ТЫ ГОНДОН</font>";
+	base_icon_state = "scrap_mud";
+	post_init_icon_state = "scrap_mud"
+	},
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "uu" = (
 /obj/structure/broken_flooring/plating/always_floorplane/directional/south,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -2299,9 +2404,22 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"uA" = (
+/turf/closed/indestructible/fakedoor/maintenance,
+/area/centcom/buckshot_club)
 "uB" = (
-/obj/machinery/light/red/dim/directional/south,
-/turf/open/floor/iron/smooth,
+/obj/effect/spawner/random/trash/grille_or_waste,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"uH" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/directional/west,
+/obj/structure/railing/unbreakable{
+	dir = 8
+	},
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "uK" = (
 /obj/machinery/washing_machine,
@@ -2323,6 +2441,7 @@
 	},
 /obj/effect/decal/cleanable/dirt,
 /obj/machinery/light/red/dim/directional/south,
+/obj/machinery/button/auto_detect/directional/south,
 /turf/open/indestructible/dark,
 /area/centcom/buckshot_club)
 "uQ" = (
@@ -2347,15 +2466,6 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"vd" = (
-/obj/effect/decal/cleanable/dirt,
-/obj/structure/sign/poster/contraband/communist_state/directional/south,
-/turf/open/indestructible/dark/smooth_large,
-/area/centcom/buckshot_club)
-"vi" = (
-/obj/structure/shipping_container/kahraman,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "vj" = (
 /obj/effect/turf_decal/siding/dark{
 	dir = 4
@@ -2369,12 +2479,11 @@
 /turf/open/floor/iron/white,
 /area/centcom/buckshot_club)
 "vu" = (
-/obj/effect/decal/cleanable/blood/splatter,
-/obj/effect/turf_decal/siding/dark{
-	dir = 1
-	},
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/indestructible/dark/smooth_large,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "vz" = (
 /obj/effect/decal/cleanable/glitter,
@@ -2387,14 +2496,14 @@
 /obj/structure/showerframe,
 /turf/open/floor/iron/white,
 /area/centcom/buckshot_club)
-"vH" = (
-/obj/structure/flora/tree/jungle/style_random,
-/obj/structure/flora/tree/jungle/style_random,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "vM" = (
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/turf_decal/bot_white,
+/obj/machinery/light/dim/directional/north,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "vQ" = (
 /obj/effect/turf_decal/siding/dark{
 	dir = 1
@@ -2404,10 +2513,16 @@
 /obj/machinery/light/red/dim/directional/north,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"vV" = (
+"vU" = (
 /obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/landmark/start/test_subject,
-/turf/open/indestructible/dark/smooth_large,
+/turf/open/indestructible/dark,
+/area/centcom/buckshot_club)
+"vV" = (
+/obj/effect/mapping_helpers/broken_floor,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/machinery/light/dim/directional/south,
+/obj/structure/table,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "wc" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -2420,34 +2535,16 @@
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "wi" = (
-/obj/machinery/button/door/directional/east{
-	id = "roulette_2"
-	},
-/turf/open/floor/iron/smooth,
+/obj/machinery/door/airlock/maintenance_hatch,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "wj" = (
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
-"wl" = (
-/obj/item/bodybag,
-/obj/item/bodybag{
-	pixel_x = -3;
-	pixel_y = -3
-	},
-/obj/item/bodybag{
-	pixel_x = 8;
-	pixel_y = 2
-	},
-/obj/item/bodybag{
-	pixel_x = -5;
-	pixel_y = 7
-	},
-/obj/item/bodybag{
-	pixel_x = 8;
-	pixel_y = 11
-	},
-/obj/structure/table/reinforced/rglass,
-/turf/open/floor/wood,
+"wr" = (
+/obj/effect/turf_decal/tile/dark,
+/obj/effect/spawner/random/trash/graffiti,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "wu" = (
 /obj/effect/decal/cleanable/blood/splatter/over_window,
@@ -2455,12 +2552,15 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "wv" = (
-/obj/structure/table/reinforced,
-/obj/item/coin/antagtoken{
-	pixel_x = 5;
-	pixel_y = 5
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
 	},
-/turf/open/floor/iron/dark/textured,
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/plating/elevatorshaft,
 /area/centcom/buckshot_club)
 "wB" = (
 /obj/structure/railing/unbreakable,
@@ -2485,7 +2585,9 @@
 /area/centcom/buckshot_club)
 "wD" = (
 /obj/effect/decal/cleanable/dirt/dust,
-/turf/closed/wall/city/siding/red,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "wE" = (
 /obj/effect/decal/cleanable/food/tomato_smudge,
@@ -2561,6 +2663,13 @@
 	},
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
+"wR" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/stack/rods/shuttle,
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "wX" = (
 /obj/structure/sign/poster/contraband/random/directional/north,
 /turf/open/floor/iron/smooth,
@@ -2572,6 +2681,12 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"xc" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "xd" = (
 /obj/machinery/light/dim/directional/south,
 /obj/item/reagent_containers/syringe{
@@ -2580,18 +2695,8 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"xe" = (
-/obj/effect/decal/cleanable/vomit/toxic,
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/structure/prop/vehicle/blacksuv,
-/obj/effect/turf_decal/delivery/white,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "xg" = (
-/obj/machinery/door/airlock/medical{
-	name = "Morgue"
-	},
-/turf/open/indestructible/dark/smooth_large,
+/turf/open/floor/catwalk_floor,
 /area/centcom/buckshot_club)
 "xh" = (
 /obj/structure/chair/buckshot,
@@ -2600,13 +2705,9 @@
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "xj" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 1
-	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 10
-	},
-/turf/open/floor/black,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/singular,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "xk" = (
 /obj/effect/decal/cleanable/dirt,
@@ -2616,10 +2717,10 @@
 	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"xl" = (
-/obj/structure/prop/city/street_on,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"xp" = (
+/obj/machinery/washing_machine,
+/turf/open/floor/iron/white/small,
+/area/centcom/buckshot_club)
 "xt" = (
 /turf/open/mirage{
 	dir = 1;
@@ -2633,15 +2734,13 @@
 /obj/effect/turf_decal/tile/red/half/contrasted,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"xw" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/glitter,
-/turf/open/indestructible/dark/smooth_large,
-/area/centcom/buckshot_club)
 "xG" = (
-/obj/structure/railing/unbreakable,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "xP" = (
 /obj/effect/mob_spawn/corpse/human/assistant,
 /obj/structure/bed/maint,
@@ -2659,13 +2758,19 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "xR" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 2
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/singular,
+/obj/structure/fluff/paper/stack{
+	layer = 2;
+	pixel_x = 5;
+	pixel_y = -5
 	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 9
-	},
-/turf/open/floor/black,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"xS" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/directional/east,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "xT" = (
 /turf/open/mirage{
@@ -2675,14 +2780,6 @@
 	target_turf_y = 48
 	},
 /area/centcom/buckshot_club)
-"xW" = (
-/obj/structure/chair/buckshot{
-	dir = 1
-	},
-/obj/effect/decal/cleanable/dirt,
-/obj/machinery/light/small/dim/directional/south,
-/turf/open/indestructible/dark/smooth_large,
-/area/centcom/buckshot_club)
 "xY" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/dirt,
@@ -2690,11 +2787,15 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"yj" = (
-/obj/effect/turf_decal/stripes/white/line{
-	dir = 8
+"yf" = (
+/obj/structure/chair/buckshot{
+	dir = 1
 	},
-/turf/open/floor/wood,
+/obj/effect/turf_decal/siding/dark{
+	dir = 1
+	},
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/dark,
 /area/centcom/buckshot_club)
 "yA" = (
 /turf/open/mirage{
@@ -2702,22 +2803,6 @@
 	range = 6;
 	target_turf_x = -7
 	},
-/area/centcom/buckshot_club)
-"yB" = (
-/turf/closed/indestructible/syndicate,
-/area/centcom/buckshot_club)
-"yG" = (
-/obj/structure/railing/unbreakable{
-	dir = 4
-	},
-/turf/open/indestructible/dark/smooth_large,
-/area/centcom/buckshot_club)
-"yH" = (
-/obj/effect/turf_decal/siding/wood{
-	dir = 4
-	},
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/wood,
 /area/centcom/buckshot_club)
 "yV" = (
 /obj/structure/railing/unbreakable,
@@ -2733,19 +2818,12 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"yX" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/turf_decal/delivery/white,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"yZ" = (
-/obj/effect/decal/cleanable/dirt,
-/obj/structure/grille/broken,
-/obj/effect/decal/cleanable/glass,
-/turf/open/indestructible/plating,
-/area/centcom/buckshot_club)
-"zd" = (
-/turf/open/floor/carpet/black,
+"zb" = (
+/obj/structure/railing/unbreakable{
+	dir = 4
+	},
+/obj/machinery/light/small/red/dim/directional/north,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "ze" = (
 /obj/structure/toilet{
@@ -2759,6 +2837,16 @@
 /obj/effect/turf_decal/vg_decals/numbers/four,
 /obj/effect/turf_decal/bot_white,
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"zi" = (
+/obj/effect/landmark/start/test_subject,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
+"zj" = (
+/obj/effect/turf_decal/siding/thinplating/dark,
+/obj/effect/decal/cleanable/dirt,
+/obj/machinery/button/auto_detect/directional/south,
+/turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "zk" = (
 /obj/machinery/door/airlock/glass,
@@ -2786,12 +2874,46 @@
 	target_turf_y = 18
 	},
 /area/centcom/buckshot_club)
+"zq" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "zw" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/turf_decal/tile/red/half/contrasted{
 	dir = 8
 	},
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"zx" = (
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 255
+	},
+/turf/closed/indestructible/hotelwall{
+	color = "#000000";
+	name = "darkness"
+	},
 /area/centcom/buckshot_club)
 "zz" = (
 /obj/effect/turf_decal/tile/red/half/contrasted,
@@ -2809,15 +2931,13 @@
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "zE" = (
-/obj/structure/flora/tree/jungle/style_2,
-/obj/structure/flora/tree/jungle/style_2,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
-"zF" = (
-/obj/effect/turf_decal/siding/wood{
-	dir = 4
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/spawner/random/decoration/glowstick/on,
+/obj/item/reagent_containers/cup/soda_cans/wellcheers{
+	pixel_x = -21;
+	pixel_y = 13
 	},
-/turf/open/floor/wood,
+/turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "zI" = (
 /obj/effect/turf_decal/siding/thinplating/dark/end{
@@ -2875,12 +2995,6 @@
 /obj/effect/turf_decal/tile/yellow/half/contrasted,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Aa" = (
-/obj/structure/table,
-/obj/effect/spawner/surgery_tray/full/morgue,
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/smooth_large,
-/area/centcom/buckshot_club)
 "Ac" = (
 /obj/effect/decal/cleanable/plastic,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -2898,10 +3012,20 @@
 /obj/structure/table/reinforced,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"Ai" = (
+/obj/effect/decal/remains/human/smokey/maintenance,
+/turf/open/floor/catwalk_floor,
+/area/centcom/buckshot_club)
 "Am" = (
 /obj/effect/turf_decal/siding/dark,
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"An" = (
+/obj/effect/turf_decal/siding/dark{
+	dir = 1
+	},
+/turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "Aq" = (
 /obj/effect/turf_decal/siding/thinplating/dark/end,
@@ -2926,27 +3050,6 @@
 	},
 /turf/open/openspace,
 /area/centcom/buckshot_club)
-"Az" = (
-/obj/item/bodybag,
-/obj/item/bodybag{
-	pixel_x = -2;
-	pixel_y = 4
-	},
-/obj/item/bodybag{
-	pixel_x = 7;
-	pixel_y = 1
-	},
-/obj/item/bodybag{
-	pixel_x = -5;
-	pixel_y = 12
-	},
-/obj/item/bodybag{
-	pixel_x = 6;
-	pixel_y = 12
-	},
-/obj/structure/table/reinforced/rglass,
-/turf/open/floor/wood,
-/area/centcom/buckshot_club)
 "AD" = (
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
@@ -2959,11 +3062,28 @@
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "AF" = (
-/obj/effect/turf_decal/siding/dark{
-	dir = 1
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
 	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/turf/open/floor/plating/elevatorshaft,
+/area/centcom/buckshot_club)
+"AI" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/fluff/paper/stack{
+	dir = 8;
+	pixel_x = -9;
+	pixel_y = 19
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "AJ" = (
 /obj/effect/turf_decal/siding{
 	dir = 5
@@ -2999,14 +3119,10 @@
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "AW" = (
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/turf_decal/siding/dark{
-	dir = 6
-	},
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt,
-/turf/open/floor/iron/dark/textured,
+/obj/structure/broken_flooring/plating/directional/north,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "AY" = (
 /obj/effect/turf_decal/tile/red/half/contrasted{
@@ -3014,10 +3130,6 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Ba" = (
-/obj/structure/flora/tree/jungle/style_3,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "Bc" = (
 /obj/item/reagent_containers/syringe/contraband/krokodil{
 	pixel_x = -4;
@@ -3027,12 +3139,6 @@
 /obj/effect/spawner/random/maintenance,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"Bj" = (
-/obj/structure/railing/unbreakable{
-	dir = 8
-	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "Bp" = (
 /obj/structure/window/reinforced/tinted/spawner/directional/north,
 /obj/structure/window/reinforced/tinted/spawner/directional/west,
@@ -3041,12 +3147,15 @@
 	},
 /turf/open/floor/iron/checker,
 /area/centcom/buckshot_club)
-"Bs" = (
-/obj/effect/turf_decal/siding/dark{
-	dir = 8
+"Bt" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/item/stack/rods{
+	pixel_x = -5;
+	pixel_y = 6
 	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "BE" = (
 /obj/effect/turf_decal/siding/dark{
 	dir = 4
@@ -3056,18 +3165,49 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "BK" = (
-/obj/effect/turf_decal/siding/dark{
-	dir = 8
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
 	},
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt,
-/turf/open/indestructible/dark/smooth_large,
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 255
+	},
+/obj/structure/fluff/metalpole{
+	dir = 6;
+	color = "#FFFFFF";
+	alpha = 25
+	},
+/turf/open/floor/plating/elevatorshaft,
 /area/centcom/buckshot_club)
-"BV" = (
-/obj/structure/chair/sofa/corp/right{
-	dir = 4
+"BQ" = (
+/obj/machinery/light/dim/directional/north,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"BR" = (
+/obj/structure/broken_flooring/plating/always_floorplane/directional/west,
+/obj/item/storage/medkit/civil_defense{
+	pixel_x = 7;
+	pixel_y = -5
 	},
-/turf/open/floor/wood,
+/obj/item/tourniquet{
+	pixel_x = -17;
+	pixel_y = -1
+	},
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "BW" = (
 /obj/item/assembly/mousetrap{
@@ -3086,14 +3226,8 @@
 /area/centcom/buckshot_club)
 "BX" = (
 /obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/turf_decal/tile/dark{
-	dir = 8
-	},
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
-"Ca" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/carpet/black,
+/obj/effect/decal/cleanable/blood/old,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "Cc" = (
 /obj/item/trash/popcorn/salty{
@@ -3101,6 +3235,26 @@
 	pixel_y = -1
 	},
 /obj/item/flashlight/glowstick/red,
+/turf/open/indestructible/plating,
+/area/centcom/buckshot_club)
+"Cg" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/trash/flare{
+	pixel_x = 0;
+	pixel_y = 10
+	},
+/obj/effect/spawner/random/decoration/glowstick/on,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"Ch" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/item/reagent_containers/syringe{
+	pixel_x = 4;
+	pixel_y = 0
+	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "Ci" = (
@@ -3137,14 +3291,6 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/indestructible/dark,
 /area/centcom/buckshot_club)
-"Cs" = (
-/obj/structure/table/reinforced/rglass,
-/obj/effect/spawner/random/food_or_drink/snack,
-/obj/effect/turf_decal/stripes/white/corner{
-	dir = 8
-	},
-/turf/open/floor/wood,
-/area/centcom/buckshot_club)
 "Cz" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -3153,6 +3299,12 @@
 	pixel_y = 6
 	},
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"CC" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/bed/maint,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "CE" = (
 /obj/item/reagent_containers/cup/soda_cans/thirteenloko{
@@ -3195,15 +3347,6 @@
 /obj/effect/mob_spawn/corpse/human/skeleton,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"CH" = (
-/obj/structure/table/buckshot,
-/obj/effect/light_emitter/interlink{
-	name = "Buckshot club";
-	light_color = "#110148"
-	},
-/obj/effect/decal/cleanable/dirt,
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
 "CJ" = (
 /obj/effect/decal/cleanable/food/flour,
 /turf/open/floor/iron/checker,
@@ -3228,8 +3371,26 @@
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "CV" = (
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/step_trigger/teleporter/offset{
+	teleport_x_offset = 58
+	},
+/turf/open/mirage{
+	dir = 8;
+	range = 5;
+	target_turf_x = 58
+	},
+/area/centcom/buckshot_club)
+"CW" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/stack/rods{
+	pixel_x = 4;
+	pixel_y = 6
+	},
+/obj/effect/turf_decal/tile/dark,
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "CX" = (
 /obj/structure/broken_flooring/plating/always_floorplane/directional/north,
 /obj/effect/decal/cleanable/dirt,
@@ -3295,10 +3456,6 @@
 /obj/structure/railing/unbreakable,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"DD" = (
-/obj/effect/turf_decal/stripes/white/corner,
-/turf/open/floor/wood,
-/area/centcom/buckshot_club)
 "DE" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/dirt,
@@ -3313,14 +3470,14 @@
 	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"DI" = (
-/obj/structure/chair/buckshot,
-/obj/effect/decal/cleanable/dirt,
-/turf/open/floor/iron/dark/textured,
+"DH" = (
+/obj/structure/broken_flooring/plating/always_floorplane/directional/west,
+/obj/machinery/light/red/directional/north,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "DO" = (
 /obj/structure/fake_stairs/directional/north,
-/turf/open/space/basic,
+/turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "DP" = (
 /obj/effect/turf_decal/vg_decals/numbers/seven,
@@ -3328,13 +3485,42 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "DU" = (
-/obj/structure/flora/tree/jungle/small/style_4,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
-"Ea" = (
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/effect/spawner/random/trash/graffiti,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"DV" = (
+/obj/machinery/light/red/dim/directional/south,
+/turf/open/indestructible/dark/smooth_large,
+/area/centcom/buckshot_club)
+"DY" = (
 /obj/effect/decal/cleanable/dirt,
-/obj/structure/frame/machine,
-/turf/open/indestructible/plating,
+/obj/item/stack/rods{
+	pixel_x = 2;
+	pixel_y = -7
+	},
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"DZ" = (
+/obj/structure/broken_flooring/plating/always_floorplane/directional/north,
+/obj/effect/decal/cleanable/dirt,
+/obj/item/stack/sheet/spaceship,
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"Eb" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/fluff/paper/stack{
+	dir = 8;
+	pixel_x = -9;
+	pixel_y = 19
+	},
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Ec" = (
 /obj/structure/broken_flooring/plating/always_floorplane/directional/west,
@@ -3351,6 +3537,11 @@
 /obj/effect/spawner/random/entertainment/lighter,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
+"Eg" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/glitter,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "Eh" = (
 /obj/effect/light_emitter/interlink{
 	name = "Buckshot club";
@@ -3359,7 +3550,9 @@
 /turf/open/floor/light/colour_cycle/dancefloor_a,
 /area/centcom/buckshot_club)
 "El" = (
-/turf/closed/indestructible/fakedoor,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "Eq" = (
 /obj/effect/decal/cleanable/dirt,
@@ -3400,10 +3593,7 @@
 /turf/open/floor/iron/checker,
 /area/centcom/buckshot_club)
 "Ex" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
-	},
-/obj/effect/spawner/random/vending/snackvend,
+/obj/effect/spawner/random/trash/cigbutt,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Ez" = (
@@ -3463,10 +3653,6 @@
 /obj/effect/turf_decal/stripes,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"EJ" = (
-/obj/structure/chair/sofa/corp/left,
-/turf/open/floor/wood,
-/area/centcom/buckshot_club)
 "EP" = (
 /obj/effect/turf_decal/siding/dark,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -3494,17 +3680,13 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Fd" = (
+/obj/structure/fake_stairs{
+	dir = 4
+	},
 /obj/effect/light_emitter/interlink{
 	name = "Buckshot club";
 	light_color = "#110148"
 	},
-/obj/structure/stairs/east,
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
-"Ff" = (
-/obj/machinery/light/directional/east,
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Fi" = (
@@ -3514,17 +3696,17 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"Fj" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/west,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "Fm" = (
 /obj/structure/table,
 /obj/item/storage/fancy/donut_box,
 /obj/effect/turf_decal/tile/dark{
 	dir = 4
 	},
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
-"Fp" = (
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/decal/cleanable/glitter,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Fs" = (
@@ -3534,10 +3716,10 @@
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
 "FB" = (
-/obj/effect/decal/cleanable/glitter,
-/obj/effect/turf_decal/tile/dark,
 /obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/dark/textured,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "FC" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -3554,6 +3736,22 @@
 	},
 /obj/structure/railing/unbreakable,
 /obj/structure/table/reinforced,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"FJ" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/reagent_containers/syringe,
+/turf/open/floor/iron/white/small,
+/area/centcom/buckshot_club)
+"FM" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/turf/cordon/secret,
+/area/centcom/buckshot_club)
+"FP" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/spawner/random/trash/grille_or_waste,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "FU" = (
@@ -3580,7 +3778,9 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Gl" = (
-/obj/machinery/door/airlock,
+/obj/machinery/door/airlock/bathroom{
+	name = "Unisex Bathroom"
+	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "Gp" = (
@@ -3589,16 +3789,20 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Gy" = (
-/obj/effect/decal/cleanable/rubble,
-/obj/structure/fence/interlink{
+"Gt" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/railing/unbreakable{
 	dir = 4
 	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "GA" = (
-/obj/machinery/photocopier/prebuilt,
-/turf/open/floor/wood,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "GE" = (
 /obj/machinery/chem_dispenser/drinks/beer/fullupgrade{
@@ -3620,14 +3824,24 @@
 	target_turf_y = 18
 	},
 /area/centcom/buckshot_club)
-"GV" = (
-/obj/structure/flora/tree/jungle/small/style_random,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
-"GZ" = (
+"GH" = (
 /obj/effect/decal/cleanable/dirt,
-/obj/effect/decal/cleanable/glitter,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/spawner/random/trash/grille_or_waste,
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"GY" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/landmark/start/test_subject,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"GZ" = (
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/black{
+	name = "void"
+	},
 /area/centcom/buckshot_club)
 "Hc" = (
 /obj/structure/railing/unbreakable,
@@ -3650,23 +3864,18 @@
 /obj/effect/turf_decal/stripes,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
+"Hh" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/fluff/paper/stack{
+	dir = 1;
+	pixel_x = -8;
+	pixel_y = 9
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "Hk" = (
 /turf/closed/wall/city/siding/red,
-/area/centcom/buckshot_club)
-"Hl" = (
-/obj/structure/shipping_container/gas,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"Ho" = (
-/obj/effect/decal/cleanable/glitter,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"Hp" = (
-/obj/structure/bed/medical/emergency{
-	dir = 4
-	},
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/smooth_large,
 /area/centcom/buckshot_club)
 "Hq" = (
 /obj/effect/decal/cleanable/dirt,
@@ -3675,11 +3884,10 @@
 /obj/effect/turf_decal/bot_white,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Hv" = (
-/obj/structure/chair/buckshot{
+"Hu" = (
+/obj/structure/railing/unbreakable{
 	dir = 8
 	},
-/obj/effect/decal/cleanable/dirt,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Hw" = (
@@ -3703,6 +3911,13 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"HD" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/directional/west,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "HJ" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/item/trash/flare{
@@ -3723,13 +3938,34 @@
 	target_turf_y = -28
 	},
 /area/centcom/buckshot_club)
-"HO" = (
-/obj/structure/shipping_container/tiger_coop,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "HP" = (
-/obj/structure/table,
-/turf/open/floor/carpet/black,
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/plating/elevatorshaft,
+/area/centcom/buckshot_club)
+"HQ" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/directional/east,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
+"HU" = (
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/stack/rods/shuttle,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "HX" = (
 /obj/effect/decal/cleanable/glitter,
@@ -3764,18 +4000,15 @@
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "Ik" = (
-/obj/structure/flora/tree/jungle/style_4,
-/obj/structure/flora/bush/sparsegrass,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
-"Ip" = (
-/obj/effect/turf_decal/arrows{
-	dir = 1
+/turf/open/floor/black{
+	name = "void"
 	},
+/area/centcom/buckshot_club)
+"Im" = (
 /obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/indestructible/dark/smooth_large,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/directional/west,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "Is" = (
 /obj/effect/decal/cleanable/glass,
@@ -3813,10 +4046,22 @@
 /obj/structure/marker_beacon/bronze,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"IO" = (
-/obj/structure/flora/bush/large/style_random,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"IU" = (
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/structure/fluff/metalpole{
+	dir = 6;
+	color = "#FFFFFF";
+	alpha = 25
+	},
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/plating/elevatorshaft,
+/area/centcom/buckshot_club)
 "IV" = (
 /turf/open/mirage{
 	dir = 2;
@@ -3857,13 +4102,20 @@
 /turf/open/floor/iron/dark,
 /area/centcom/buckshot_club)
 "Jg" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 1
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
 	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 6
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
 	},
-/turf/open/floor/black,
+/turf/closed/indestructible/hotelwall{
+	color = "#000000";
+	name = "darkness"
+	},
 /area/centcom/buckshot_club)
 "Jh" = (
 /turf/open/mirage{
@@ -3881,27 +4133,22 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Jn" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "Jq" = (
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/turf_decal/siding/dark,
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/dark/textured,
+/obj/structure/broken_flooring/plating/directional/south,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
-"Jr" = (
-/obj/structure/flora/tree/jungle/style_4,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "Jt" = (
 /obj/structure/broken_flooring/plating/always_floorplane/directional/north,
 /obj/item/trash/empty_food_tray{
 	pixel_x = 1;
 	pixel_y = -7
 	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"Jw" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/singular,
+/obj/effect/spawner/random/trash/cigpack,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "JA" = (
@@ -3942,11 +4189,26 @@
 /obj/effect/spawner/random/decoration/glowstick/on,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"JQ" = (
-/obj/effect/turf_decal/stripes/white/line{
-	dir = 1
+"JN" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/spawner/random/trash/graffiti,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"JO" = (
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
 	},
-/turf/open/floor/wood,
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/plating/elevatorshaft,
 /area/centcom/buckshot_club)
 "JX" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -3961,14 +4223,12 @@
 /obj/structure/chair/sofa/corp/left,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"Kd" = (
-/obj/structure/flora/tree/jungle/style_2,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
-"Kh" = (
-/obj/structure/shipping_container/donk_co,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"Ki" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "Kj" = (
 /obj/effect/decal/cleanable/crayon/e{
 	pixel_x = 3;
@@ -4022,9 +4282,10 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"Ky" = (
-/turf/closed/indestructible/stone,
-/area/centcom/buckshot_club/outdoors)
+"Kw" = (
+/obj/effect/spawner/random/trash/graffiti,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "KF" = (
 /obj/structure/window/green_glass_pane,
 /turf/open/indestructible/plating,
@@ -4032,8 +4293,18 @@
 "KG" = (
 /obj/effect/decal/cleanable/glass,
 /obj/structure/sign/poster/contraband/random/directional/north,
-/obj/machinery/suit_storage_unit/open,
 /turf/open/floor/iron/smooth,
+/area/centcom/buckshot_club)
+"KI" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/stack/rods{
+	pixel_x = 15;
+	pixel_y = 6
+	},
+/obj/effect/turf_decal/tile/dark,
+/obj/effect/spawner/random/trash/grille_or_waste,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "KJ" = (
 /obj/effect/decal/cleanable/dirt,
@@ -4048,16 +4319,18 @@
 /obj/machinery/light/small/dim/directional/south,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"KP" = (
-/obj/effect/decal/cleanable/traitor_rune,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+"KT" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/plating/directional/south,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "KU" = (
-/obj/item/target/syndicate,
-/obj/item/sticker/syndicate/op{
-	pixel_x = 0;
-	pixel_y = 10
+/obj/structure/shipping_container/donk_co{
+	pixel_x = -4;
+	pixel_y = 11
 	},
+/obj/machinery/light/red/dim/directional/south,
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
 "KV" = (
@@ -4091,11 +4364,10 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "KY" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/landmark/start/test_subject,
-/turf/open/indestructible/dark/smooth_large,
+/obj/effect/mapping_helpers/broken_floor,
+/obj/item/reagent_containers/syringe,
+/obj/structure/table,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "KZ" = (
 /obj/machinery/light/directional/west,
@@ -4131,7 +4403,6 @@
 /area/centcom/buckshot_club)
 "Lr" = (
 /obj/structure/chair/buckshot,
-/obj/machinery/light/red/dim/directional/north,
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
 "Lw" = (
@@ -4140,19 +4411,23 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Lz" = (
-/obj/structure/shipping_container/ntfid,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "LA" = (
 /turf/open/openspace,
 /area/centcom/buckshot_club)
 "LC" = (
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/turf_decal/siding/dark,
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt,
-/turf/open/floor/iron/dark/textured,
+/obj/structure/fluff/metalpole/anchor{
+	dir = 10
+	},
+/obj/structure/fluff/metalpole/anchor,
+/obj/structure/marker_beacon/burgundy,
+/obj/structure/fluff/metalpole{
+	dir = 6;
+	color = "#FFFFFF";
+	alpha = 25
+	},
+/turf/open/floor/black{
+	name = "void"
+	},
 /area/centcom/buckshot_club)
 "LD" = (
 /obj/structure/table/reinforced,
@@ -4162,6 +4437,14 @@
 /obj/effect/light_emitter/interlink{
 	name = "Buckshot club";
 	light_color = "#110148"
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"LE" = (
+/obj/structure/fluff/paper/stack{
+	dir = 8;
+	pixel_x = -9;
+	pixel_y = 19
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
@@ -4189,31 +4472,14 @@
 /obj/item/stack/rods/shuttle,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"LZ" = (
-/obj/structure/fence/interlink{
-	dir = 4
-	},
-/obj/structure/fence/interlink{
-	dir = 4
-	},
-/obj/structure/fence/interlink{
-	dir = 4
-	},
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
-"Mk" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 1
-	},
-/obj/effect/turf_decal/siding/dark,
-/turf/open/floor/black,
+"LJ" = (
+/obj/structure/lattice,
+/obj/structure/lattice,
+/turf/closed/wall/city/siding/red,
 /area/centcom/buckshot_club)
-"Mm" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/glitter,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+"LZ" = (
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
 "Mq" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -4231,9 +4497,35 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"MA" = (
+/obj/item/stack/rods{
+	pixel_x = 1;
+	pixel_y = -13
+	},
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"MB" = (
+/obj/structure/railing/unbreakable{
+	dir = 4
+	},
+/obj/machinery/light/small/red/dim/directional/south,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"ME" = (
+/obj/structure/broken_flooring/singular/directional/east,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "MG" = (
 /obj/effect/spawner/random/trash/botanical_waste,
 /turf/open/indestructible/plating,
+/area/centcom/buckshot_club)
+"MH" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/singular/directional/east,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "ML" = (
 /obj/effect/smooths_with_walls,
@@ -4252,17 +4544,15 @@
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "Na" = (
-/obj/machinery/door/airlock/colony_prefab{
-	name = "Rest room";
-	color = "#A9A9A9"
+/obj/machinery/door/airlock/bathroom{
+	name = "Unisex Bathroom"
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Ne" = (
-/obj/structure/railing/unbreakable,
-/obj/structure/table/reinforced,
 /obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/dark/textured,
+/obj/effect/decal/cleanable/dirt,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "Ni" = (
 /obj/effect/turf_decal/siding/dark,
@@ -4285,16 +4575,18 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Nt" = (
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/turf_decal/siding/dark,
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/landmark/start/test_subject,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Nz" = (
 /obj/structure/drain,
 /obj/effect/mapping_helpers/broken_floor,
 /turf/open/floor/iron/white,
+/area/centcom/buckshot_club)
+"NE" = (
+/obj/structure/broken_flooring/plating/directional/south,
+/obj/structure/broken_flooring/side/directional,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "NF" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -4321,16 +4613,34 @@
 /area/centcom/buckshot_club)
 "NL" = (
 /obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/wood,
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"NM" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/south,
+/turf/open/floor/plating,
+/area/centcom/buckshot_club)
+"NN" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/directional/north,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "NP" = (
 /obj/effect/turf_decal/vg_decals/numbers/eight,
 /obj/effect/turf_decal/bot_white,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"NS" = (
-/obj/structure/filingcabinet/chestdrawer,
-/turf/open/floor/carpet/black,
+"NQ" = (
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/structure/railing/unbreakable{
+	dir = 8
+	},
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "NW" = (
 /obj/effect/turf_decal/tile/purple/anticorner/contrasted{
@@ -4347,11 +4657,12 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"Oh" = (
-/obj/structure/chair/sofa/corp/corner{
-	dir = 4
+"Og" = (
+/obj/structure/railing/unbreakable{
+	dir = 8
 	},
-/turf/open/floor/wood,
+/obj/effect/spawner/random/trash/caution_sign,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Ol" = (
 /obj/effect/turf_decal/siding/dark{
@@ -4361,11 +4672,6 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Oo" = (
-/obj/structure/flora/bush/large/style_2,
-/obj/structure/flora/bush/large/style_random,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "OA" = (
 /obj/effect/turf_decal/siding/thinplating/dark,
 /obj/effect/decal/cleanable/dirt,
@@ -4387,6 +4693,14 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"OL" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/item/stack/rods/shuttle,
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "ON" = (
 /obj/structure/sink/directional/south,
 /obj/structure/mirror/directional/north,
@@ -4396,13 +4710,6 @@
 /obj/effect/decal/cleanable/food/plant_smudge,
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
-"OP" = (
-/obj/effect/turf_decal/siding/dark{
-	dir = 4
-	},
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "OW" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/machinery/light/dim/directional/south,
@@ -4414,10 +4721,6 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"OZ" = (
-/obj/structure/flora/tree/jungle/style_random,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "Pc" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/turf_decal/vg_decals/numbers/three,
@@ -4430,8 +4733,13 @@
 /area/centcom/buckshot_club)
 "Pi" = (
 /obj/structure/sign/poster/contraband/random/directional/south,
-/obj/machinery/suit_storage_unit/open,
 /turf/open/floor/iron/smooth,
+/area/centcom/buckshot_club)
+"Pj" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/machinery/light/dim/directional/north,
+/turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "Pk" = (
 /obj/effect/turf_decal/stripes{
@@ -4455,12 +4763,17 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"Pp" = (
-/obj/effect/turf_decal/siding{
-	dir = 8
+"Po" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/item/trash/fleet_ration{
+	pixel_x = 2;
+	pixel_y = 7
 	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "Pq" = (
 /obj/effect/turf_decal/siding/thinplating/dark/end,
 /obj/effect/decal/cleanable/dirt,
@@ -4512,9 +4825,12 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "PB" = (
-/obj/structure/table,
-/obj/item/papercutter,
-/turf/open/floor/wood,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/blood/old,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "PD" = (
 /obj/structure/window/reinforced/tinted/spawner/directional/north,
@@ -4522,21 +4838,16 @@
 /turf/open/floor/iron/checker,
 /area/centcom/buckshot_club)
 "PH" = (
+/obj/structure/railing/unbreakable,
+/obj/structure/fake_stairs{
+	dir = 8
+	},
 /obj/effect/light_emitter/interlink{
 	name = "Buckshot club";
 	light_color = "#110148"
 	},
-/obj/structure/stairs/west,
-/obj/structure/railing/unbreakable,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"PI" = (
-/obj/effect/decal/cleanable/glitter,
-/obj/effect/turf_decal/siding/dark{
-	dir = 4
-	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "PL" = (
 /obj/effect/decal/cleanable/crayon/e{
 	pixel_x = -11;
@@ -4561,18 +4872,6 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"PS" = (
-/obj/machinery/button/door/directional/north{
-	id = "roulette_3"
-	},
-/obj/effect/decal/cleanable/dirt,
-/turf/open/indestructible/plating,
-/area/centcom/buckshot_club)
-"Qb" = (
-/obj/structure/flora/bush/large/style_2,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "Qc" = (
 /obj/effect/turf_decal/siding/thinplating/dark,
 /obj/effect/decal/cleanable/dirt,
@@ -4584,6 +4883,13 @@
 	},
 /obj/effect/turf_decal/tile/red/opposingcorners,
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"Qe" = (
+/obj/effect/turf_decal/siding/dark{
+	dir = 8
+	},
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "Qf" = (
 /obj/effect/turf_decal/tile/dark_blue/half/contrasted{
@@ -4609,6 +4915,14 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
+"Qn" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/item/trash/shrimp_chips{
+	pixel_x = 6;
+	pixel_y = 5
+	},
+/turf/open/indestructible/plating,
+/area/centcom/buckshot_club)
 "Qp" = (
 /obj/structure/curtain/bounty/start_closed{
 	pixel_y = 7
@@ -4616,16 +4930,6 @@
 /obj/effect/turf_decal/stripes,
 /obj/structure/marker_beacon/bronze,
 /turf/open/indestructible/dark/smooth_large,
-/area/centcom/buckshot_club)
-"Qs" = (
-/obj/effect/decal/cleanable/dirt,
-/obj/structure/sign/poster/contraband/soviet_propaganda/directional/east,
-/obj/item/clothing/mask/russian_balaclava{
-	pixel_x = 8;
-	pixel_y = 6
-	},
-/obj/machinery/light/small/dim/directional/east,
-/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Qu" = (
 /obj/effect/light_emitter/interlink{
@@ -4635,14 +4939,10 @@
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "QA" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 2
-	},
-/obj/machinery/light/red/dim/directional/north,
-/obj/effect/turf_decal/siding/dark{
-	dir = 1
-	},
-/turf/open/floor/black,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/blood/old,
+/obj/effect/landmark/start/test_subject,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "QB" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -4652,23 +4952,24 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
+"QD" = (
+/obj/effect/turf_decal/siding/dark{
+	dir = 5
+	},
+/turf/open/indestructible/dark/smooth_large,
+/area/centcom/buckshot_club)
 "QE" = (
-/obj/structure/rack/gunrack,
-/obj/item/gun/ballistic/automatic/c20r/toy/unrestricted,
-/obj/item/gun/ballistic/automatic/c20r/toy/unrestricted,
+/obj/effect/spawner/random/structure/grille,
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
 "QF" = (
-/obj/machinery/door/airlock,
 /obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/mapping_helpers/airlock/access/all/admin,
+/obj/machinery/door/airlock/maintenance_hatch,
+/obj/effect/mapping_helpers/airlock/access/all/admin/general,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "QI" = (
-/obj/machinery/door/airlock/colony_prefab{
-	name = "Club door";
-	color = "#A9A9A9"
-	},
+/obj/machinery/door/airlock/maintenance_hatch,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "QJ" = (
@@ -4677,29 +4978,24 @@
 	name = "darkness"
 	},
 /area/centcom/buckshot_club)
-"QK" = (
-/obj/structure/flora/bush/large/style_3,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "QM" = (
-/obj/structure/table/reinforced,
-/obj/machinery/door/window/left/directional/south,
-/obj/item/folder/yellow{
-	pixel_x = -6
-	},
-/obj/item/pen{
-	pixel_x = -6
-	},
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/turf_decal/tile/dark,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "QN" = (
 /obj/effect/mapping_helpers/broken_floor,
 /turf/closed/wall/city/siding/red,
 /area/centcom/buckshot_club)
-"QS" = (
-/obj/structure/flora/tree/jungle/small/style_5,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+"QP" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/fluff/paper/stack{
+	dir = 8;
+	pixel_x = -10;
+	pixel_y = 1
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "QT" = (
 /obj/structure/broken_flooring/plating/always_floorplane/directional/west,
 /obj/effect/decal/cleanable/dirt,
@@ -4716,14 +5012,8 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "QU" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
-	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 5
-	},
-/obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/singular/directional/east,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "QY" = (
@@ -4731,12 +5021,6 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"Ra" = (
-/obj/effect/turf_decal/siding/dark{
-	dir = 4
-	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "Rc" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/dirt,
@@ -4764,6 +5048,14 @@
 /obj/structure/mirror/broken/directional/north,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"Rk" = (
+/obj/effect/decal/cleanable/glitter,
+/obj/structure/shipping_container/donk_co{
+	pixel_x = -7;
+	pixel_y = -8
+	},
+/turf/open/floor/iron/smooth,
+/area/centcom/buckshot_club)
 "Rl" = (
 /obj/effect/light_emitter/interlink{
 	name = "Buckshot club";
@@ -4772,10 +5064,11 @@
 /obj/item/kirbyplants/random/fullysynthetic,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Rq" = (
-/obj/structure/rack/gunrack,
+"Rt" = (
 /obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/smooth_large,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/turf/cordon/secret,
 /area/centcom/buckshot_club)
 "Rw" = (
 /obj/structure/window/reinforced/spawner/directional/south,
@@ -4803,14 +5096,8 @@
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
 "RG" = (
-/obj/machinery/suit_storage_unit/open,
+/obj/item/bodybag/environmental/prisoner/syndicate,
 /turf/open/floor/iron/smooth,
-/area/centcom/buckshot_club)
-"RK" = (
-/obj/structure/railing/unbreakable{
-	dir = 8
-	},
-/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "RM" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -4838,10 +5125,6 @@
 /obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"RV" = (
-/obj/structure/flora/tree/jungle/small/style_3,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "RZ" = (
 /obj/effect/turf_decal/siding/thinplating/dark{
 	dir = 10
@@ -4865,17 +5148,6 @@
 /obj/item/chair,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"Si" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"Sj" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 8
-	},
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
 "Sm" = (
 /obj/structure/decorative{
 	icon = 'icons/obj/stack_objects.dmi';
@@ -4896,10 +5168,6 @@
 /obj/machinery/light/red/dim/directional/south,
 /turf/open/openspace,
 /area/centcom/buckshot_club)
-"Sp" = (
-/obj/structure/flora/bush/style_4,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "Sq" = (
 /obj/structure/rack/gunrack,
 /obj/effect/decal/cleanable/dirt,
@@ -4907,18 +5175,13 @@
 /obj/structure/marker_beacon/burgundy,
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"Ss" = (
-/obj/structure/flora/bush/sparsegrass,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "Sv" = (
 /obj/effect/turf_decal/siding,
 /obj/structure/table_frame,
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "Sy" = (
-/obj/machinery/door/window/right/directional/west,
+/obj/effect/spawner/random/trash/cigpack,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "SA" = (
@@ -4926,10 +5189,30 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "SB" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
+/obj/structure/lattice,
+/obj/structure/lattice,
+/turf/closed/indestructible/hotelwall{
+	color = "#000000";
+	name = "darkness"
 	},
-/obj/item/kirbyplants/random,
+/area/centcom/buckshot_club)
+"SC" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/item/reagent_containers/cup/glass/waterbottle{
+	pixel_x = -2;
+	pixel_y = -5
+	},
+/obj/item/reagent_containers/cup/glass/waterbottle{
+	pixel_x = -11;
+	pixel_y = -4
+	},
+/turf/open/indestructible/plating,
+/area/centcom/buckshot_club)
+"SH" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/turf_decal/tile/dark,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "SJ" = (
@@ -4949,12 +5232,6 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"SQ" = (
-/obj/effect/turf_decal/stripes/white/corner{
-	dir = 1
-	},
-/turf/open/floor/wood,
-/area/centcom/buckshot_club)
 "Tc" = (
 /obj/effect/turf_decal/siding/thinplating/dark,
 /obj/structure/chair{
@@ -4967,15 +5244,8 @@
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "Tg" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
-	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 1
-	},
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/dirt,
-/turf/open/floor/iron/dark/textured,
+/obj/structure/broken_flooring/plating/directional/west,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "Tj" = (
 /obj/effect/turf_decal/siding/dark{
@@ -4996,10 +5266,10 @@
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "Tq" = (
-/obj/structure/flora/tree/jungle/style_2,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/turf_decal/tile/dark,
+/obj/effect/spawner/random/trash/grille_or_waste,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "Tr" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -5007,12 +5277,6 @@
 	dir = 1
 	},
 /turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
-"Tz" = (
-/obj/effect/turf_decal/stripes/white/corner{
-	dir = 4
-	},
-/turf/open/floor/wood,
 /area/centcom/buckshot_club)
 "TC" = (
 /obj/effect/step_trigger/teleporter/offset{
@@ -5026,10 +5290,6 @@
 	target_turf_y = 28
 	},
 /area/centcom/buckshot_club)
-"TE" = (
-/obj/effect/decal/cleanable/rubble,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "TG" = (
 /obj/effect/turf_decal/siding{
 	dir = 10
@@ -5059,14 +5319,10 @@
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "TN" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 2
-	},
-/obj/machinery/light/small/red/dim/directional/north,
-/obj/effect/turf_decal/siding/dark{
-	dir = 9
-	},
-/turf/open/floor/black,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/broken_flooring/plating/always_floorplane/directional/west,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "TU" = (
 /obj/effect/decal/cleanable/dirt,
@@ -5093,12 +5349,31 @@
 /obj/effect/turf_decal/bot_white,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
+"Ug" = (
+/obj/structure/fluff/metalpole/anchor{
+	dir = 10
+	},
+/obj/structure/fluff/metalpole/anchor,
+/turf/closed/indestructible/hotelwall{
+	color = "#000000";
+	name = "darkness"
+	},
+/area/centcom/buckshot_club)
 "Uh" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/machinery/light/red/dim/directional/south,
 /obj/item/stack/rods/shuttle{
 	pixel_x = 11;
 	pixel_y = 6
+	},
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"Ui" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/fluff/paper/stack{
+	layer = 2;
+	pixel_x = 5;
+	pixel_y = -5
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
@@ -5110,12 +5385,8 @@
 /turf/open/floor/iron/checker,
 /area/centcom/buckshot_club)
 "Uk" = (
-/obj/effect/turf_decal/siding{
-	dir = 8
-	},
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
+/turf/closed/indestructible/binary,
+/area/centcom/buckshot_club)
 "Um" = (
 /turf/closed/indestructible/hotelwall,
 /area/centcom/buckshot_club)
@@ -5185,16 +5456,15 @@
 /obj/effect/decal/cleanable/dirt,
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
-"UF" = (
-/obj/machinery/light/red/dim/directional/north,
-/turf/open/indestructible/dark/smooth_large,
+"UH" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/spawner/random/trash/cigbutt,
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "UJ" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
-	},
-/obj/effect/spawner/random/vending/colavend,
-/turf/open/floor/iron/dark/textured,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/bed/maint,
+/turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
 "UL" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -5210,14 +5480,40 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
+"UN" = (
+/obj/effect/turf_decal/siding/dark{
+	dir = 9
+	},
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/dark/smooth_large,
+/area/centcom/buckshot_club)
 "US" = (
 /turf/cordon/secret,
 /area/centcom/buckshot_club)
 "UU" = (
-/obj/effect/turf_decal/tile/dark{
-	dir = 1
+/obj/item/reagent_containers/syringe{
+	pixel_x = -10;
+	pixel_y = -6
 	},
-/obj/effect/decal/cleanable/vomit/old,
+/obj/effect/turf_decal/tile/dark,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"UV" = (
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/broken_flooring/singular,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"UW" = (
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/obj/effect/decal/cleanable/dirt,
+/obj/structure/fluff/paper/stack{
+	dir = 8;
+	pixel_x = -9;
+	pixel_y = 19
+	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Va" = (
@@ -5249,12 +5545,12 @@
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "Vq" = (
-/obj/structure/fence/interlink,
-/obj/structure/fence/interlink{
-	dir = 4
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/structure/railing/unbreakable{
+	dir = 8
 	},
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "Vs" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -5272,9 +5568,10 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Vx" = (
-/obj/structure/flora/tree/jungle/style_6,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
 "Vz" = (
 /obj/effect/decal/cleanable/dirt/dust,
 /obj/effect/decal/cleanable/dirt/dust,
@@ -5327,10 +5624,42 @@
 /obj/structure/sign/flag/syndicate/directional/north,
 /turf/open/floor/iron/smooth,
 /area/centcom/buckshot_club)
-"VM" = (
-/obj/effect/decal/cleanable/dirt,
-/obj/structure/frame/machine,
-/obj/item/stack/cable_coil/five,
+"VO" = (
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/structure/fluff/metalpole{
+	dir = 6;
+	color = "#FFFFFF";
+	alpha = 25
+	},
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/turf/open/floor/plating/elevatorshaft,
+/area/centcom/buckshot_club)
+"VR" = (
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/effect/spawner/random/trash/cigpack,
+/turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"VS" = (
+/obj/item/stack/rods{
+	pixel_x = 3;
+	pixel_y = -7
+	},
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "VT" = (
@@ -5342,11 +5671,6 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"VX" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/structure/prop/city/street_on,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "VY" = (
 /obj/effect/turf_decal/tile/yellow/half/contrasted{
 	dir = 4
@@ -5409,14 +5733,6 @@
 /obj/item/stack/rods/shuttle,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Ws" = (
-/obj/effect/turf_decal/siding{
-	dir = 8
-	},
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/glitter,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "Wt" = (
 /obj/machinery/door/airlock{
 	id_tag = "stall2";
@@ -5426,38 +5742,19 @@
 /obj/machinery/atmospherics/pipe/smart/manifold4w/pink/hidden,
 /turf/open/floor/iron/dark,
 /area/centcom/buckshot_club)
-"Wv" = (
-/obj/effect/decal/cleanable/glitter,
-/obj/effect/turf_decal/tile/dark,
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
-"Ww" = (
-/obj/structure/marker_beacon/burgundy,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"WA" = (
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/decal/cleanable/plastic,
-/turf/open/floor/iron/dark/textured,
-/area/centcom/buckshot_club)
 "WB" = (
-/obj/machinery/light/cold/dim/directional/north,
-/obj/item/kirbyplants/random,
+/obj/item/stack/rods{
+	pixel_x = 6;
+	pixel_y = -6
+	},
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "WD" = (
-/obj/effect/decal/cleanable/blood/splatter,
-/obj/effect/turf_decal/tile/dark,
-/obj/effect/turf_decal/siding/dark,
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/floor/iron/dark/textured,
+/turf/closed/wall/city/siding/red/style/style_3,
 /area/centcom/buckshot_club)
-"WG" = (
-/obj/structure/railing/unbreakable{
-	dir = 4
-	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "WJ" = (
 /obj/effect/decal/cleanable/dirt,
 /obj/effect/decal/cleanable/crayon/e{
@@ -5482,10 +5779,6 @@
 	},
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"WN" = (
-/obj/effect/turf_decal/delivery/white,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "WO" = (
 /obj/structure/medieval/stone_arch{
 	color = "#b77e69"
@@ -5496,34 +5789,42 @@
 /obj/effect/turf_decal/stripes,
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"WS" = (
-/turf/closed/indestructible/rock,
-/area/centcom/buckshot_club)
 "WU" = (
+/obj/structure/fake_stairs{
+	dir = 8
+	},
 /obj/effect/light_emitter/interlink{
 	name = "Buckshot club";
 	light_color = "#110148"
 	},
-/obj/structure/stairs/west,
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
-"Xf" = (
-/obj/effect/decal/cleanable/rubble,
-/obj/effect/decal/cleanable/dirt/dust,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"Xp" = (
-/obj/effect/decal/cleanable/glitter,
-/turf/open/indestructible/dark/smooth_large,
+"WW" = (
+/obj/effect/decal/cleanable/crayon/e{
+	pixel_x = -11;
+	pixel_y = -12;
+	icon_state = "x"
+	},
+/obj/effect/decal/cleanable/crayon/e{
+	pixel_x = -3;
+	pixel_y = -12;
+	icon_state = "i"
+	},
+/obj/effect/decal/cleanable/crayon/e{
+	pixel_x = 6;
+	pixel_y = -12;
+	icon_state = "t"
+	},
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "Xt" = (
-/obj/structure/flora/tree/jungle/style_5,
-/obj/structure/flora/bush/sparsegrass,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
-"XA" = (
-/obj/machinery/light/cold/dim/directional/east,
-/turf/open/indestructible/dark/smooth_large,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt,
+/turf/open/floor/plating,
 /area/centcom/buckshot_club)
 "XE" = (
 /obj/effect/decal/cleanable/dirt/dust,
@@ -5532,10 +5833,14 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "XH" = (
-/obj/structure/railing/unbreakable{
-	dir = 8
+/obj/effect/step_trigger/teleporter/offset{
+	teleport_x_offset = -58
 	},
-/turf/open/indestructible/dark/smooth_large,
+/turf/open/mirage{
+	dir = 4;
+	range = 5;
+	target_turf_x = -58
+	},
 /area/centcom/buckshot_club)
 "XM" = (
 /obj/effect/decal/cleanable/dirt,
@@ -5573,24 +5878,39 @@
 	},
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"Yd" = (
-/obj/effect/decal/cleanable/dirt/dust,
-/obj/effect/decal/cleanable/glitter,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
-"Ye" = (
-/obj/structure/railing/unbreakable,
-/obj/structure/railing/unbreakable{
-	dir = 4
-	},
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "Yi" = (
 /obj/effect/turf_decal/siding/dark/corner,
 /obj/effect/turf_decal/siding/dark/corner{
 	dir = 8
 	},
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"Yj" = (
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 1;
+	color = "#000000";
+	alpha = 150
+	},
+/obj/effect/turf_decal/tile/dark/half{
+	dir = 2;
+	color = "#000000";
+	alpha = 255
+	},
+/obj/structure/fans/tiny/invisible{
+	density = 1
+	},
+/obj/structure/chair/buckshot,
+/turf/open/floor/plating/elevatorshaft,
 /area/centcom/buckshot_club)
 "Yn" = (
 /obj/structure/sign/poster/contraband/space_cola/directional/north,
@@ -5605,14 +5925,8 @@
 /obj/effect/decal/cleanable/dirt,
 /turf/open/floor/iron/white/small,
 /area/centcom/buckshot_club)
-"Ys" = (
-/obj/structure/table,
-/obj/item/paper_bin,
-/turf/open/floor/wood,
-/area/centcom/buckshot_club)
 "Yt" = (
-/obj/structure/filingcabinet,
-/turf/open/floor/carpet/black,
+/turf/closed/wall/city/siding/red/style/style_2,
 /area/centcom/buckshot_club)
 "Yu" = (
 /obj/effect/turf_decal/tile/red/half/contrasted{
@@ -5643,11 +5957,6 @@
 	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"YH" = (
-/obj/structure/flora/tree/jungle/style_random,
-/obj/structure/flora/bush/large/style_2,
-/turf/open/misc/grass/planet,
-/area/centcom/buckshot_club/outdoors)
 "YL" = (
 /obj/structure/fake_stairs/directional/north,
 /obj/effect/light_emitter/interlink{
@@ -5673,15 +5982,13 @@
 /turf/open/floor/iron/dark/textured,
 /area/centcom/buckshot_club)
 "YS" = (
-/obj/structure/sign/poster/contraband/random/directional/south,
-/obj/machinery/suit_storage_unit/open,
-/obj/machinery/light/red/dim/directional/south,
-/turf/open/floor/iron/smooth,
+/obj/effect/turf_decal/siding/dark{
+	dir = 1
+	},
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
-"YX" = (
-/obj/effect/decal/cleanable/rubble,
-/turf/open/misc/asphalt,
-/area/centcom/buckshot_club/outdoors)
 "Zd" = (
 /obj/effect/spawner/random/trash/box,
 /turf/open/indestructible/plating,
@@ -5696,12 +6003,26 @@
 /turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "Zh" = (
+/obj/effect/turf_decal/tile/dark{
+	dir = 1
+	},
+/obj/effect/decal/cleanable/dirt/dust,
+/obj/effect/decal/cleanable/glitter,
 /obj/structure/railing/unbreakable{
 	dir = 8
 	},
-/obj/structure/fake_stairs/directional/north,
-/obj/effect/decal/cleanable/dirt/dust,
 /turf/open/floor/iron/dark/textured,
+/area/centcom/buckshot_club)
+"Zu" = (
+/obj/effect/turf_decal/siding/dark{
+	dir = 4
+	},
+/obj/effect/decal/cleanable/dirt/dust,
+/turf/open/indestructible/dark/smooth_large,
+/area/centcom/buckshot_club)
+"ZB" = (
+/obj/effect/turf_decal/bot_white,
+/turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "ZE" = (
 /obj/effect/mob_spawn/corpse/human/skeleton,
@@ -5709,13 +6030,17 @@
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
 "ZG" = (
-/obj/structure/bodycontainer/morgue{
-	dir = 2
+/obj/structure/fluff/metalpole/anchor{
+	dir = 10
 	},
-/obj/effect/turf_decal/siding/dark{
-	dir = 5
+/obj/structure/fluff/metalpole/anchor,
+/turf/open/floor/black{
+	name = "void"
 	},
-/turf/open/floor/black,
+/area/centcom/buckshot_club)
+"ZI" = (
+/obj/effect/mapping_helpers/broken_floor,
+/turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "ZJ" = (
 /obj/structure/chair/buckshot{
@@ -5723,10 +6048,11 @@
 	},
 /turf/open/indestructible/plating,
 /area/centcom/buckshot_club)
-"ZM" = (
-/obj/structure/table/reinforced/rglass,
-/obj/machinery/microwave/engineering/cell_included,
-/turf/open/floor/wood,
+"ZN" = (
+/obj/effect/turf_decal/siding/dark{
+	dir = 4
+	},
+/turf/open/indestructible/dark/smooth_large,
 /area/centcom/buckshot_club)
 "ZR" = (
 /obj/effect/decal/cleanable/dirt,
@@ -5761,1322 +6087,1322 @@
 /area/centcom/buckshot_club)
 
 (1,1,1) = {"
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
 "}
 (2,1,1) = {"
-dk
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+US
+US
+US
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+US
+US
+US
+US
+US
+Hk
+Hk
+sM
+Jg
+zx
+QJ
+QJ
+QJ
+QJ
+kI
+QJ
+QJ
 "}
 (3,1,1) = {"
-dk
-hr
-CV
-CV
-Kd
-Kd
-Kd
-CV
-Sp
-CV
-CV
-CV
-CV
-Kd
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-OZ
-Vx
-CV
-CV
-CV
-qg
-YH
-CV
-Sp
-CV
-CV
-CV
-CV
-vH
-CV
-IO
-CV
-OZ
-CV
-CV
-RV
-CV
-CV
-OZ
-Kd
-CV
-qg
-Qb
-Qb
-tf
-sn
-sn
-Ss
-sn
-OZ
-CV
-CV
-CV
-CV
-OZ
-qg
-CV
-CV
-CV
-CV
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+US
+US
+US
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+US
+US
+US
+US
+US
+Hk
+Hk
+IU
+nF
+BK
+tp
+tp
+tp
+tp
+hL
+QJ
+QJ
 "}
 (4,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-zE
-Kd
-CV
-CV
-CV
-Sp
-CV
-CV
-CV
-qg
-CV
-CV
-CV
-sn
-sn
-CV
-CV
-CV
-Sp
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-ki
-Qb
-sn
-CV
-CV
-CV
-qg
-CV
-CV
-CV
-CV
-sn
-OZ
-CV
-CV
-qg
-qg
-qg
-CV
-Vx
-CV
-sn
-CV
-Vx
-CV
-sn
-sn
-CV
-CV
-bu
-CV
-CV
-OZ
-OZ
-OZ
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+US
+US
+US
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+US
+US
+US
+US
+US
+Hk
+Hk
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (5,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-CV
-DU
-Kd
-CV
-qg
-CV
-CV
-Qb
-CV
-CV
-CV
-Ba
-CV
-sn
-CV
-qg
-YH
-YH
-CV
-CV
-CV
-CV
-ss
-CV
-CV
-CV
-sn
-sn
-sn
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-sn
-CV
-CV
-IO
-CV
-qg
-CV
-CV
-sn
-sn
-sn
-CV
-qg
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+US
+US
+US
+Hk
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+US
+US
+US
+US
+US
+Hk
+Hk
+LZ
+wv
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (6,1,1) = {"
-dk
-hr
-CV
-ss
-CV
-CV
-CV
-CV
-Sp
-CV
-CV
-CV
-CV
-mo
-CV
-CV
-CV
-CV
-Sp
-IO
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-OZ
-Vx
-CV
-CV
-qg
-CV
-QS
-CV
-CV
-CV
-CV
-CV
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
 CV
 CV
 CV
 CV
-Vx
+CV
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
 CV
 CV
 CV
 CV
-GV
 CV
 CV
 CV
-tf
-CV
-CV
-CV
-CV
-OZ
-OZ
-CV
-jA
-CV
-CV
-sn
-CV
-CV
-hr
-dk
+Hk
+dR
+wv
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (7,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-Kd
-CV
-CV
-CV
-CV
-CV
-CV
-qg
-qg
-CV
-CV
-CV
-sn
-CV
-CV
-Vx
-CV
-CV
-Sp
-CV
-CV
-CV
-Oo
-CV
-CV
-CV
-YH
-CV
-CV
-CV
-CV
-CV
-Kd
-CV
-qg
-IO
-CV
-qg
-CV
-qg
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-CV
-CV
-CV
-CV
-qg
-CV
-CV
-CV
-CV
-tf
-CV
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+Gi
+Gi
+Gi
+Hk
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+Gi
+Gi
+Gi
+Gi
+Gi
+Hk
+Hk
+th
+wv
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (8,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-Kd
-CV
-CV
-Ky
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-kU
-jn
-Vq
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-kU
-th
-jn
-jn
-Ky
-CV
-CV
-Ba
-CV
-CV
-CV
-sn
-CV
-OZ
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Rc
+SA
+Gi
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+WD
+Lw
+QU
+tI
+Gi
+Gi
+Gi
+Gi
+XE
+dR
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+ae
+QJ
+QJ
 "}
 (9,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-Kd
-Kd
-sn
-sn
-sn
-sn
-CV
-iE
-CV
-Kd
-CV
-CV
-Kd
-Kd
-CV
-CV
-CV
-CV
-CV
-CV
-jA
-CV
-CV
-CV
-CV
-CV
-Kd
-CV
-CV
-CV
-CV
-qg
-CV
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+KJ
+HB
+Gi
+Yt
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+WD
+Lw
+SA
+Gi
+Gi
+Gi
+Gi
+Gi
+lR
+LZ
+LZ
+wv
+AF
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (10,1,1) = {"
-dk
-hr
-CV
-Kd
-CV
-OZ
-CV
-Vx
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-sn
-sn
-sn
-sn
-Kd
-iE
-CV
-CV
-CV
-CV
-CV
-Kd
-Kd
-CV
-CV
-CV
-CV
-Kd
-CV
-CV
-CV
-CV
-Kd
-Kd
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-OZ
-CV
-qg
-CV
-CV
-CV
-OZ
-CV
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+sy
+lD
+wr
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Lw
+Nt
+Gi
+Gi
+Gi
+Gi
+Gi
+jS
+wD
 LZ
-CV
-Vx
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-hr
-dk
+jJ
+AF
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (11,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-iE
-CV
-CV
-Kd
-Kd
-CV
-CV
-jA
-CV
-CV
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-Kd
-Kd
-xl
-CV
-CV
-CV
-CV
-jw
-qb
-VX
-jw
-jw
-CV
-jw
-jw
-jw
-jw
-CV
-xl
-CV
-CV
-CV
-qg
-CV
-qg
-CV
-CV
-CV
-Kd
-CV
-CV
-pk
-CV
-Kd
-CV
-CV
-CV
-sn
-CV
-CV
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Gi
+Gi
+ik
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Lw
+Gi
+QP
+Gi
+Gi
+Gi
+Gi
+pd
+dR
+LZ
+LZ
+wv
+AF
+tn
+Ik
+ZG
+QJ
+QJ
 "}
 (12,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-tf
-CV
-iE
-CV
-CV
-vM
-Hl
-vM
-Hl
-vM
-Hl
-vM
-vM
-vM
-hH
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-sD
-Bs
-Bs
-Bs
-Bs
-nb
-Bs
-iH
-Bs
-Bs
-ox
-sD
-sD
-ox
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-Bs
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-gA
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+ue
+Rc
+QM
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Lw
+Gi
+jS
+oV
+QU
+GY
+Gi
+pd
+BX
+LZ
+LZ
+wv
+AF
+tn
+Ik
+ZG
+QJ
+QJ
 "}
 (13,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-Kd
-sn
-CV
-iE
-CV
-CV
-vM
-vM
-vM
-vM
-vM
-vM
-Ww
-vM
-vM
-Gy
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-Ho
-Ho
-vM
-vM
-WN
-vM
-WN
-Ho
-vM
-yX
-Jn
-Jn
-yX
-Jn
-Jn
-Jn
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-tf
-CV
-CV
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+BQ
+KJ
+Bt
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Lw
+Gi
+pr
+MH
+SA
+SA
+Gi
+pd
+dR
+LZ
+LZ
+wv
+AF
+tn
+Ik
+ZG
+QJ
+QJ
 "}
 (14,1,1) = {"
-dk
-hr
-CV
-CV
-Vx
-CV
-CV
-CV
-CV
-iE
-CV
-CV
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-Ho
-hH
-vM
-Jn
-Jn
-vM
-vM
-vM
-vM
-Yd
-Yd
-Yd
-Jn
-Jn
-Jn
-Jn
-Jn
-Jn
-Jn
-Jn
-Jn
-vM
-Yd
-Yd
-Yd
-vM
-Jn
-Jn
-Jn
-Ho
-vM
-vM
-vM
-vM
-vM
-vM
-qY
-CV
-iE
-CV
-CV
-CV
-CV
-Kd
-sn
-CV
-CV
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+fQ
+sy
+oQ
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+WD
+Lw
+ME
+dK
+xS
+jS
+oU
+Gi
+XE
+El
+LZ
+nD
+AF
+tn
+Ik
+Ik
+ae
+QJ
+QJ
 "}
 (15,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-qg
-CV
-iE
-sn
-sn
-vM
-vM
-vM
-YX
-vM
-vM
-vM
-vM
-vM
-sb
-rX
-rX
-rX
-rX
-rX
-Yd
-vM
-vM
+US
 Uk
 Uk
-Pp
 Uk
-Ws
-Si
-Mm
-Ho
-lb
-lb
-Pp
 Uk
-vM
-Si
-Jn
-Pp
 Uk
-Pp
-Pp
-Pp
-vM
-Jn
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-Vx
-CV
-CV
-CV
-CV
-CV
-YH
-hr
-dk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Yt
+xk
+uu
+sc
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+WD
+Lw
+Tg
+dK
+fx
+cS
+FP
+Gi
+pd
+El
+nD
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (16,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-ew
-CV
-CV
-iE
-sn
-sn
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-sb
-Jn
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-Ho
-vM
-vM
-vM
-vM
-xe
-Jn
-pV
-vM
-gz
-vM
-gz
-vM
-vM
-Xf
-Jn
-Jn
-Jn
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-qg
-Qb
-CV
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Qn
+Yw
+AD
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Yt
+Lw
+Jq
+lr
+dR
+sH
+uB
+jS
+Vx
+GA
+IU
+nF
+BK
+tp
+tp
+tp
+hL
+QJ
+QJ
 "}
 (17,1,1) = {"
-dk
-hr
-Kd
-CV
-CV
-CV
-ss
-CV
-CV
-iE
-sn
-sn
-vM
-vM
-vM
-vM
-Ho
-vM
-vM
-vM
-vM
-hH
-Ra
-Ra
-Ra
-Ra
-Ra
-Ra
-Ra
-Ra
-Ra
-Ra
-Ra
-Ra
-Ra
-eV
-Ra
-Ra
-Ra
-eV
-Ra
-eV
-PI
-OP
-OP
-OP
-Jn
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-ss
-CV
-CV
-CV
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+fh
+xY
+NP
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+WD
+Lw
+jS
+Gi
+KT
+bO
+bC
+ou
+Vx
+Ne
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (18,1,1) = {"
-dk
-hr
-CV
-CV
-QS
-CV
-CV
-Kd
-CV
-iE
-CV
-CV
-vM
-Ww
-vM
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-xl
-CV
-CV
-CV
-CV
-CV
-TE
-xl
-CV
-CV
-CV
-CV
-kI
-CV
-CV
-CV
-xl
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Ec
+VF
+ik
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+WD
+Lw
+Sy
+sA
+Hh
+KJ
+ua
+jS
+pd
+Ne
+LZ
+jJ
 AF
-vM
-vM
-vM
-vM
-vM
-vM
-Jn
-Jn
-vM
-CV
-Kd
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-ss
-CV
-hr
-dk
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (19,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-QK
-CV
-sn
-CV
-iE
-CV
-CV
-vM
-vM
-vM
-Jn
-Jn
-KP
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Hk
 Hk
@@ -7094,61 +7420,61 @@ Hk
 Hk
 Hk
 Hk
-yB
-yB
-yB
+Uk
+Uk
+Hk
+ag
+WJ
+QM
 Hk
 Hk
 Hk
 Hk
 Hk
-CV
+Hk
+Hk
+Hk
+Hk
+Lw
+jS
+jS
+jS
+jS
+bO
+Gi
+NM
+dR
+qY
+nD
 AF
-vM
-vM
-vM
-vM
-vM
-vM
-Jn
-Jn
-vM
-CV
-CV
-iE
-CV
-CV
-QS
-CV
-CV
-CV
-CV
-CV
-CV
-hr
-dk
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (20,1,1) = {"
-dk
-hr
-Vx
-CV
-qg
-qg
-qg
-sn
-CV
-iE
-CV
-Ss
-vM
-vi
-vM
-Jn
-Jn
-vM
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Zd
 CF
@@ -7166,61 +7492,61 @@ hg
 wH
 NW
 Hk
-tq
-jS
-jS
+Uk
+Uk
+Hk
+WW
+Kj
+QM
+Hk
 wv
-tn
-Hk
-QJ
-Hk
-WN
 AF
-vM
-vM
-vM
-vM
-vM
-vM
-Jn
-Jn
-vM
-CV
-Kd
-iE
-CV
-CV
-CV
-QK
-CV
-sn
-tf
-sn
-jA
-hr
-dk
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
+jS
+lZ
+SA
+uB
+uB
+Gi
+pd
+El
+nD
+AF
+tn
+Ik
+Ik
+Ik
+ae
+QJ
+QJ
 "}
 (21,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-iE
-CV
-CV
-vM
-vM
-vM
-fm
-Jn
-vM
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 go
 xP
@@ -7238,61 +7564,61 @@ Va
 cA
 zz
 Hk
-bq
-XE
-XE
-pd
+Uk
+Uk
+Hk
+ip
+jS
+wR
+Yt
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
 Gi
-Hk
-Hk
-Hk
-vM
-ui
-Bj
-ui
-vM
-vM
-vM
-vM
-Jn
-Jn
-vM
-CV
-CV
-iE
-CV
-CV
-qg
-qg
-qg
-sn
-sn
-sn
-CV
-hr
-dk
+tI
+Gi
+Gi
+Gi
+Gi
+jS
+LZ
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+hL
+QJ
+QJ
 "}
 (22,1,1) = {"
-dk
-hr
-Kd
-CV
-CV
-CV
-jA
-Jr
-CV
-iE
-CV
-CV
-vM
-vM
-vM
-vM
-vM
-ia
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 ED
 ul
@@ -7309,62 +7635,62 @@ Qd
 Qd
 Qd
 zZ
+Yt
+Uk
+Uk
 Hk
-WB
-XE
-jJ
-XH
-RK
+Cg
+Rc
+bU
 Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
+QU
 wI
 wI
-vM
-xG
-xG
-xG
-vM
-vM
-vM
-vM
-Jn
-Jn
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-sn
-sn
-sn
-CV
-hr
-dk
+Hk
+Hk
+ug
+pd
+LZ
+LZ
+wv
+AF
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (23,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-jA
-jA
-CV
-iE
-CV
-sn
-vi
-qI
-YX
-vM
-Ww
-vM
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 em
 ig
@@ -7382,61 +7708,61 @@ ie
 cA
 KO
 Hk
+Uk
+Uk
+Hk
+zq
+FP
+bU
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
+SA
+wI
+DV
+Hk
+Hk
 Gi
-KY
-wI
-Ip
-FC
-El
-wI
-wI
-vM
-xG
-xG
-xG
-vM
-vM
-vM
-Jn
-Si
-Si
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-jA
-Jr
-sn
-gJ
-qg
-hr
-dk
+TN
+fx
+nD
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (24,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-ss
-CV
-CV
-CV
-iE
-CV
-CV
-vM
-vM
-vM
-HO
-Ho
-vM
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 ZE
 Bc
@@ -7454,61 +7780,61 @@ Qd
 Qd
 JX
 Hk
-JH
-vV
-Ne
-tK
-jS
+Uk
+Uk
 Hk
-UF
-wI
-vM
-xG
-xG
-xG
-vM
-vM
-vM
-Jn
-Si
-Si
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-jA
-jA
-CV
-Kd
-CV
-hr
-dk
+Po
+Kw
+fY
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Yt
+Lw
+SA
+Gi
+Gi
+uB
+uB
+Nt
+Xt
+fx
+wv
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (25,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-ss
-CV
-CV
-CV
-iE
-CV
-CV
-vM
-vM
-vM
-vM
-HO
-vM
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 tg
 MG
@@ -7526,61 +7852,61 @@ lA
 Pr
 tG
 Hk
+Uk
+Uk
+Hk
+hP
+SA
+xc
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Yt
+Lw
 Gi
-vV
-yV
-tK
-tK
-El
-wI
-wI
-vM
-xG
-xG
-xG
-vM
-vM
-vM
-Si
-Si
-Si
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-hr
-dk
+Gi
+SA
+SA
+GH
+jS
+Ne
+LZ
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (26,1,1) = {"
-dk
-hr
-CV
-CV
-jA
-CV
-CV
-Kd
-CV
-iE
-CV
-Kh
-Lz
-qI
-vM
-Jn
-vM
-vM
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Hk
 Hk
@@ -7598,61 +7924,61 @@ cA
 Qd
 wu
 Hk
-Sy
+Uk
+Uk
 Hk
-mI
-yG
-hO
+Ii
+gb
+NL
 Hk
-wI
-wI
-vM
-xG
-xG
-xG
-vM
-vM
-vM
-Si
-Si
-Si
-vM
-sn
-Kd
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-hr
-dk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Yt
+Lw
+SA
+Gi
+sy
+SA
+uB
+Fj
+fx
+LZ
+LZ
+wv
+AF
+tn
+Ik
+Ik
+ae
+QJ
+QJ
 "}
 (27,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-ss
-sn
-CV
-iE
-sn
-CV
-vM
-Ho
-vM
-Jn
-vM
-vM
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 rC
 AD
@@ -7670,61 +7996,61 @@ Qd
 Qd
 hM
 Hk
-wI
-qh
-wI
-jS
-jS
+Uk
+Uk
 Hk
+ZR
+VJ
+av
 Hk
-Hk
-vM
-WG
-Ye
-xG
-vM
-vM
-vM
-Jn
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-jA
-CV
-CV
-CV
-Kd
-CV
-jA
-hr
-dk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Yt
+Lw
+SA
+td
+AI
+Jw
+uB
+dR
+fx
+LZ
+LZ
+wv
+AF
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (28,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-iE
-sn
-CV
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 ZZ
 Nz
@@ -7741,62 +8067,62 @@ cA
 XO
 iu
 xu
+Yt
+Uk
+Uk
 Hk
-bO
-QM
-aA
-wI
-XA
-fx
-dn
+zE
+lS
+SC
 Hk
-WN
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-CV
-CV
-hr
-dk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
+LE
+kC
+SA
+SA
+Gi
+dR
+Ne
+dR
+nD
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (29,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-Kd
-Tq
-CV
-iE
-CV
-sn
-sn
-CV
-CV
-CV
-CV
-sn
-sn
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 vC
 AD
@@ -7814,60 +8140,60 @@ mO
 VY
 eH
 Hk
+Uk
+Uk
 Hk
+Dq
+uj
+ZB
 Hk
-QI
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
-Hk
-QI
-Hk
-Hk
-CV
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-sn
-qg
-CV
-Kd
-hr
-dk
+Lw
+Tg
+fx
+eS
+sy
+Gi
+ff
+FB
+th
+wv
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (30,1,1) = {"
-dk
-hr
-CV
-Kd
-CV
-CV
-CV
-sn
-CV
-iE
-CV
-Hk
-Hk
-Hk
-Hk
-Hk
-Hk
-Hk
-Hk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Hk
 Hk
@@ -7883,63 +8209,63 @@ Hk
 Hk
 Hk
 Hk
-fs
+QI
 Hk
 Hk
-SB
+Uk
+Uk
+Hk
+WB
+Rc
+QM
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
 Lw
-ik
-Hk
-GA
-NL
-Ys
-Hk
-CV
-vM
-vM
-mW
-vM
-vM
-vM
-Ho
-vM
-vM
-vM
-sn
-Kd
-iE
-CV
-CV
-CV
-CV
-Kd
-Tq
-CV
-CV
-Kd
-hr
-dk
+fx
+vu
+LZ
+SA
+Gi
+Gi
+dR
+dR
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (31,1,1) = {"
-dk
-hr
-CV
-Vx
-CV
-CV
-CV
-sn
-CV
-iE
-CV
-Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 tH
 RU
@@ -7957,61 +8283,61 @@ mc
 Hk
 Vu
 Wf
+Yt
+Uk
+Uk
 Hk
-sr
-tK
-ik
+Lw
+KJ
+QM
 Hk
-PB
-NL
-sY
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
-Hk
-Hk
-Hk
-Hk
-Hk
-Hk
-Hk
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-CV
-CV
-hr
-dk
+Lw
+Jq
+LZ
+fx
+xR
+sy
+Ec
+ny
+LZ
+LZ
+wv
+AF
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (32,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-tf
-CV
-iE
-CV
-Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 hs
 XE
@@ -8030,60 +8356,60 @@ QI
 Wh
 hm
 Hk
-UJ
-tK
-Fp
+Uk
+Uk
+Yt
+HU
+sy
+oQ
+Yt
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
-yH
-zF
-yH
-Hk
+Lw
 Gi
+NE
+sH
+SA
 Gi
-Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-sn
-qY
-iE
-CV
-CV
-ss
-CV
-Kd
-sn
-CV
-CV
-jA
-hr
-dk
+mI
+mI
+wD
+LZ
+jJ
+AF
+tn
+Ik
+Ik
+ae
+QJ
+QJ
 "}
 (33,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-Kd
-sn
-CV
-iE
-CV
-Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Ol
 fq
@@ -8102,60 +8428,60 @@ Hk
 cL
 sL
 Hk
-Ex
-tK
-Fp
+Uk
+Uk
+Yt
+Pj
+uu
+sc
 Hk
-pf
-zd
-rS
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-sn
-sn
-iE
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-CV
-CV
-hr
-dk
+Lw
+rv
+SA
+SA
+ua
+uB
+LZ
+dR
+dR
+LZ
+LZ
+wv
+AF
+tn
+Ik
+ZG
+QJ
+QJ
 "}
 (34,1,1) = {"
-dk
-hr
-CV
-CV
-Vx
-CV
-CV
-CV
-CV
-iE
-CV
-Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Ol
 Am
@@ -8174,60 +8500,60 @@ Hk
 Hk
 QI
 Hk
+Uk
+Uk
+Yt
+qR
+Yw
+AD
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
 Lw
-xw
-Fp
-Hk
-fu
-HP
-zd
-Hk
 Gi
+Nt
 Gi
-Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-sn
-sn
-iE
-CV
-CV
-CV
-qg
-qg
-sn
-CV
-CV
-CV
-hr
-dk
+bO
+uB
+ff
+dR
+BX
+LZ
+LZ
+IU
+nF
+BK
+tp
+hL
+QJ
+QJ
 "}
 (35,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-qg
-CV
-iE
-CV
-Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Ol
 Am
@@ -8246,60 +8572,60 @@ bT
 Lw
 Lw
 Hk
-UU
-xw
-WA
+Uk
+Uk
+Yt
+Ch
+xY
+ZB
 Hk
-zd
-tp
-Ca
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Yt
+Lw
+Gi
+wI
+DV
+Hk
 Hk
 Gi
-Gi
-Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-sn
-sn
-iE
-CV
-Vx
-CV
-CV
-CV
-Tq
-CV
-qg
-CV
-hr
-dk
+Ki
+dR
+LZ
+LZ
+wv
+AF
+tn
+Ik
+ZG
+QJ
+QJ
 "}
 (36,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-ss
-CV
-CV
-iE
-CV
-Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Ol
 Am
@@ -8318,52 +8644,52 @@ hO
 hO
 Kk
 Hk
-sc
-xw
-Wv
+Uk
+Uk
 Hk
-NS
-Ca
-Yt
+bT
+qR
+qR
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
-vM
-vM
-vM
-vM
-CV
-DU
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-Kd
-hr
-dk
+Lw
+Gi
+wI
+wI
+Hk
+Hk
+ug
+sS
+El
+LZ
+nD
+AF
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (37,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Hk
 Hk
@@ -8387,55 +8713,55 @@ jS
 He
 Ib
 Hk
+Yt
+Hk
+Yt
 Hk
 Hk
+Hk
+bT
+Gi
+AD
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
 Lw
-xw
-ik
-wD
-Hk
-Hk
-Hk
-Hk
+jS
 Gi
 Gi
-Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-CV
-sn
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-hr
-dk
+uB
+uB
+mI
+El
+El
+nD
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (38,1,1) = {"
-dk
-hr
-CV
-CV
-QS
-CV
-CV
-ss
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Gi
 Gi
@@ -8459,55 +8785,55 @@ jS
 jS
 ij
 Zh
+Zh
+Zh
+rF
 ij
-ij
-Lw
-ks
-xw
+NQ
+Hk
+bT
 jS
-Sj
-Sj
-BX
-tv
+ik
 Hk
+wv
+JO
+cM
+GZ
+GZ
+GZ
+GZ
+Yt
+Lw
+jS
+jS
 Gi
+uB
 Gi
-Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-CV
-sn
-iE
-CV
-CV
-CV
-Vx
-CV
-CV
-CV
-jA
-CV
-hr
-dk
+zi
+xG
+dR
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+ae
+QJ
+QJ
 "}
 (39,1,1) = {"
-dk
-hr
-Kd
-CV
-CV
-QK
-CV
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Gi
 Gi
@@ -8529,57 +8855,57 @@ rn
 HX
 pd
 vz
-oE
-dA
-oE
-oE
+jS
+jS
+jS
+jS
+Eg
+jS
 Gi
-qC
-tK
-tK
-Xp
-Xp
-xw
-jD
+QI
+bT
+JH
+NL
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+jv
+Og
+Hu
+uH
+Vq
+Vq
+rp
 Hk
-vM
-vM
-vM
-vM
-CV
-sn
-iE
-CV
-CV
-CV
-Kd
-CV
-CV
-CV
-sn
-CV
-hr
-dk
+Lw
+jS
+Ui
+jS
+xj
+Gi
+LZ
+BX
+dR
+LZ
+wv
+AF
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (40,1,1) = {"
-dk
-hr
-CV
-CV
-qg
-qg
-qg
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Hk
 Hk
@@ -8602,56 +8928,56 @@ kh
 nC
 Ig
 rV
+im
 rV
 rV
 rV
-ik
-ik
-lX
-Ff
-FB
-nD
-lX
-Sj
+hI
+rV
 Hk
+Lw
+jS
+SH
+QI
 Gi
 Gi
+Tg
+Ne
+HQ
+Vx
 Gi
+QI
+Lw
 Gi
+Vx
+jS
+pd
 Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-sn
-sn
-iE
-CV
-CV
-ss
-CV
-QK
-CV
-qg
-Jr
-CV
-hr
-dk
+ff
+dR
+LZ
+LZ
+jJ
+AF
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (41,1,1) = {"
-dk
-hr
-CV
-Vx
-CV
-CV
-CV
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 oc
 oc
@@ -8674,56 +9000,56 @@ Hk
 zk
 Hk
 Hk
+Yt
 Hk
 Hk
 Hk
+Yt
 Hk
 Hk
+bT
+jS
+NL
 Hk
+zb
+uw
+uw
+Gt
+pV
+uw
+MB
 Hk
-Hk
-Hk
-xg
-Hk
-Hk
-Hk
+Lw
+Gi
+UW
+eS
+jS
+jS
 Gi
 Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-hr
-dk
+El
+dR
+LZ
+wv
+AF
+tn
+Ik
+ZG
+QJ
+QJ
 "}
 (42,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-jA
-Jr
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Eh
 Eh
@@ -8750,52 +9076,52 @@ RG
 bm
 rE
 rE
-bm
+QE
 QE
 Hk
-xR
-tY
-BK
-lR
-xj
+Tr
+pd
+xc
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
+wv
+JO
+cM
+GZ
+GZ
+GZ
+GZ
 Hk
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-jA
-CV
-CV
-CV
-CV
-hr
-dk
+Lw
+Gi
+Im
+LZ
+aH
+jS
+Gi
+Gi
+El
+dR
+LZ
+wv
+AF
+tn
+Ik
+ZG
+QJ
+QJ
 "}
 (43,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-jA
-jA
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Fd
 eQ
@@ -8814,8 +9140,8 @@ Eh
 oc
 ts
 ts
-Lw
-jS
+DU
+UH
 cj
 Hk
 KG
@@ -8825,49 +9151,49 @@ bm
 Oc
 QE
 Hk
-sq
+vM
+KJ
+ik
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
 sA
-pd
-LC
-Mk
-Hk
+hW
+dR
+fu
 Gi
 Gi
-jS
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-sn
-Xt
-CV
-hr
-dk
+Fj
+PB
+fx
+LZ
+wv
+AF
+tn
+Ik
+ZG
+QJ
+QJ
 "}
 (44,1,1) = {"
-dk
-hr
-CV
-qg
-qg
-qg
-CV
-CV
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 ts
 ts
@@ -8890,56 +9216,56 @@ Lw
 jS
 cj
 Hk
-bm
+sQ
 bm
 bm
 bm
 bm
 kD
 Hk
-QA
-hL
-Hp
-WD
-eS
+Lw
+SA
+QM
+Yt
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
-Gi
-Gi
+Lw
+Tg
+Xt
+NN
+SA
 jS
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-CV
-DU
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-sn
-sn
-CV
-hr
-dk
+mI
+QA
+El
+LZ
+LZ
+wv
+AF
+tn
+Ik
+ae
+QJ
+QJ
 "}
 (45,1,1) = {"
-dk
-hr
-CV
-qg
-qg
-qg
-jA
-CV
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Qu
 Qu
@@ -8967,51 +9293,51 @@ bm
 hi
 bm
 wQ
-uB
+bm
 Hk
-sq
-Tg
-Aa
+Lw
+SA
+CW
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+WD
+Lw
 Jq
-Mk
-Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-jA
-qg
-Qb
-Ss
-sn
-CV
-hr
-dk
+AW
+Eb
+ua
+uB
+us
+Ne
+El
+LZ
+nD
+AF
+tn
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (46,1,1) = {"
-dk
-hr
-CV
-qg
-po
-pv
-CV
-CV
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 ts
 Qu
@@ -9039,51 +9365,51 @@ bm
 bm
 Is
 Is
-bm
+RG
 Hk
-sq
-Tg
-ae
-Jq
-Mk
+qW
+Gi
+DZ
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-Kd
-CV
-sn
-Ss
-Xt
-ss
-hr
-dk
+Lw
+Gi
+UV
+Gi
+bO
+uB
+SA
+gT
+El
+nD
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (47,1,1) = {"
-dk
-hr
-CV
-qg
-qg
-dq
-CV
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 ts
 Qu
@@ -9102,7 +9428,7 @@ Eh
 oc
 ts
 Hk
-bT
+jf
 jS
 uZ
 Hk
@@ -9110,52 +9436,52 @@ wX
 bm
 fw
 bm
-rN
+bm
 KU
 Hk
-rv
-hL
-Rq
-LC
-Mk
+ax
+py
+nA
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-sn
+wv
+AF
+tn
 Ik
-sn
-CV
-hr
-dk
+Ik
+Ik
+Ik
+Hk
+Lw
+Gi
+Gi
+Gi
+uB
+uB
+SA
+Vx
+LZ
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (48,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-qg
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 ts
 ts
@@ -9179,55 +9505,55 @@ jS
 uZ
 Hk
 VK
-Oc
+Rk
 RE
 pj
 bm
 bm
-xg
-cS
-vu
-nj
-Nt
-eS
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
+TU
+cs
+cs
 Hk
-vM
-vM
-vM
-vM
-CV
-CV
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
+Gi
+wI
+wI
+Hk
+Hk
+DH
 dR
-CV
-CV
-CV
-ss
-CV
-sn
-Ss
-sn
-CV
-hr
-dk
+LZ
+LZ
+JO
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (49,1,1) = {"
-dk
-hr
-CV
-Kd
-Kd
-CV
-CV
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 WU
 PH
@@ -9250,56 +9576,56 @@ bT
 jS
 Es
 Hk
-oR
+Is
 wE
-rN
+RG
 bm
 RE
-YS
+Pi
 Hk
-TN
-hL
-cS
-Nt
-Mk
+Hw
+cs
+BR
+Yt
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
+Lw
 Gi
-Gi
-Gi
-Gi
-Gi
+wI
+DV
 Hk
-vM
-vM
-vM
-vM
-CV
-CV
+Hk
 dR
-CV
-CV
-CV
-CV
-CV
-sn
-sn
-CV
-CV
-hr
-dk
+fx
+LZ
+nD
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (50,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Eh
 Eh
@@ -9322,56 +9648,56 @@ Lw
 pd
 qK
 Hk
-QE
-fY
-wi
 bm
+bm
+bm
+pP
 bm
 Pi
 Hk
-ZG
-QU
-dK
-AW
-Jg
+ut
+SA
+UU
 Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Yt
+VR
 Gi
 Gi
 Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-CV
-CV
+uB
+uB
 dR
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-jA
-CV
-hr
-dk
+fx
+LZ
+HP
+AF
+tn
+Ik
+Ik
+Ik
+ae
+QJ
+QJ
 "}
 (51,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-tf
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 oc
 oc
@@ -9395,55 +9721,55 @@ jS
 OG
 Hk
 Hk
+Yt
 Hk
 Hk
-oe
+wi
 Hk
 Hk
+OL
+ky
+dA
 Hk
-Hk
-xg
-Hk
-Hk
-Hk
-Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Yt
+Lw
 Gi
+Nt
+jS
 Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-ss
-QK
-CV
-CV
-CV
-CV
-hr
-dk
+jS
+tY
+ks
+LZ
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (52,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-Kd
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Hk
 Hk
@@ -9466,128 +9792,128 @@ bT
 Gi
 Us
 Hk
-Oh
-BV
-iL
-yj
+xg
+xg
+xg
+pU
+xg
+xg
+Yt
+DY
+JN
+Tq
 Hk
-SA
-dG
-cd
-GZ
-cs
-SA
-Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+WD
+Lw
 Gi
-Gi
-Gi
-Gi
-Gi
-Gi
-Hk
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-Kd
-CV
-CV
-hr
-dk
+jS
+jS
+rv
+FP
+jS
+us
+LZ
+LZ
+JO
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (53,1,1) = {"
-dk
-hr
-CV
-CV
-Vx
-CV
-CV
-CV
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Pl
 bN
 oC
 ts
 ts
-Lw
+jz
 Tr
 bT
 bT
 bT
 bT
 bT
-Lw
+jz
 bT
 bT
 bT
 bT
 Lw
-jS
+hX
 oa
 Hk
-EJ
-uf
-dP
-rJ
+sr
+oR
 Hk
-mq
-yZ
-SA
-fP
-SA
-cs
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
 Hk
-vM
-vM
-vM
-vM
-sn
-CV
-iE
-CV
-CV
-Vx
-CV
-CV
-CV
-CV
-CV
-CV
-hr
-dk
+sr
+Hk
+qd
+KJ
+Tq
+Yt
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+WD
+Lw
+Gi
+HD
+jS
+fm
+bC
+jS
+mI
+ks
+LZ
+VO
+BK
+tp
+tp
+tp
+hL
+QJ
+QJ
 "}
 (54,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-qg
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 wG
 Kn
@@ -9610,63 +9936,63 @@ Gi
 Gi
 eR
 Hk
-rJ
-rJ
-rJ
-DD
+xg
+oR
 Hk
-SA
-cs
-cs
-SA
-SA
-FZ
+hk
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+xg
 Hk
-vM
-vM
-vM
-vM
-sn
-sn
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-Ba
-hr
-dk
+VS
+jS
+xc
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
+Tg
+Ne
+HQ
+Vx
+uB
+Fj
+ks
+LZ
+LZ
+JO
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (55,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-Kd
-ss
-CV
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 CE
 AE
 Ql
 qw
 ts
-bT
+dP
 Gi
 aG
 pQ
@@ -9679,59 +10005,59 @@ pQ
 pQ
 Uj
 Gi
-Gi
+Ex
 aN
 Hk
-Tz
-rJ
-rJ
-hc
-sG
-SA
-DI
-SA
-CH
-SA
-xW
+xg
+oR
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+hk
 Hk
-vM
-vM
-vM
-vM
-CV
-sn
-iE
-CV
-CV
-CV
-Kd
-Kd
-CV
-qg
-CV
-CV
-hr
-dk
+xg
+Hk
+qh
+jS
+eq
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
+Gi
+Ne
+fx
+sA
+Gi
+tY
+LZ
+LZ
+nD
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (56,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-Kd
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 gg
 AE
@@ -9753,57 +10079,57 @@ Uj
 pd
 Gi
 Es
-il
-JQ
-rJ
-rJ
-Cs
 Hk
-PS
-SA
-cs
-SA
-SA
-vd
+xg
+hk
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+tq
 Hk
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-qg
-CV
-ss
-hr
-dk
+sr
+Hk
+de
+MA
+ev
+Yt
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+Hk
+Lw
+Gi
+Ne
+Ne
+jS
+Gi
+jS
+zi
+nD
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+ae
+QJ
+QJ
 "}
 (57,1,1) = {"
-dk
-hr
-CV
-CV
-QS
-CV
-CV
-CV
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 GE
 Hc
@@ -9826,56 +10152,56 @@ Gi
 pd
 gf
 Hk
-SQ
-rJ
-rJ
-cM
+sr
+tq
 Hk
-SA
-oq
-SA
-Hv
-SA
-SA
+tq
+oR
+xg
+Yt
+nl
+uB
+KI
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-sn
-sn
-CV
-hr
-dk
+Lw
+Gi
+SA
+Xt
+aX
+Gi
+jS
+LZ
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (58,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-QK
-CV
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Yn
 Kv
@@ -9897,57 +10223,57 @@ qU
 pd
 Gi
 Es
+wi
+xg
+tq
 Hk
-wl
-Az
-qP
-ZM
+tq
+oR
+xg
 Hk
-VM
-Ea
-fe
-Qs
-oJ
-SA
+Gp
+KJ
+xc
 Hk
-Gi
-Gi
-Gi
-Gi
-Gi
-Gi
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
 Hk
-vM
-vM
-vM
-vM
-jA
-jA
-iE
-CV
-CV
-CV
-CV
-ss
-Ba
-sn
-Qb
-CV
-hr
-dk
+Lw
+Gi
+Eb
+jS
+ou
+Gi
+jS
+LZ
+LZ
+JO
+tn
+Ik
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (59,1,1) = {"
-dk
-hr
-jA
-CV
-qg
-qg
-qg
-sn
-CV
-iE
-CV
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
 Hk
 Hk
 Hk
@@ -9973,6 +10299,13 @@ Hk
 Hk
 Hk
 Hk
+tq
+oR
+Ai
+Hk
+Ii
+gb
+NL
 Hk
 Hk
 Hk
@@ -9982,972 +10315,964 @@ Hk
 Hk
 Hk
 Hk
-Hk
-Hk
-Hk
-Hk
-Hk
-Hk
-Hk
-vM
-vM
-vM
-vM
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-sn
-sn
-CV
-hr
-dk
+Lw
+Gi
+SA
+xj
+Gi
+Gi
+Fj
+LZ
+LZ
+jJ
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (60,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-sn
-CV
-iE
-CV
-CV
-CV
-CV
-jA
-CV
-qg
-CV
-CV
-jA
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-dq
-CV
-CV
-CV
-CV
-CV
-jA
-DU
-qg
-CV
-CV
-CV
-CV
-CV
-CV
-qg
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-CV
-DU
-CV
-CV
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-CV
-CV
-sn
-sn
-jA
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+tq
+oR
+xg
+Hk
+ZR
+VJ
+kz
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Lw
+Sy
+SA
+Gi
+Gi
+Gi
+LZ
+dR
+LZ
+LZ
+JO
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (61,1,1) = {"
-dk
-hr
-CV
-Kd
-CV
-CV
-jA
-Jr
-CV
-iE
-CV
-qg
-CV
-CV
-CV
-DU
-CV
-CV
-qg
-qg
-CV
-DU
-CV
-CV
-CV
-jA
-CV
-CV
-DU
-CV
-CV
-CV
-CV
-CV
-CV
-DU
-CV
-CV
-CV
-CV
-jA
-jA
-qg
-CV
-CV
-DU
-CV
-qg
-DU
-CV
-CV
-CV
-OZ
-CV
-CV
-DU
-CV
-CV
-iE
-CV
-CV
-CV
-CV
-ss
-CV
-sn
-sn
-qg
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+sr
+Yt
+zE
+lS
+SC
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Lw
+Gi
+Gi
+Gi
+Gi
+Gi
+LZ
+BX
+fx
+LZ
+JO
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (62,1,1) = {"
-dk
-hr
-CV
-Kd
-CV
-CV
-jA
-jA
-CV
-Ky
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-jn
-Ky
-CV
-CV
-CV
-CV
-QK
-CV
-Jr
-sn
-QK
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+xg
+xg
+wi
+pU
+xg
+xg
+xg
+xg
+pU
+xg
+xg
+xg
+xg
+xg
+pU
+xg
+xg
+xg
+pU
+xg
+xg
+xg
+xg
+pU
+xg
+wi
+xg
+Hk
+Dq
+uj
+ZB
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Lw
+Gi
+Gi
+Gi
+Gi
+Gi
+Gi
+dR
+LZ
+LZ
+JO
+tn
+Ik
+Ik
+Ik
+ae
+QJ
+QJ
 "}
 (63,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-CV
-CV
-GV
-CV
-CV
-CV
-OZ
-CV
-GV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-mo
-CV
-CV
-CV
-CV
-mo
-CV
-CV
-CV
-CV
-CV
-CV
-mo
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-sn
-Qb
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+xg
+LZ
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+uA
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+WB
+Rc
+SA
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Yt
+Lw
+Gi
+Gi
+Gi
+Gi
+Gi
+Gi
+dR
+LZ
+LZ
+JO
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (64,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-Kd
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-OZ
-CV
-qg
-CV
-CV
-CV
-sn
-sn
-CV
-CV
-CV
-Sp
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-ki
-Qb
-CV
-CV
-CV
-CV
-Ba
-CV
-CV
-CV
-um
-sn
-jA
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+uA
+xg
+LZ
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+Lw
+Gi
+Gi
+Hk
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Yt
+Hk
+Gi
+Gi
+Gi
+Gi
+Gi
+Hk
+Hk
+ks
+nD
+AF
+tn
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (65,1,1) = {"
-dk
-hr
-CV
-CV
-Sp
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-ki
-Qb
-sn
-CV
-CV
-CV
-CV
-CV
-qg
-CV
-CV
-CV
-sn
-sn
-CV
-CV
-CV
-Sp
-CV
-CV
-CV
-CV
-Qb
-CV
-CV
-CV
-Ba
-CV
-sn
-CV
-qg
-YH
-YH
-CV
-CV
-CV
-CV
-ss
-CV
-CV
-CV
-sn
-sn
-Vx
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-sn
-sn
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+xg
+LZ
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+XH
+XH
+XH
+XH
+XH
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+XH
+XH
+XH
+XH
+XH
+XH
+XH
+Hk
+nD
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (66,1,1) = {"
-dk
-hr
-qg
-CV
-CV
-CV
-sn
-sn
-CV
-CV
-CV
-Sp
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-CV
-ki
-Qb
-sn
-CV
-CV
-Ba
-CV
-sn
-CV
-qg
-YH
-YH
-CV
-CV
-mo
-CV
-CV
-CV
-CV
-Sp
-IO
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-qg
-CV
-QS
-CV
-CV
-CV
-CV
-qg
-CV
-CV
-qg
-CV
-CV
-Vx
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+xg
+LZ
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+US
+US
+US
+Hk
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+Rt
+FM
+gn
+gn
+US
+Hk
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (67,1,1) = {"
-dk
-hr
-Qb
-CV
-CV
-CV
-Ba
-CV
-sn
-CV
-qg
-YH
-YH
-CV
-CV
-CV
-CV
-ss
-CV
-CV
-CV
-sn
-sn
-sn
-CV
-CV
-Sp
-IO
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-qg
-qg
-CV
-CV
-CV
-sn
-CV
-CV
-CV
-CV
-CV
-Sp
-CV
-CV
-CV
-Oo
-CV
-CV
-CV
-YH
-CV
-CV
-CV
-CV
-Ba
-CV
-CV
-CV
-jA
-CV
-CV
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+Hk
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+US
+US
+US
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+US
+US
+US
+US
+US
+Hk
+Hk
+wv
+AF
+tn
+Ik
+Ik
+Ik
+Ik
+ZG
+QJ
+QJ
 "}
 (68,1,1) = {"
-dk
-hr
-CV
-CV
-CV
-CV
-Sp
-IO
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-OZ
-CV
-CV
-CV
-qg
-CV
-QS
-CV
-CV
-CV
-CV
-sn
-CV
-CV
-CV
-CV
-CV
-Sp
-CV
-CV
-GV
-CV
-CV
-CV
-Ba
-sn
-CV
-CV
-CV
-Vx
-CV
-CV
-CV
-DU
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-CV
-jA
-CV
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+US
+US
+US
+Hk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+Hk
+US
+US
+US
+US
+US
+Hk
+Hk
+IU
+nF
+BK
+tp
+tp
+tp
+tp
+LC
+QJ
+QJ
 "}
 (69,1,1) = {"
-dk
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-hr
-dk
+US
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Uk
+Hk
+US
+US
+US
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+Hk
+US
+US
+US
+US
+US
+Hk
+Hk
+sM
+Jg
+zx
+QJ
+QJ
+QJ
+QJ
+Ug
+QJ
+QJ
 "}
 (70,1,1) = {"
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
-dk
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
 "}
 
 (1,1,2) = {"
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
 "}
 (2,1,2) = {"
-Um
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-Um
+US
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+US
 "}
 (3,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -11014,12 +11339,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (4,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -11086,12 +11411,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (5,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -11158,12 +11483,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (6,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -11230,12 +11555,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (7,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -11302,12 +11627,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (8,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -11374,12 +11699,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (9,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -11446,12 +11771,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (10,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -11518,12 +11843,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (11,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -11590,39 +11915,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (12,1,2) = {"
-Um
-WS
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-AD
-QJ
-QJ
-QJ
-QJ
-QJ
-QJ
-QJ
-AD
+US
 AD
 AD
 AD
@@ -11662,12 +11960,40 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+US
 "}
 (13,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -11688,11 +12014,11 @@ QJ
 QJ
 QJ
 QJ
+Hk
 US
 US
 US
-US
-US
+Hk
 QJ
 QJ
 QJ
@@ -11716,11 +12042,11 @@ QJ
 QJ
 QJ
 QJ
+Hk
 US
 US
 US
-US
-US
+Hk
 QJ
 QJ
 QJ
@@ -11734,12 +12060,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (14,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -11806,12 +12132,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (15,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -11860,11 +12186,11 @@ mU
 oK
 QJ
 QJ
-Um
+Hk
 Pk
 Pk
 gH
-Um
+Hk
 QJ
 QJ
 oK
@@ -11878,12 +12204,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (16,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -11950,12 +12276,12 @@ QJ
 QJ
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (17,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12022,12 +12348,12 @@ kr
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (18,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12054,7 +12380,7 @@ pd
 jS
 fv
 hf
-Qc
+zj
 Hk
 jB
 FZ
@@ -12084,7 +12410,7 @@ fv
 pJ
 Qc
 Hk
-jB
+rN
 FZ
 FZ
 QY
@@ -12094,12 +12420,12 @@ kr
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (19,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12166,12 +12492,12 @@ kr
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (20,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12238,12 +12564,12 @@ kr
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (21,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12310,12 +12636,12 @@ kr
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (22,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12382,12 +12708,12 @@ QJ
 QJ
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (23,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12454,12 +12780,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (24,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12526,12 +12852,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (25,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12598,12 +12924,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (26,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12670,12 +12996,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (27,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12742,12 +13068,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (28,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12814,12 +13140,12 @@ QJ
 QJ
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (29,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12886,12 +13212,12 @@ xT
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (30,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -12918,7 +13244,7 @@ SA
 Gi
 WO
 qm
-Qc
+zj
 Hk
 jB
 FZ
@@ -12948,7 +13274,7 @@ fv
 hf
 Qc
 Hk
-jB
+rN
 FZ
 FZ
 QY
@@ -12958,12 +13284,12 @@ xT
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (31,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13030,12 +13356,12 @@ xT
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (32,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13102,12 +13428,12 @@ xT
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (33,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13174,12 +13500,12 @@ xT
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (34,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13246,12 +13572,12 @@ QJ
 QJ
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (35,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13318,12 +13644,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (36,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13374,7 +13700,7 @@ QJ
 Hk
 bY
 XM
-jS
+Gi
 iQ
 Sm
 Hk
@@ -13390,12 +13716,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (37,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13462,12 +13788,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (38,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13534,12 +13860,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (39,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13566,7 +13892,7 @@ jS
 VD
 jR
 LA
-Hk
+AD
 QJ
 AD
 AD
@@ -13606,12 +13932,12 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (40,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13623,20 +13949,20 @@ Hk
 Hk
 Hk
 Hk
+qG
+Hk
+Hk
+Hk
+qG
 Hk
 Hk
 Hk
 Hk
 Hk
-Hk
-Hk
-Hk
-Hk
-Um
 cx
 cx
 ng
-Um
+Hk
 Hk
 Hk
 QJ
@@ -13678,12 +14004,12 @@ QJ
 QJ
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (41,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -13691,10 +14017,10 @@ AD
 Hk
 wI
 Au
-Gl
+rK
 wI
 My
-LA
+il
 Ph
 LA
 LA
@@ -13750,12 +14076,12 @@ jU
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (42,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 Hk
 Hk
@@ -13766,7 +14092,7 @@ Hk
 Hk
 QB
 Dw
-LA
+il
 Ph
 LA
 LA
@@ -13776,11 +14102,11 @@ LA
 QJ
 AD
 QJ
+Hk
 US
 US
 US
-US
-US
+Hk
 QJ
 AD
 AD
@@ -13812,7 +14138,7 @@ jL
 Gb
 Qc
 Hk
-jB
+rN
 FZ
 FZ
 QY
@@ -13822,32 +14148,32 @@ jU
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (43,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 QJ
 Hk
 ze
 Hk
-wj
+xp
 wj
 Hk
 Jd
 ER
-LA
+il
 Ph
 LA
 LA
 LA
-qG
+LJ
 LA
 QJ
 QJ
-QJ
+mR
 QJ
 QJ
 QJ
@@ -13894,23 +14220,23 @@ jU
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (44,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 QJ
 Hk
 zC
 Hk
-qB
-wj
+fs
+kV
 Hk
 FC
 Ef
-LA
+il
 Ph
 LA
 LA
@@ -13966,12 +14292,12 @@ jU
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (45,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 QJ
 Hk
@@ -13982,7 +14308,7 @@ wP
 Hk
 tK
 wB
-LA
+il
 Ph
 LA
 LA
@@ -14038,31 +14364,31 @@ jU
 US
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (46,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 Hk
 Hk
-qB
+FJ
 qB
 lE
 wj
 Gl
 wI
 wB
-LA
+il
 Ph
-LA
-LA
-LA
 Ph
-LA
-LA
-LA
+Ph
+Ph
+Ph
+Ph
+Ph
+Ph
 Ph
 LA
 QJ
@@ -14110,23 +14436,23 @@ QJ
 QJ
 QJ
 AD
-WS
-Um
+AD
+US
 "}
 (47,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 lG
 lI
 qB
 MR
 qB
-qB
+UJ
 Hk
 Vz
 yV
-LA
+il
 Ph
 LA
 LA
@@ -14164,11 +14490,11 @@ yA
 cl
 QJ
 QJ
-Um
+Hk
 ng
 cx
 cx
-Um
+Hk
 QJ
 QJ
 cl
@@ -14182,23 +14508,23 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (48,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 Hk
 Hk
 UB
 oL
 qB
-oL
+CC
 Hk
 ri
 gh
-LA
+il
 Ph
 LA
 LA
@@ -14254,32 +14580,32 @@ QJ
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (49,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 jg
 lI
 zB
 MR
 IB
-lE
+vV
 Hk
 FC
 yV
-LA
+il
 Ph
 LA
 LA
 LA
-qG
+LJ
 LA
 QJ
 QJ
-mR
+SB
 QJ
 QJ
 AD
@@ -14308,41 +14634,41 @@ QJ
 QJ
 QJ
 QJ
+Hk
 US
 US
 US
+Hk
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+QJ
+AD
+AD
+AD
+AD
 US
-US
-QJ
-QJ
-QJ
-QJ
-QJ
-QJ
-QJ
-QJ
-QJ
-QJ
-AD
-AD
-AD
-WS
-Um
 "}
 (50,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 Hk
 QN
 wj
 oL
 wj
-wP
+KY
 QN
 Ll
 yV
-LA
+il
 Ph
 LA
 LA
@@ -14398,12 +14724,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (51,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 lG
 lI
@@ -14414,7 +14740,7 @@ pB
 Hk
 Yc
 Du
-LA
+il
 Ph
 LA
 LA
@@ -14470,12 +14796,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (52,1,2) = {"
-Um
-WS
+US
+AD
 Hk
 Hk
 Hk
@@ -14487,13 +14813,13 @@ Hk
 QF
 Hk
 Hk
+qG
 Hk
 Hk
 Hk
+qG
 Hk
 Hk
-Hk
-Hk
 AD
 AD
 AD
@@ -14542,12 +14868,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (53,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -14556,11 +14882,11 @@ Hk
 AD
 AD
 Hk
+ZI
 wI
 wI
 wI
-wI
-wI
+ZI
 Hk
 AD
 AD
@@ -14614,12 +14940,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (54,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -14686,25 +15012,25 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (55,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
 AD
 Hk
-mD
-mD
-mD
-mD
-mD
-mD
-mD
-mD
+oe
+AF
+cM
+GZ
+GZ
+an
+jH
+vU
 Hk
 AD
 AD
@@ -14758,25 +15084,25 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (56,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
 AD
 Hk
-wI
-wI
-wI
-wI
-wI
-wI
-wI
-wI
+oe
+AF
+cM
+UN
+Qe
+lF
+An
+fc
 Hk
 AD
 AD
@@ -14830,25 +15156,25 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (57,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
 AD
 Hk
-mD
-mD
-mD
-mD
+oe
+AF
+Yj
+lx
 jV
 mD
-mD
-mD
+yf
+aV
 Hk
 AD
 AD
@@ -14902,25 +15228,25 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (58,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
 AD
 Hk
-wI
-wI
-wI
-wI
-wI
-wI
-wI
-wI
+oe
+AF
+cM
+QD
+ZN
+Zu
+YS
+FC
 Hk
 AD
 AD
@@ -14974,25 +15300,25 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (59,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
 AD
 Hk
-mD
-mD
-mD
-de
-mD
-mD
-mD
-mD
+oe
+AF
+cM
+GZ
+GZ
+GZ
+bq
+vU
 Hk
 AD
 AD
@@ -15046,12 +15372,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (60,1,2) = {"
-Um
-WS
+US
+AD
 AD
 AD
 AD
@@ -15118,12 +15444,11 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+US
 "}
 (61,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -15190,12 +15515,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (62,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -15262,12 +15587,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (63,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -15334,12 +15659,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (64,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -15406,12 +15731,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (65,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -15478,12 +15803,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (66,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -15550,12 +15875,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (67,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -15622,12 +15947,12 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (68,1,2) = {"
-Um
-WS
+US
 AD
 AD
 AD
@@ -15694,150 +16019,151 @@ AD
 AD
 AD
 AD
-WS
-Um
+AD
+AD
+US
 "}
 (69,1,2) = {"
-Um
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-WS
-Um
+US
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+AD
+US
 "}
 (70,1,2) = {"
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
-Um
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
+US
 "}

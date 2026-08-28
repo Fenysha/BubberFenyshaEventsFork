@@ -17,7 +17,7 @@
 /obj/structure/chair/buckshot/unbuckle_mob(mob/living/buckled_mob, force, can_fall)
     if(!party)
         return ..()
-    if((party.game_started && !party.can_free_exit) || party.registration)
+    if(((party.game_started && !party.can_free_exit) || party.registration) && party.is_participant(buckled_mob))
         to_chat(buckled_mob, span_warning("You cannot leave the game after it has started! You should have read the waiver more carefully."))
         return
     return ..()
