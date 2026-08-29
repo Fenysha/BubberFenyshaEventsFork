@@ -230,6 +230,7 @@ MAPPING_DIRECTIONAL_HELPERS(/obj/machinery/button/auto_detect, 24)
 /obj/machinery/computer/trainstation_control
 	name = "Station Control Console"
 	desc = "A computer for controlling the station's magnetic locks. Use it to continue on your way."
+	icon_state = MAP_SWITCH("computer", "/obj/machinery/computer/trainstation_control")
 	icon_screen = "command"
 	icon_keyboard = "id_key"
 
@@ -376,6 +377,7 @@ MAPPING_DIRECTIONAL_HELPERS(/obj/machinery/button/auto_detect, 24)
 /obj/machinery/computer/train_control_terminal
 	name = "Train Control Console"
 	desc = "A computer for controlling the train's movement and selecting the next station."
+	icon_state = MAP_SWITCH("computer", "/obj/machinery/computer/train_control_terminal")
 	icon_screen = "command"
 	icon_keyboard = "id_key"
 

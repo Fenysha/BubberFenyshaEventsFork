@@ -225,7 +225,11 @@
 /obj/machinery/computer/train_cargo_control
 	name = "Cargo control console"
 	desc = "A console for controlling the anomalous cargo."
-	icon_state = "computer"
+
+	icon_state = MAP_SWITCH("computer", "/obj/machinery/computer/train_cargo_control")
+	icon_screen = "alert:0"
+	icon_keyboard = "atmos_key"
+
 	density = TRUE
 	uses_integrity = FALSE
 	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF | FREEZE_PROOF

@@ -418,8 +418,9 @@
 /obj/machinery/computer/train_turbine_computer
 	name = "train turbine control console"
 	desc = "A computer for controlling the train's steam turbine. Tracks RPM, temperature, pressure, and integrity - like a nuclear reactor from Barotrauma, only steam-powered."
-	icon_screen = "turbinecomp"
-	icon_keyboard = "tech_key"
+	icon_state = MAP_SWITCH("computer", "/obj/machinery/computer/train_turbine_computer")
+	icon_screen = "alert:0"
+	icon_keyboard = "atmos_key"
 	var/datum/weakref/rotor_ref
 	var/mapping_id
 
