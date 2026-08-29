@@ -1,37 +1,37 @@
 //MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
 "a" = (
 /turf/closed/indestructible/train_border,
-/area/space)
+/area/trainstation/outdoor/station)
 "o" = (
 /turf/closed/mineral/random/icy_planet,
-/area/space)
+/area/trainstation/outdoor/station)
 "p" = (
 /turf/closed/mineral/diamond/ice,
-/area/space)
+/area/trainstation/outdoor/station)
 "s" = (
 /obj/structure/flora/grass/green/style_3,
 /obj/structure/flora/grass/green/style_3,
 /turf/open/misc/asteroid/snow/indestructible/planet,
-/area/space)
+/area/trainstation/outdoor/station)
 "D" = (
 /obj/structure/flora/grass/green/style_3,
 /turf/open/misc/asteroid/snow/indestructible/planet,
-/area/space)
+/area/trainstation/outdoor/station)
 "H" = (
 /obj/structure/flora/tree/pine/style_random,
 /obj/structure/flora/grass/green/style_3,
 /turf/open/misc/asteroid/snow/indestructible/planet,
-/area/space)
+/area/trainstation/outdoor/station)
 "S" = (
 /turf/open/misc/asteroid/snow/indestructible/planet,
-/area/space)
+/area/trainstation/outdoor/station)
 "T" = (
 /obj/structure/flora/tree/pine/style_random,
 /turf/open/misc/asteroid/snow/indestructible/planet,
-/area/space)
+/area/trainstation/outdoor/station)
 "V" = (
 /turf/closed/mineral/iron/ice,
-/area/space)
+/area/trainstation/outdoor/station)
 
 (1,1,1) = {"
 S

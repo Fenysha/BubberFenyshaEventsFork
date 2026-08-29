@@ -499,7 +499,8 @@ SUBSYSTEM_DEF(train_controller)
 		next_transition_time = INFINITY
 	else
 		transition_theme.process_instant()
-		set_movement_theme(pick_theme())
+		if(!transition_theme.change_spawn_theme)
+			set_movement_theme(pick_theme())
 		next_transition_time = INFINITY
 
 	SSmoving_turfs.on_train_start()

@@ -7,6 +7,7 @@
 	"space_empty_levels": 0,
 	"planetary": 1,
 	"trainstation": 1,
+	"override_titlescreen": true,
 	"shuttles": {
 		"cargo": "cargo_nova",
 		"ferry": "ferry_fancy",

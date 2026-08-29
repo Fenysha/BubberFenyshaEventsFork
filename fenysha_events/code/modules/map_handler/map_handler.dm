@@ -3,10 +3,13 @@
 	/// Assoc list(/datum/job/captain = -1)
 	var/list/custom_manifest
 
+	var/override_titlescreen = FALSE
+
 /datum/map_config/LoadConfig(filename, error_if_missing)
 	. = ..()
 	if(!.)
 		return FALSE
+	override_titlescreen = .["override_titlescreen"] || FALSE
 
 	var/handler = .["map_handler"]
 	if(handler)
