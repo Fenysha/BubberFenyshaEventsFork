@@ -136,6 +136,7 @@ GLOBAL_LIST_INIT(all_elevators, list())
 		return
 
 	if(floor == current_floor)
+		open_floor(current_floor)
 		return
 
 	var/floor_key = num_to_floor(floor)

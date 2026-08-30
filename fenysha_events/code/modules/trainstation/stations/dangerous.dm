@@ -46,13 +46,16 @@
 	required_stations = 8
 
 /datum/train_station/heart_of_infections
-	name = "Heart of Infection"
+	name = "Heart of Infection I"
 	map_path = "_maps/modular_events/trainstation/bossfight_map.dmm"
-	creator = "V1SITY"
+	creator = "Fenysha"
 
+	possible_nearstations = list(/datum/train_station/near_station/static_undeground)
 	station_flags = TRAINSTATION_ABSCTRACT | TRAINSTATION_BLOCKING
 	station_type = TRAINSTATION_TYPE_MILITARY
 	threat_level = THREAT_LEVEL_DEADLY
+
+	environment_flags = ENVIRONMENT_UNDERGROUND
 	region = TRAINSTATION_REGION_THUNDRA
 
 /datum/train_station/military_house
@@ -99,12 +102,13 @@
 
 /datum/train_station/lost_dam
 	name = "Penrose Hydroelectric Station"
-	creator = "Mold & Fenysha"
+	creator = "Fenysha & Mold"
 	desc = "A gigantic hydroelectric station in the vicinity of the city of Penrose. \
 			Despite the complete absence of personnel, the radio beacon still works and broadcasts a short message: \"Station operating in normal mode.\" \
 			The turbines keep humming even now."
 	threat_level = THREAT_LEVEL_HAZARDOUS
 	region = TRAINSTATION_REGION_THUNDRA
+	station_flags = TRAINSTATION_BLOCKING
 	map_path = "_maps/modular_events/trainstation/lost_dam.dmm"
 	possible_nearstations = list(/datum/train_station/near_station/lost_dam)
 

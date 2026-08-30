@@ -366,13 +366,26 @@ MAPPING_DIRECTIONAL_HELPERS(/obj/machinery/button/auto_detect, 24)
 	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ACID_PROOF
 
 /obj/item/paper/trainstation_password/Initialize(mapload)
+	. = ..()
 	var/datum/train_station/current_station = SStrain_controller?.loaded_station
-	name = "[current_station.name] - security update"
-	default_raw_text = replacetext(default_raw_text, "%STATIONNAME%", current_station.name)
-	default_raw_text = replacetext(default_raw_text, "%STATIONPASSWORD%", current_station.get_password())
-	SSpoints_of_interest.make_point_of_interest(src)
-	return ..()
+	if(current_station)
+		name = "[current_station.name] - security update"
+		default_raw_text = replacetext(default_raw_text, "%STATIONNAME%", current_station.name)
+		default_raw_text = replacetext(default_raw_text, "%STATIONPASSWORD%", current_station.get_password())
 
+	SSpoints_of_interest?.make_point_of_interest(src)
+
+	set_light(3, 2, "#00e1ff")
+	apply_noticeable_filters()
+
+/obj/item/paper/trainstation_password/proc/apply_noticeable_filters()
+	add_filter("security_outline", 1, list("type" = "outline", "size" = 1, "color" = "#00ffff"))
+	add_filter("security_glow", 2, list("type" = "bloom", "size" = 3, "color" = "#00e1ff"))
+
+	var/filter_glow = get_filter("security_glow")
+	if(filter_glow)
+		animate(filter_glow, size = 6, time = 10, loop = -1, flags = ANIMATION_PARALLEL)
+		animate(size = 2, time = 10)
 
 /obj/machinery/computer/train_control_terminal
 	name = "Train Control Console"
