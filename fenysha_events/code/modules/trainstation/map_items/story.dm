@@ -47,3 +47,20 @@
 	uses_integrity = FALSE
 	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | UNACIDABLE | ACID_PROOF | FREEZE_PROOF
 	flags_1 = SUPERMATTER_IGNORES_1
+
+/turf/open/cliff/dam_wall
+	name = "Dam wall"
+	desc = "The wall of this now-frozen dam. Looks nigh-impenetrable to damage."
+	icon = 'modular_zubbers/icons/turf/floors/tram.dmi'
+	base_icon_state = "tram_platform"
+	icon_state = "tram_platform"
+
+/obj/effect/turf_decal/full_dark_tile
+	name = "black floor"
+	icon = 'icons/turf/floors.dmi'
+	icon_state = "black"
+	alpha = 150
+
+/obj/effect/turf_decal/full_dark_tile/half_bright
+	alpha = 80
+

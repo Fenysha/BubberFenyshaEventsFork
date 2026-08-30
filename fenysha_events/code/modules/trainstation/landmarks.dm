@@ -33,6 +33,11 @@
 /turf/closed/indestructible/train_border
 	name = "Iced rock"
 	icon_state = "icerock"
+	icon = 'modular_zubbers/icons/turf/walls/icerock_wall.dmi'
+	icon_state = "icerock_wall-0"
+	base_icon_state = "icerock_wall"
+	canSmoothWith = SMOOTH_GROUP_CLOSED_TURFS
+	smoothing_flags = SMOOTH_BITMASK | SMOOTH_BORDER
 
 /datum/map_template/train
 	name = "Train Template"

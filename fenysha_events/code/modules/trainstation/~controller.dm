@@ -1523,3 +1523,4 @@ ADMIN_VERB(open_train_controller, R_ADMIN, "Open train controller", "Open active
 	sounds_to_play = list(
 		'fenysha_events/sounds/loop_trainride.ogg' = 63 SECONDS,
 	)
+
