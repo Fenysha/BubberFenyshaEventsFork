@@ -208,13 +208,7 @@
 	// FENYSHA EDIT ADDITION END
 
 	// Approximate text height
-	// FENYSHA EDIT CHANGE BEGIN - AUTOTRANSLATE - Cyrillic font swap
-	// The maptext font has no Cyrillic glyphs, so Russian text would otherwise
-	// fall back to an arbitrary system face with different metrics - which
-	// MeasureText below then sizes the box against incorrectly.
-	// ORIGINAL: var/complete_text = "<span style='color: [tgt_color]'><span class='center [extra_classes.Join(" ")]'>[owner.apply_message_emphasis(text)]</span></span>"
-	var/complete_text = "<span style='color: [tgt_color]'><span class='center [extra_classes.Join(" ")]'>[runechat_apply_script_font(owner.apply_message_emphasis(text))]</span></span>"
-	// FENYSHA EDIT CHANGE END
+	var/complete_text = "<span style='color: [tgt_color]'><span class='center [extra_classes.Join(" ")]'>[owner.apply_message_emphasis(text)]</span></span>"
 
 	var/mheight
 	WXH_TO_HEIGHT(owned_by.MeasureText(complete_text, null, CHAT_MESSAGE_WIDTH), mheight)

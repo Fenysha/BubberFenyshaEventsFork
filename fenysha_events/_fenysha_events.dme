@@ -28,7 +28,6 @@
 #include "code\modules\autotranslate\SSautotranslate.dm"
 #include "code\modules\autotranslate\text_morph.dm"
 #include "code\modules\autotranslate\runechat.dm"
-#include "code\modules\autotranslate\runechat_font.dm"
 #include "code\modules\autotranslate\translated_speech.dm"
 #include "code\modules\autotranslate\debug.dm"
 /// #include "code\modules\barricades\barricades.dm"
