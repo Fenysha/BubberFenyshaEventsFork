@@ -74,6 +74,27 @@
 	return work_done
 
 
+/datum/gas_machine_connector/reversed
+
+/datum/gas_machine_connector/reversed/New(location, obj/machinery/connecting_machine, direction, gas_volume)
+	. = ..()
+	if(QDELETED(src) || isnull(gas_connector))
+		return
+	disconnect_connector()
+	reconnect_connector()
+
+/datum/gas_machine_connector/reversed/reconnect_connector()
+	gas_connector.dir = REVERSE_DIR(connected_machine.dir)
+	gas_connector.set_init_directions()
+	gas_connector.atmos_init()
+	var/obj/machinery/atmospherics/node = gas_connector.nodes[1]
+	if(node)
+		node.atmos_init()
+		node.add_member(gas_connector)
+		gas_connector.update_parents()
+	SSair.add_to_rebuild_queue(gas_connector)
+
+
 /obj/machinery/power/train_turbine/inlet_compressor
 	name = "train turbine inlet compressor"
 	desc = "The inlet part of the train's steam turbine. Connects to pipes for the supply of hot water vapor."
@@ -97,10 +118,8 @@
 
 /obj/machinery/power/train_turbine/inlet_compressor/post_machine_initialize()
 	. = ..()
-	var/connector_dir = REVERSE_DIR(dir)
-	connector = new(loc, src, connector_dir, CELL_VOLUME * 0.5)
-	connector.gas_connector.dir = connector_dir
-	connector.gas_connector.initialize_directions = connector_dir
+	// Steam comes in on the face away from the rotor.
+	connector = new /datum/gas_machine_connector/reversed(loc, src, null, CELL_VOLUME * 0.5)
 
 /obj/machinery/power/train_turbine/inlet_compressor/Destroy()
 	QDEL_NULL(connector)
@@ -633,7 +652,7 @@
 	/// Internal gas mixture for the steam outlet
 	var/datum/gas_mixture/internal_gasmix
 	/// Atmos connector for the steam outlet
-	var/datum/gas_machine_connector/steam_output
+	var/datum/gas_machine_connector/reversed/steam_output
 	/// Plumbing component for the water inlet
 	var/datum/component/plumbing/heater_plumbing
 	/// Stack of plasma sheets inside
@@ -653,8 +672,7 @@
 	)
 	heater_plumbing.enable()
 
-	// Atmos connector - steam outlet only
-	steam_output = new(loc, src, dir, CELL_VOLUME * 0.5)
+	steam_output = new(loc, src, null, CELL_VOLUME * 0.5)
 
 	air_update_turf(TRUE)
 	update_appearance(UPDATE_OVERLAYS)

@@ -185,6 +185,11 @@ SUBSYSTEM_DEF(autotranslate)
 		subscriber.Invoke(result, success)
 	request.subscribers?.Cut()
 
+/// Translation for this exact text if we already have one, else null. Lets a panel that renders
+/// once and cannot animate show a translation without waiting on the backend.
+/datum/controller/subsystem/autotranslate/proc/cached_translation(text, source_language, target_language)
+	return translation_cache[build_key(text, source_language, target_language)]
+
 /datum/controller/subsystem/autotranslate/proc/store_in_cache(key, value)
 	if(isnull(value))
 		return

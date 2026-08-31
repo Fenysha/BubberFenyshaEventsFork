@@ -21,11 +21,21 @@ ADMIN_VERB(cmd_admin_say, R_NONE, "ASay", "Send a message to other admins", ADMI
 	send_asay_to_other_server(user.ckey, message) //SKYRAT EDIT ADDITION
 	var/asay_color = user.prefs.read_preference(/datum/preference/color/asay_color)
 	var/custom_asay_color = (CONFIG_GET(flag/allow_admin_asaycolor) && asay_color) ? "<font color=[asay_color]>" : "<font color='[DEFAULT_ASAY_COLOR]'>"
+	// FENYSHA EDIT ADDITION - AUTOTRANSLATE - the body as it is about to be embedded, so a reader
+	// who wants it translated gets just that part swapped and keeps the header, colour and links.
+	var/asay_body = message
+	// FENYSHA EDIT ADDITION END
 	message = "[span_adminsay("[span_prefix("ADMIN:")] <EM>[key_name_admin(user)]</EM> [ADMIN_FLW(user.mob)]: [custom_asay_color]<span class='message linkify'>[message]")]</span>[custom_asay_color ? "</font>":null]"
 	for(var/client/admin as anything in GLOB.admins)
+		// FENYSHA EDIT ADDITION - AUTOTRANSLATE
+		var/shown_message = message
+		var/translated_asay = translated_chat_text(admin, asay_body, user)
+		if(translated_asay != asay_body)
+			shown_message = replacetext(message, asay_body, translated_asay)
+		// FENYSHA EDIT ADDITION END
 		to_chat(admin,
 			type = MESSAGE_TYPE_ADMINCHAT,
-			html = message,
+			html = shown_message,
 			avoid_highlighting = (admin == user),
 			confidential = TRUE,
 		)

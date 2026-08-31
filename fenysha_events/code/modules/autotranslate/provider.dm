@@ -14,6 +14,81 @@
  * Providers must never block. begin() kicks work off, poll() reports on it.
  */
 
+/**
+ * Fragments a translator must hand back untouched.
+ *
+ * Order matters: markup first, so the token patterns below run against text where every tag has
+ * already become a placeholder and cannot be swallowed by a greedy match.
+ *
+ *   markup   linkifiers wrap mentions and names before we ever see the body; a transliterated
+ *            <a href> is broken markup
+ *   @word    admin pings and datum refs - check_asay_links() resolves these by exact ckey, so a
+ *            translated one pings nobody
+ *   #123     ticket references, likewise looked up by exact id
+ */
+GLOBAL_LIST_INIT(translation_protected_patterns, list(
+	regex("<\[^>\]*>", "g"),
+	regex(@"@[^\s{}]+", "g"),
+	regex(@"#[0-9]+", "g"),
+))
+
+/**
+ * Swaps every protected fragment for a numbered placeholder.
+ *
+ * Placeholders are `{0}`-style: ASCII, no letters for an engine to transliterate, and short enough
+ * that it will not split them across a sentence boundary. Found fragments are appended to `tokens`
+ * in placeholder order.
+ */
+/proc/translation_protect(text, list/tokens)
+	if(!istext(text) || !length(text))
+		return text
+	for(var/regex/pattern as anything in GLOB.translation_protected_patterns)
+		var/rebuilt = ""
+		var/last = 1
+		pattern.index = 1
+		while(pattern.Find(text))
+			rebuilt += copytext(text, last, pattern.index)
+			rebuilt += "{[length(tokens)]}"
+			tokens += pattern.match
+			last = pattern.next
+		if(last == 1)
+			continue
+		text = rebuilt + copytext(text, last)
+	return text
+
+/**
+ * Puts the protected fragments back.
+ *
+ * Returns null if the translator dropped or mangled any placeholder. That is deliberate: a caller
+ * that cannot restore a mention must show the untranslated original rather than a line where the
+ * ping silently went missing.
+ */
+/proc/translation_restore(text, list/tokens)
+	if(!length(tokens))
+		return text
+	if(!istext(text))
+		return null
+	// Tolerant of an engine padding the braces out to "{ 0 }".
+	var/static/regex/placeholder = regex(@"\{\s*([0-9]+)\s*\}", "g")
+	// Pre-sized, because seen[n] on an empty list is a positional write and runtimes out of bounds
+	// rather than making an associative entry.
+	var/list/seen = new /list(length(tokens))
+	var/rebuilt = ""
+	var/last = 1
+	placeholder.index = 1
+	while(placeholder.Find(text))
+		var/index = text2num(placeholder.group[1])
+		if(isnull(index) || index < 0 || index >= length(tokens))
+			return null
+		rebuilt += copytext(text, last, placeholder.index)
+		rebuilt += tokens[index + 1]
+		seen[index + 1] = TRUE
+		last = placeholder.next
+	for(var/i in 1 to length(tokens))
+		if(!seen[i])
+			return null
+	return rebuilt + copytext(text, last)
+
 /// One unit of work. Created by SSautotranslate, handed to the provider.
 /datum/translation_request
 	/// Cache key this request was filed under.
@@ -33,6 +108,8 @@
 	var/list/datum/callback/subscribers
 	/// Free-form scratch space for the provider (an http_request, a job id...).
 	var/provider_state
+	/// Fragments held back from the translator, in placeholder order. See translation_protect().
+	var/list/protected_tokens = list()
 
 /datum/translation_request/New(key, source_text, source_language, target_language)
 	. = ..()

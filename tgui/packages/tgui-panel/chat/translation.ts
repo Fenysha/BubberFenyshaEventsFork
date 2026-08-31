@@ -434,9 +434,18 @@ function morph(node: HTMLElement, payload: TranslationPayload): void {
   // The browser has already decoded what is in the DOM.
   const originalText = node.textContent ?? payload.original ?? '';
 
+  // The server hands back html: entity-encoded body text, plus any markup it held back from the
+  // translator (mention links, ticket refs - see translation_protect() in provider.dm). Animate on
+  // the text of that, then settle to the markup itself, so links survive and an encoded quote does
+  // not spend the whole animation reading as a literal &#34;.
+  const translatedHtml = payload.text ?? '';
+  const decoder = document.createElement('span');
+  decoder.innerHTML = translatedHtml;
+  const translatedText = decoder.textContent ?? '';
+
   // Array.from splits by code point, so Cyrillic and anything astral survive.
   const from = Array.from(originalText);
-  const to = Array.from(payload.text ?? '');
+  const to = Array.from(translatedText);
   const duration = payload.duration ?? DEFAULT_DURATION;
   const scramble = payload.scramble ?? DEFAULT_SCRAMBLE;
 
@@ -448,7 +457,7 @@ function morph(node: HTMLElement, payload: TranslationPayload): void {
 
   // Nothing to animate between - just settle.
   if (!from.length || duration <= 0) {
-    node.textContent = to.join('');
+    node.innerHTML = translatedHtml;
     reapplyHighlights(node);
     return;
   }
@@ -462,11 +471,13 @@ function morph(node: HTMLElement, payload: TranslationPayload): void {
       return;
     }
     const progress = Math.min(1, (now - started) / duration);
-    node.textContent = buildFrame(from, to, progress, scramble);
     if (progress < 1) {
+      node.textContent = buildFrame(from, to, progress, scramble);
       requestAnimationFrame(step);
       return;
     }
+    // Last frame goes in as markup, not text - see translatedHtml above.
+    node.innerHTML = translatedHtml;
     node.classList.remove('tsl-morphing');
     reapplyHighlights(node);
   };

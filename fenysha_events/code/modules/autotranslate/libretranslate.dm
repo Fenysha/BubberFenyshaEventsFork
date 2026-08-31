@@ -98,7 +98,7 @@
 		// The say pipeline hands us html-encoded text. Entities have to be
 		// resolved before they go to a translator or it will happily translate
 		// "&#34;" as literal text and hand back something unusable.
-		"q" = html_decode(request.source_text),
+		"q" = translation_protect(html_decode(request.source_text), request.protected_tokens),
 		"source" = request.source_language,
 		"target" = request.target_language,
 		"format" = "text",
@@ -139,8 +139,14 @@
 		request.fail("no translatedText in response")
 		return TRUE
 
-	// Back into the encoding the rest of the chat pipeline expects.
-	request.succeed(html_encode(translated))
+	// Encode first, then restore: the placeholders are plain ASCII and pass through html_encode
+	// untouched, while the fragments they stand for are markup that must not be escaped.
+	var/restored = translation_restore(html_encode(translated), request.protected_tokens)
+	if(isnull(restored))
+		request.fail("protected fragments lost in translation")
+		return TRUE
+
+	request.succeed(restored)
 	return TRUE
 
 /datum/translation_provider/libretranslate/abort(datum/translation_request/request)

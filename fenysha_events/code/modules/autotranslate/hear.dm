@@ -94,6 +94,56 @@
  * Use for announcements, narrations, admin PMs and similar. Speech goes
  * through try_begin_translation() instead, since that also drives runechat.
  */
+/**
+ * Translation for surfaces that render once and cannot animate - the ticket panels, which are
+ * plain browse() windows with none of the chat panel's morph script behind them.
+ *
+ * Returns a finished translation when one is already cached, otherwise the original text, and
+ * requests it so the panel's own Refresh link has it a moment later. Never wraps or defers,
+ * because there is nothing on the other end to resolve a pending marker.
+ */
+/proc/translated_panel_text(client/target, text)
+	if(isnull(target) || !istext(text) || !length(text))
+		return text
+
+	var/target_language = autotranslate_pref_to_code(target.prefs?.read_preference(/datum/preference/choiced/autotranslate_target))
+	if(isnull(target_language))
+		return text
+
+	var/source_language = autotranslate_detect_language(text)
+	if(source_language == target_language)
+		return text
+
+	if(!SSautotranslate.can_translate(source_language, target_language))
+		return text
+
+	var/cached = SSautotranslate.cached_translation(text, source_language, target_language)
+	if(!isnull(cached))
+		return cached
+
+	// Warm the cache for the next render. request_translation() stores the result itself, so the
+	// callback has nothing to do - it exists only because a request with no subscriber is rejected.
+	SSautotranslate.request_translation(text, source_language, target_language, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(translation_noop)))
+	return text
+
+/// Subscriber for requests made purely to populate the cache.
+/proc/translation_noop(result, success)
+	return
+
+/**
+ * Swaps a known prose fragment inside an already-formatted line for its translation.
+ *
+ * Returns the line unchanged when there is nothing to swap, so callers can use it unconditionally.
+ * Only the fragment is ever sent to a translator; timestamps, names and links stay untouched.
+ */
+/proc/translated_panel_line(client/target, line, body)
+	if(!istext(body) || !length(body))
+		return line
+	var/translated = translated_panel_text(target, body)
+	if(translated == body)
+		return line
+	return replacetext(line, body, translated)
+
 /proc/translated_chat_text(client/target, text, client/author)
 	if(isnull(target) || !istext(text) || !length(text))
 		return text

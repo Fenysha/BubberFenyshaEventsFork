@@ -192,6 +192,12 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 	var/heard_by_no_admins = FALSE
 	/// The collection of interactions with this ticket. Use AddInteraction() or, preferably, admin_ticket_log()
 	var/list/ticket_interactions
+	/// FENYSHA EDIT ADDITION - AUTOTRANSLATE. One entry per ticket_interactions entry: the plain
+	/// prose inside it, or null for status lines that have none. The panel swaps just that
+	/// fragment for a translation, so timestamps, names and links survive.
+	var/list/interaction_bodies
+	/// FENYSHA EDIT ADDITION - AUTOTRANSLATE. The same, for player_interactions.
+	var/list/player_interaction_bodies
 	/// Statclick holder for the ticket
 	var/obj/effect/statclick/ahelp/statclick
 	/// Static counter used for generating each ticket ID
@@ -247,6 +253,10 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 	statclick = new(null, src)
 	ticket_interactions = list()
 	player_interactions = list()
+	// FENYSHA EDIT ADDITION - AUTOTRANSLATE
+	interaction_bodies = list()
+	player_interaction_bodies = list()
+	// FENYSHA EDIT ADDITION END
 
 	addtimer(CALLBACK(src, PROC_REF(add_to_ping_ss), 2 MINUTES)) //SKYRAT EDIT ADDITION - Ticket Ping | this is not responsible for the notification itself, but only for adding the ticket to the list of those to notify.
 	if(is_bwoink)
@@ -370,7 +380,9 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 	GLOB.ahelp_tickets.resolved_tickets -= src
 	return ..()
 
-/datum/admin_help/proc/AddInteraction(formatted_message, player_message)
+/// FENYSHA EDIT CHANGE - AUTOTRANSLATE - `translatable_body` is the plain prose inside the
+/// formatted messages, for the ticket panels to swap out per reader. Optional; status lines omit it.
+/datum/admin_help/proc/AddInteraction(formatted_message, player_message, translatable_body, player_translatable_body)
 	if (!isnull(usr) && usr.ckey != initiator_ckey)
 		admins_involved |= usr.ckey
 		if(heard_by_no_admins)
@@ -378,8 +390,10 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 			send2adminchat(initiator_ckey, "Ticket #[id]: Answered by [key_name(usr)]")
 
 	ticket_interactions += "[server_timestamp()]: [formatted_message]"
+	interaction_bodies += list(translatable_body) // FENYSHA EDIT ADDITION - AUTOTRANSLATE
 	if (!isnull(player_message))
 		player_interactions += "[server_timestamp()]: [player_message]"
+		player_interaction_bodies += list(player_translatable_body || translatable_body) // FENYSHA EDIT ADDITION - AUTOTRANSLATE
 
 //Removes the ahelp verb and returns it after 2 minutes
 /datum/admin_help/proc/TimeoutVerb()
@@ -424,14 +438,17 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 	msg = sanitize(copytext_char(msg, 1, MAX_MESSAGE_LEN))
 	var/ref_src = "[REF(src)]"
 	//Message to be sent to all admins
+	// FENYSHA EDIT ADDITION - AUTOTRANSLATE - held separately so it can be swapped per reader
+	var/formatted_body = span_linkify(keywords_lookup(msg))
+	// FENYSHA EDIT ADDITION END
 	var/admin_msg = fieldset_block(
 		span_adminhelp("Ticket [TicketHref("#[id]", ref_src)]"),
 		"<b>[LinkedReplyName(ref_src)]</b>\n\n\
-		[span_linkify(keywords_lookup(msg))]\n\n\
+		[formatted_body]\n\n\
 		<b class='smaller'>[FullMonty(ref_src)]</b>",
 		"boxed_message red_box")
 
-	AddInteraction("<font color='red'>[LinkedReplyName(ref_src)]: [msg]</font>", player_message = "<font color='red'>[LinkedReplyName(ref_src)]: [msg]</font>")
+	AddInteraction("<font color='red'>[LinkedReplyName(ref_src)]: [msg]</font>", player_message = "<font color='red'>[LinkedReplyName(ref_src)]: [msg]</font>", translatable_body = msg) // FENYSHA EDIT CHANGE - AUTOTRANSLATE - added translatable_body
 	log_admin_private("Ticket #[id]: [key_name(initiator)]: [msg]")
 
 	//send this msg to all admins
@@ -439,9 +456,15 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 		if(X.prefs.toggles & SOUND_ADMINHELP)
 			SEND_SOUND(X, sound('sound/effects/adminhelp.ogg'))
 		window_flash(X, ignorepref = TRUE)
+		// FENYSHA EDIT ADDITION - AUTOTRANSLATE
+		var/shown_admin_msg = admin_msg
+		var/translated_body = translated_chat_text(X, formatted_body, initiator)
+		if(translated_body != formatted_body)
+			shown_admin_msg = replacetext(admin_msg, formatted_body, translated_body)
+		// FENYSHA EDIT ADDITION END
 		to_chat(X,
 			type = MESSAGE_TYPE_ADMINPM,
-			html = admin_msg,
+			html = shown_admin_msg,
 			confidential = TRUE)
 
 	//show it to the person adminhelping too
@@ -619,8 +642,15 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 	else
 		dat += "<b>DISCONNECTED</b>[FOURSPACES][ClosureLinks(ref_src)]<br>"
 	dat += "<br><b>Log:</b><br><br>"
-	for(var/I in ticket_interactions)
-		dat += "[I]<br>"
+	// FENYSHA EDIT CHANGE - AUTOTRANSLATE - render each entry with its prose translated for
+	// whoever opened the panel. No morph here: this is a browse() window, so it shows finished
+	// text and the Refresh link above picks up anything that was not cached yet.
+	for(var/index in 1 to length(ticket_interactions))
+		dat += "[translated_panel_line(usr?.client, ticket_interactions[index], LAZYACCESS(interaction_bodies, index))]<br>"
+	// ORIGINAL:
+	// for(var/I in ticket_interactions)
+	// 	dat += "[I]<br>"
+	// FENYSHA EDIT CHANGE END
 
 	// Helper for opening directly to player ticket history
 	dat += "<br><br><b>Player Ticket History:</b>"
@@ -730,8 +760,13 @@ GLOBAL_DATUM_INIT(ahelp_tickets, /datum/admin_help_tickets, new)
 		dat += "<br>Closed at: [round_timestamp("hh:mm:ss", closed_at)] (Approx [DisplayTimeText(world.time - closed_at)] ago)"
 	dat += "<br><br>"
 	dat += "<br><b>Log:</b><br><br>"
-	for (var/interaction in player_interactions)
-		dat += "[interaction]<br>"
+	// FENYSHA EDIT CHANGE - AUTOTRANSLATE
+	for (var/index in 1 to length(player_interactions))
+		dat += "[translated_panel_line(usr?.client, player_interactions[index], LAZYACCESS(player_interaction_bodies, index))]<br>"
+	// ORIGINAL:
+	// for (var/interaction in player_interactions)
+	// 	dat += "[interaction]<br>"
+	// FENYSHA EDIT CHANGE END
 
 	var/datum/browser/player_panel = new(usr, "ahelp[id]", 0, 620, 480)
 	player_panel.set_content(dat.Join())
@@ -897,7 +932,9 @@ GAME_VERB(/client, view_latest_ticket, "View Latest Ticket", "Admin")
 /// player_message: If the message should be shown in the player ticket panel, fill this out
 /// log_in_blackbox: Whether or not this message with the blackbox system.
 /// If disabled, this message should be logged with a different proc call
-/proc/admin_ticket_log(what, message, player_message, log_in_blackbox = TRUE)
+/// FENYSHA EDIT CHANGE - AUTOTRANSLATE - the two translatable_body args carry the plain prose
+/// inside `message` and `player_message`, for the ticket panels to translate per reader.
+/proc/admin_ticket_log(what, message, player_message, log_in_blackbox = TRUE, translatable_body, player_translatable_body)
 	var/client/mob_client
 	var/mob/Mob = what
 	if(istype(Mob))
@@ -906,9 +943,9 @@ GAME_VERB(/client, view_latest_ticket, "View Latest Ticket", "Admin")
 		mob_client = what
 	if(istype(mob_client) && mob_client.current_ticket)
 		if (isnull(player_message))
-			mob_client.current_ticket.AddInteraction(message)
+			mob_client.current_ticket.AddInteraction(message, translatable_body = translatable_body)
 		else
-			mob_client.current_ticket.AddInteraction(message, player_message)
+			mob_client.current_ticket.AddInteraction(message, player_message, translatable_body, player_translatable_body)
 		if(log_in_blackbox)
 			SSblackbox.LogAhelp(mob_client.current_ticket.id, "Interaction", message, mob_client.ckey, usr.ckey)
 		return mob_client.current_ticket

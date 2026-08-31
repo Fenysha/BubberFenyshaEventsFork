@@ -457,7 +457,9 @@ ADMIN_VERB(cmd_admin_pm_panel, R_NONE, "Admin PM", "Show a list of clients to PM
 	if(our_holder)
 		recipient.receive_ahelp(
 			name_key_with_link,
-			span_linkify(keyword_parsed_msg),
+			// FENYSHA EDIT CHANGE - AUTOTRANSLATE
+			translated_chat_text(recipient, span_linkify(keyword_parsed_msg), src),
+			// ORIGINAL: span_linkify(keyword_parsed_msg),
 			"danger",
 		)
 
@@ -472,7 +474,10 @@ ADMIN_VERB(cmd_admin_pm_panel, R_NONE, "Admin PM", "Show a list of clients to PM
 		admin_ticket_log(src,
 			interaction_message,
 			log_in_blackbox = FALSE,
-			player_message = player_interaction_message)
+			player_message = player_interaction_message,
+			// FENYSHA EDIT ADDITION - AUTOTRANSLATE - the two lines embed different renderings
+			translatable_body = keyword_parsed_msg,
+			player_translatable_body = send_message)
 		if(recipient != src) //reeee
 			admin_ticket_log(recipient,
 				interaction_message,
@@ -488,11 +493,19 @@ ADMIN_VERB(cmd_admin_pm_panel, R_NONE, "Admin PM", "Show a list of clients to PM
 	admin_ticket_log(src,
 		"<font color='red'>[replymsg]</font>",
 		log_in_blackbox = FALSE,
-		player_message = player_replymsg)
+		player_message = player_replymsg,
+		// FENYSHA EDIT ADDITION - AUTOTRANSLATE
+		translatable_body = span_linkify(keyword_parsed_msg),
+		player_translatable_body = span_linkify(send_message))
+	// FENYSHA EDIT CHANGE - AUTOTRANSLATE - only the body, so the reply link survives
+	var/reply_body = span_linkify(keyword_parsed_msg)
+	var/translated_reply = translated_chat_text(recipient, reply_body, src)
+	var/shown_replymsg = (translated_reply == reply_body) ? replymsg : replacetext(replymsg, reply_body, translated_reply)
 	to_chat(recipient,
 		type = MESSAGE_TYPE_ADMINPM,
-		html = span_danger("[replymsg]"),
+		html = span_danger("[shown_replymsg]"),
 		confidential = TRUE)
+	// FENYSHA EDIT CHANGE END
 
 	ticket.reply_to_admins_notification(send_message)
 	SSblackbox.LogAhelp(ticket_id, "Reply", send_message, recip_ckey, our_ckey)
