@@ -105,6 +105,7 @@
 			<a class="menu_button" href='byond://?src=[text_ref(src)];character_setup=1'>SETUP CHARACTER</a>
 			<a class="menu_button" href='byond://?src=[text_ref(src)];game_options=1'>GAME OPTIONS</a>
 			<a id="be_antag" class="menu_button" href='byond://?src=[text_ref(src)];toggle_antag=1'>[client.prefs.read_preference(/datum/preference/toggle/be_antag) ? "<span class='checked'>☑</span> BE ANTAGONIST" : "<span class='unchecked'>☒</span> BE ANTAGONIST"]</a>
+			<a id="translate" class="menu_button" href='byond://?src=[text_ref(src)];toggle_translate=1'>[autotranslate_lobby_label(client.prefs.read_preference(/datum/preference/choiced/autotranslate_target))]</a>
 		"}
 
 		if(length(GLOB.lobby_station_traits))
@@ -148,6 +149,16 @@
 						antag_int = 0;
 					antag_mark.innerHTML = antag_marks\[antag_int\];
 				}
+			}
+
+			var translate_int = [autotranslate_lobby_index(client.prefs.read_preference(/datum/preference/choiced/autotranslate_target))];
+			var translate_mark = document.getElementById("translate");
+			var translate_marks = \[ [autotranslate_lobby_label_array()] \];
+			function toggle_translate(state) {
+				translate_int = Number(state);
+				if(isNaN(translate_int) || translate_int < 0 || translate_int >= translate_marks.length)
+					translate_int = 0;
+				translate_mark.innerHTML = translate_marks\[translate_int\];
 			}
 
 			var character_name_slot = document.getElementById("character_slot");
@@ -304,7 +315,7 @@
 			<a class="menu_button" href='byond://?src=[text_ref(src)];game_options=1'>GAME OPTIONS</a>
 			<a id="be_antag" class="menu_button" href='byond://?src=[text_ref(src)];toggle_antag=1'>[client.prefs.read_preference(/datum/preference/toggle/be_antag) ? "<span class='checked'>☑</span> BE ANTAGONIST" : "<span class='unchecked'>☒</span> BE ANTAGONIST"]</a>
 			<hr>
-			<a class="menu_button" href='byond://?src=[text_ref(src)];server_swap=1'>SWAP SERVERS</a>
+			<a id="translate" class="menu_button" href='byond://?src=[text_ref(src)];toggle_translate=1'>[autotranslate_lobby_label(client.prefs.read_preference(/datum/preference/choiced/autotranslate_target))]</a>
 		"}
 
 		if(length(GLOB.lobby_station_traits))
@@ -341,6 +352,16 @@
 						antag_int = 0;
 					antag_mark.innerHTML = antag_marks\[antag_int\];
 				}
+			}
+
+			var translate_int = [autotranslate_lobby_index(client.prefs.read_preference(/datum/preference/choiced/autotranslate_target))];
+			var translate_mark = document.getElementById("translate");
+			var translate_marks = \[ [autotranslate_lobby_label_array()] \];
+			function toggle_translate(state) {
+				translate_int = Number(state);
+				if(isNaN(translate_int) || translate_int < 0 || translate_int >= translate_marks.length)
+					translate_int = 0;
+				translate_mark.innerHTML = translate_marks\[translate_int\];
 			}
 
 			var character_name_slot = document.getElementById("character_slot");

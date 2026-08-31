@@ -97,7 +97,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_ADMIN, "Direct Narrate",
 
 	msg = user.reformat_narration(msg)
 
-	to_chat(target, msg, confidential = TRUE)
+	// FENYSHA EDIT ADDITION - AUTOTRANSLATE
+	to_chat(target, translated_chat_text(target.client, msg, user), confidential = TRUE)
+	// ORIGINAL: to_chat(target, msg, confidential = TRUE)
 	log_admin("DirectNarrate: [key_name(user)] to ([key_name(target)]): [msg]")
 	msg = span_adminnotice("<b> DirectNarrate: [key_name_admin(user)] to ([key_name_admin(target)]):</b> [msg]<BR>")
 	message_admins(msg)

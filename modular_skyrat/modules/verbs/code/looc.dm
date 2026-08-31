@@ -84,13 +84,20 @@ GAME_VERB_DESC(/client, looc_wallpierce, "LOOC (Wallpierce)", "Local OOC, seen b
 		if (is_holder)
 			continue //admins are handled afterwards
 
+		// FENYSHA EDIT ADDITION - AUTOTRANSLATE
+		var/shown_msg = translated_chat_text(hearing_client, msg, src)
+		// FENYSHA EDIT ADDITION END
+
 		if(holder && isdead(src.mob)) // Admins ghosted display ckey
-			to_chat(hearing_client, span_looc(span_prefix("LOOC[wall_pierce ? " (WALL PIERCE)" : ""]:</span> <EM>[src.ckey]:</EM> <span class='message'>[msg]")))
+			to_chat(hearing_client, span_looc(span_prefix("LOOC[wall_pierce ? " (WALL PIERCE)" : ""]:</span> <EM>[src.ckey]:</EM> <span class='message'>[shown_msg]")))
 		else
-			to_chat(hearing_client, span_looc(span_prefix("LOOC[wall_pierce ? " (WALL PIERCE)" : ""]:</span> <EM>[src.mob.name]:</EM> <span class='message'>[msg]")))
+			to_chat(hearing_client, span_looc(span_prefix("LOOC[wall_pierce ? " (WALL PIERCE)" : ""]:</span> <EM>[src.mob.name]:</EM> <span class='message'>[shown_msg]")))
 
 	for(var/client/cli_client as anything in GLOB.admins)
+		// FENYSHA EDIT ADDITION - AUTOTRANSLATE - admins skip the loop above via `continue`,
+		// so this is the only place their copy of the line gets built. Without this they were
+		// the one group that never saw LOOC translated.
 		if (admin_seen[cli_client])
-			to_chat(cli_client, span_looc("[ADMIN_FLW(usr)] <span class='prefix'>LOOC[wall_pierce ? " (WALL PIERCE)" : ""]:</span> <EM>[src.key]/[src.mob.name]:</EM> <span class='message'>[msg]</span>"))
+			to_chat(cli_client, span_looc("[ADMIN_FLW(usr)] <span class='prefix'>LOOC[wall_pierce ? " (WALL PIERCE)" : ""]:</span> <EM>[src.key]/[src.mob.name]:</EM> <span class='message'>[translated_chat_text(cli_client, msg, src)]</span>"))
 		else if (cli_client.prefs.read_preference(/datum/preference/toggle/admin/see_looc))
-			to_chat(cli_client, span_rlooc("[ADMIN_FLW(usr)] <span class='prefix'>(R)LOOC[wall_pierce ? " (WALL PIERCE)" : ""]:</span> <EM>[src.key]/[src.mob.name]:</EM> <span class='message'>[msg]</span>"))
+			to_chat(cli_client, span_rlooc("[ADMIN_FLW(usr)] <span class='prefix'>(R)LOOC[wall_pierce ? " (WALL PIERCE)" : ""]:</span> <EM>[src.key]/[src.mob.name]:</EM> <span class='message'>[translated_chat_text(cli_client, msg, src)]</span>"))

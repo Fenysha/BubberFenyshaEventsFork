@@ -75,3 +75,44 @@
 		return null
 
 	return new /datum/translated_speech(listener, raw_message, source_language, target_language)
+
+/**
+ * Chat-only translation for communication that is not mob speech.
+ *
+ * Returns the text to actually send: wrapped for the panel if a translation
+ * is on its way, unchanged otherwise. Safe to call with any client and any
+ * text - every gate is checked internally.
+ *
+ * Dispatch is deferred a tick so the caller's own to_chat is queued into
+ * SSchat first, keeping the line ahead of its translation notice.
+ *
+ * `author` is whoever wrote the line, when there is one. A player watching
+ * their own words rewrite themselves is disorienting and tells them nothing,
+ * so the writer always sees exactly what they typed - the same rule
+ * try_begin_translation() applies to speech.
+ *
+ * Use for announcements, narrations, admin PMs and similar. Speech goes
+ * through try_begin_translation() instead, since that also drives runechat.
+ */
+/proc/translated_chat_text(client/target, text, client/author)
+	if(isnull(target) || !istext(text) || !length(text))
+		return text
+
+	if(!isnull(author) && target == author)
+		return text
+
+	var/target_language = autotranslate_pref_to_code(target.prefs?.read_preference(/datum/preference/choiced/autotranslate_target))
+	if(isnull(target_language))
+		return text
+
+	var/source_language = autotranslate_detect_language(text)
+	if(source_language == target_language)
+		return text
+
+	if(!SSautotranslate.can_translate(source_language, target_language))
+		return text
+
+	var/datum/translated_speech/handle = new(target, text, source_language, target_language)
+	var/wrapped = handle.wrapped_text()
+	addtimer(CALLBACK(handle, TYPE_PROC_REF(/datum/translated_speech, begin)), 0)
+	return wrapped

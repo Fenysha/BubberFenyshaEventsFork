@@ -34,9 +34,11 @@
 	machine_gasmix = new()
 	machine_gasmix.volume = gas_theoretical_volume
 
-	if(mapload && part_path)
-		installed_part = new part_path(src)
-		efficiency = installed_part?.get_tier_value(TURBINE_MAX_EFFICIENCY) || efficiency
+	if(part_path)
+		installed_part = locate(part_path) in component_parts
+		if(installed_part)
+			component_parts -= installed_part
+			efficiency = installed_part.get_tier_value(TURBINE_MAX_EFFICIENCY) || efficiency
 
 	air_update_turf(TRUE)
 	update_appearance(UPDATE_OVERLAYS)
@@ -77,7 +79,11 @@
 	desc = "The inlet part of the train's steam turbine. Connects to pipes for the supply of hot water vapor."
 	icon_state = "inlet_compressor"
 	base_icon_state = "inlet_compressor"
+	circuit = /obj/item/circuitboard/machine/train_turbine_compressor
 	part_path = /obj/item/turbine_parts/compressor
+	// Matches a tier 1 compressor part, so pulling the part out is a downgrade and slotting a tier 1
+	// back in is a no-op. Left at the base 0.5 these read *better* stripped than stock.
+	efficiency = 0.25
 	gas_theoretical_volume = 1000
 
 	/// Steam intake regulator (0.01–1.0)
@@ -135,7 +141,9 @@
 	desc = "The central part of the train's steam turbine. Controls RPM, temperature, and power generation. The higher the RPM, the more power - but also the greater the risk of overheating and destruction."
 	icon_state = "core_rotor"
 	base_icon_state = "core_rotor"
+	circuit = /obj/item/circuitboard/machine/train_turbine_rotor
 	part_path = /obj/item/turbine_parts/rotor
+	efficiency = 0.25
 	gas_theoretical_volume = 3000
 
 	var/active = FALSE
@@ -173,19 +181,25 @@
 
 /obj/machinery/power/train_turbine/core_rotor/Initialize(mapload)
 	. = ..()
-	new /obj/item/paper/guides/jobs/atmos/train_turbine(loc)
-	SStrain_controller.train_engine = src
+	if(mapload)
+		new /obj/item/paper/guides/jobs/atmos/train_turbine(loc)
+	// Claim the engine slot only if it is free, so building a second rotor cannot steal the train's
+	// drive away from the working one.
+	if(QDELETED(SStrain_controller.train_engine))
+		SStrain_controller.train_engine = src
 	soundloop = new(src)
 	connect_to_network()
 
 /obj/machinery/power/train_turbine/core_rotor/Destroy()
-	. = ..()
-	SStrain_controller.train_engine = null
+	// Release before the parent runs, and only if we are the engine - otherwise scrapping a spare
+	// rotor unsets the live one and the train refuses to move.
+	if(SStrain_controller.train_engine == src)
+		SStrain_controller.train_engine = null
+	// Clears compressor.rotor / turbine.rotor so surviving parts do not hold a deleted core. Must run
+	// before the soundloop goes, since end_processing() stops it.
+	deactivate_parts()
 	QDEL_NULL(soundloop)
-
-/obj/machinery/power/train_turbine/core_rotor/post_machine_initialize()
-	. = ..()
-	activate_parts()
+	return ..()
 
 /obj/machinery/power/train_turbine/core_rotor/begin_processing()
 	. = ..()
@@ -331,9 +345,11 @@
 	if(!check_only)
 		compressor.rotor = src
 		turbine.rotor = src
-		max_temperature = 1000 + installed_part?.get_tier_value(TURBINE_MAX_TEMP) * 0.1 || 0
-		max_rpm = 5950 + installed_part?.get_tier_value(TURBINE_MAX_RPM) * 0.001 || 0
-		efficiency = (compressor.efficiency + turbine.efficiency) / 3
+		max_temperature = 1000 + (installed_part?.get_tier_value(TURBINE_MAX_TEMP) || 0) * 0.1
+		max_rpm = 5950 + (installed_part?.get_tier_value(TURBINE_MAX_RPM) || 0) * 0.001
+		// From our own installed tier. Averaging the neighbours here discarded every rotor upgrade,
+		// and process() already averages all three parts when it computes total_efficiency.
+		efficiency = installed_part?.get_tier_value(TURBINE_MAX_EFFICIENCY) || initial(efficiency)
 
 	return TRUE
 
@@ -388,7 +404,9 @@
 	desc = "The outlet part of the train's steam turbine. Exhausts CO₂ into the atmosphere and routes cooled water through liquid pipes."
 	icon_state = "inlet_compressor"
 	base_icon_state = "inlet_compressor"
+	circuit = /obj/item/circuitboard/machine/train_turbine_stator
 	part_path = /obj/item/turbine_parts/stator
+	efficiency = 0.85
 	gas_theoretical_volume = 6000
 
 	var/turf/open/output_turf
@@ -421,6 +439,7 @@
 	icon_state = MAP_SWITCH("computer", "/obj/machinery/computer/train_turbine_computer")
 	icon_screen = "alert:0"
 	icon_keyboard = "atmos_key"
+	circuit = /obj/item/circuitboard/computer/train_turbine_computer
 	var/datum/weakref/rotor_ref
 	var/mapping_id
 
@@ -455,11 +474,24 @@
 /obj/machinery/computer/train_turbine_computer/proc/register_machine(obj/machinery/power/train_turbine/core_rotor/machine)
 	rotor_ref = WEAKREF(machine)
 
+/// The core this console drives. A console built in-round has no mapping_id to match on, so fall back
+/// to the train's engine - there is only ever one - rather than showing a dead UI until someone
+/// multitools it. An explicit multitool link still wins.
+/obj/machinery/computer/train_turbine_computer/proc/resolve_rotor()
+	var/obj/machinery/power/train_turbine/core_rotor/linked = rotor_ref?.resolve()
+	if(!QDELETED(linked))
+		return linked
+	linked = SStrain_controller.train_engine
+	if(QDELETED(linked))
+		return null
+	register_machine(linked)
+	return linked
+
 
 /obj/machinery/computer/train_turbine_computer/ui_interact(mob/user, datum/tgui/ui)
 	. = ..()
-	var/obj/machinery/power/train_turbine/core_rotor/main_control = rotor_ref?.resolve()
-	if(!main_control.activate_parts(user, check_only = TRUE))
+	var/obj/machinery/power/train_turbine/core_rotor/main_control = resolve_rotor()
+	if(!QDELETED(main_control) && !main_control.activate_parts(user, check_only = TRUE))
 		main_control.activate_parts(user)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -470,12 +502,13 @@
 /obj/machinery/computer/train_turbine_computer/ui_data(mob/user)
 	. = list()
 
-	var/obj/machinery/power/train_turbine/core_rotor/main_control = rotor_ref?.resolve()
+	var/obj/machinery/power/train_turbine/core_rotor/main_control = resolve_rotor()
 	if(QDELETED(main_control) || !main_control.all_parts_connected)
 		.["connected"] = FALSE
 		return
-	var/datum/gas_mixture/pipe_mix = main_control.compressor?.connector?.gas_connector?.airs[1]
-	.["compressor_too_cold"] = pipe_mix.temperature < MIN_STEAM_TEMPERATURE || FALSE
+	var/list/connector_airs = main_control.compressor?.connector?.gas_connector?.airs
+	var/datum/gas_mixture/pipe_mix = length(connector_airs) ? connector_airs[1] : null
+	.["compressor_too_cold"] = isnull(pipe_mix) || pipe_mix.temperature < MIN_STEAM_TEMPERATURE
 	.["connected"] = TRUE
 	.["active"] = main_control.active
 	.["rpm"] = main_control.rpm
@@ -506,8 +539,8 @@
 	if(.)
 		return
 
-	var/obj/machinery/power/train_turbine/core_rotor/main_control = rotor_ref?.resolve()
-	if(!main_control)
+	var/obj/machinery/power/train_turbine/core_rotor/main_control = resolve_rotor()
+	if(QDELETED(main_control))
 		return FALSE
 
 	switch(action)
@@ -523,6 +556,8 @@
 		if("regulate")
 			var/val = params["regulate"]
 			if(isnull(val))
+				return FALSE
+			if(QDELETED(main_control.compressor))
 				return FALSE
 			main_control.compressor.intake_regulator = clamp(text2num(val), 0.01, 1)
 			return TRUE
@@ -585,6 +620,7 @@
 	icon = 'fenysha_events/icons/machinery/thermomachine.dmi'
 	icon_state = "thermo_base"
 	base_icon_state = "thermo_base"
+	circuit = /obj/item/circuitboard/machine/train_heater
 	can_atmos_pass = ATMOS_PASS_DENSITY
 	buffer = HEATER_WATER_VOLUME
 

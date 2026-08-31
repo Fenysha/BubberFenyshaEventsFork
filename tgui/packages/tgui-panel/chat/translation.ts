@@ -269,9 +269,7 @@ function findPendingMarker(
   id: string | null,
 ): HTMLElement | null {
   if (id) {
-    const byId = document.querySelector<HTMLElement>(
-      `[data-tsl-for="${id}"]`,
-    );
+    const byId = document.querySelector<HTMLElement>(`[data-tsl-for="${id}"]`);
     if (byId) {
       return byId;
     }
@@ -412,7 +410,10 @@ function reapplyHighlights(node: HTMLElement): void {
       (text: string) => {
         const span = document.createElement('span');
         span.className = 'Chat__highlight';
-        span.setAttribute('style', `--highlight-color:${parser.highlightColor}`);
+        span.setAttribute(
+          'style',
+          `--highlight-color:${parser.highlightColor}`,
+        );
         span.textContent = text;
         return span;
       },
@@ -438,6 +439,8 @@ function morph(node: HTMLElement, payload: TranslationPayload): void {
   const to = Array.from(payload.text ?? '');
   const duration = payload.duration ?? DEFAULT_DURATION;
   const scramble = payload.scramble ?? DEFAULT_SCRAMBLE;
+
+  settleTranslated(node, originalText);
 
   if (!to.length) {
     return;
@@ -465,20 +468,27 @@ function morph(node: HTMLElement, payload: TranslationPayload): void {
       return;
     }
     node.classList.remove('tsl-morphing');
-    node.classList.add('tsl-translated');
-    // Hovering a translated line shows what was actually said. Only mark it
-    // as hoverable if there is genuinely something to show, otherwise the
-    // help cursor promises a tooltip that never appears.
-    if (originalText) {
-      node.setAttribute('title', originalText);
-    } else {
-      node.removeAttribute('title');
-      node.classList.add('tsl-no-tooltip');
-    }
     reapplyHighlights(node);
   };
 
   requestAnimationFrame(step);
+}
+
+/**
+ * Marks a line as settled on its translation, with the original on hover.
+ *
+ * Only marked hoverable when there is genuinely something to show - a help
+ * cursor promising a tooltip that never appears is worse than no affordance.
+ */
+function settleTranslated(node: HTMLElement, originalText: string): void {
+  node.classList.add('tsl-translated');
+  if (originalText) {
+    node.setAttribute('title', originalText);
+    node.classList.remove('tsl-no-tooltip');
+  } else {
+    node.removeAttribute('title');
+    node.classList.add('tsl-no-tooltip');
+  }
 }
 
 /** Clears the pending affordances and, on success, runs the morph. */
@@ -505,8 +515,6 @@ function applyTranslation(
 
 /** Entry point, registered against `chat/translation` in events/listeners.ts. */
 export function chatTranslation(rawPayload: string): void {
-
-
   let payload: TranslationPayload;
   try {
     payload = payloadSchema.parse(

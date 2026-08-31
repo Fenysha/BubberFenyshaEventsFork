@@ -72,6 +72,13 @@
 		server_swap()
 		return
 
+	// FENYSHA EDIT ADDITION - AUTOTRANSLATE - the lobby button that used to swap servers
+	if(href_list["toggle_translate"])
+		play_lobby_button_sound()
+		cycle_autotranslate_preference()
+		return
+	// FENYSHA EDIT ADDITION END
+
 	if(href_list["view_manifest"])
 		play_lobby_button_sound()
 		ViewManifest()

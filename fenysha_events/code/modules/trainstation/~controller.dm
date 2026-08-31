@@ -10,7 +10,10 @@ SUBSYSTEM_DEF(train_controller)
 
 	dependencies = list(
 		/datum/controller/subsystem/mapping,
-		/datum/controller/subsystem/daylight,
+	    // otherwise tcomms won't work correctly
+		/datum/controller/subsystem/atoms,
+		/datum/controller/subsystem/machines,
+		/datum/controller/subsystem/lighting,
 	)
 
 	/// The global map along which the train moves
@@ -1284,7 +1287,7 @@ ADMIN_VERB(open_train_controller, R_ADMIN, "Open train controller", "Open active
 	SStrain_controller.ui_interact(usr)
 
 /obj/effect/mapping_helpers/ztrait_injector/trainstation
-	traits_to_add = list(ZTRAIT_NOPARALLAX = TRUE, ZTRAIT_NOXRAY = TRUE, ZTRAIT_NOPHASE = TRUE, ZTRAT_TRAINSTATION = TRUE, ZTRAIT_BASETURF = /turf/open/space)
+	traits_to_add = list(ZTRAIT_NOPARALLAX = TRUE, ZTRAIT_NOXRAY = TRUE, ZTRAIT_NOPHASE = TRUE, ZTRAIT_TRAINSTATION = TRUE, ZTRAIT_BASETURF = /turf/open/misc/asteroid/snow)
 
 
 /atom/movable/screen/station_logo

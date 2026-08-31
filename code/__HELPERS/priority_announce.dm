@@ -83,7 +83,7 @@
 	else
 		finalized_announcement = CHAT_ALERT_DEFAULT_SPAN(jointext(announcement_strings, ""))
 
-	dispatch_announcement_to_players(finalized_announcement, players, sound)
+	dispatch_announcement_to_players(finalized_announcement, players, sound, translatable_body = text) // FENYSHA EDIT - AUTOTRANSLATE
 
 	if(isnull(sender_override) && players == GLOB.player_list)
 		if(length(title) > 0)
@@ -156,7 +156,7 @@
 		finalized_announcement = CHAT_ALERT_DEFAULT_SPAN(jointext(minor_announcement_strings, ""))
 
 	var/custom_sound = sound_override || (alert ? 'modular_skyrat/modules/alerts/sound/alerts/alert1.ogg' : 'sound/announcer/notice/notice2.ogg') // SKYRAT EDIT CHANGE - CUSTOM ANNOUNCEMENTS - Original: 'sound/announcer/notice/notice1.ogg'
-	dispatch_announcement_to_players(finalized_announcement, players, custom_sound, should_play_sound)
+	dispatch_announcement_to_players(finalized_announcement, players, custom_sound, should_play_sound, translatable_body = message) // FENYSHA EDIT - AUTOTRANSLATE
 
 /// Sends an announcement about the level changing to players. Uses the passed in datum and the subsystem's previous security level to generate the message.
 /proc/level_announce(datum/security_level/selected_level, previous_level_number)
@@ -199,7 +199,7 @@
 
 /// Proc that just dispatches the announcement to our applicable audience. Only the announcement is a mandatory arg.
 /// `should_play_sound` can also be a callback, if you want to only play the sound to specific players.
-/proc/dispatch_announcement_to_players(announcement, list/players = GLOB.player_list, sound_override = null, should_play_sound = TRUE)
+/proc/dispatch_announcement_to_players(announcement, list/players = GLOB.player_list, sound_override = null, should_play_sound = TRUE, translatable_body = null)
 	// SKYRAT EDIT CHANGE BEGIN - CUSTOM ANNOUNCEMENTS
 	/* Original:
 
@@ -233,7 +233,18 @@
 		if(isnewplayer(target) || HAS_TRAIT(target, TRAIT_DEAF))
 			continue
 
-		to_chat(target, announcement)
+		// FENYSHA EDIT ADDITION BEGIN - AUTOTRANSLATE
+		// The announcement is one shared HTML string, so swap just the body
+		// in for readers who want it translated. The header and markup are
+		// left alone - only the plain body is ever sent to a translator.
+		var/shown_announcement = announcement
+		if(translatable_body)
+			var/translated_body = translated_chat_text(target.client, translatable_body)
+			if(translated_body != translatable_body)
+				shown_announcement = replacetext(announcement, translatable_body, translated_body)
+		to_chat(target, shown_announcement)
+		// ORIGINAL: to_chat(target, announcement)
+		// FENYSHA EDIT ADDITION END
 	// SKYRAT EDIT CHANGE END - CUSTOM ANNOUNCEMENTS
 
 #undef MAJOR_ANNOUNCEMENT_TITLE
