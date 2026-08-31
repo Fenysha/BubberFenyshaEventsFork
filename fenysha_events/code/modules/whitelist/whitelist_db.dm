@@ -269,5 +269,32 @@ SUBSYSTEM_DEF(whitelist)
 	return length(rows_to_insert)
 
 
+/**
+ * Lets the Discord bot push a whitelist change into the running round.
+ *
+ * The bot writes straight into `player_rank`, and the game only reads that table when
+ * SSwhitelist initialises, so without this a whitelist granted over Discord did not take
+ * effect until the next round started or an admin ran "Reload Whitelist" by hand.
+ *
+ * Comms-key protected, like every other topic that changes state. Answers with a small
+ * result the bot can show the player, so "you are whitelisted" is not a guess.
+ */
+/datum/world_topic/whitelist_reload
+	keyword = "whitelist_reload"
+
+/datum/world_topic/whitelist_reload/Run(list/input)
+	if(!CONFIG_GET(flag/usewhitelist))
+		return list("status" = "error", "error" = "whitelist is disabled on this server")
+
+	if(CONFIG_GET(flag/whitelist_legacy_system))
+		return list("status" = "error", "error" = "server is running the legacy whitelist.txt")
+
+	if(!SSwhitelist.load_whitelist_from_db())
+		return list("status" = "error", "error" = "reload failed, see the server logs")
+
+	log_game("Whitelist reloaded from the database over world topic ([length(GLOB.whitelist)] ckeys).")
+	return list("status" = "ok", "count" = length(GLOB.whitelist))
+
+
 #undef WHITELIST_TABLE_NAME
 #undef WHITELIST_RANK_TITLE
