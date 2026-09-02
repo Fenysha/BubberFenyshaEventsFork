@@ -157,18 +157,18 @@ ADMIN_VERB(daylight_reapply_lighting, R_ADMIN, "Daylight Reapply Area Lighting",
 
 	return FALSE
 
-/datum/preference/toggle/daylight_tint_fx
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "daylight_tint_fx"
-	savefile_identifier = PREFERENCE_PLAYER
+// /datum/preference/toggle/daylight_tint_fx
+// 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
+// 	savefile_key = "daylight_tint_fx"
+// 	savefile_identifier = PREFERENCE_PLAYER
 
-/datum/preference/toggle/daylight_tint_fx/create_default_value()
-	return TRUE
+// /datum/preference/toggle/daylight_tint_fx/create_default_value()
+// 	return TRUE
 
-/datum/preference/toggle/daylight_particle_fx
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "daylight_particle_fx"
-	savefile_identifier = PREFERENCE_PLAYER
+// /datum/preference/toggle/daylight_particle_fx
+// 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
+// 	savefile_key = "daylight_particle_fx"
+// 	savefile_identifier = PREFERENCE_PLAYER
 
-/datum/preference/toggle/daylight_particle_fx/create_default_value()
-	return TRUE
+// /datum/preference/toggle/daylight_particle_fx/create_default_value()
+// 	return TRUE
