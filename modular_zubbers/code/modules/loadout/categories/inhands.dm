@@ -41,9 +41,11 @@
 	name = "Folded Wheelchair"
 	item_path = /obj/item/wheelchair
 
+#if !defined(NOERP)
 /datum/loadout_item/inhand/sex_sign
 	name = "Sex Holosign Projector"
 	item_path = /obj/item/holosign_creator/sex
+#endif
 
 /datum/loadout_item/inhand/umbrella
 	name = "Umbrella"

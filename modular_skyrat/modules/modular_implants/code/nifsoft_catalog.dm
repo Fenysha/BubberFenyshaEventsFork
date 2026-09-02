@@ -2,12 +2,16 @@ GLOBAL_LIST_INIT(purchasable_nifsofts, list(
 	/datum/nifsoft/hivemind,
 	/datum/nifsoft/summoner,
 	/datum/nifsoft/action_granter/shapeshifter,
+#if !defined(NOERP)
 	/datum/nifsoft/summoner/dorms,
+#endif
 	/datum/nifsoft/soul_poem,
 	/datum/nifsoft/soulcatcher,
 	/datum/nifsoft/scryer,
 	/datum/nifsoft/summoner/book,
+#if !defined(NOERP)
 	/datum/nifsoft/action_granter/hypnosis,
+#endif
 ))
 
 /datum/computer_file/program/nifsoft_downloader

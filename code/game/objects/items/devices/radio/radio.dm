@@ -403,12 +403,14 @@
 	. = ..()
 	if(radio_freq || !broadcasting || get_dist(src, speaker) > canhear_range || message_mods[MODE_RELAY])
 		return
+#if !defined(NOERP)
 	// BUBBER Edit Start - the worst snowflake code for vore
 	if(istype(speaker.loc, /obj/vore_belly))
 		var/obj/vore_belly/VB = speaker.loc
 		if(VB.muffles_radio)
 			return
 	// BUBBER Edit End
+#endif
 	var/list/filtered_mods = list()
 
 	if (message_mods[MODE_SING])

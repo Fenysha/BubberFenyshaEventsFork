@@ -323,12 +323,16 @@ GAME_VERB_PROC(/mob, Cell, "Cell", "Admin")
 			msg_type = MSG_AUDIBLE
 		else if(T != loc && T != src) //if src is inside something and not a turf.
 			// BUBBER EDIT Start - Prey hear each other in bellies + pred always hears prey
+#if !defined(NOERP)
 			if(istype(loc, /obj/vore_belly))
 				if(hearing_mob.loc != loc && hearing_mob != loc.loc)
 					msg = blind_message
 					msg_type = MSG_AUDIBLE
 			// BUBBER EDIT End
 			else if(hearing_mob != loc)  // Only give the blind message to hearers that aren't the location
+#else
+			if(hearing_mob != loc)  // Only give the blind message to hearers that aren't the location
+#endif
 				msg = blind_message
 				msg_type = MSG_AUDIBLE
 		else if(!HAS_TRAIT(hearing_mob, TRAIT_HEAR_THROUGH_DARKNESS) && hearing_mob.lighting_cutoff < LIGHTING_CUTOFF_HIGH && T.is_softly_lit() && !in_range(T,hearing_mob)) //if it is too dark, unless we're right next to them.

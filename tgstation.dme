@@ -14,7 +14,6 @@
 
 // BEGIN_PREFERENCES
 #define DEBUG
-#define NOERP // Этот дефайн отключает загрузку любого контента относящего к эротике. ВСЕГО
 // END_PREFERENCES
 
 // BEGIN_INCLUDE
@@ -578,6 +577,7 @@
 #include "code\__DEFINES\~~bubber_defines\traits\nanites.dm"
 #include "code\__DEFINES\~~bubber_defines\traits\sources.dm"
 #include "code\__DEFINES\~~bubber_defines\traits\station_traits.dm"
+#include "code\__fenysha_modular\_compile_options.dm"
 #include "code\__HELPERS\_auxtools_api.dm"
 #include "code\__HELPERS\_dreamluau.dm"
 #include "code\__HELPERS\_level_traits.dm"
@@ -7336,11 +7336,15 @@
 #include "modular_skyrat\master_files\code\modules\client\preferences\delete_sparks.dm"
 #include "modular_skyrat\master_files\code\modules\client\preferences\emote_overlay.dm"
 #include "modular_skyrat\master_files\code\modules\client\preferences\emote_panel.dm"
+#if !defined(NOERP)
 #include "modular_skyrat\master_files\code\modules\client\preferences\erp_preferences.dm"
+#endif
 #include "modular_skyrat\master_files\code\modules\client\preferences\face_cursor_combat_mode.dm"
 #include "modular_skyrat\master_files\code\modules\client\preferences\flavor_text.dm"
 #include "modular_skyrat\master_files\code\modules\client\preferences\gameplay.dm"
+#if !defined(NOERP)
 #include "modular_skyrat\master_files\code\modules\client\preferences\genitals.dm"
+#endif
 #include "modular_skyrat\master_files\code\modules\client\preferences\ghost.dm"
 #include "modular_skyrat\master_files\code\modules\client\preferences\headshot.dm"
 #include "modular_skyrat\master_files\code\modules\client\preferences\laugh.dm"
@@ -8095,7 +8099,9 @@
 #include "modular_skyrat\modules\customization\modules\mob\dead\new_player\sprite_accessories\ears.dm"
 #include "modular_skyrat\modules\customization\modules\mob\dead\new_player\sprite_accessories\fluff.dm"
 #include "modular_skyrat\modules\customization\modules\mob\dead\new_player\sprite_accessories\frills.dm"
+#if !defined(NOERP)
 #include "modular_skyrat\modules\customization\modules\mob\dead\new_player\sprite_accessories\genitals.dm"
+#endif
 #include "modular_skyrat\modules\customization\modules\mob\dead\new_player\sprite_accessories\hair.dm"
 #include "modular_skyrat\modules\customization\modules\mob\dead\new_player\sprite_accessories\head_accessory.dm"
 #include "modular_skyrat\modules\customization\modules\mob\dead\new_player\sprite_accessories\horns.dm"
@@ -8172,7 +8178,9 @@
 #include "modular_skyrat\modules\customization\modules\surgery\organs\eyes.dm"
 #include "modular_skyrat\modules\customization\modules\surgery\organs\fluff.dm"
 #include "modular_skyrat\modules\customization\modules\surgery\organs\frills.dm"
+#if !defined(NOERP)
 #include "modular_skyrat\modules\customization\modules\surgery\organs\genitals.dm"
+#endif
 #include "modular_skyrat\modules\customization\modules\surgery\organs\head_accessory.dm"
 #include "modular_skyrat\modules\customization\modules\surgery\organs\horns.dm"
 #include "modular_skyrat\modules\customization\modules\surgery\organs\moth_antennae.dm"
@@ -8268,7 +8276,9 @@
 #include "modular_skyrat\modules\food_replicator\code\replicator_designs\replicator_food.dm"
 #include "modular_skyrat\modules\food_replicator\code\replicator_designs\replicator_medical.dm"
 #include "modular_skyrat\modules\GAGS\greyscale_configs.dm"
+#if !defined(NOERP)
 #include "modular_skyrat\modules\GAGS\nsfw\greyscale_configs.dm"
+#endif
 #include "modular_skyrat\modules\gladiator\code\datums\ruins\lavaland.dm"
 #include "modular_skyrat\modules\gladiator\code\game\objects\items\gladiator_items.dm"
 #include "modular_skyrat\modules\gladiator\code\modules\mob\living\simple_animal\hostile\megafauna\markedone.dm"
@@ -8324,9 +8334,11 @@
 #include "modular_skyrat\modules\indicators\code\sealed.dm"
 #include "modular_skyrat\modules\indicators\code\ssd_indicator.dm"
 #include "modular_skyrat\modules\inflatables\code\inflatable.dm"
+#if !defined(NOERP)
 #include "modular_skyrat\modules\interaction_menu\code\click.dm"
 #include "modular_skyrat\modules\interaction_menu\code\interaction_component.dm"
 #include "modular_skyrat\modules\interaction_menu\code\interaction_datum.dm"
+#endif
 #include "modular_skyrat\modules\jungle\code\flora.dm"
 #include "modular_skyrat\modules\kahraman_equipment\code\gps_beacon.dm"
 #include "modular_skyrat\modules\kahraman_equipment\code\looping_sounds.dm"
@@ -8514,10 +8526,14 @@
 #include "modular_skyrat\modules\modular_implants\code\nifsoft_catalog.dm"
 #include "modular_skyrat\modules\modular_implants\code\nifsofts.dm"
 #include "modular_skyrat\modules\modular_implants\code\nifsofts\book_summoner.dm"
+#if !defined(NOERP)
 #include "modular_skyrat\modules\modular_implants\code\nifsofts\dorms.dm"
+#endif
 #include "modular_skyrat\modules\modular_implants\code\nifsofts\hivemind.dm"
 #include "modular_skyrat\modules\modular_implants\code\nifsofts\huds.dm"
+#if !defined(NOERP)
 #include "modular_skyrat\modules\modular_implants\code\nifsofts\hypnosis.dm"
+#endif
 #include "modular_skyrat\modules\modular_implants\code\nifsofts\money_sense.dm"
 #include "modular_skyrat\modules\modular_implants\code\nifsofts\prop_summoner.dm"
 #include "modular_skyrat\modules\modular_implants\code\nifsofts\scryer.dm"
@@ -8544,6 +8560,7 @@
 #include "modular_skyrat\modules\modular_items\code\summon_beacon.dm"
 #include "modular_skyrat\modules\modular_items\code\tailoring.dm"
 #include "modular_skyrat\modules\modular_items\code\thieving_gloves.dm"
+#if !defined(NOERP)
 #include "modular_skyrat\modules\modular_items\lewd_items\code\clothing_pref_check.dm"
 #include "modular_skyrat\modules\modular_items\lewd_items\code\decals.dm"
 #include "modular_skyrat\modules\modular_items\lewd_items\code\emote.dm"
@@ -8641,6 +8658,7 @@
 #include "modular_skyrat\modules\modular_items\lewd_items\code\lewd_structures\dancing_pole.dm"
 #include "modular_skyrat\modules\modular_items\lewd_items\code\lewd_structures\pillow.dm"
 #include "modular_skyrat\modules\modular_items\lewd_items\code\lewd_structures\shibari_stand.dm"
+#endif
 #include "modular_skyrat\modules\modular_persistence\code\modular_persistence.dm"
 #include "modular_skyrat\modules\modular_reagents\code\alert.dm"
 #include "modular_skyrat\modules\modular_reagents\code\reagents\medicine.dm"
@@ -9107,7 +9125,9 @@
 #include "modular_zubbers\code\__DEFINES\traits.dm"
 #include "modular_zubbers\code\_globalvars\tgui_fallback.dm"
 #include "modular_zubbers\code\_globalvars\lists\_maintenance_loot.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\_globalvars\lists\erp_items.dm"
+#endif
 #include "modular_zubbers\code\_globalvars\lists\maintenance_loot_common.dm"
 #include "modular_zubbers\code\_globalvars\lists\maintenance_loot_oddity.dm"
 #include "modular_zubbers\code\_globalvars\lists\maintenance_loot_one_of_a_kind.dm"
@@ -9173,6 +9193,7 @@
 #include "modular_zubbers\code\datums\components\crafting\weapon_ammo.dm"
 #include "modular_zubbers\code\datums\components\crafting\crafting\melee_weapon.dm"
 #include "modular_zubbers\code\datums\components\fantasy\weight_overrides.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\datums\components\vore\_defines.dm"
 #include "modular_zubbers\code\datums\components\vore\absorb_control.dm"
 #include "modular_zubbers\code\datums\components\vore\belly.dm"
@@ -9185,6 +9206,7 @@
 #include "modular_zubbers\code\datums\components\vore\ui.dm"
 #include "modular_zubbers\code\datums\components\vore\vore.dm"
 #include "modular_zubbers\code\datums\components\vore\z_undefs.dm"
+#endif
 #include "modular_zubbers\code\datums\computer_datums\protolathe_modifications.dm"
 #include "modular_zubbers\code\datums\diseases\advance\presets.dm"
 #include "modular_zubbers\code\datums\diseases\advance\transformation.dm"
@@ -9228,7 +9250,9 @@
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\bald.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\body_morpher.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\death_consequences.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\dominant_aura.dm"
+#endif
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\egg_production.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\entombed.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\equipping.dm"
@@ -9236,7 +9260,9 @@
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\hemophage.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\hungry.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\hydrophilic.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\hypnotic.dm"
+#endif
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\lungs.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\nameless.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\perch.dm"
@@ -9244,9 +9270,11 @@
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\seamless_clothes.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\unblinking.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\waddle.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\well_trained.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\aphrodisiacal_bite\aphrodisiacal_bite.dm"
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\aphrodisiacal_bite\aphrodisiacal_bite_quirk.dm"
+#endif
 #include "modular_zubbers\code\datums\quirks\neutral_quirks\oversized\oversized_quirk.dm"
 #include "modular_zubbers\code\datums\quirks\positive_quirks\bilingual_override.dm"
 #include "modular_zubbers\code\datums\quirks\positive_quirks\chip_connector_override.dm"
@@ -9414,7 +9442,9 @@
 #include "modular_zubbers\code\game\objects\structures\chalkboard.dm"
 #include "modular_zubbers\code\game\objects\structures\engine_choice.dm"
 #include "modular_zubbers\code\game\objects\structures\flora.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\game\objects\structures\lewd_portals.dm"
+#endif
 #include "modular_zubbers\code\game\objects\structures\mirror.dm"
 #include "modular_zubbers\code\game\objects\structures\ore_vent.dm"
 #include "modular_zubbers\code\game\objects\structures\shower.dm"
@@ -9793,7 +9823,9 @@
 #include "modular_zubbers\code\modules\customization\sprite_accessories\ears.dm"
 #include "modular_zubbers\code\modules\customization\sprite_accessories\ears32x64.dm"
 #include "modular_zubbers\code\modules\customization\sprite_accessories\frills.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\modules\customization\sprite_accessories\genitals.dm"
+#endif
 #include "modular_zubbers\code\modules\customization\sprite_accessories\horns.dm"
 #include "modular_zubbers\code\modules\customization\sprite_accessories\ipc_screens.dm"
 #include "modular_zubbers\code\modules\customization\sprite_accessories\moth_antennae.dm"
@@ -9934,10 +9966,12 @@
 #include "modular_zubbers\code\modules\languages\siikmaas.dm"
 #include "modular_zubbers\code\modules\languages\uncommon.dm"
 #include "modular_zubbers\code\modules\languages\vampiric.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\modules\lewd_machinery\bridle.dm"
 #include "modular_zubbers\code\modules\lewd_machinery\clicker.dm"
 #include "modular_zubbers\code\modules\lewd_machinery\lustwish.dm"
 #include "modular_zubbers\code\modules\lewd_machinery\sex_barrier.dm"
+#endif
 #include "modular_zubbers\code\modules\liquids\height_floors.dm"
 #include "modular_zubbers\code\modules\loadout\categories\accessories.dm"
 #include "modular_zubbers\code\modules\loadout\categories\belts.dm"
@@ -9970,6 +10004,7 @@
 #include "modular_zubbers\code\modules\mining\equipment\voucher_sets.dm"
 #include "modular_zubbers\code\modules\mining\lavaland\equipment\explorer_gear.dm"
 #include "modular_zubbers\code\modules\mining\lavaland\equipment\mining_tools.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\modules\mkultra\mkultra_ui.dm"
 #include "modular_zubbers\code\modules\mkultra\petskillchip.dm"
 #include "modular_zubbers\code\modules\mkultra\reaction.dm"
@@ -9988,6 +10023,7 @@
 #include "modular_zubbers\code\modules\mkultra\commands\sleep.dm"
 #include "modular_zubbers\code\modules\mkultra\commands\strip.dm"
 #include "modular_zubbers\code\modules\mkultra\commands\stun.dm"
+#endif
 #include "modular_zubbers\code\modules\mob\mob.dm"
 #include "modular_zubbers\code\modules\mob\mob_defines.dm"
 #include "modular_zubbers\code\modules\mob\dead\new_player\sprite_accessories.dm"
@@ -10098,7 +10134,9 @@
 #include "modular_zubbers\code\modules\mod\mod_theme.dm"
 #include "modular_zubbers\code\modules\mod\mod_types.dm"
 #include "modular_zubbers\code\modules\mod\modules.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\modules\mod\modules_lustwish.dm"
+#endif
 #include "modular_zubbers\code\modules\modular_computers\computer.dm"
 #include "modular_zubbers\code\modules\modular_computers\small_painting_printer.dm"
 #include "modular_zubbers\code\modules\modular_computers\machinery\modular_computer.dm"
@@ -10107,8 +10145,10 @@
 #include "modular_zubbers\code\modules\modular_items\code\necklace.dm"
 #include "modular_zubbers\code\modules\modular_items\code\recipes_misc.dm"
 #include "modular_zubbers\code\modules\modular_items\code\food_and_drinks\food\meatslab.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\modules\modular_items\lewd_items\code\lewd_arousal\arousal.dm"
 #include "modular_zubbers\code\modules\modular_items\lewd_items\code\lewd_arousal\lewd_components\arousal_components.dm"
+#endif
 #include "modular_zubbers\code\modules\modular_weapons\code\gunsets.dm"
 #include "modular_zubbers\code\modules\modular_weapons\code\company_and_or_faction_based\sakhno_concern\magazines.dm"
 #include "modular_zubbers\code\modules\modular_weapons\code\company_and_or_faction_based\sakhno_concern\pistol.dm"
@@ -10396,7 +10436,9 @@
 #include "modular_zubbers\code\modules\vending\engivend.dm"
 #include "modular_zubbers\code\modules\vending\games.dm"
 #include "modular_zubbers\code\modules\vending\halloween_chocolate.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\modules\vending\lustwish.dm"
+#endif
 #include "modular_zubbers\code\modules\vending\medical.dm"
 #include "modular_zubbers\code\modules\vending\megaseed.dm"
 #include "modular_zubbers\code\modules\vending\multisec.dm"
@@ -10404,7 +10446,9 @@
 #include "modular_zubbers\code\modules\vending\wardrobe.dm"
 #include "modular_zubbers\code\modules\vetted\examine.dm"
 #include "modular_zubbers\code\modules\vetted\vetted.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\code\modules\vetted\overrides\erp_preferences.dm"
+#endif
 #include "modular_zubbers\code\modules\voting\_votes.dm"
 #include "modular_zubbers\code\modules\voting\living_timer.dm"
 #include "modular_zubbers\code\modules\voting\vote_overrides.dm"
@@ -10486,7 +10530,9 @@
 #include "modular_zubbers\master_files\code\modules\awaymissions\chamenos.dm"
 #include "modular_zubbers\master_files\code\modules\awaymissions\zlevelmaintsroom.dm"
 #include "modular_zubbers\master_files\code\modules\client\preferences\chat_examine_headshot.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\master_files\code\modules\client\preferences\hypnopref.dm"
+#endif
 #include "modular_zubbers\master_files\code\modules\client\preferences\obscurity_examine.dm"
 #include "modular_zubbers\master_files\code\modules\client\preferences\scaling_method.dm"
 #include "modular_zubbers\master_files\code\modules\entombed_quirk\code\entombed_alt_actions.dm"
@@ -10532,7 +10578,9 @@
 #include "modular_zubbers\modules\awaymissions_zubbers\Maintsroom\maintsrooms.dm"
 #include "modular_zubbers\modules\awaymissions_zubbers\Maintsroom\spawner_maintsroom.dm"
 #include "modular_zubbers\modules\jobs\job_types\chaplain\chaplain_nullrod.dm"
+#if !defined(NOERP)
 #include "modular_zubbers\modules\lewd_clothing\latex_halfcatsuit.dm"
+#endif
 #include "modular_zubbers\modules\plexagon_navsec\code\navsec.dm"
 #include "modular_zubbers\modules\plexagon_selfserve\code\off_duty_component.dm"
 #include "modular_zubbers\modules\plexagon_selfserve\code\plexagon_selfserve.dm"

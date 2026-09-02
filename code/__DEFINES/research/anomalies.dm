@@ -52,7 +52,9 @@ GLOBAL_LIST_INIT(bioscrambler_organs_blacklist, typecacheof(list (
 	/obj/item/organ/eyes/robotic, // SKYRAT EDIT ADDITION
 	/obj/item/organ/eyes/night_vision/cyber, // SKYRAT EDIT ADDITION
 	/obj/item/organ/taur_body, // BUBBER EDIT ADDITION
+#if !defined(NOERP)
 	/obj/item/organ/genital // BUBBER EDIT - ADDITION
+#endif
 )))
 
 /// List of body parts we can apply to people

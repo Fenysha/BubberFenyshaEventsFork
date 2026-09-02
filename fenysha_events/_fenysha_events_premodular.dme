@@ -9,4 +9,4 @@
  * EVENTS CODE
  */
 
-#include "code\modules\erotic_removeval\living.dm"
+#include "code\modules\erotic_removeval\compat.dm"

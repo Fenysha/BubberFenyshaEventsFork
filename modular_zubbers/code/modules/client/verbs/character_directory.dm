@@ -191,10 +191,12 @@ GAME_VERB_DESC(/client, show_character_directory, "Character Directory", "Shows 
 		data["personalVisibility"] = READ_PREFS(user, toggle/show_in_directory)
 		data["personalAttraction"] = READ_PREFS(user, choiced/attraction)
 		data["personalGender"] = READ_PREFS(user, choiced/display_gender)
+#if !defined(NOERP)
 		data["personalErpTag"] = READ_PREFS(user, choiced/erp_status)
 		data["personalVoreTag"] = READ_PREFS(user, choiced/erp_status_v)
 		data["personalHypnoTag"] = READ_PREFS(user, choiced/erp_status_hypno)
 		data["personalNonconTag"] = READ_PREFS(user, choiced/erp_status_nc)
+#endif
 		data["prefsOnly"] = TRUE
 
 	data["canOrbit"] = isobserver(user)
@@ -257,10 +259,12 @@ GAME_VERB_DESC(/client, show_character_directory, "Character Directory", "Shows 
 		//List of all the shown ERP preferences in the Directory. If there is none, return "Unset"
 		attraction = READ_PREFS(mob, choiced/attraction)
 		gender = READ_PREFS(mob, choiced/display_gender)
+#if !defined(NOERP)
 		erp = READ_PREFS(mob, choiced/erp_status)
 		vore = READ_PREFS(mob, choiced/erp_status_v)
 		hypno = READ_PREFS(mob, choiced/erp_status_hypno)
 		noncon = READ_PREFS(mob, choiced/erp_status_nc)
+#endif
 		character_ad = READ_PREFS(mob, text/character_ad)
 		ooc_notes = READ_PREFS(mob, text/ooc_notes)
 		//If the user is an antagonist or Observer, we want them to be able to see exploitables in the Directory.

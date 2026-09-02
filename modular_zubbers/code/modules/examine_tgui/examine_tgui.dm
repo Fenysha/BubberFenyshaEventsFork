@@ -85,6 +85,7 @@
 
 	//  Handle OOC notes first
 	if(preferences)
+#if !defined(NOERP)
 		if(preferences.read_preference(/datum/preference/toggle/master_erp_preferences))
 			var/e_prefs = preferences.read_preference(/datum/preference/choiced/erp_status)
 			var/e_prefs_free_use = preferences.read_preference(/datum/preference/toggle/erp_free_use)
@@ -98,6 +99,7 @@
 			ooc_notes += "Non-Con: [e_prefs_nc]\n"
 			ooc_notes += "ERP Mechanics: [e_prefs_mechanical]\n"
 			ooc_notes += "\n"
+#endif
 
 		if(display_gender != "Unset")
 			character_ad += "Gender: [display_gender]\n"

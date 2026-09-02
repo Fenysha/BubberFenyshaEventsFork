@@ -140,8 +140,10 @@
 	name = "Suspicious Red Lunchbox"
 	item_path = /obj/item/storage/lunchbox/amongus
 
+#if !defined(NOERP)
 /// Lustwish stuff
 
 /datum/loadout_item/pocket_items/lustwish_theme
 	name = "Lustwish MOD Plating"
 	item_path = /obj/item/mod/construction/plating/lustwish
+#endif

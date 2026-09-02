@@ -86,6 +86,7 @@
 		RND_CATEGORY_MECHFAB_CYBORG_MODULES + RND_SUBCATEGORY_MECHFAB_CYBORG_MODULES_RESEARCH
 	)
 
+#if !defined(NOERP)
 /datum/design/borg_dominatrix
 	name = "Cyborg dominatrix module"
 	id = "dominatrixmodule"
@@ -113,6 +114,7 @@
 	category = list(
 		RND_CATEGORY_MECHFAB_CYBORG_MODULES + RND_SUBCATEGORY_MECHFAB_CYBORG_MODULES_ALL
 	)
+#endif
 
 //so we have our own category
 /datum/design/borg_upgrade_surgical_processor_sci

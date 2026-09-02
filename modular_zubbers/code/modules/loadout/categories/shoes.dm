@@ -214,10 +214,12 @@
 	name = "Laceup Shoes (Recolorable)"
 	item_path = /obj/item/clothing/shoes/colorable_laceups
 
+#if !defined(NOERP)
 /datum/loadout_item/shoes/formal/dominaheels
 	name = "Dominant Heels"
 	item_path = /obj/item/clothing/shoes/latex_heels/domina_heels
 	erp_item = TRUE
+#endif
 
 /datum/loadout_item/shoes/formal/high_heels
 	name = "High Heels"
@@ -240,9 +242,11 @@
 	name = "Latex Heels"
 	item_path = /obj/item/clothing/shoes/latex_heels
 
+#if !defined(NOERP)
 /datum/loadout_item/shoes/formal/latex_heels/ballet_heels
 	name = "Ballet Heels"
 	item_path = /obj/item/clothing/shoes/latex_heels/ballet_heels
+#endif
 
 //Casual
 
@@ -312,9 +316,11 @@
 	name = "Frosty Boots"
 	item_path = /obj/item/clothing/shoes/jackbros
 
+#if !defined(NOERP)
 /datum/loadout_item/shoes/fun/latex_socks
 	name = "Latex Socks"
 	item_path = /obj/item/clothing/shoes/latex_socks
+#endif
 
 /*
 *	SEASONAL

@@ -98,6 +98,7 @@
 /// Brings a savefile up to date with modular preferences. Called if savefile_needs_update_skyrat() returned a value higher than 0
 /datum/preferences/proc/update_character_skyrat(current_version, list/save_data)
 	to_chat(parent, custom_boxed_message("red_box", span_bolddanger("Updating preference values, if you don't see the second half of this message, ahelp immediately!")))
+#if !defined(NOERP)
 	if(current_version < VERSION_GENITAL_TOGGLES)
 		// removed genital toggles, with the new choiced prefs paths as assoc
 		var/static/list/old_toggles
@@ -120,13 +121,16 @@
 		if(save_data["skin_tone_toggle"])
 			for(var/pref_type in subtypesof(/datum/preference/toggle/genital_skin_tone))
 				write_preference(GLOB.preference_entries[pref_type], TRUE)
+#endif
 
+#if !defined(NOERP)
 	if(current_version < VERSION_BREAST_SIZE_CHANGE)
 		var/list/old_breast_prefs
 		old_breast_prefs = save_data["breasts_size"]
 		if(isnum(old_breast_prefs)) // Can't be too careful
 			// You weren't meant to be able to pick sizes over this anyways.
 			write_preference(GLOB.preference_entries[/datum/preference/choiced/breasts_size], GLOB.breast_size_translation["[min(old_breast_prefs, 10)]"])
+#endif
 
 	if(current_version < VERSION_SYNTH_REFACTOR)
 		var/old_species = save_data["species"]

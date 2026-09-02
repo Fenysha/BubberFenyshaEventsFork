@@ -79,10 +79,12 @@
 			seen_it = TRUE
 			living_parent.add_mood_event("encountered_evil", /datum/mood_event/encountered_evil)
 			living_parent.set_jitter_if_lower(15 SECONDS)
+#if !defined(NOERP)
 	// BUBBER EDIT ADDITION BEGIN - Empaths detect arousal
 	if(ishuman(target) && living_parent.client.prefs.read_preference(/datum/preference/toggle/erp))
 		examine_list += astype(target, /mob/living/carbon/human).get_arousal_info()
 	// BUBBER EDIT ADDITION END - Empaths detect arousal
+#endif
 
 /datum/component/empathy/proc/on_hands_laid(datum/source, mob/living/carbon/smiter)
 	SIGNAL_HANDLER

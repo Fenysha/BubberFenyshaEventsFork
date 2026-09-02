@@ -116,11 +116,15 @@
 		/obj/item/clothing/glasses/osi,
 		/obj/item/clothing/glasses/phantom,
 		/obj/item/clothing/glasses/salesman, // Now's your chance.
+#if !defined(NOERP)
 		/obj/item/clothing/glasses/nice_goggles,
+#endif
 		/obj/item/clothing/glasses/thin,
 		/obj/item/clothing/glasses/biker,
 		/obj/item/clothing/glasses/sunglasses/gar,
+#if !defined(NOERP)
 		/obj/item/clothing/glasses/hypno,
+#endif
 		/obj/item/clothing/glasses/heat,
 		/obj/item/clothing/glasses/cold,
 		/obj/item/clothing/glasses/orange,

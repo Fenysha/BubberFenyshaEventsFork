@@ -94,7 +94,9 @@ GLOBAL_LIST_INIT(uncommon_loot, list(//uncommon: useful items
 		/obj/item/vending_refill/hotdog = 1,
 		/obj/item/vending_refill/snack/imported/tiziran = 1,
 		/obj/item/vending_refill/medical_deforest = 1,
+#if !defined(NOERP)
 		/obj/item/vending_refill/lustwish = 1,
+#endif
 		/obj/item/vending_refill/halloween_chocolate = 1,
 		/obj/item/vending_refill/vacation = 1
 	) = 50,

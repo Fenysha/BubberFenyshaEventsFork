@@ -343,10 +343,12 @@
 	name = "Natural Wig"
 	item_path = /obj/item/clothing/head/wig/natural
 
+#if !defined(NOERP)
 /datum/loadout_item/head/domina_cap
 	name = "Dominant Cap"
 	item_path = /obj/item/clothing/head/domina_cap
 	erp_item = TRUE
+#endif
 
 /datum/loadout_item/head/fashionable_cap
 	name = "Fashionable Baseball Cap"

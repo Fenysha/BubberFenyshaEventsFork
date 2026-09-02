@@ -9,9 +9,11 @@
 	name = "Ringing Bell Collar"
 	item_path = /obj/item/clothing/neck/human_petcollar/locked/ringbell
 
+#if !defined(NOERP)
 /datum/loadout_item/neck/gps
 	name = "Tracking Collar"
 	item_path = /obj/item/clothing/neck/kink_collar/locked/gps
+#endif
 
 /datum/loadout_item/neck/binary
 	name = "Crow Feather Cloak"

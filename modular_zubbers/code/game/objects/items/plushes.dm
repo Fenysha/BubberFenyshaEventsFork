@@ -144,6 +144,7 @@
 	gender = FEMALE
 	squeak_override = list('sound/misc/soggy.ogg'=1)
 
+#if !defined(NOERP)
 /obj/item/toy/plush/cescrewsplush/examine(mob/user)
 	. = ..()
 	. += span_notice("Alt-click to take a look under her skirt.")
@@ -155,6 +156,7 @@
 	qdel(src)
 	user.put_in_hands(toy)
 	return TRUE
+#endif
 
 /obj/item/toy/plush/internshiba
 	name = "Intern Shiba Plush" //Plush for Kazumi Hasegawa/sprited by Amorbis
@@ -237,6 +239,7 @@
 	update_appearance()
 	update_inhand_icon()
 
+#if !defined(NOERP)
 /obj/item/toy/plush/suspicious_protogen/examine(mob/user)
 	. = ..()
 	if(lewd)
@@ -271,6 +274,7 @@
 	. = proxy.attack(target, user)
 	playsound(user, 'modular_skyrat/modules/emotes/sound/emotes/dwoop.ogg', 50, TRUE)
 	qdel(proxy)
+#endif
 
 // Plush for ZeferwasnttakenFR
 /obj/item/toy/plush/foxy_plush
@@ -796,6 +800,7 @@
 	update_plush_state()
 	return TRUE
 
+#if !defined(NOERP)
 /obj/item/toy/plush/aeri/attack(mob/living/carbon/human/target, mob/living/carbon/human/user)
 	if(clothed)
 		return ..()
@@ -806,6 +811,7 @@
 	proxy.icon_state = icon_state
 	. = proxy.attack(target, user)
 	qdel(proxy)
+#endif
 
 //If you suicide with this toy it just summons a BSA smite on you
 /obj/item/toy/plush/aeri/suicide_act(mob/living/carbon/human/user)
@@ -945,6 +951,7 @@
 	update_plush_state()
 	return TRUE
 
+#if !defined(NOERP)
 /obj/item/toy/plush/noble/attack(mob/living/carbon/human/target, mob/living/carbon/human/user)
 	if(clothed)
 		return ..()
@@ -956,6 +963,7 @@
 	. = proxy.attack(target, user)
 	playsound(user, 'modular_zubbers/sound/misc/dog_toy.ogg', 50, TRUE)
 	qdel(proxy)
+#endif
 
 // Plush for Bit_Synergy
 /obj/item/toy/plush/blue_synth
@@ -988,9 +996,13 @@
 	gender = MALE
 	squeak_override = list('modular_skyrat/modules/emotes/sound/emotes/dwoop.ogg' = 1)
 	var/obj/item/inserted_item = null
+#if !defined(NOERP)
 	var/static/list/contained_item = list(
 		/obj/item/clothing/sextoy/dildo,
 	)
+#else
+	var/static/list/contained_item = list()
+#endif
 
 /obj/item/toy/plush/protective_protogen/Initialize(mapload)
 	. = ..()
@@ -1060,6 +1072,7 @@
 		This is the emotional support you need when the real thing isn't around, perfect for spilling your thoughts and worries into, it's unbearably soft.. \
 		The attached dildo seems to have changed into a cyan-colored knotted dick, and a hefty set of nuts. It looks and feels almost too real..."
 
+#if !defined(NOERP)
 /obj/item/toy/plush/protective_protogen/attack(mob/living/carbon/human/target, mob/living/carbon/human/user)
 	if(!inserted_item)
 		return ..()
@@ -1071,3 +1084,4 @@
 	. = proxy.attack(target, user)
 	playsound(user, 'modular_skyrat/modules/emotes/sound/emotes/dwoop.ogg', 50, TRUE)
 	qdel(proxy)
+#endif

@@ -116,9 +116,11 @@
 			in_view.Remove(mob)
 
 		var/list/targets = list(SUBTLE_ONE_TILE_TEXT, SUBTLE_SAME_TILE_TEXT) + in_view
+#if !defined(NOERP)
 		var/obj/structure/lewd_portal/portal = user?.buckled
 		if(istype(portal, /obj/structure/lewd_portal))
 			targets.Insert(1, PORTAL_ONE_TILE_TEXT, PORTAL_SAME_TILE_TEXT)
+#endif
 		target = tgui_input_list(user, "Pick a target", "Target Selection", targets)
 		if(!target)
 			return FALSE
@@ -159,6 +161,7 @@
 		if(hologram.Impersonation?.client)
 			hologram.Impersonation.show_message(subtler_message, alt_msg = subtler_message)
 			subtler_sound(hologram.Impersonation)
+#if !defined(NOERP)
 	else if(istype(target, /obj/lewd_portal_relay)) //Direct Message to a portal user
 		var/obj/lewd_portal_relay/portal_relay = target
 		user.show_message(subtler_message, alt_msg = subtler_message)
@@ -166,8 +169,10 @@
 			subtler_message = span_subtler("<b>Unknown</b>[space]<i>[user.apply_message_emphasis(subtler_emote)]</i>")
 			portal_relay.owner.show_message(subtler_message, alt_msg = subtler_message)
 			subtler_sound(portal_relay.owner)
+#endif
 	else
 		var/ghostless
+#if !defined(NOERP)
 		if(target == PORTAL_SAME_TILE_TEXT || target == PORTAL_ONE_TILE_TEXT)
 			switch(target)
 				if(PORTAL_ONE_TILE_TEXT)
@@ -181,6 +186,9 @@
 			subtler_message = span_subtler("<b>[output_portal]</b>[space]<i>[user.apply_message_emphasis(subtler_emote)]</i>")
 		else
 			ghostless = get_hearers_in_view(target, user) - GLOB.dead_mob_list
+#else
+		ghostless = get_hearers_in_view(target, user) - GLOB.dead_mob_list
+#endif
 
 		var/obj/effect/overlay/holo_pad_hologram/hologram = GLOB.hologram_impersonators[user]
 		if(hologram)
@@ -195,11 +203,13 @@
 			// Optional sound notification
 			subtler_sound(receiver)
 
+#if !defined(NOERP)
 		for(var/obj/lewd_portal_relay/portal in ghostless) //Message portal owners caught in range
 			if(portal?.owner?.client && portal.owner != user)
 				subtler_message = span_subtler("<b>Unknown</b>[space]<i>[user.apply_message_emphasis(subtler_emote)]</i>")
 				portal.owner.show_message(subtler_message, alt_msg = subtler_message)
 			subtler_sound(portal.owner)
+#endif
 
 	return TRUE
 

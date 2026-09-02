@@ -28,9 +28,11 @@
 	name = "Purple Armband"
 	item_path = /obj/item/clothing/accessory/armband/science/nonsec
 
+#if !defined(NOERP)
 /datum/loadout_item/accessory/lewdapron
 	name = "Latex Maid Apron"
 	item_path = /obj/item/clothing/accessory/lewdapron
+#endif
 
 //No red armband for obvious reasons.
 

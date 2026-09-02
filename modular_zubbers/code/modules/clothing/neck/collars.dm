@@ -11,6 +11,7 @@
 	. = ..()
 	AddComponent(/datum/component/squeak, list('modular_zubbers/sound/misc/collarbell1.ogg'=1,'modular_zubbers/sound/misc/collarbell2.ogg'=1), 50, 100, 8)
 
+#if !defined(NOERP)
 /obj/item/clothing/neck/kink_collar/locked/gps
 	name = "tracking collar"
 	desc = "A collar that lets you find your pet anywhere with GPS!"
@@ -79,3 +80,4 @@
 	if(gps.tracking && !isinhands)
 		. += mutable_appearance('modular_zubbers/icons/obj/clothing/GAGS/collar.dmi', "collar_mob_tracker_light")
 		. += emissive_appearance('modular_zubbers/icons/obj/clothing/GAGS/collar.dmi', "collar_mob_tracker_light", src, alpha = src.alpha)
+#endif

@@ -218,9 +218,11 @@
 	item_path = /obj/item/clothing/mask/whistle
 	restricted_roles = list(ALL_JOBS_SEC)
 
+#if !defined(NOERP)
 /datum/loadout_item/mask/utility/bridle
 	name = "Bridle"
 	item_path = /obj/item/clothing/mask/bridle
+#endif
 
 /*
 *	COSTUMES

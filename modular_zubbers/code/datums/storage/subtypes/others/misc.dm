@@ -10,7 +10,9 @@
 /datum/storage/wallet/New()
 	. = ..()
 	add_holdable(list(
+#if !defined(NOERP)
 		/obj/item/condom_pack,
+#endif
 		/obj/item/gbp_punchcard,
 		)
 	)

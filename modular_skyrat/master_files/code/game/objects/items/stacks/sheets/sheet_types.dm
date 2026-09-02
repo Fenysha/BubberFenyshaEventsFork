@@ -98,7 +98,9 @@ GLOBAL_LIST_INIT(skyrat_wood_recipes, list(
 // Cloth
 
 GLOBAL_LIST_INIT(skyrat_cloth_recipes, list(
+#if !defined(NOERP)
 	new/datum/stack_recipe("fancy pillow", /obj/item/fancy_pillow, 3, category = CAT_ENTERTAINMENT),
+#endif
 	new/datum/stack_recipe("towel", /obj/item/towel, 2, category = CAT_CLOTHING),
 	new/datum/stack_recipe("eyepatch wrap", /obj/item/clothing/glasses/eyepatch/wrap, 2, category = CAT_CLOTHING),
 	new/datum/stack_recipe("eyepatch", /obj/item/clothing/glasses/eyepatch, 2, category = CAT_CLOTHING),

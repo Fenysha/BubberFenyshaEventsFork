@@ -305,9 +305,13 @@
  * It lets you pick between a few options for DNA specifics
  */
 /datum/action/innate/alter_form/proc/alter_dna(mob/living/carbon/human/alterer)
+#if !defined(NOERP)
 	var/list/key_list = list("Body Size", "Genitals", "Mutant Parts")
 	if(CONFIG_GET(flag/disable_erp_preferences))
 		key_list.Remove("Genitals")
+#else
+	var/list/key_list = list("Body Size", "Mutant Parts")
+#endif
 	var/dna_alteration = tgui_input_list(
 		alterer,
 		"Select what part of your DNA you'd like to alter",
@@ -345,8 +349,10 @@
 			else
 				alterer.update_transform(new_body_size)
 
+#if !defined(NOERP)
 		if("Genitals")
 			alter_genitals(alterer)
+#endif
 		if("Mutant Parts")
 			alter_parts(alterer)
 
@@ -447,6 +453,7 @@
 	alterer.dna.species.body_markings = assemble_body_markings_from_set(marking_set, alterer.dna.features, alterer.dna.species)
 	alterer.update_body(is_creating = TRUE)
 
+#if !defined(NOERP)
 /**
  * Alter genitals lets you adjust the size or functionality of genitalia
  * If you don't own the genital you try to adjust, it'll ask you if you want to add it first
@@ -582,6 +589,7 @@
 				return
 			alterer.dna.features["belly_size"] = new_size
 			tummy.set_size(alterer.dna.features["belly_size"])
+#endif
 
 /**
  * The beginning for character alteration. Handles all the settings and targetting. Leads into [do_char_alteration].

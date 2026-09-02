@@ -44,6 +44,7 @@
 #include "code\modules\daylight\debug.dm"
 #include "code\modules\dynamic_area\dynamic_area.dm"
 #include "code\modules\elevators\elevator_control.dm"
+#include "code\modules\erotic_removeval\map_placeholders.dm"
 #include "code\modules\erotic_removeval\prefs.dm"
 #include "code\modules\dynamic_footsteps\dynamic_footsteps.dm"
 #include "code\modules\event_apps\custom_interaction\program.dm"

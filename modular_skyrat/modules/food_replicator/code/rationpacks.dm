@@ -132,16 +132,21 @@
 	atom_storage.set_holdable(list(
 		/obj/item/kitchen/spoon/plastic,
 		/obj/item/kitchen/fork/plastic,
+#if !defined(NOERP)
 		/obj/item/serviette,
+#endif
 	))
 	atom_storage.max_slots = 4
 
 /obj/item/storage/box/utensils/PopulateContents()
 	new /obj/item/kitchen/spoon/plastic(src)
 	new /obj/item/kitchen/fork/plastic(src)
+#if !defined(NOERP)
 	new /obj/item/serviette/colonial(src)
 	new /obj/item/serviette/colonial(src)
+#endif
 
+#if !defined(NOERP)
 /obj/item/serviette/colonial
 	name = "colonial napkin"
 	desc = "To clean all the mess. Comes with a custom <i>combined</i> design of red and blue."
@@ -154,6 +159,7 @@
 	desc = "No longer useful, super dirty, or soaked, or otherwise unrecognisable."
 	icon_state = "napkin_used"
 	icon = 'modular_skyrat/modules/food_replicator/icons/rationpack.dmi'
+#endif
 
 /obj/item/storage/box/colonial_rations
 	name = "foreign colonization ration"

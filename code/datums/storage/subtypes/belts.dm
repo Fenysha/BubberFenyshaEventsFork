@@ -234,7 +234,11 @@
 
 /datum/storage/wands_belt/New(atom/parent, max_slots, max_specific_storage, max_total_storage, rustle_sound, remove_rustle_sound)
 	. = ..()
+#if !defined(NOERP)
 	set_holdable(list(/obj/item/gun/magic/wand,/obj/item/clothing/sextoy/magic_wand)) // BUBBER EDIT CHANGE: adds /obj/item/clothing/sextoy/magic_wand
+#else
+	set_holdable(list(/obj/item/gun/magic/wand))
+#endif
 
 ///Janitor belt
 /datum/storage/janitor_belt

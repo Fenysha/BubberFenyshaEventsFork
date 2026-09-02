@@ -50,7 +50,9 @@
 		/obj/item/reagent_containers/cup/glass/bottle/lizardwine = 1,
 		/obj/item/reagent_containers/cup/glass/bottle/whiskey = 1,
 		/obj/item/reagent_containers/cup/glass/bottle/hcider = 1,
+#if !defined(NOERP)
 		/obj/item/lustwish_discount = 1,
+#endif
 		/obj/item/folder/ancient_paperwork = 1,
 		/obj/item/reagent_containers/cup/glass/flask = 1,
 		/obj/item/storage/fancy/cigarettes/cigars = 1,
@@ -89,7 +91,9 @@
 		/obj/item/storage/medkit/emergency = 1,
 		/obj/item/storage/fancy/donut_box = 1,
 		/obj/item/radio = 1,
+#if !defined(NOERP)
 		/obj/item/clothing/erp_leash = 1,
+#endif
 		/obj/item/reagent_containers/cup/glass/bottle/lizardwine = 1,
 		/obj/item/reagent_containers/cup/glass/bottle/whiskey = 1,
 		/obj/item/reagent_containers/cup/glass/bottle/hcider = 1,

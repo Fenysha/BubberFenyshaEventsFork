@@ -2,6 +2,7 @@
 	// use the loaded modlink scryer object to have the frequency set to NT upon creation
 	build_path = /obj/item/clothing/neck/link_scryer/loaded
 
+#if !defined(NOERP)
 /datum/design/module/mod_remote
 	name = "MODsuit Remote Module"
 	id = "mod_remote_module"
@@ -11,3 +12,4 @@
 		/datum/material/glass = SHEET_MATERIAL_AMOUNT * 1.5,
 	)
 	research_icon_state = "module_remote"
+#endif

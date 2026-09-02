@@ -63,6 +63,8 @@ GLOBAL_LIST_INIT(xmas_gift_blacklist, list(
 	/obj/structure/fluff/paper, // So I stop getting 500 papers
 	/obj/item/circuitboard, // Like above but for boards.
 	/obj/item/circuit_component, // I hate these things.
+#if !defined(NOERP)
 	/obj/item/organ/genital, // Rule 8.
+#endif
 	/obj/item/melee/supermatter_sword,
 ))

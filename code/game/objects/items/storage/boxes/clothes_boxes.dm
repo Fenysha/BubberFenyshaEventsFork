@@ -323,6 +323,7 @@
 	new /obj/item/clothing/suit/wizrobe/black(src)
 	new /obj/item/clothing/shoes/sandal(src)
 
+#if !defined(NOERP)
 // BUBBER EDIT ADDITION BEGIN
 
 /obj/item/storage/box/lewd_toys
@@ -339,3 +340,4 @@
 	new /obj/item/clothing/glasses/blindfold/kinky(src)
 
 // BUBBER EDIT ADDITION END
+#endif

@@ -17,9 +17,11 @@
 	trauma_blacklist += typesof(/datum/brain_trauma/special/imaginary_friend)
 	// Requires a obsession target
 	trauma_blacklist += typesof(/datum/brain_trauma/special/obsessed)
+#if !defined(NOERP)
 	//SKYRAT EDIT START
 	trauma_blacklist += typesof(/datum/brain_trauma/very_special/induced_hypnosis) // Requires an object to properly work
 	//SKYRAT EDIT END
+#endif
 
 	for(var/datum/brain_trauma/trauma as anything in valid_subtypesof(/datum/brain_trauma) - trauma_blacklist)
 		test_trauma(dummy, trauma)

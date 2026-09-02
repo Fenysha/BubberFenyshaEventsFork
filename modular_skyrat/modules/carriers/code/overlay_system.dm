@@ -36,8 +36,13 @@
 	if(!occupant_prefs.read_preference(/datum/preference/toggle/carrier_overlays))
 		return FALSE
 
+#if !defined(NOERP)
 	if(initial(current_overlay_path.vore_overlay) && !occupant_prefs.read_preference(/datum/preference/toggle/erp/vore_overlays))
 		return FALSE
+#else
+	if(initial(current_overlay_path.vore_overlay))
+		return FALSE
+#endif
 
 	if(!ispath(current_overlay_path))
 		occupant.clear_fullscreen("carrier", FALSE)

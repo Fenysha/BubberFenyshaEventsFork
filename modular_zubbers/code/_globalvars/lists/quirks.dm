@@ -13,8 +13,12 @@ GLOBAL_LIST_INIT(seamless_heel_choice, list(
 	"Fancy Heels (Colourable)" = /obj/item/clothing/shoes/fancy_heels,
 	"High Heels (Colourable)" = /obj/item/clothing/shoes/high_heels,
 	"Pink Heels" = /obj/item/clothing/shoes/latex_heels/bubber/clussy/mute,
+#if !defined(NOERP)
 	"Dominant Heels" = /obj/item/clothing/shoes/latex_heels/domina_heels,
+#endif
 	"Latex Heels" = /obj/item/clothing/shoes/latex_heels,
+#if !defined(NOERP)
 	"Ballet Heels" = /obj/item/clothing/shoes/latex_heels/ballet_heels,
+#endif
 	"High-Heeled Jackboots" = /obj/item/clothing/shoes/jackboots/heel,
 ))

@@ -360,6 +360,7 @@
 	if(cyborg.emagged)
 		return ..()
 
+#if !defined(NOERP)
 /// Dominatrix time
 /obj/item/borg/upgrade/dominatrixmodule
 	name = "borg dominatrix module"
@@ -379,3 +380,4 @@
 						/obj/item/clothing/erp_leash,
 						/obj/item/clicker
 						)
+#endif

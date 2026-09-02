@@ -234,7 +234,9 @@
 			/obj/item/toy/crayon,
 			/obj/item/poker_chip,
 			// SKYRAT EDIT BEGIN
+#if !defined(NOERP)
 			/obj/item/condom_pack,
+#endif
 			/obj/item/gbp_punchcard,
 			// SKYRAT EDIT END
 		),

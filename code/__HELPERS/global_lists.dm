@@ -183,7 +183,9 @@ GLOBAL_LIST_INIT(WALLITEMS_INTERIOR, typecacheof(list(
 	/obj/structure/sign/poster/official/random,
 	/obj/structure/sign/poster/random,
 	/obj/structure/urinal,
+#if !defined(NOERP)
 	/obj/structure/lewd_portal, //BUBBER EDIT ADDITION - Lewd Portals
+#endif
 )))
 
 // Wall mounted machinery which are visually coming out of the wall.

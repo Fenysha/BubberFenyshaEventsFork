@@ -1547,6 +1547,7 @@ MAPPING_DIRECTIONAL_HELPERS(/obj/structure/sign/poster/contraband/korpstech, 32)
 	righthand_file = null
 	spans = list("glossy")
 
+#if !defined(NOERP)
 /obj/item/clothing/ears/kinky_headphones/sharkenning
 	name = "suspiciously glossy headphones"
 	desc = "Black metalic headphones with a glossy finish. The soft rubber cushions are comftorable and form fitting"
@@ -1557,6 +1558,7 @@ MAPPING_DIRECTIONAL_HELPERS(/obj/structure/sign/poster/contraband/korpstech, 32)
 	inhand_icon_state = null
 	current_kinkphones_color = "black"
 	color_changed = TRUE
+#endif
 
 //reward for SomeRandomOwl
 /obj/item/clothing/head/costume/strigihat

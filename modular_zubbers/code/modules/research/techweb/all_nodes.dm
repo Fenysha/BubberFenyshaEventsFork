@@ -165,8 +165,10 @@
 	. = ..()
 	design_ids += list(
 		"blanksynth",
+#if !defined(NOERP)
 		"dominatrixmodule",
 		"obediencemodule",
+#endif
 		"borg_upgrade_expand",
 		"borg_upgrade_shrink",
 	)
@@ -260,9 +262,11 @@
 	announce_channels = list(RADIO_CHANNEL_SECURITY)
 
 // Modsuit tech
+#if !defined(NOERP)
 /datum/techweb_node/mod_equip/New()
 	. = ..()
 	design_ids += list("mod_remote_module")
+#endif
 
 /datum/techweb_node/nerd
 	id = TECHWEB_NODE_NERD

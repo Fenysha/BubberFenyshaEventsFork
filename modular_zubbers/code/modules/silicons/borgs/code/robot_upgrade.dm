@@ -78,6 +78,7 @@
 	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 7.5, /datum/material/glass =SHEET_MATERIAL_AMOUNT * 2.5, /datum/material/silver = HALF_SHEET_MATERIAL_AMOUNT * 2.5)
 
 
+#if !defined(NOERP)
 // Borg Dom Aura :)
 /obj/item/borg/upgrade/dominatrixmodule/action(mob/living/silicon/robot/borg, mob/living/user)
 	if(borg.hasToys)
@@ -94,6 +95,7 @@
 		if(borg.hasToys)
 			borg.hasToys = FALSE
 		borg.remove_quirk(/datum/quirk/dominant_aura)
+#endif
 
 // Engineering RLD
 /obj/item/borg/upgrade/rld
@@ -236,6 +238,7 @@
 	items_to_remove = list(/obj/item/gun/energy/recharge/kinetic_accelerator)
 	custom_materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT * 5, /datum/material/uranium = SHEET_MATERIAL_AMOUNT * 3, /datum/material/glass = SHEET_MATERIAL_AMOUNT * 2, /datum/material/plastic = SHEET_MATERIAL_AMOUNT, /datum/material/bluespace = SHEET_MATERIAL_AMOUNT)
 
+#if !defined(NOERP)
 /// "Good Borg" Obedience Training
 /mob/living/silicon/robot
 	var/hasToys = FALSE
@@ -275,6 +278,7 @@
 			borg.hasToys = FALSE
 
 		borg.remove_quirk(/datum/quirk/well_trained)
+#endif
 
 /obj/item/borg/upgrade/detailer
 	name = "janitor detailing toolset"

@@ -6,6 +6,7 @@
 
 	if(href_list["lookup_info"])
 		switch(href_list["lookup_info"])
+#if !defined(NOERP)
 			if("genitals")
 				var/list/line = list()
 				for(var/genital in GLOB.possible_genitals)
@@ -22,6 +23,7 @@
 					line += ORG.get_description_string(G)
 				if(length(line))
 					to_chat(usr, span_notice("[jointext(line, "\n")]"))
+#endif
 			if("open_examine_panel")
 				tgui.holder = src
 				tgui.ui_interact(usr) //datum has a tgui component, here we open the window

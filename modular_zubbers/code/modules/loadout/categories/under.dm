@@ -201,9 +201,11 @@
 	name = "Pirate Outfit"
 	item_path = /obj/item/clothing/under/costume/pirate
 
+#if !defined(NOERP)
 /datum/loadout_item/uniform/miscellaneous/bunny_suit
 	name = "Bunny Suit"
 	item_path = /obj/item/clothing/under/costume/bunnylewd
+#endif
 
 /datum/loadout_item/uniform/miscellaneous/centcom_officer_replica
 	name = "CentCom turtleneck replica"
@@ -213,13 +215,17 @@
 	name = "CentCom skirtleneck replica"
 	item_path = /obj/item/clothing/under/rank/centcom/officer_skirt/replica
 
+#if !defined(NOERP)
 /datum/loadout_item/uniform/miscellaneous/latex_catsuit
 	name = "Latex Catsuit"
 	item_path = /obj/item/clothing/under/misc/latex_catsuit
+#endif
 
+#if !defined(NOERP)
 /datum/loadout_item/uniform/miscellaneous/latex_halfcatsuit
 	name = "Latex Half-Catsuit"
 	item_path = /obj/item/clothing/under/misc/latex_halfcatsuit
+#endif
 
 /datum/loadout_item/uniform/miscellaneous/custom_bunnysuit
 	name = "Custom Bunnysuit"
@@ -249,13 +255,17 @@
 	name = "Giant Scarf"
 	item_path = /obj/item/clothing/under/dress/bubber/giant_scarf
 
+#if !defined(NOERP)
 /datum/loadout_item/uniform/miscellaneous/lewdmaid
 	name = "Latex Maid Costume"
 	item_path = /obj/item/clothing/under/costume/lewdmaid
+#endif
 
+#if !defined(NOERP)
 /datum/loadout_item/uniform/miscellaneous/stripper_outfit
 	name = "Stripper Outfit"
 	item_path = /obj/item/clothing/under/stripper_outfit
+#endif
 
 /datum/loadout_item/uniform/miscellaneous/greyscale_turtleneck
 	name = "Greyscale Turtleneck and Pants"

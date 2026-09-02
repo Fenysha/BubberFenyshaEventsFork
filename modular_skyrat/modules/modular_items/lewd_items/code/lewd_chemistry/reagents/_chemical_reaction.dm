@@ -1,3 +1,2 @@
-/datum/chemical_reaction
-	/// Will this reaction be disabled by the ERP config being turned off?
-	var/erp_reaction = FALSE
+// The erp_reaction var moved to fenysha_events/code/modules/erotic_removeval/compat.dm,
+// since SSreagents reads it whether or not this module is compiled in.
