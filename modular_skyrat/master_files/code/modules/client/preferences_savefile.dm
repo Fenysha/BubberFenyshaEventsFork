@@ -353,6 +353,15 @@
 			augments_sanitized[aug_slot] = aug_entry
 	augments = augments_sanitized
 
+
+// FENYSHA EDIT ADDITION BEGIN - PREFERENCES IMPORT
+/// The newest modular character version this server understands.
+/// Exposed because the define is #undef'd just below, and the preferences import has to clamp an uploaded value to
+/// it rather than let a file claim a version whose migrations we do not have.
+/datum/preferences/proc/get_modular_savefile_version_max()
+	return MODULAR_SAVEFILE_VERSION_MAX
+// FENYSHA EDIT ADDITION END
+
 #undef MODULAR_SAVEFILE_VERSION_MAX
 #undef MODULAR_SAVEFILE_UP_TO_DATE
 

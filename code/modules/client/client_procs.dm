@@ -988,6 +988,10 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 		ASSIGN_GAME_VERB(src, /client, self_playtime)
 	if(!CONFIG_GET(flag/forbid_preferences_export))
 		ASSIGN_GAME_VERB(src, /client, export_preferences)
+	// FENYSHA EDIT ADDITION BEGIN - PREFERENCES IMPORT
+	if(!CONFIG_GET(flag/forbid_preferences_import))
+		ASSIGN_GAME_VERB(src, /client, import_preferences)
+	// FENYSHA EDIT ADDITION END
 
 
 //checks if a client is afk

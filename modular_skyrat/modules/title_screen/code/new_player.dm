@@ -114,6 +114,25 @@
 		preferences.ui_interact(usr)
 		return
 
+	// FENYSHA EDIT ADDITION BEGIN - PREFERENCES IMPORT/EXPORT
+	if(href_list["export_preferences"])
+		play_lobby_button_sound()
+		// The button is only drawn when exports are allowed, but the href is player supplied, so check it again here
+		if(CONFIG_GET(flag/forbid_preferences_export))
+			return
+		// export_json_to_client does its own confirmation prompt and cooldown
+		client.prefs?.savefile?.export_json_to_client(src, client.ckey)
+		return
+
+	if(href_list["import_preferences"])
+		play_lobby_button_sound()
+		// The button is only drawn when imports are allowed, but the href is player supplied, so check it again here
+		if(CONFIG_GET(flag/forbid_preferences_import))
+			return
+		client.prefs?.import_preferences_from_client(src)
+		return
+	// FENYSHA EDIT ADDITION END
+
 	if(href_list["toggle_ready"])
 		play_lobby_button_sound()
 		// Prevent readying up after the round has begun setting up or is already playing

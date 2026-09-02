@@ -521,6 +521,14 @@ SAVEFILE UPDATING/VERSIONING - 'Simplified', or rather, more coder-friendly ~Car
 			base_bindings -= keybind_name
 	return base_bindings
 
+// FENYSHA EDIT ADDITION BEGIN - PREFERENCES IMPORT
+/// The savefile versions this server is willing to load, as list(minimum, maximum).
+/// Exposed because the defines are #undef'd just below, and fenysha_events/code/modules/preferences_import needs
+/// them to decide whether an uploaded save is one we can actually migrate.
+/datum/preferences/proc/get_savefile_version_bounds() as /list
+	return list(SAVEFILE_VERSION_MIN, SAVEFILE_VERSION_MAX)
+// FENYSHA EDIT ADDITION END
+
 #undef SAVEFILE_VERSION_MAX
 #undef SAVEFILE_VERSION_MIN
 #undef SAVE_DATA_NO_ERROR

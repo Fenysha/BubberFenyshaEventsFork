@@ -16,6 +16,20 @@
 	icon_state = null
 	invisibility = INVISIBILITY_ABSTRACT
 	anchored = TRUE
+	// The maps still carry var edits for the real objects, and the map loader assigns those by name onto whatever
+	// type it made, so every var edited on a placeholder in a .dmm has to exist here or preloader_load() runtimes.
+	// Everything else the maps touch (name, desc, icon, icon_state, base_icon_state, color, density, pixel_x,
+	// pixel_y) is already on /atom.
+	/// Unused, only here so the maps can set it on the vendor these stand in for. See above.
+	var/all_products_free
+	/// Unused, only here so the maps can set it on the vendor these stand in for. See above.
+	var/onstation
+	/// Unused, only here so the maps can set it on the vendor these stand in for. See above.
+	var/onstation_override
+	/// Unused, only here so the maps can set it on the vendor these stand in for. See above.
+	var/scan_id
+	/// Unused, only here so the maps can set it on the vendor these stand in for. See above.
+	var/shut_up
 
 /obj/effect/noerp_removed/Initialize(mapload)
 	. = ..()

@@ -108,6 +108,9 @@
 			<a id="translate" class="menu_button" href='byond://?src=[text_ref(src)];toggle_translate=1'>[autotranslate_lobby_label(client.prefs.read_preference(/datum/preference/choiced/autotranslate_target))]</a>
 		"}
 
+		// FENYSHA EDIT ADDITION - PREFERENCES IMPORT/EXPORT
+		dat += preferences_file_buttons()
+
 		if(length(GLOB.lobby_station_traits))
 			dat += {"<a class="menu_button" href='byond://?src=[text_ref(src)];job_traits=1'>JOB TRAITS</a>"}
 
@@ -317,6 +320,9 @@
 			<hr>
 			<a id="translate" class="menu_button" href='byond://?src=[text_ref(src)];toggle_translate=1'>[autotranslate_lobby_label(client.prefs.read_preference(/datum/preference/choiced/autotranslate_target))]</a>
 		"}
+
+		// FENYSHA EDIT ADDITION - PREFERENCES IMPORT/EXPORT
+		dat += preferences_file_buttons()
 
 		if(length(GLOB.lobby_station_traits))
 			dat += {"<a class="menu_button" href='byond://?src=[text_ref(src)];job_traits=1'>JOB TRAITS</a>"}

@@ -598,6 +598,17 @@ SMART_CACHE_ASSETS
 ## Minimum number settable for this is 1.
 SECONDS_COOLDOWN_FOR_PREFERENCES_EXPORT 10
 
+## FENYSHA EDIT ADDITION BEGIN - PREFERENCES IMPORT
+## If this remains commented out, we will allow players to upload a previously exported JSON file over their own preferences.
+## Every value in an uploaded file is run back through the preference datum that owns it, and anything the server doesn't recognise is dropped,
+## but uncomment this if you don't want to accept client uploads at all.
+#FORBID_PREFERENCES_IMPORT
+
+## The time (in seconds) that a player must wait between imports of a JSON preferences file.
+## Minimum number settable for this is 1.
+SECONDS_COOLDOWN_FOR_PREFERENCES_IMPORT 60
+## FENYSHA EDIT ADDITION END
+
 ## Uncomment to allow the station name to be in the hub entry.
 ## You should only enable this if you can guarantee a station name doesn't break BYOND's TOS.
 ## BYOND staff have gotten upset at us in the past for inappropriate station names.
