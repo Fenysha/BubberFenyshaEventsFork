@@ -85,6 +85,7 @@ img.bg {
 }
 
 /* ===== PROGRESS ===== */
+/* Boot uses the ring from get_loading_screen_html(), which is styled inline. */
 .container_progress {
     position: relative;
     height: 5vmin;

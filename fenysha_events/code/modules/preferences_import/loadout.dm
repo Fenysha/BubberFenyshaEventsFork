@@ -1,13 +1,7 @@
-/*
-*	Loadout hardening for the preferences import.
-*
-*	Loadout item details are otherwise carried through untouched from whatever the savefile happened to hold, which
-*	is not good enough for a savefile that a player handed us themselves. These are overrides rather than core edits,
-*	so upstream's own loadout code stays untouched.
-*/
+// Item details are otherwise carried through from the savefile untouched, which is not good enough for one a
+// player handed us. Overrides rather than core edits.
 
-/// Filter the preset layer before the downstream deserialize walks it, so an uploaded file has to clear the same
-/// preset name and count rules the loadout menu enforces.
+/// Filters presets before the downstream deserialize walks them, to the same rules the loadout menu enforces.
 /datum/preference/loadout/deserialize(list/input, datum/preferences/preferences)
 	if(!islist(input))
 		return create_default_value(preferences)
@@ -31,11 +25,8 @@
 	for(var/item_path in .)
 		.[item_path] = sanitize_item_details(.[item_path])
 
-/**
- * Rebuilds a single loadout entry's detail list out of only the keys we know about.
- *
- * Returns a list, always, as the loadout menu treats a null entry as "not in the loadout".
- */
+/// Rebuilds one entry's detail list from only the keys we know about. Always a list - the menu treats null as
+/// "not in the loadout".
 /datum/preference/loadout/proc/sanitize_item_details(list/details) as /list
 	var/list/sanitized = list()
 	if(!islist(details))

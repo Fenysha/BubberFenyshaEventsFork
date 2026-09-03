@@ -324,7 +324,7 @@ SUBSYSTEM_DEF(train_controller)
 	loaded_station.pre_load()
 
 	var/result = to_load.load_station(CALLBACK(src, PROC_REF(on_station_loaded)))
-	SSdaylight.reapply_lighting()
+	// Daylight is handled by SSdaylight.handle_loaded_turfs(), at the end of load_station().
 	loaded_station.setup_environment()
 
 	if(screens && islist(screens) && length(screens))

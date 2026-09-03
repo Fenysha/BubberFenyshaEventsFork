@@ -5,17 +5,9 @@
 /// Most languages an imported character may claim. The languages menu re-checks this against the species limit on load.
 #define MAX_IMPORTED_LANGUAGES 20
 
-/**
- * Sanitizes the modular half of an imported character slot into `sanitized`.
- *
- * The keys written by save_character_skyrat() are not preference entries, so
- * [/datum/preferences/proc/sanitize_imported_preference_entries] never sees them and they would otherwise be carried
- * over from an uploaded file completely unchecked. Everything here is rebuilt key by key against what this server
- * actually has, which is also what keeps a file from an ERP enabled build from bringing genital features, arousal
- * text or lewd sprite accessories in through the modular side.
- *
- * Anything that cannot be validated is left out entirely, so load_character_skyrat() generates a default for it.
- */
+/// The keys save_character_skyrat() writes are not preference entries, so sanitize_imported_preference_entries()
+/// never sees them and they would otherwise come through unchecked. Rebuilt key by key against what this server
+/// has; anything unvalidatable is left out for load_character_skyrat() to default.
 /datum/preferences/proc/sanitize_imported_character_modular(list/imported, list/sanitized)
 	sanitized["augments"] = sanitize_imported_augments(imported["augments"])
 	sanitized["augment_limb_styles"] = sanitize_imported_augment_limb_styles(imported["augment_limb_styles"])
@@ -29,14 +21,12 @@
 	sanitized["allow_advanced_colors"] = !!imported["allow_advanced_colors"]
 	sanitized["tgui_prefs_migration"] = !!imported["tgui_prefs_migration"]
 
-	// Kept so the modular updater still runs on an older file, but never above our own version, since that would skip
-	// migrations the rest of this slot is expecting to have run.
+	// Kept so the modular updater still runs on an older file, but never above ours or it skips migrations.
 	var/imported_modular_version = imported["modular_version"]
 	if(isnum(imported_modular_version) && imported_modular_version >= 1)
 		sanitized["modular_version"] = min(round(imported_modular_version), get_modular_savefile_version_max())
 
-	// The loadout preset migration reads the pre-presets key, so run it through the loadout preference's own
-	// sanitizer and keep it. Without this, importing a save older than VERSION_LOADOUT_PRESETS silently loses it.
+	// The preset migration reads the pre-presets key; without this a save older than it silently loses its loadout.
 	if(islist(imported["loadout_list"]))
 		var/datum/preference/loadout/loadout_preference = GLOB.preference_entries[/datum/preference/loadout]
 		sanitized["loadout_list"] = loadout_preference?.sanitize_loadout_list(imported["loadout_list"], null, parent)
@@ -50,8 +40,7 @@
 		var/augment_path = istext(augment) ? _text2path(augment) : augment
 		if(isnull(GLOB.augment_items[augment_path]))
 			continue
-		// Store the resolved path, not the text the JSON held. GLOB.augment_items is keyed by typepath, and
-		// filter_invalid_quirks() looks each augment up in it to price the quirk balance without a null check.
+		// Resolved path, not the JSON text: filter_invalid_quirks() keys GLOB.augment_items with it, unguarded.
 		sanitized[slot] = augment_path
 	return sanitized
 
@@ -66,14 +55,8 @@
 		sanitized[limb_key] = style
 	return sanitized
 
-/**
- * DNA features.
- *
- * This one matters more than it looks: prefs.features is handed straight to set_species() as override_features, so
- * it ends up as dna.features and is read by species, organ and sprite accessory code that assumes we wrote it.
- * Keys we have no feature for at all are dropped, which is where an ERP save's genital feature keys go on a build
- * that does not compile them.
- */
+/// DNA features. prefs.features is handed straight to set_species() as override_features, so it becomes dna.features
+/// and is read by species, organ and sprite code that assumes we wrote it. Unknown keys are dropped.
 /datum/preferences/proc/sanitize_imported_features(imported_features)
 	var/list/sanitized = list()
 	var/list/known_keys = get_known_feature_keys()

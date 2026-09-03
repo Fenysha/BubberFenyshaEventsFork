@@ -4,17 +4,11 @@
 #define MAX_IMPORTED_HOTKEY_LENGTH 100
 
 /**
- * Prompts the player for a preferences JSON export, sanitizes all of it, and replaces their save with the result.
+ * Prompts for a preferences JSON export, sanitizes it, and replaces the player's save. Returns TRUE if written.
  *
- * Nothing in the uploaded file is trusted. Rather than filtering the file down, the new savefile tree is built up
- * from scratch: we walk our own preference entries and non-preference keys and ask each one for a value, so anything
- * the file holds that we do not explicitly know about never reaches the savefile at all.
- *
- * That is what makes this safe to point at a save from a server that has content we do not. A file exported from an
- * ERP enabled build carries preference keys and character features this server has no datum for, and every one of
- * them is dropped here simply by never being asked for.
- *
- * Returns TRUE if a new save was written.
+ * The new tree is built up rather than filtered down: we walk our own preference entries and ask each for a value,
+ * so anything the file holds that we have no datum for never reaches the savefile. That is what makes a save from
+ * a server with content we lack (ERP keys on a NOERP build) safe to import.
  */
 /datum/preferences/proc/import_preferences_from_client(mob/requester)
 	if(!load_and_save || !path || path == DEV_PREFS_PATH)
@@ -44,8 +38,7 @@
 	if(length(errored_keys))
 		stack_trace("Preference keys threw while sanitizing an imported savefile: [json_encode(unique_list(errored_keys))]")
 
-	// Keep the pre-import save around so a regretted import is recoverable. This can't share the updater's backup path,
-	// since importing an older save runs the updater immediately afterwards and it would back the import up over this.
+	// Own backup path: importing an older save runs the updater, which would clobber the updater's own backup.
 	var/backup_path = PREFS_IMPORT_BACKUP_PATH(path)
 	if(fexists(backup_path))
 		fdel(backup_path)
@@ -54,9 +47,8 @@
 
 	savefile.overwrite_tree(sanitized)
 
-	// Drop everything cached off the old save and reload from the tree we just wrote. This runs the normal versioning
-	// and load time sanitization on top of what we already sanitized, and saves the result back out.
-	value_cache = list() // value_cache is untyped downstream, so it cannot be Cut() directly
+	// Reload from the tree we just wrote, which also runs the normal versioning and load time sanitization.
+	value_cache = list() // untyped downstream, so it cannot be Cut() directly
 	recently_updated_keys.Cut()
 	key_bindings = deep_copy_list(GLOB.default_hotkeys)
 	key_bindings_by_key = get_key_bindings_by_key(key_bindings)
@@ -97,11 +89,8 @@
 	sanitized["favorite_outfits"] = sanitize_imported_favorite_outfits(imported["favorite_outfits"])
 	sanitized["job_assigned_profiles"] = sanitize_imported_job_profiles(imported["job_assigned_profiles"])
 
-	// Deliberately never imported, because none of it is the uploaded file's to hand out:
-	// - hearted_until is a commendation other players gave out, so it stays on the account that earned it.
-	// - antag_tickets is server granted currency, see modular_zubbers zantag_tickets.
-	// - the vore module trees (vore, bellies*, slot_metadata, slot_lookup_table) are erotic content this build does
-	//   not compile, and nothing reads them back through a preference datum that could sanitize them.
+	// Never imported, none of it being the file's to hand out: hearted_until and antag_tickets are server granted,
+	// and the vore trees (vore, bellies*, slot_metadata, slot_lookup_table) have no datum to sanitize them.
 
 	// Only slots we would have made ourselves, so a file cannot stuff the tree full of character slots
 	for(var/slot in 1 to max_save_slots)
@@ -133,17 +122,9 @@
 
 	return sanitized
 
-/**
- * Runs every value in the imported data belonging to the given savefile identifier through its own preference datum.
- *
- * A value only reaches `sanitized` if its datum can both deserialize and validate it. Anything else is left out
- * entirely rather than replaced, so the usual "no value saved" path generates a default for it on load.
- *
- * Preferences this build does not compile - every ERP preference on a NOERP build, for instance - have no datum for
- * this loop to find, so their keys are simply left behind in the imported list.
- *
- * Returns the savefile keys whose datum threw on the imported value, for the caller to log.
- */
+/// Runs each imported value for this identifier through its own preference datum. A value only survives if its
+/// datum can deserialize and validate it; anything else is left out so load generates a default. Keys with no
+/// datum on this build are never asked for. Returns the keys whose datum threw, for the caller to log.
 /datum/preferences/proc/sanitize_imported_preference_entries(list/imported, list/sanitized, savefile_identifier)
 	var/list/errored_keys = list()
 

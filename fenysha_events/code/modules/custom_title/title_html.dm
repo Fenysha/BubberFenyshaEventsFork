@@ -1,82 +1,90 @@
 #define MAX_STARTUP_MESSAGES 1
 
+/// Shared by both title variants: the active title document can be swapped mid-boot, and a variant with a
+/// different progress widget makes the indicator change shape near the end of loading.
+/mob/dead/new_player/proc/get_loading_screen_html()
+	var/dat = {"<img src="loading_screen.gif" class="bg" id="bg_layer" alt="">"}
+	// Inline, not by class: this goes into two title documents that style the same class names differently.
+	dat += {"
+	<div id="parallax_loader" style="position:absolute; bottom:40px; right:40px; white-space:nowrap; text-align:right; z-index:2;">
+		<div id="terminal" style="display:inline-block; vertical-align:middle; margin-right:15px; max-width:60vw; overflow:hidden; text-overflow:ellipsis; text-align:right; font-family:'Fixedsys', monospace; font-size:1.8vmin; color:#f0d30b;"></div>
+		<svg width="60" height="60" style="display:inline-block; vertical-align:middle; transform:rotate(-90deg); overflow:visible;">
+			<circle stroke="rgba(240, 211, 11, 1)" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
+			<circle id="progress_circle" stroke="#a19020" stroke-width="4" fill="transparent" r="24" cx="30" cy="30" style="transition:stroke-dashoffset 0.15s ease-out;"/>
+		</svg>
+	</div>
+	"}
+
+	dat += {"
+	<script language="JavaScript">
+		var terminal = document.getElementById("terminal");
+		var terminal_lines = \[
+	"}
+
+	for(var/message in GLOB.startup_messages)
+		dat += {""[replacetext(message, "\"", "\\\"")]","}
+
+	dat += {"
+		\];
+
+		function append_terminal_text(text) {
+			if(text) {
+				terminal_lines.push(text);
+			}
+			while(terminal_lines.length > [MAX_STARTUP_MESSAGES]) {
+				terminal_lines.shift();
+			}
+			var last_msg = terminal_lines.slice(-1);
+			terminal.innerHTML = last_msg.length ? last_msg.pop() : '';
+		}
+
+		append_terminal_text();
+
+		var circle = document.getElementById("progress_circle");
+		var radius = circle.r.baseVal.value;
+		var circumference = 2 * Math.PI * radius;
+		circle.style.strokeDasharray = circumference + ' ' + circumference;
+		circle.style.strokeDashoffset = circumference;
+
+		function setProgress(percent) {
+			var offset = circumference - (percent / 100 * circumference);
+			circle.style.strokeDashoffset = offset;
+		}
+
+		var previous_tick = new Date().getTime();
+		var progress_current_time = [world.timeofday - SStitle.progress_reference_time];
+		var progress_completion_time = [SStitle.average_completion_time];
+		var progress_current_position = 0;
+
+		setInterval(function() {
+			if(progress_current_time < progress_completion_time) {
+				var current_tick = new Date().getTime();
+				progress_current_time += (current_tick - previous_tick) / 100;
+				previous_tick = current_tick;
+			}
+
+			progress_current_position = Math.min(Math.max(progress_current_time / progress_completion_time * 100, progress_current_position), 100);
+			setProgress(progress_current_position);
+		}, 16.666666667);
+
+		function update_loading_progress(current_time, total_time) {
+			progress_current_time = parseFloat(current_time);
+			progress_completion_time = parseFloat(total_time);
+		}
+
+		function update_current_character() {}
+	</script>
+	"}
+
+	return dat
+
 /mob/dead/new_player/get_title_html()
 	if(SSmapping.current_map.override_titlescreen)
 		return get_default_title_html()
 
 	var/dat = CUSTOM_TITLE_HTML
 	if(SSticker.current_state == GAME_STATE_STARTUP)
-		dat += {"<img src="loading_screen.gif" class="bg" id="bg_layer" alt="">"}
-		dat += {"
-		<div class="container_loading" id="parallax_loader">
-			<div class="terminal_text" id="terminal"></div>
-			<svg class="progress_ring" width="60" height="60">
-				<circle class="progress_ring_bg" stroke="rgba(240, 211, 11, 1)" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
-				<circle class="progress_ring_circle" id="progress_circle" stroke="#a19020" stroke-width="4" fill="transparent" r="24" cx="30" cy="30"/>
-			</svg>
-		</div>
-		"}
-
-		dat += {"
-		<script language="JavaScript">
-			var terminal = document.getElementById("terminal");
-			var terminal_lines = \[
-		"}
-
-		for(var/message in GLOB.startup_messages)
-			dat += {""[replacetext(message, "\"", "\\\"")]","}
-
-		dat += {"
-			\];
-
-			function append_terminal_text(text) {
-				if(text) {
-					terminal_lines.push(text);
-				}
-				while(terminal_lines.length > [MAX_STARTUP_MESSAGES]) {
-					terminal_lines.shift();
-				}
-				var last_msg = terminal_lines.slice(-1);
-				terminal.innerHTML = last_msg.length ? last_msg.pop() : '';
-			}
-
-			append_terminal_text();
-
-			var circle = document.getElementById("progress_circle");
-			var radius = circle.r.baseVal.value;
-			var circumference = 2 * Math.PI * radius;
-			circle.style.strokeDasharray = circumference + ' ' + circumference;
-			circle.style.strokeDashoffset = circumference;
-
-			function setProgress(percent) {
-				var offset = circumference - (percent / 100 * circumference);
-				circle.style.strokeDashoffset = offset;
-			}
-
-			var previous_tick = new Date().getTime();
-			var progress_current_time = [world.timeofday - SStitle.progress_reference_time];
-			var progress_completion_time = [SStitle.average_completion_time];
-			var progress_current_position = 0;
-
-			setInterval(function() {
-				if(progress_current_time < progress_completion_time) {
-					var current_tick = new Date().getTime();
-					progress_current_time += (current_tick - previous_tick) / 100;
-					previous_tick = current_tick;
-				}
-
-				progress_current_position = Math.min(Math.max(progress_current_time / progress_completion_time * 100, progress_current_position), 100);
-				setProgress(progress_current_position);
-			}, 16.666666667);
-
-			function update_loading_progress(current_time, total_time) {
-				progress_current_time = parseFloat(current_time);
-				progress_completion_time = parseFloat(total_time);
-			}
-
-			function update_current_character() {}
-		</script>
-		"}
+		dat += get_loading_screen_html()
 
 	else
 		dat += {"<img src="loading_screen.gif" class="bg" id="bg_layer" alt="">"}
@@ -209,85 +217,7 @@
 /mob/dead/new_player/proc/get_default_title_html()
 	var/dat = SStitle.title_html
 	if(SSticker.current_state == GAME_STATE_STARTUP)
-		dat += {"<img src="loading_screen.gif" class="bg" alt="">"}
-		dat += {"<div class="container_terminal" id="terminal"></div>"}
-		dat += {"<div class="container_progress" id="progress_container"><div class="progress_bar" id="progress"><div class="sub_progress_bar" id="sub_progress"></div></div></div>"}
-
-		dat += {"
-		<script language="JavaScript">
-			var terminal = document.getElementById("terminal");
-			var terminal_lines = \[
-		"}
-
-		for(var/message in GLOB.startup_messages)
-			dat += {""[replacetext(message, "\"", "\\\"")]","}
-
-		dat += {"
-			\];
-
-			function append_terminal_text(text) {
-				if(text) {
-					terminal_lines.push(text);
-				}
-				while(terminal_lines.length > [MAX_STARTUP_MESSAGES]) {
-					terminal_lines.shift();
-				}
-
-				terminal.innerHTML = terminal_lines.join("");
-			}
-
-			append_terminal_text();
-
-			var progress_bar = document.getElementById("progress");
-			var sub_progress_bar = document.getElementById("sub_progress");
-			var progress_container = document.getElementById("progress_container");
-			// milliseconds, the actual realtime tick number
-			var previous_tick = new Date().getTime();
-			// These times are all in 10ths of a second, like byond.
-			var progress_current_time = [world.timeofday - SStitle.progress_reference_time];
-			var progress_completion_time = [SStitle.average_completion_time];
-			// Current progress bar position from 0-100
-			var progress_current_position = 0;
-			// Current start position from 0-100 of subprogress area. Zooming towards target_sub_start.
-			var progress_sub_start = 0;
-			// Target start position of progress area. A captured value of progress_current_position.
-			var target_sub_start = 0;
-
-			setInterval(function() {
-				// Compensate for shakey execution.
-				if(progress_current_time < progress_completion_time) {
-					var current_tick = new Date().getTime();
-					progress_current_time += (current_tick - previous_tick) / 100;
-					previous_tick = current_tick;
-				}
-
-				// Bound the new position between the old pos and 100: only go forwards
-				progress_current_position = Math.min(Math.max(progress_current_time / progress_completion_time * 100, progress_current_position), 100);
-
-				if(progress_sub_start == 0) {
-					// person just connected, jump to current real progress pos.
-					progress_sub_start = target_sub_start = progress_current_position;
-				} else {
-					// Animate the sub-progress position; requires old and new progress bar pos to know speed.
-					progress_sub_start = Math.min(progress_sub_start + 0.1, target_sub_start);
-				}
-
-				// Recalculate gap as a % within a % since they're nested.
-				var progress_sub_current_position = (progress_current_position - progress_sub_start) / progress_current_position * 100;
-
-				progress_bar.style.width = "" + progress_current_position + "%";
-				sub_progress_bar.style.width = "" + progress_sub_current_position + "%";
-			}, 16.666666667);
-
-			function update_loading_progress(current_time, total_time) {
-				progress_current_time = parseFloat(current_time);
-				progress_completion_time = parseFloat(total_time);
-				target_sub_start = progress_current_position;
-			}
-
-			function update_current_character() {}
-		</script>
-		"}
+		dat += get_loading_screen_html()
 
 	else
 		dat += {"<img src="loading_screen.gif" class="bg" alt="">"}

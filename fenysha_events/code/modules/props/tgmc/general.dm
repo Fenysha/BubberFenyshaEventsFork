@@ -350,21 +350,25 @@
 	name = "Wyman Hole"
 	desc = "A manhole cover."
 	icon_state = "wymanhole"
+	density = FALSE
 
 /obj/structure/prop/general/wymanhole_open
 	name = "Wyman Hole Open"
 	desc = "An open manhole cover."
 	icon_state = "wymanhole_open"
+	density = FALSE
 
 /obj/structure/prop/general/wymanhole_open2
 	name = "Wyman Hole Open 2"
-	desc = "A second open manhole design."
+	desc = "An open manhole cover."
 	icon_state = "wymanhole_open2"
+	density = FALSE
 
 /obj/structure/prop/general/wymanhole_open3
 	name = "Wyman Hole Open 3"
-	desc = "A third open manhole variant."
+	desc = "An open manhole cover."
 	icon_state = "wymanhole_open3"
+	density = FALSE
 
 /obj/structure/prop/general/maintenancehatch
 	name = "Maintenance Hatch"
@@ -373,7 +377,7 @@
 
 /obj/structure/prop/general/maintenancehatch_alt
 	name = "Maintenance Hatch Alt"
-	desc = "An alternative maintenance hatch."
+	desc = "A hatch for maintenance access."
 	icon_state = "maintenancehatch_alt"
 
 /obj/structure/prop/general/maintenancehatch_alt_open

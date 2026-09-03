@@ -37,6 +37,12 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 	. = ..()
 	INVOKE_ASYNC(SSdaylight, TYPE_PROC_REF(/datum/controller/subsystem/daylight, refresh_turf_daylight), src)
 
+/// Map templates move turfs between areas without changing their type. The maploader calls this directly rather
+/// than change_area(), so neither AfterChange() nor COMSIG_TURF_AREA_CHANGED fires for a template load.
+/turf/on_change_area(area/old_area, area/new_area)
+	. = ..()
+	INVOKE_ASYNC(SSdaylight, TYPE_PROC_REF(/datum/controller/subsystem/daylight, refresh_turf_daylight), src)
+
 /area/proc/initialize_daylight(mapload = FALSE)
 	if(daylight)
 		SSdaylight.daylight_areas += src
@@ -356,11 +362,17 @@ SUBSYSTEM_DEF(daylight)
 		loaded_holder?.add_overlay(light)
 		CHECK_TICK
 
+	// New terrain can invalidate the leak feathering of daylight areas it landed next to, so rebuild those too.
+	reapply_lighting_near(turfs)
+
 /// Re-applies (or removes) the daylight overlay on a single turf - called from /turf/AfterChange so that a turf
 /// replaced by ChangeTurf (a fresh object with no overlays) is re-lit, since the area's one-time pass never re-runs.
 /// Cheap no-op for the vast majority of turfs that aren't in daylight areas.
 /datum/controller/subsystem/daylight/proc/refresh_turf_daylight(turf/changed)
 	if(!setup_complete || QDELETED(changed)) // roundstart turfs are handled by the central pass
+		return
+	// Station swaps touch every turf in the block under this flag, and handle_loaded_turfs() redoes it all after.
+	if(Master.map_loading)
 		return
 	// Also the reattach path: a turf change rebuilds the lighting object, so re-add to the NEW holder.
 	var/atom/changed_holder = daylight_overlay_holder(changed)
@@ -369,9 +381,60 @@ SUBSYSTEM_DEF(daylight)
 	// Every strength, not just 255: a turf that moved in from a leak ring still carries its feather strength.
 	clear_daylight_wash(changed)
 	var/area/turf_area = changed.loc
-	if(!turf_area?.daylight)
+	if(turf_area?.daylight)
+		changed_holder.add_overlay(get_daylight_overlay_appearance(255, changed))
 		return
-	changed_holder.add_overlay(get_daylight_overlay_appearance(255, changed))
+	// May still sit in a neighbouring area's leak ring, whose feather we just cleared.
+	var/mutable_appearance/leaked_wash = get_leaked_daylight(changed)
+	if(leaked_wash)
+		changed_holder.add_overlay(leaked_wash)
+
+/// Rebuilds the daylight areas new terrain could have affected. Leaks only reach length(GLOB.daylight_leak_falloff)
+/// tiles, so only areas within that radius of the loaded block can be stale - reapply_lighting() repaints every
+/// daylight area on the map, which is most of the station load stall.
+/datum/controller/subsystem/daylight/proc/reapply_lighting_near(list/turfs)
+	if(!setup_complete || !length(turfs))
+		return 0
+
+	var/leak_depth = length(GLOB.daylight_leak_falloff)
+	var/min_x = world.maxx
+	var/max_x = 1
+	var/min_y = world.maxy
+	var/max_y = 1
+	var/list/z_levels = list()
+	for(var/turf/loaded_turf as anything in turfs)
+		min_x = min(min_x, loaded_turf.x)
+		max_x = max(max_x, loaded_turf.x)
+		min_y = min(min_y, loaded_turf.y)
+		max_y = max(max_y, loaded_turf.y)
+		z_levels |= loaded_turf.z
+
+	min_x = max(min_x - leak_depth, 1)
+	min_y = max(min_y - leak_depth, 1)
+	max_x = min(max_x + leak_depth, world.maxx)
+	max_y = min(max_y + leak_depth, world.maxy)
+
+	var/list/affected_areas = list()
+	for(var/z_level in z_levels)
+		for(var/turf/nearby as anything in block(min_x, min_y, z_level, max_x, max_y, z_level))
+			var/area/nearby_area = nearby.loc
+			if(nearby_area?.daylight)
+				affected_areas[nearby_area] = TRUE
+		CHECK_TICK
+
+	for(var/area/daylit_area as anything in affected_areas)
+		daylit_area.clear_daylight_overlay()
+		daylit_area.apply_daylight_overlay()
+		daylit_area.update_base_lighting()
+	return length(affected_areas)
+
+/// The feathered daylight overlay a turf was given by some daylight area's leak ring, or null if it has none.
+/datum/controller/subsystem/daylight/proc/get_leaked_daylight(turf/target)
+	for(var/area/daylight_area as anything in daylight_areas)
+		var/mutable_appearance/leaked_wash = daylight_area.daylight_leaked?[target]
+		if(leaked_wash)
+			return leaked_wash
+	return null
 
 /datum/controller/subsystem/daylight/proc/register_emitter(obj/effect/light_emitter/daylight/emitter)
 	if(!emitter || QDELETED(emitter) || (emitter in all_emitters))
