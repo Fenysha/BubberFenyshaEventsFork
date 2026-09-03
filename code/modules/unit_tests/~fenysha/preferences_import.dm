@@ -164,5 +164,3 @@
 
 
 
-TEST_FOCUS(/datum/unit_test/preferences_import_sanitization)
-TEST_FOCUS(/datum/unit_test/preferences_import_drops_uncompiled_content)
