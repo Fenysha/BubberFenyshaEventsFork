@@ -148,11 +148,31 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 				// plane. Stored so clear_daylight_overlay() cuts the same one.
 				var/mutable_appearance/leak_light = get_daylight_overlay_appearance(leak_falloff[ring], neighbor)
 				var/atom/leak_holder = daylight_overlay_holder(neighbor)
+				// Cut first: this runs again on partial rebuilds, and the wash is BLEND_ADD, so re-adding over an
+				// existing feather doubles its alpha instead of replacing it.
+				clear_daylight_wash(neighbor)
 				leak_holder?.add_overlay(leak_light)
 				daylight_leaked[neighbor] = leak_light
 				next_frontier += neighbor
 		frontier = next_frontier
 		CHECK_TICK
+
+/// Recomputes this area's feathering, leaving the full strength wash on its own turfs alone.
+/// Whole area on purpose: a daylight area like /area/trainstation/outdoor spans the whole railway, so the train
+/// and a station share one, and terrain arriving in one part moves a boundary in another.
+/area/proc/relight_daylight_leaks()
+	if(!daylight_lit)
+		return
+	for(var/turf/leaked_turf as anything in daylight_leaked)
+		clear_daylight_wash(leaked_turf)
+		CHECK_TICK
+	daylight_leaked = null
+
+	var/list/own_turfs = list()
+	for(var/turf/area_turf in src)
+		own_turfs += area_turf
+		CHECK_TICK
+	leak_daylight(own_turfs)
 
 /// Removes the daylight light overlay (and any leaked feather) from this area's turfs.
 /area/proc/clear_daylight_overlay()
@@ -362,8 +382,8 @@ SUBSYSTEM_DEF(daylight)
 		loaded_holder?.add_overlay(light)
 		CHECK_TICK
 
-	// New terrain can invalidate the leak feathering of daylight areas it landed next to, so rebuild those too.
-	reapply_lighting_near(turfs)
+	// New terrain moves daylight boundaries, and a daylight area spans far more than the loaded block.
+	rebuild_daylight_leaks()
 
 /// Re-applies (or removes) the daylight overlay on a single turf - called from /turf/AfterChange so that a turf
 /// replaced by ChangeTurf (a fresh object with no overlays) is re-lit, since the area's one-time pass never re-runs.
@@ -389,44 +409,17 @@ SUBSYSTEM_DEF(daylight)
 	if(leaked_wash)
 		changed_holder.add_overlay(leaked_wash)
 
-/// Rebuilds the daylight areas new terrain could have affected. Leaks only reach length(GLOB.daylight_leak_falloff)
-/// tiles, so only areas within that radius of the loaded block can be stale - reapply_lighting() repaints every
-/// daylight area on the map, which is most of the station load stall.
-/datum/controller/subsystem/daylight/proc/reapply_lighting_near(list/turfs)
-	if(!setup_complete || !length(turfs))
+/// Rebuilds the feathering on every daylight area. Not scoped to the loaded block: a daylight area spans the whole
+/// railway, so the train and a station share one, and terrain arriving in one part moves a boundary in another.
+/// Cheaper than reapply_lighting() because the full strength wash on area turfs is left alone.
+/datum/controller/subsystem/daylight/proc/rebuild_daylight_leaks()
+	if(!setup_complete)
 		return 0
-
-	var/leak_depth = length(GLOB.daylight_leak_falloff)
-	var/min_x = world.maxx
-	var/max_x = 1
-	var/min_y = world.maxy
-	var/max_y = 1
-	var/list/z_levels = list()
-	for(var/turf/loaded_turf as anything in turfs)
-		min_x = min(min_x, loaded_turf.x)
-		max_x = max(max_x, loaded_turf.x)
-		min_y = min(min_y, loaded_turf.y)
-		max_y = max(max_y, loaded_turf.y)
-		z_levels |= loaded_turf.z
-
-	min_x = max(min_x - leak_depth, 1)
-	min_y = max(min_y - leak_depth, 1)
-	max_x = min(max_x + leak_depth, world.maxx)
-	max_y = min(max_y + leak_depth, world.maxy)
-
-	var/list/affected_areas = list()
-	for(var/z_level in z_levels)
-		for(var/turf/nearby as anything in block(min_x, min_y, z_level, max_x, max_y, z_level))
-			var/area/nearby_area = nearby.loc
-			if(nearby_area?.daylight)
-				affected_areas[nearby_area] = TRUE
-		CHECK_TICK
-
-	for(var/area/daylit_area as anything in affected_areas)
-		daylit_area.clear_daylight_overlay()
-		daylit_area.apply_daylight_overlay()
-		daylit_area.update_base_lighting()
-	return length(affected_areas)
+	var/rebuilt = 0
+	for(var/area/daylit_area as anything in daylight_areas)
+		daylit_area.relight_daylight_leaks()
+		rebuilt++
+	return rebuilt
 
 /// The feathered daylight overlay a turf was given by some daylight area's leak ring, or null if it has none.
 /datum/controller/subsystem/daylight/proc/get_leaked_daylight(turf/target)

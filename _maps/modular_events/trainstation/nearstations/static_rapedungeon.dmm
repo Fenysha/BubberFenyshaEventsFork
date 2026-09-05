@@ -72,8 +72,7 @@
 	icon = 'icons/obj/machines/atmospherics/thermomachine.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /turf/open/floor/iron/dark,
 /area/trainstation/indoors/shaded_area)
@@ -685,8 +684,7 @@
 	icon = 'icons/obj/machines/lathes.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /turf/open/floor/iron/dark,
 /area/trainstation/indoors/shaded_area)
@@ -5565,7 +5563,6 @@
 	anchored = 1;
 	color = "#ecd6c9";
 	density = 1;
-	can_be_unanchored = 1;
 	dir = 4
 	},
 /obj/effect/decal/cleanable/dirt/dust,
@@ -6039,8 +6036,7 @@
 	icon = 'icons/obj/machines/research.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /turf/open/indestructible/meat,
 /area/trainstation/indoors/shaded_area)
@@ -6429,8 +6425,7 @@
 	icon = 'icons/obj/medical/chemical_tanks.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /turf/open/floor/iron/dark,
 /area/trainstation/indoors/shaded_area)
@@ -6881,8 +6876,7 @@
 	icon = 'icons/obj/medical/chemical_tanks.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /turf/open/floor/iron/dark,
 /area/trainstation/indoors/shaded_area)
@@ -10674,7 +10668,6 @@
 	anchored = 1;
 	color = "#ecd6c9";
 	density = 1;
-	can_be_unanchored = 1;
 	dir = 1
 	},
 /obj/effect/decal/cleanable/dirt/dust,
@@ -11238,7 +11231,6 @@
 	anchored = 1;
 	color = "#ecd6c9";
 	density = 1;
-	can_be_unanchored = 1;
 	dir = 4
 	},
 /turf/open/indestructible/meat,
@@ -11688,8 +11680,7 @@
 	icon = 'icons/obj/machines/research.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /turf/open/floor/iron/dark,
 /area/trainstation/indoors/shaded_area)
@@ -12521,8 +12512,7 @@
 	icon = 'icons/obj/machines/robotics.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /turf/open/floor/iron/dark,
 /area/trainstation/indoors/shaded_area)
@@ -13229,8 +13219,7 @@
 	icon = 'icons/obj/medical/chemical_tanks.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /obj/effect/mist,
 /turf/open/floor/plating/reinforced,
@@ -14133,8 +14122,7 @@
 	icon = 'icons/obj/medical/chemical_tanks.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /turf/open/floor/plating/reinforced,
 /area/trainstation/indoors/shaded_area)
@@ -15236,7 +15224,6 @@
 	anchored = 1;
 	color = "#ecd6c9";
 	density = 1;
-	can_be_unanchored = 1;
 	dir = 4
 	},
 /turf/open/floor/iron/dark,
@@ -15414,8 +15401,7 @@
 	icon = 'icons/obj/machines/research.dmi';
 	anchored = 1;
 	color = "#ecd6c9";
-	density = 1;
-	can_be_unanchored = 1
+	density = 1
 	},
 /turf/open/floor/iron/dark,
 /area/trainstation/indoors/shaded_area)
@@ -15927,7 +15913,6 @@
 	anchored = 1;
 	color = "#ecd6c9";
 	density = 1;
-	can_be_unanchored = 1;
 	dir = 4
 	},
 /obj/effect/decal/cleanable/dirt/dust,

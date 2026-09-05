@@ -62,6 +62,11 @@
 /datum/element/footstep_callback/Detach(atom/movable/source)
 	UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
 	steps_for_living -= source
+	// This element is BESPOKE with argument_hash_start_idx = 2, so the
+	// per-instance CALLBACK is part of its identity: every host gets its own
+	// element, and that element holds the callback, which holds the host. Not
+	// releasing it here turned every such mob into a hard delete.
+	sound_provider = null
 	return ..()
 
 

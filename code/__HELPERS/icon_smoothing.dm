@@ -192,18 +192,20 @@ xxx xxx xxx
 			var/turf/neighbor = get_step(src, direction); \
 			if(neighbor && (!area_limited_icon_smoothing || istype(neighbor.loc, area_limited_icon_smoothing))) { \
 				var/neighbor_smoothing_groups = neighbor.smoothing_groups; \
-				if(neighbor_smoothing_groups) { \
+				/* FENYSHA EDIT CHANGE - islist(), was truthiness. SETUP_SMOOTHING() turns these from text into */ \
+				if(islist(neighbor_smoothing_groups)) { \
 					SMOOTH_AGAINST(neighbor, direction, direction_flag, neighbor_smoothing_groups); \
 				} \
 				if(smooth_obj) { \
 					for(var/atom/movable/thing as anything in neighbor) { \
 						var/thing_smoothing_groups = thing.smoothing_groups; \
-						if(!thing.anchored || isnull(thing_smoothing_groups)) { \
+						if(!thing.anchored || !islist(thing_smoothing_groups)) { \
 							continue; \
 						}; \
 						SMOOTH_AGAINST(thing, direction, direction_flag, thing_smoothing_groups); \
 					} \
 				} \
+				/* FENYSHA EDIT CHANGE END */ \
 			} else if (smooth_border) { \
 				JUNCTION_FOUND(null, direction, direction_flag); \
 			} \

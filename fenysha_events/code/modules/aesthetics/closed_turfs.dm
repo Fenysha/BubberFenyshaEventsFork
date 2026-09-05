@@ -3,7 +3,8 @@
 	icon_state = "ship_walls-0"
 	base_icon_state = "ship_walls"
 	sheet_type = /obj/item/stack/sheet/spaceship
-	smoothing_groups = SMOOTH_GROUP_CLOSED_TURFS + SMOOTH_GROUP_SHUTTLE_PARTS
+	// Must stay in ascending group id order; unsorted lists make bitmask_smooth() runtime on every neighbour check.
+	smoothing_groups = SMOOTH_GROUP_SHUTTLE_PARTS + SMOOTH_GROUP_CLOSED_TURFS
 	canSmoothWith = SMOOTH_GROUP_SHUTTLE_PARTS + SMOOTH_GROUP_AIRLOCK + SMOOTH_GROUP_SURVIVAL_TITANIUM_POD
 
 /turf/closed/wall/mineral/titanium/spaceship/nodiagonal

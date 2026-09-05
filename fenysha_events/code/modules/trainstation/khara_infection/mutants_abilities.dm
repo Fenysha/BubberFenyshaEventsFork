@@ -282,6 +282,7 @@
 	src.cast = cast
 
 /datum/component/khara_hivemind/Destroy(force)
+	all_minds -= parent
 	action.Remove(parent)
 	QDEL_NULL(action)
 	. = ..()

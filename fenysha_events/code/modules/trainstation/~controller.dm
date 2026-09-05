@@ -292,10 +292,10 @@ SUBSYSTEM_DEF(train_controller)
 
 /datum/controller/subsystem/train_controller/proc/on_station_unloaded()
 
-/datum/controller/subsystem/train_controller/proc/unload_station(datum/train_station/to_unload, hide_for_players = TRUE)
+/datum/controller/subsystem/train_controller/proc/unload_station(datum/train_station/to_unload, hide_for_players = TRUE, clear_turfs = TRUE)
 	if(!to_unload)
 		return
-	to_unload.unload_station(CALLBACK(src, PROC_REF(on_station_unloaded)))
+	to_unload.unload_station(CALLBACK(src, PROC_REF(on_station_unloaded)), clear_turfs)
 
 /datum/controller/subsystem/train_controller/proc/on_station_loaded()
 
@@ -317,7 +317,11 @@ SUBSYSTEM_DEF(train_controller)
 			ADD_TRAIT(L, TRAIT_NO_TRANSFORM, REF(src))
 			LAZYADD(screens, L)
 	if(loaded_station)
-		unload_station(loaded_station, hide_for_players)
+		// Skip the outgoing turf clear only when the incoming template covers at least the same block, or the old
+		// station would be left behind wherever the new one is smaller.
+		var/datum/map_template/outgoing = loaded_station.template
+		var/covers_old_block = to_load.template && outgoing && to_load.template.width >= outgoing.width && to_load.template.height >= outgoing.height
+		unload_station(loaded_station, hide_for_players, !covers_old_block)
 
 	loading = TRUE
 	loaded_station = to_load

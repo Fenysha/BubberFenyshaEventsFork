@@ -49,6 +49,7 @@
 #include "code\modules\preferences_import\import.dm"
 #include "code\modules\preferences_import\import_modular.dm"
 #include "code\modules\preferences_import\lobby.dm"
+#include "code\modules\optimizations\turf_context.dm"
 #include "code\modules\preferences_import\loadout.dm"
 #include "code\modules\preferences_import\verbs.dm"
 #include "code\modules\erotic_removeval\map_placeholders.dm"

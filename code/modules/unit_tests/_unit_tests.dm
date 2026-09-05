@@ -377,6 +377,7 @@
 // SKYRAT EDIT END
 // FENYSHA EDIT ADDITION BEGIN - the TEST_ASSERT macros are #undef'd below, so fenysha tests have to be included here
 #include "~fenysha\preferences_import.dm"
+#include "~fenysha\trainstation_load_profile.dm"
 // FENYSHA EDIT ADDITION END
 // END_INCLUDE
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter

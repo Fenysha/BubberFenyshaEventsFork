@@ -1,6 +1,9 @@
 /datum/map_template/train_station
 	name = "Train Station Template"
 	returns_created_atoms = TRUE
+	/// Stations replace their block outright rather than stacking onto it - unload_station() resets the turfs to
+	/// space anyway, and stacking would both cost a load_on_top() per turf and grow baseturfs on every swap.
+	should_place_on_top = FALSE
 
 /datum/train_station
 	/// Name of the station
@@ -67,7 +70,7 @@
 
 /datum/train_station/New()
 	. = ..()
-	template = new /datum/map_template(map_path, "Train station - [name]", TRUE)
+	template = new /datum/map_template/train_station(map_path, "Train station - [name]", TRUE)
 	template.returns_created_atoms = TRUE
 	SSmapping.map_templates[template.name] = template
 
@@ -280,7 +283,12 @@
 /datum/train_station/proc/pre_unload()
 	clear_environment()
 
-/datum/train_station/proc/unload_station(datum/callback/unload_callback)
+/**
+ * clear_turfs: pass FALSE when another station is being loaded straight over this one and its template covers at
+ * least the same block. Contents are still purged; the turfs are left for the incoming template to overwrite,
+ * which halves the ChangeTurf count of a swap - that was the single biggest cost in the load profile.
+ */
+/datum/train_station/proc/unload_station(datum/callback/unload_callback, clear_turfs = TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	var/obj/effect/landmark/trainstation/crew_spawnpoint/crew_mover = locate() in GLOB.landmarks_list
@@ -300,6 +308,11 @@
 			if(isobserver(AM))
 				continue
 			POOL_ASYNC_RELEASE(AM)
+		// Still reset baseturfs either way: the incoming ChangeTurf inherits them, so skipping this would leave
+		// the outgoing station's base under the new one.
+		if(!clear_turfs)
+			T.baseturfs = /turf/open/space
+			continue
 		T.ChangeTurf(/turf/open/space, null, CHANGETURF_DEFER_CHANGE)
 		T.baseturfs = /turf/open/space
 
