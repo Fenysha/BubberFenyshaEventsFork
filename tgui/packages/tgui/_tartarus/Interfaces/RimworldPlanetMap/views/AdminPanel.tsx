@@ -1,5 +1,5 @@
 import { useState } from 'react';
-
+import { useBackend } from 'tgui/backend';
 import {
   Box,
   Button,
@@ -11,60 +11,37 @@ import {
   Stack,
 } from 'tgui-core/components';
 
-import { useBackend } from 'tgui/backend';
-
-import type {
-  PlanetMapData,
-  PlanetTile,
-} from '../types';
+import type { PlanetMapData, PlanetTile } from '../types';
 
 type AdminPanelProps = {
   localTile?: PlanetTile | null;
 };
 
-export const AdminPanel = (
-  props: AdminPanelProps,
-) => {
-  const { act, data } =
-    useBackend<PlanetMapData>();
+export const AdminPanel = (props: AdminPanelProps) => {
+  const { act, data } = useBackend<PlanetMapData>();
 
-  const selected =
-    data.selectedTile;
+  const selected = data.selectedTile;
 
-  const selectedObject =
-    data.selectedObject;
+  const selectedObject = data.selectedObject;
 
-  const [objectName, setObjectName] =
-    useState('Settlement');
+  const [objectName, setObjectName] = useState('Settlement');
 
-  const [seedValue, setSeedValue] =
-    useState(data.seed);
+  const [seedValue, setSeedValue] = useState(data.seed);
 
-  const [planetType, setPlanetType] =
-    useState(data.planetType);
+  const [planetType, setPlanetType] = useState(data.planetType);
 
-  const presets =
-    data.presets ?? [
-      data.planetType,
-    ];
+  const presets = data.presets ?? [data.planetType];
 
-  const hasSelection =
-    !!selected;
+  const hasSelection = !!selected;
 
   return (
     <Stack fill vertical>
       <Stack.Item>
         <Section title="Planet">
           <LabeledList>
-            <LabeledList.Item label="Name">
-              {data.name}
-            </LabeledList.Item>
-            <LabeledList.Item label="Type">
-              {data.planetType}
-            </LabeledList.Item>
-            <LabeledList.Item label="Seed">
-              {data.seed}
-            </LabeledList.Item>
+            <LabeledList.Item label="Name">{data.name}</LabeledList.Item>
+            <LabeledList.Item label="Type">{data.planetType}</LabeledList.Item>
+            <LabeledList.Item label="Seed">{data.seed}</LabeledList.Item>
             <LabeledList.Item label="Revision">
               {data.generationRevision}
             </LabeledList.Item>
@@ -111,44 +88,27 @@ export const AdminPanel = (
 
       <Stack.Item grow>
         <Section fill scrollable title="Selected tile">
-          {!hasSelection && (
-            <Box color="label">
-              Click a hex on the planet.
-            </Box>
-          )}
+          {!hasSelection && <Box color="label">Click a hex on the planet.</Box>}
 
           {hasSelection && (
             <LabeledList>
-              <LabeledList.Item label="X">
-                {selected.x}
-              </LabeledList.Item>
-              <LabeledList.Item label="Y">
-                {selected.y}
-              </LabeledList.Item>
+              <LabeledList.Item label="X">{selected.x}</LabeledList.Item>
+              <LabeledList.Item label="Y">{selected.y}</LabeledList.Item>
               <LabeledList.Item label="Biome">
-                {props.localTile?.biome ??
-                  selected.biome ??
-                  'client'}
+                {props.localTile?.biome ?? selected.biome ?? 'client'}
               </LabeledList.Item>
               <LabeledList.Item label="Elevation">
-                {props.localTile?.elevation ??
-                  selected.elevation ??
-                  '—'}
+                {props.localTile?.elevation ?? selected.elevation ?? '—'}
               </LabeledList.Item>
               <LabeledList.Item label="Heat">
-                {props.localTile?.heat ??
-                  selected.heat ??
-                  '—'}
+                {props.localTile?.heat ?? selected.heat ?? '—'}
               </LabeledList.Item>
               <LabeledList.Item label="Humidity">
-                {props.localTile?.humidity ??
-                  selected.humidity ??
-                  '—'}
+                {props.localTile?.humidity ?? selected.humidity ?? '—'}
               </LabeledList.Item>
               <LabeledList.Item label="Temp">
                 {(
-                  props.localTile?.temperature ??
-                  selected.temperature
+                  props.localTile?.temperature ?? selected.temperature
                 )?.toFixed?.(3) ?? '—'}
               </LabeledList.Item>
               <LabeledList.Item label="Image">
@@ -159,9 +119,7 @@ export const AdminPanel = (
 
           {!!selectedObject && (
             <Box mt={1}>
-              <Box bold>
-                {selectedObject.name}
-              </Box>
+              <Box bold>{selectedObject.name}</Box>
               <Box color="label">
                 {selectedObject.type} ({selectedObject.id})
               </Box>
@@ -172,11 +130,7 @@ export const AdminPanel = (
 
       <Stack.Item>
         <Section title="Place">
-          <Input
-            fluid
-            value={objectName}
-            onChange={setObjectName}
-          />
+          <Input fluid value={objectName} onChange={setObjectName} />
           <Stack mt={1}>
             <Stack.Item grow>
               <Button

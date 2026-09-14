@@ -13,7 +13,6 @@ const SEED_MODULUS = 2147483647;
 const SEED_MULTIPLIER = 1103515245;
 const SEED_INCREMENT = 12345;
 
-
 /**
  * JS Number safely represents integers only up to 2^53 - 1.
  *
@@ -27,26 +26,19 @@ const SEED_INCREMENT = 12345;
  */
 function nextSeed(seed: number): number {
   const value =
-    (
-      BigInt(Math.trunc(seed)) *
-      BigInt(SEED_MULTIPLIER) +
-      BigInt(SEED_INCREMENT)
-    ) %
+    (BigInt(Math.trunc(seed)) * BigInt(SEED_MULTIPLIER) +
+      BigInt(SEED_INCREMENT)) %
     BigInt(SEED_MODULUS);
 
   return Number(value);
 }
 
-
 export function deriveSeeds(seed: number) {
-  const terrainSeed =
-    nextSeed(seed);
+  const terrainSeed = nextSeed(seed);
 
-  const heatSeed =
-    nextSeed(terrainSeed);
+  const heatSeed = nextSeed(terrainSeed);
 
-  const humiditySeed =
-    nextSeed(heatSeed);
+  const humiditySeed = nextSeed(heatSeed);
 
   return {
     terrainSeed,

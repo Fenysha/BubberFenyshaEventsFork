@@ -30,20 +30,21 @@ export const buildPlanetTexture = (
 
       const color = new THREE.Color(BIOME_COLORS[tile.biome] ?? 0xff00ff);
 
-      /*
-       * НИКАКОГО rowOffset ЗДЕСЬ НЕТ.
-       *
-       * Texture:
-       *
-       * pixel[x, y] = logical tile[x + 1, y + 1]
-       */
+      const variation = stableVariation(x, y, data.terrainSeed);
+
       const index = (y * width + x) * 4;
 
-      pixels[index] = Math.round(color.r * 255);
+      pixels[index] = Math.round(
+        THREE.MathUtils.clamp(color.r * variation, 0, 1) * 255,
+      );
 
-      pixels[index + 1] = Math.round(color.g * 255);
+      pixels[index + 1] = Math.round(
+        THREE.MathUtils.clamp(color.g * variation, 0, 1) * 255,
+      );
 
-      pixels[index + 2] = Math.round(color.b * 255);
+      pixels[index + 2] = Math.round(
+        THREE.MathUtils.clamp(color.b * variation, 0, 1) * 255,
+      );
 
       pixels[index + 3] = 255;
     }
@@ -59,15 +60,15 @@ export const buildPlanetTexture = (
 
   texture.colorSpace = THREE.SRGBColorSpace;
 
-  texture.wrapS = THREE.RepeatWrapping;
-
+  texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
 
   texture.magFilter = THREE.NearestFilter;
-
   texture.minFilter = THREE.NearestFilter;
 
   texture.generateMipmaps = false;
+  texture.flipY = false;
+
   texture.needsUpdate = true;
 
   return texture;

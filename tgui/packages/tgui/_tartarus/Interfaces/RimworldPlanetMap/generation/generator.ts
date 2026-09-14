@@ -1,7 +1,4 @@
-import type {
-  PlanetMapData,
-  PlanetTile,
-} from '../types';
+import type { PlanetMapData, PlanetTile } from '../types';
 
 import {
   BIOME_BEACH,
@@ -16,11 +13,9 @@ import {
   BIOME_TEMPERATE_FOREST,
   BIOME_TROPICAL_FOREST,
   BIOME_TUNDRA,
-
   CLIMATE_HIGH,
   CLIMATE_LOW,
   CLIMATE_MEDIUM,
-
   ELEVATION_COAST,
   ELEVATION_HIGHLAND,
   ELEVATION_LOWLAND,
@@ -31,20 +26,14 @@ import {
 
 import { DbpSampler } from './dbp';
 
-
 export class PlanetGenerator {
-
   public readonly data: PlanetMapData;
 
   private readonly terrain: DbpSampler;
   private readonly heat: DbpSampler;
   private readonly humidity: DbpSampler;
 
-
-  public constructor(
-    data: PlanetMapData,
-  ) {
-
+  public constructor(data: PlanetMapData) {
     this.data = data;
 
     /*
@@ -55,45 +44,31 @@ export class PlanetGenerator {
      * We do NOT derive them again here.
      */
 
-    this.terrain =
-      new DbpSampler({
-        seed: data.terrainSeed,
-        accuracy: data.noiseScale,
-        stampSize: data.terrainScale,
-        worldSize: data.width,
-      });
+    this.terrain = new DbpSampler({
+      seed: data.terrainSeed,
+      accuracy: data.noiseScale,
+      stampSize: data.terrainScale,
+      worldSize: data.width,
+    });
 
-    this.heat =
-      new DbpSampler({
-        seed: data.heatSeed,
-        accuracy: data.noiseScale,
-        stampSize: data.heatScale,
-        worldSize: data.width,
-      });
+    this.heat = new DbpSampler({
+      seed: data.heatSeed,
+      accuracy: data.noiseScale,
+      stampSize: data.heatScale,
+      worldSize: data.width,
+    });
 
-    this.humidity =
-      new DbpSampler({
-        seed: data.humiditySeed,
-        accuracy: data.noiseScale,
-        stampSize: data.humidityScale,
-        worldSize: data.width,
-      });
+    this.humidity = new DbpSampler({
+      seed: data.humiditySeed,
+      accuracy: data.noiseScale,
+      stampSize: data.humidityScale,
+      worldSize: data.width,
+    });
   }
 
-
-  private valid(
-    x: number,
-    y: number,
-  ): boolean {
-
-    return (
-      x >= 1 &&
-      x <= this.data.width &&
-      y >= 1 &&
-      y <= this.data.height
-    );
+  private valid(x: number, y: number): boolean {
+    return x >= 1 && x <= this.data.width && y >= 1 && y <= this.data.height;
   }
-
 
   /*
    * rustg_dbp_generate returns a grid whose first cell corresponds
@@ -102,21 +77,13 @@ export class PlanetGenerator {
    * Server planetary coordinates start at 1,1.
    */
 
-  private dbpX(
-    x: number,
-  ): number {
-
+  private dbpX(x: number): number {
     return x - 1;
   }
 
-
-  private dbpY(
-    y: number,
-  ): number {
-
+  private dbpY(y: number): number {
     return y - 1;
   }
-
 
   /*
    * --------------------------------------------------------------------------
@@ -124,19 +91,15 @@ export class PlanetGenerator {
    * --------------------------------------------------------------------------
    */
 
-  public getElevation(
-    x: number,
-    y: number,
-  ): string {
-
-    if(!this.valid(x, y)) {
+  public getElevation(x: number, y: number): string {
+    if (!this.valid(x, y)) {
       return ELEVATION_OCEAN;
     }
 
     const px = this.dbpX(x);
     const py = this.dbpY(y);
 
-    if(
+    if (
       this.terrain.inRange(
         px,
         py,
@@ -147,7 +110,7 @@ export class PlanetGenerator {
       return ELEVATION_SNOW;
     }
 
-    if(
+    if (
       this.terrain.inRange(
         px,
         py,
@@ -158,7 +121,7 @@ export class PlanetGenerator {
       return ELEVATION_MOUNTAIN;
     }
 
-    if(
+    if (
       this.terrain.inRange(
         px,
         py,
@@ -169,7 +132,7 @@ export class PlanetGenerator {
       return ELEVATION_HIGHLAND;
     }
 
-    if(
+    if (
       this.terrain.inRange(
         px,
         py,
@@ -180,7 +143,7 @@ export class PlanetGenerator {
       return ELEVATION_LOWLAND;
     }
 
-    if(
+    if (
       this.terrain.inRange(
         px,
         py,
@@ -201,37 +164,25 @@ export class PlanetGenerator {
     return ELEVATION_OCEAN;
   }
 
-
   /*
    * --------------------------------------------------------------------------
    * Heat
    * --------------------------------------------------------------------------
    */
 
-  public getHeat(
-    x: number,
-    y: number,
-  ): string {
-
-    if(!this.valid(x, y)) {
+  public getHeat(x: number, y: number): string {
+    if (!this.valid(x, y)) {
       return CLIMATE_LOW;
     }
 
     const px = this.dbpX(x);
     const py = this.dbpY(y);
 
-    if(
-      this.heat.inRange(
-        px,
-        py,
-        this.data.heatThresholdHigh,
-        1.1,
-      )
-    ) {
+    if (this.heat.inRange(px, py, this.data.heatThresholdHigh, 1.1)) {
       return CLIMATE_HIGH;
     }
 
-    if(
+    if (
       this.heat.inRange(
         px,
         py,
@@ -245,37 +196,25 @@ export class PlanetGenerator {
     return CLIMATE_LOW;
   }
 
-
   /*
    * --------------------------------------------------------------------------
    * Humidity
    * --------------------------------------------------------------------------
    */
 
-  public getHumidity(
-    x: number,
-    y: number,
-  ): string {
-
-    if(!this.valid(x, y)) {
+  public getHumidity(x: number, y: number): string {
+    if (!this.valid(x, y)) {
       return CLIMATE_LOW;
     }
 
     const px = this.dbpX(x);
     const py = this.dbpY(y);
 
-    if(
-      this.humidity.inRange(
-        px,
-        py,
-        this.data.humidityThresholdHigh,
-        1.1,
-      )
-    ) {
+    if (this.humidity.inRange(px, py, this.data.humidityThresholdHigh, 1.1)) {
       return CLIMATE_HIGH;
     }
 
-    if(
+    if (
       this.humidity.inRange(
         px,
         py,
@@ -289,73 +228,43 @@ export class PlanetGenerator {
     return CLIMATE_LOW;
   }
 
-
   /*
    * --------------------------------------------------------------------------
    * Temperature
    * --------------------------------------------------------------------------
    */
 
-  public getTemperature(
-    x: number,
-    y: number,
-    heat?: string,
-  ): number {
-
-    if(!this.valid(x, y)) {
+  public getTemperature(x: number, y: number, heat?: string): number {
+    if (!this.valid(x, y)) {
       return 0;
     }
 
-    const latitude =
-      Math.abs(
-        (
-          (y - 1) /
-          Math.max(
-            1,
-            this.data.height - 1,
-          )
-        ) * 2 -
-        1,
-      );
+    const latitude = Math.abs(
+      ((y - 1) / Math.max(1, this.data.height - 1)) * 2 - 1,
+    );
 
     /*
      * 0 = equator
      * 1 = pole
      */
 
-    const latitudeModifier =
-      1 - latitude;
+    const latitudeModifier = 1 - latitude;
 
-    const heatLevel =
-      heat ?? this.getHeat(x, y);
+    const heatLevel = heat ?? this.getHeat(x, y);
 
     let heatModifier = 0.2;
 
-    if(
-      heatLevel ===
-      CLIMATE_HIGH
-    ) {
-
+    if (heatLevel === CLIMATE_HIGH) {
       heatModifier = 1.0;
-
-    } else if(
-      heatLevel ===
-      CLIMATE_MEDIUM
-    ) {
-
+    } else if (heatLevel === CLIMATE_MEDIUM) {
       heatModifier = 0.6;
     }
 
     return Math.max(
       0,
-      Math.min(
-        1,
-        latitudeModifier * 0.55 +
-        heatModifier * 0.45,
-      ),
+      Math.min(1, latitudeModifier * 0.55 + heatModifier * 0.45),
     );
   }
-
 
   /*
    * --------------------------------------------------------------------------
@@ -370,28 +279,21 @@ export class PlanetGenerator {
     heat?: string,
     humidity?: string,
   ): string {
+    const e = elevation ?? this.getElevation(x, y);
 
-    const e =
-      elevation ??
-      this.getElevation(x, y);
+    const h = heat ?? this.getHeat(x, y);
 
-    const h =
-      heat ??
-      this.getHeat(x, y);
-
-    const hm =
-      humidity ??
-      this.getHumidity(x, y);
+    const hm = humidity ?? this.getHumidity(x, y);
 
     /*
      * Water.
      */
 
-    if(e === ELEVATION_OCEAN) {
+    if (e === ELEVATION_OCEAN) {
       return BIOME_OCEAN;
     }
 
-    if(e === ELEVATION_COAST) {
+    if (e === ELEVATION_COAST) {
       return BIOME_BEACH;
     }
 
@@ -399,11 +301,11 @@ export class PlanetGenerator {
      * Extreme terrain.
      */
 
-    if(e === ELEVATION_SNOW) {
+    if (e === ELEVATION_SNOW) {
       return BIOME_SNOW;
     }
 
-    if(e === ELEVATION_MOUNTAIN) {
+    if (e === ELEVATION_MOUNTAIN) {
       return BIOME_MOUNTAINS;
     }
 
@@ -411,9 +313,8 @@ export class PlanetGenerator {
      * Cold.
      */
 
-    if(h === CLIMATE_LOW) {
-
-      if(hm === CLIMATE_HIGH) {
+    if (h === CLIMATE_LOW) {
+      if (hm === CLIMATE_HIGH) {
         return BIOME_TAIGA;
       }
 
@@ -424,13 +325,12 @@ export class PlanetGenerator {
      * Moderate.
      */
 
-    if(h === CLIMATE_MEDIUM) {
-
-      if(hm === CLIMATE_HIGH) {
+    if (h === CLIMATE_MEDIUM) {
+      if (hm === CLIMATE_HIGH) {
         return BIOME_TEMPERATE_FOREST;
       }
 
-      if(hm === CLIMATE_MEDIUM) {
+      if (hm === CLIMATE_MEDIUM) {
         return BIOME_GRASSLAND;
       }
 
@@ -441,17 +341,16 @@ export class PlanetGenerator {
      * Hot.
      */
 
-    if(hm === CLIMATE_HIGH) {
+    if (hm === CLIMATE_HIGH) {
       return BIOME_RAINFOREST;
     }
 
-    if(hm === CLIMATE_MEDIUM) {
+    if (hm === CLIMATE_MEDIUM) {
       return BIOME_TROPICAL_FOREST;
     }
 
     return BIOME_DESERT;
   }
-
 
   /*
    * --------------------------------------------------------------------------
@@ -459,44 +358,16 @@ export class PlanetGenerator {
    * --------------------------------------------------------------------------
    */
 
-  public getTile(
-    x: number,
-    y: number,
-  ): PlanetTile {
+  public getTile(x: number, y: number): PlanetTile {
+    const elevation = this.getElevation(x, y);
 
-    const elevation =
-      this.getElevation(
-        x,
-        y,
-      );
+    const heat = this.getHeat(x, y);
 
-    const heat =
-      this.getHeat(
-        x,
-        y,
-      );
+    const humidity = this.getHumidity(x, y);
 
-    const humidity =
-      this.getHumidity(
-        x,
-        y,
-      );
+    const temperature = this.getTemperature(x, y, heat);
 
-    const temperature =
-      this.getTemperature(
-        x,
-        y,
-        heat,
-      );
-
-    const biome =
-      this.getBiome(
-        x,
-        y,
-        elevation,
-        heat,
-        humidity,
-      );
+    const biome = this.getBiome(x, y, elevation, heat, humidity);
 
     return {
       biome,

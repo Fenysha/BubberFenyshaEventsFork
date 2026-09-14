@@ -1,25 +1,15 @@
 import * as THREE from 'three';
-
+import { PLANET_RADIUS } from '../generation/constants';
 import type { PlanetMapData } from '../types';
 
-import {
-  PLANET_RADIUS,
-} from '../generation/constants';
-
-export type LodLevel =
-  | 'far'
-  | 'medium'
-  | 'near';
+export type LodLevel = 'far' | 'medium' | 'near';
 
 type LodDetail = {
   widthSegments: number;
   heightSegments: number;
 };
 
-const LOD_DETAIL: Record<
-  LodLevel,
-  LodDetail
-> = {
+const LOD_DETAIL: Record<LodLevel, LodDetail> = {
   far: {
     widthSegments: 32,
     heightSegments: 16,
@@ -40,8 +30,7 @@ export const buildPlanetGeometry = (
   _data: PlanetMapData,
   lod: LodLevel,
 ): THREE.SphereGeometry => {
-  const detail =
-    LOD_DETAIL[lod];
+  const detail = LOD_DETAIL[lod];
 
   return new THREE.SphereGeometry(
     PLANET_RADIUS,

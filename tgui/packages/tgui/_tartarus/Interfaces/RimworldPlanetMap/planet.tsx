@@ -263,8 +263,8 @@ export const Planet = ({
     controls.enablePan = false;
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
-    controls.minDistance = PLANET_RADIUS * 1.015;
-    controls.maxDistance = 9;
+    controls.minDistance = PLANET_RADIUS * 1.08;
+    controls.maxDistance = 13;
     controls.rotateSpeed = 0.55;
 
     loadCameraState(camera, controls);
@@ -481,18 +481,13 @@ export const Planet = ({
       }
     };
 
-    const zoomToSelection = () => {
-      const direction = camera.position
-        .clone()
-        .sub(controls.target)
-        .normalize();
-
+    const zoomToSelection = (selectedPoint: THREE.Vector3) => {
       const start = camera.position.clone();
 
+      const direction = selectedPoint.clone().normalize();
       const end = direction.multiplyScalar(PLANET_RADIUS * 1.045);
 
       const started = performance.now();
-
       const duration = 380;
 
       const animateZoom = (now: number) => {
@@ -501,9 +496,7 @@ export const Planet = ({
         const eased = t * t * (3 - 2 * t);
 
         camera.position.lerpVectors(start, end, eased);
-
         controls.target.set(0, 0, 0);
-
         controls.update();
 
         if (t < 1) {
@@ -583,7 +576,7 @@ export const Planet = ({
 
       callbacksRef.current.onTileClick?.(x, y, tile);
 
-      zoomToSelection();
+      // zoomToSelection(point);
     };
 
     renderer.domElement.addEventListener('pointerdown', handlePointerDown);

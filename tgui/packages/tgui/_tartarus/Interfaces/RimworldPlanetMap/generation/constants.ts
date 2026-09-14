@@ -6,16 +6,13 @@
 
 export const PLANET_RADIUS = 2;
 
-
 /*
  * ----------------------------------------------------------------------------
  * Camera
  * ----------------------------------------------------------------------------
  */
 
-export const CAMERA_STATE_KEY =
-  'rimworld-planet-camera';
-
+export const CAMERA_STATE_KEY = 'rimworld-planet-camera';
 
 export const DEFAULT_CAMERA_POSITION = {
   x: 0,
@@ -23,13 +20,11 @@ export const DEFAULT_CAMERA_POSITION = {
   z: PLANET_RADIUS * 2.4,
 };
 
-
 export const DEFAULT_CAMERA_TARGET = {
   x: 0,
   y: 0,
   z: 0,
 };
-
 
 /*
  * ----------------------------------------------------------------------------
@@ -40,7 +35,6 @@ export const DEFAULT_CAMERA_TARGET = {
 export const CLIMATE_LOW = '0';
 export const CLIMATE_MEDIUM = '1';
 export const CLIMATE_HIGH = '2';
-
 
 /*
  * ----------------------------------------------------------------------------
@@ -55,7 +49,6 @@ export const ELEVATION_HIGHLAND = '3';
 export const ELEVATION_MOUNTAIN = '4';
 export const ELEVATION_SNOW = '5';
 
-
 /*
  * ----------------------------------------------------------------------------
  * Biomes
@@ -68,30 +61,21 @@ export const BIOME_BEACH = 'beach';
 export const BIOME_TUNDRA = 'tundra';
 export const BIOME_TAIGA = 'taiga';
 
-export const BIOME_TEMPERATE_FOREST =
-  'temperate_forest';
+export const BIOME_TEMPERATE_FOREST = 'temperate_forest';
 
-export const BIOME_GRASSLAND =
-  'grassland';
+export const BIOME_GRASSLAND = 'grassland';
 
-export const BIOME_SAVANNA =
-  'savanna';
+export const BIOME_SAVANNA = 'savanna';
 
-export const BIOME_DESERT =
-  'desert';
+export const BIOME_DESERT = 'desert';
 
-export const BIOME_TROPICAL_FOREST =
-  'tropical_forest';
+export const BIOME_TROPICAL_FOREST = 'tropical_forest';
 
-export const BIOME_RAINFOREST =
-  'rainforest';
+export const BIOME_RAINFOREST = 'rainforest';
 
-export const BIOME_MOUNTAINS =
-  'mountains';
+export const BIOME_MOUNTAINS = 'mountains';
 
-export const BIOME_SNOW =
-  'snow';
-
+export const BIOME_SNOW = 'snow';
 
 /*
  * ----------------------------------------------------------------------------
