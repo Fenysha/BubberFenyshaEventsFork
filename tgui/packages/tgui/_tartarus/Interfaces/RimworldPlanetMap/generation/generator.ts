@@ -84,10 +84,24 @@ export class PlanetGenerator {
     x: number,
     y: number,
   ): number {
-    const rowWidth = this.getRowWidth(y);
+    const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
+    const polarFade = Math.sin(baseLat * Math.PI);
+
+    const s = (this.data.seed ?? 0) % 5000;
+    const angleDeg = (x * 0.85 + y * 0.35 + s) % 360;
+    // Смещение y плавно уменьшается к полюсам
+    const warpY = Math.max(
+      1,
+      Math.min(
+        this.data.height,
+        Math.round(y + Math.sin((angleDeg * Math.PI) / 180) * 15 * polarFade),
+      ),
+    );
+
+    const rowWidth = this.getRowWidth(warpY);
     const normX = (x - 0.5) / rowWidth;
     const noiseX = normX * this.data.width;
-    const noiseY = y - 0.5;
+    const noiseY = warpY - 0.5;
 
     const x0 = Math.floor(noiseX);
     const y0 = Math.floor(noiseY);
@@ -245,16 +259,71 @@ export class PlanetGenerator {
     return CLIMATE_LOW;
   }
 
+  private getLatitudeOffset(
+    x: number,
+    y: number,
+    heat?: string,
+    humidity?: string,
+    elevation?: string,
+  ): number {
+    const h = heat ?? this.getHeat(x, y);
+    const hm = humidity ?? this.getHumidity(x, y);
+    const e = elevation ?? this.getElevation(x, y);
+
+    const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
+    // Затухание волн у полюсов (0 на полюсах, 1 на экваторе)
+    const polarFade = Math.sin(baseLat * Math.PI);
+
+    let climateOffset = 0.0;
+    if (h === CLIMATE_HIGH) {
+      climateOffset += 0.08;
+    } else if (h === CLIMATE_LOW) {
+      climateOffset -= 0.08;
+    }
+
+    if (hm === CLIMATE_HIGH) {
+      climateOffset -= 0.04;
+    } else if (hm === CLIMATE_LOW) {
+      climateOffset += 0.04;
+    }
+
+    if (e === ELEVATION_MOUNTAIN || e === ELEVATION_HIGHLAND) {
+      climateOffset -= 0.07;
+    } else if (e === ELEVATION_SNOW) {
+      climateOffset -= 0.12;
+    }
+
+    const s = (this.data.seed ?? 0) % 10000;
+    const angle1Deg = (x * 0.35 + y * 0.15 + s) % 360;
+    const angle2Deg = (x * 0.85 - y * 0.45 + s * 1.3) % 360;
+    const angle3Deg = (x * 1.7 + y * 1.1 + s * 2.1) % 360;
+
+    const toRad = Math.PI / 180;
+    // Гасим волны на полюсах через polarFade
+    const wave =
+      (Math.sin(angle1Deg * toRad) * 0.06 +
+        Math.cos(angle2Deg * toRad) * 0.04 +
+        Math.sin(angle3Deg * toRad) * 0.02) *
+      polarFade;
+
+    return climateOffset + wave;
+  }
+
   public getTemperature(x: number, y: number, heat?: string): number {
     if (!this.valid(x, y)) {
       return 0;
     }
 
-    const normalizedLatitude = (y - 1) / Math.max(1, this.data.height - 1);
+    const heatLevel = heat ?? this.getHeat(x, y);
+
+    const latitudeOffset = this.getLatitudeOffset(x, y, heatLevel);
+    const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
+    const normalizedLatitude = Math.max(
+      0,
+      Math.min(1, baseLat + latitudeOffset),
+    );
     const latitudeDistance = Math.abs(normalizedLatitude - 0.5) * 2.0;
     const latitudeTemperature = Math.max(0, 1.0 - latitudeDistance) ** 1.8;
-
-    const heatLevel = heat ?? this.getHeat(x, y);
 
     let heatModifier = -0.15;
     if (heatLevel === CLIMATE_MEDIUM) {
@@ -299,7 +368,12 @@ export class PlanetGenerator {
 
     const temperature = this.getTemperature(x, y, h);
 
-    const normalizedLatitude = (y - 1) / Math.max(1, this.data.height - 1);
+    const latitudeOffset = this.getLatitudeOffset(x, y, h, hm, e);
+    const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
+    const normalizedLatitude = Math.max(
+      0,
+      Math.min(1, baseLat + latitudeOffset),
+    );
 
     const polarDistance = Math.abs((normalizedLatitude - 0.5) * 2.0);
 
@@ -392,6 +466,7 @@ export class PlanetGenerator {
 
     return BIOME_DESERT;
   }
+
   public getTile(x: number, y: number): PlanetTile {
     const elevation = this.getElevation(x, y);
     const heat = this.getHeat(x, y);

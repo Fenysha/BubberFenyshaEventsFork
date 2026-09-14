@@ -317,6 +317,7 @@
 					custom_params[key] = text2num(params[key])
 
 			SSrimworld_planetmap.generate_planet(planet_type, planet_seed, custom_params)
+			SStgui.try_update_ui(usr, src)
 			return TRUE
 
 		if("place_settlement")

@@ -412,14 +412,20 @@
 	if(!map)
 		return FALSE
 
-	var/sample_x = get_sample_x(x, y)
-	var/coordinate = map_width * (y - 1) + sample_x
+	var/base_lat = (y - 1) / max(1, map_height - 1)
+	var/polar_fade = sin(base_lat * 180)
+
+	var/s = seed % 5000
+	var/angle = ((x * 0.85 + y * 0.35 + s) % 360)
+	var/warp_y = clamp(round(y + sin(angle) * 15 * polar_fade), 1, map_height)
+
+	var/sample_x = get_sample_x(x, warp_y)
+	var/coordinate = map_width * (warp_y - 1) + sample_x
 
 	if(coordinate < 1 || coordinate > length(map))
 		return FALSE
 
 	return text2num(map[coordinate])
-
 
 /datum/rimworld_planet/proc/get_heat_level(x, y)
 
@@ -474,18 +480,52 @@
 
 	return RW_ELEVATION_OCEAN
 
+/datum/rimworld_planet/proc/get_latitude_offset(x, y, heat = null, humidity = null, elevation = null)
+	var/h = isnull(heat) ? get_heat_level(x, y) : heat
+	var/hm = isnull(humidity) ? get_humidity_level(x, y) : humidity
+	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
+
+	var/base_lat = (y - 1) / max(1, map_height - 1)
+	var/polar_fade = sin(base_lat * 180)
+
+	var/climate_offset = 0.0
+	if(h == RW_CLIMATE_HIGH)
+		climate_offset += 0.08
+	else if(h == RW_CLIMATE_LOW)
+		climate_offset -= 0.08
+
+	if(hm == RW_CLIMATE_HIGH)
+		climate_offset -= 0.04
+	else if(hm == RW_CLIMATE_LOW)
+		climate_offset += 0.04
+
+	if(e == RW_ELEVATION_MOUNTAIN || e == RW_ELEVATION_HIGHLAND)
+		climate_offset -= 0.07
+	else if(e == RW_ELEVATION_SNOW)
+		climate_offset -= 0.12
+
+	var/s = seed % 10000
+	var/angle1 = ((x * 0.35 + y * 0.15 + s) % 360)
+	var/angle2 = ((x * 0.85 - y * 0.45 + s * 1.3) % 360)
+	var/angle3 = ((x * 1.7 + y * 1.1 + s * 2.1) % 360)
+
+	var/wave = ((sin(angle1) * 0.06) + (cos(angle2) * 0.04) + (sin(angle3) * 0.02)) * polar_fade
+
+	return climate_offset + wave
 
 /datum/rimworld_planet/proc/get_temperature(x, y, heat_level = null)
 	if(!is_valid_coordinate(x, y))
 		return 0
 
-	var/normalized_latitude = ((y - 1) / max(1, map_height - 1))
-	var/latitude_distance = abs(normalized_latitude - 0.5) * 2.0
-	var/latitude_temperature = (max(0, 1.0 - latitude_distance) ** 1.8)
-
 	var/heat = heat_level
 	if(isnull(heat))
 		heat = get_heat_level(x, y)
+
+	var/latitude_offset = get_latitude_offset(x, y, heat)
+	var/base_lat = (y - 1) / max(1, map_height - 1)
+	var/normalized_latitude = clamp(base_lat + latitude_offset, 0, 1)
+	var/latitude_distance = abs(normalized_latitude - 0.5) * 2.0
+	var/latitude_temperature = (max(0, 1.0 - latitude_distance) ** 1.8)
 
 	var/heat_modifier = -0.15
 	if(heat == RW_CLIMATE_MEDIUM)
@@ -525,7 +565,9 @@
 
 	var/temperature = get_temperature(x, y, h)
 
-	var/normalized_latitude = ((y - 1) / max(1, map_height - 1))
+	var/latitude_offset = get_latitude_offset(x, y, h, hm, e)
+	var/base_lat = (y - 1) / max(1, map_height - 1)
+	var/normalized_latitude = clamp(base_lat + latitude_offset, 0, 1)
 	var/polar_distance = abs((normalized_latitude - 0.5) * 2.0)
 
 	if(polar_distance >= 0.82)
@@ -643,6 +685,7 @@
 
 	derive_seeds()
 	clear_noise_maps()
+	ensure_maps()
 	generation_revision++
 
 	log_world("[name] planetary parameters ready in [(REALTIMEOFDAY - start_time) / 10]s. Terrain is reconstructed on clients from seeds.")

@@ -4,18 +4,21 @@ import type * as THREE from 'three';
 export type PlanetViewType = 'admin' | 'caravan' | 'overview';
 
 export const selectedPlanetTileToPlanetTile = (
-  tile: SelectedPlanetTile | null | undefined,
+  tile: SelectedPlanetTile | PlanetTile | null | undefined,
 ): PlanetTile | null => {
   if (!tile) {
     return null;
   }
 
   return {
-    biome: tile.biome ?? 'unknown',
+    x: tile.x,
+    y: tile.y,
+    biome: tile.biome ?? 'Unknown',
     temperature: tile.temperature ?? 0,
     heat: tile.heat ?? '0',
     humidity: tile.humidity ?? '0',
     elevation: tile.elevation ?? '0',
+    objects: 'objects' in tile ? tile.objects : [],
   };
 };
 
@@ -145,11 +148,14 @@ export type PlanetViewData = {
 };
 
 export type PlanetTile = {
+  x?: number;
+  y?: number;
   biome: string;
   temperature: number;
   heat: string;
   humidity: string;
   elevation: string;
+  objects?: PlanetObject[];
 };
 
 export type SelectedPlanetTile = {

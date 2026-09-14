@@ -35,7 +35,7 @@ export const RimworldPlanetMap = () => {
   }, [act]);
 
   const handleTileClick = (x: number, y: number, tile: PlanetTile) => {
-    setLocalTile(tile);
+    setLocalTile({ ...tile, x, y });
     act('select_tile', { x, y });
   };
 
@@ -44,7 +44,9 @@ export const RimworldPlanetMap = () => {
   };
 
   const viewType = data.viewType || 'overview';
-  const activeTile = data.selectedTile || localTile;
+  const activeTile = data.selectedTile
+    ? { ...localTile, ...data.selectedTile }
+    : localTile;
   const hasSelectedTile = !!activeTile;
 
   return (
