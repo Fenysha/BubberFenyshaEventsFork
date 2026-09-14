@@ -27,5 +27,8 @@
 	},
 	"workspaces": [
 		"packages/*"
-	]
+	],
+	"dependencies": {
+		"three": "^0.186.0"
+	}
 }

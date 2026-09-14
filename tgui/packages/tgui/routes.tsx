@@ -16,6 +16,12 @@ const requireInterface = require.context(
   /^(?!.*\.test\.(tsx?|jsx?)).*\.(tsx?|jsx?)$/,
 );
 
+const requireTartarusInterface = require.context(
+  './_tartarus/Interfaces',
+  true,
+  /^(?!.*\.test\.(tsx?|jsx?)).*\.(tsx?|jsx?)$/,
+);
+
 type RoutingErrorProps = {
   type: 'notFound' | 'missingExport' | 'unknown';
   name: string;
@@ -43,7 +49,6 @@ function RoutingErrorWindow(props: RoutingErrorProps) {
   );
 }
 
-// Displays an empty Window with scrollable content
 function SuspendedWindow() {
   return (
     <Window>
@@ -52,7 +57,6 @@ function SuspendedWindow() {
   );
 }
 
-// Displays a loading screen with a spinning icon
 function RefreshingWindow() {
   return (
     <Window title="Loading">
@@ -63,9 +67,20 @@ function RefreshingWindow() {
   );
 }
 
-// Get the component for the current route
+const getComponent = (path: string) => {
+  try {
+    return requireTartarusInterface(path);
+  } catch (err) {
+    if (err.code !== 'MODULE_NOT_FOUND') {
+      throw err;
+    }
+
+    return requireInterface(path);
+  }
+};
+
 export function getRoutedComponent(name: string) {
-  const interfacePathBuilders = [
+  const builders = [
     (name: string) => `./${name}.tsx`,
     (name: string) => `./${name}.jsx`,
     (name: string) => `./${name}/index.tsx`,
@@ -73,11 +88,12 @@ export function getRoutedComponent(name: string) {
   ];
 
   let esModule;
-  while (!esModule && interfacePathBuilders.length > 0) {
-    const interfacePathBuilder = interfacePathBuilders.shift()!;
-    const interfacePath = interfacePathBuilder(name);
+
+  while (!esModule && builders.length) {
+    const path = builders.shift()!(name);
+
     try {
-      esModule = requireInterface(interfacePath);
+      esModule = getComponent(path);
     } catch (err) {
       if (err.code !== 'MODULE_NOT_FOUND') {
         throw new Error('notFound');
@@ -90,6 +106,7 @@ export function getRoutedComponent(name: string) {
   }
 
   const Component = esModule[name];
+
   if (!Component) {
     throw new Error('missingExport');
   }
@@ -103,24 +120,23 @@ export function RoutedComponent() {
   if (suspended) {
     return <SuspendedWindow />;
   }
+
   if (config.refreshing) {
     return <RefreshingWindow />;
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    if (debug.kitchenSink) {
-      return <KitchenSink />;
-    }
+  if (process.env.NODE_ENV !== 'production' && debug.kitchenSink) {
+    return <KitchenSink />;
   }
 
   const name = config?.interface?.name;
+
   if (!name) {
     return <RoutingErrorWindow type="notFound" name="(undefined)" />;
   }
 
   try {
     const Component = getRoutedComponent(name);
-
     return <Component />;
   } catch (err) {
     switch (err.message) {

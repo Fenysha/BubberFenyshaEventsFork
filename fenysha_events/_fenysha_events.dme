@@ -158,6 +158,8 @@
 #include "code\modules\props\tgmc\vehicles.dm"
 #include "code\modules\props\vehicles\vehicles_64x64.dm"
 #include "code\modules\quicker_spawn\observer.dm"
+#include "code\modules\rimworld\overmap\_overmap.dm"
+#include "code\modules\rimworld\overmap\planet.dm"
 #include "code\modules\robust_ai\generic_abilities\knockdown_target.dm"
 #include "code\modules\robust_ai\generic_abilities\throw_grenade.dm"
 #include "code\modules\robust_ai\generic_abilities\heal_target.dm"

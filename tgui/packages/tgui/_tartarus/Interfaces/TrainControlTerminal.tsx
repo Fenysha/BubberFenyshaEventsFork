@@ -15,8 +15,8 @@ import {
   TextArea,
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
-import { useBackend } from '../backend';
-import { Window } from '../layouts';
+import { useBackend } from '../../backend';
+import { Window } from '../../layouts';
 
 const MAP_WIDTH = 5000;
 const MAP_HEIGHT = 5000;

@@ -1,0 +1,23 @@
+/*
+ * _tartarus/Interfaces/RimworldPlanetMap.scss
+ */
+
+.rimworld-planet-map {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background:
+    radial-gradient(
+      circle at center,
+      #101927 0%,
+      #05080e 55%,
+      #020308 100%
+    );
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}
