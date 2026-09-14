@@ -21,3 +21,11 @@
     height: 100%;
   }
 }
+
+.rimworld-planet-map__sidebar {
+  height: 100%;
+  padding: 8px;
+  overflow: hidden;
+  background: rgba(8, 12, 18, 0.92);
+  border-left: 1px solid rgba(184, 212, 227, 0.18);
+}
