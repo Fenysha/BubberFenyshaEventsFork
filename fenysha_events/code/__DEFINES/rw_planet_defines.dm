@@ -60,6 +60,8 @@
 
 #define RW_BIOME_OCEAN "ocean"
 #define RW_BIOME_BEACH "beach"
+#define RW_BIOME_COAST "coasts"
+#define RW_BIOME_SEA_ICE "sea_ice"
 #define RW_BIOME_TUNDRA "tundra"
 #define RW_BIOME_TAIGA "taiga"
 #define RW_BIOME_TEMPERATE_FOREST "temperate_forest"
@@ -76,17 +78,6 @@
  * ----------------------------------------------------------------------------
  * DBP configuration
  * ----------------------------------------------------------------------------
- *
- * These values correspond directly to:
- *
- * rustg_dbp_generate(
- *     seed,
- *     accuracy,
- *     stamp_size,
- *     world_size,
- *     lower_range,
- *     upper_range
- * )
  */
 
 /*
@@ -95,52 +86,45 @@
 #define RW_TERRAIN_NOISE_SCALE 60
 
 /*
- * Terrain should contain larger continental structures.
+ * Terrain stamp size increased for large, organic continental landmasses.
  */
-#define RW_ELEVATION_STAMP_SIZE 72
+#define RW_ELEVATION_STAMP_SIZE 120
 
 /*
- * Climate should be broader than terrain.
+ * Climate maps stamp sizes for broad regional climate zones.
  */
-#define RW_HEAT_STAMP_SIZE 110
-#define RW_HUMIDITY_STAMP_SIZE 105
+#define RW_HEAT_STAMP_SIZE 140
+#define RW_HUMIDITY_STAMP_SIZE 130
 
 
 /**
  * ----------------------------------------------------------------------------
- * Terran planet
+ * Terran planet parameters
  * ----------------------------------------------------------------------------
- *
- * Target:
- * - roughly 55-60% water
- * - broad continental lowlands
- * - visible highlands
- * - mountains present but not dominant
- * - limited permanent snow
  */
 
-#define RW_TERRAN_HEAT_LOW -0.18
-#define RW_TERRAN_HEAT_HIGH 0.30
+#define RW_TERRAN_HEAT_LOW -0.20
+#define RW_TERRAN_HEAT_HIGH 0.25
 
-#define RW_TERRAN_HUMIDITY_LOW -0.16
-#define RW_TERRAN_HUMIDITY_HIGH 0.30
+#define RW_TERRAN_HUMIDITY_LOW -0.18
+#define RW_TERRAN_HUMIDITY_HIGH 0.25
 
 #define RW_TERRAN_OCEAN_LOW -1.0
-#define RW_TERRAN_OCEAN_HIGH -0.18
+#define RW_TERRAN_OCEAN_HIGH -0.05
 
-#define RW_TERRAN_COAST_LOW -0.18
-#define RW_TERRAN_COAST_HIGH -0.08
+#define RW_TERRAN_COAST_LOW -0.05
+#define RW_TERRAN_COAST_HIGH 0.08
 
-#define RW_TERRAN_LOWLAND_LOW -0.08
-#define RW_TERRAN_LOWLAND_HIGH 0.20
+#define RW_TERRAN_LOWLAND_LOW 0.08
+#define RW_TERRAN_LOWLAND_HIGH 0.42
 
-#define RW_TERRAN_HIGHLAND_LOW 0.20
-#define RW_TERRAN_HIGHLAND_HIGH 0.36
+#define RW_TERRAN_HIGHLAND_LOW 0.42
+#define RW_TERRAN_HIGHLAND_HIGH 0.65
 
-#define RW_TERRAN_MOUNTAIN_LOW 0.36
-#define RW_TERRAN_MOUNTAIN_HIGH 0.54
+#define RW_TERRAN_MOUNTAIN_LOW 0.65
+#define RW_TERRAN_MOUNTAIN_HIGH 0.82
 
-#define RW_TERRAN_SNOW_LOW 0.54
+#define RW_TERRAN_SNOW_LOW 0.82
 #define RW_TERRAN_SNOW_HIGH 1.10
 
 

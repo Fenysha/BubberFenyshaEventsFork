@@ -1,7 +1,5 @@
 import * as THREE from 'three';
 
-import { PLANET_RADIUS } from '../generation/constants';
-
 const wrapX = (x: number, width: number): number => {
   let result = x % width;
 
@@ -12,107 +10,61 @@ const wrapX = (x: number, width: number): number => {
   return result;
 };
 
-/*
- * Logical hex tile -> sphere.
- *
- * X:
- *   longitude / column
- *
- * Y:
- *   latitude / row
- *
- * Odd rows are shifted by half
- * a logical column.
- */
+export const getRowWidth = (
+  y: number,
+  height: number,
+  maxWidth: number,
+): number => {
+  const v = (y + 0.5) / height;
+  const latitude = v * Math.PI - Math.PI * 0.5;
+  const count = Math.round(maxWidth * Math.cos(latitude));
+  return Math.max(6, count);
+};
 
 export const planetCoordinateToVector = (
   x: number,
   y: number,
-  width: number,
+  maxWidth: number,
   height: number,
-  radius: number = PLANET_RADIUS,
+  radius: number,
 ): THREE.Vector3 => {
-  const column = wrapX(x - 1, width);
+  const rowWidth = getRowWidth(y, height, maxWidth);
+  const v = (y + 0.5) / height;
+  const latitude = v * Math.PI - Math.PI * 0.5;
 
-  const row = THREE.MathUtils.clamp(y - 1, 0, height - 1);
-
-  const rowOffset = row % 2 === 1 ? 0.5 : 0.0;
-
-  /*
-   * IMPORTANT:
-   *
-   * The stagger applies to the logical
-   * tile position, not texture sampling.
-   */
-
-  const u = (column + 0.5 + rowOffset) / width;
-
-  const v = (row + 0.5) / height;
-
+  const stagger = Math.floor(y) % 2 !== 0 ? 0.5 : 0.0;
+  const u =
+    ((((x % rowWidth) + rowWidth) % rowWidth) + 0.5 + stagger) / rowWidth;
   const longitude = u * Math.PI * 2 - Math.PI;
 
-  const latitude = v * Math.PI - Math.PI / 2;
-
-  const cosLatitude = Math.cos(latitude);
+  const cosLat = Math.cos(latitude);
 
   return new THREE.Vector3(
-    Math.cos(longitude) * cosLatitude * radius,
-
-    Math.sin(latitude) * radius,
-
-    Math.sin(longitude) * cosLatitude * radius,
+    radius * cosLat * Math.cos(longitude),
+    radius * Math.sin(latitude),
+    radius * cosLat * Math.sin(longitude),
   );
 };
 
-/*
- * Sphere -> logical tile.
- */
-
 export const vectorToPlanetCoordinate = (
-  vector: THREE.Vector3,
-  width: number,
+  point: THREE.Vector3,
+  maxWidth: number,
   height: number,
-): {
-  x: number;
-  y: number;
-} => {
-  const normal = vector.clone().normalize();
+): { x: number; y: number } => {
+  const normalized = point.clone().normalize();
+  const sinLat = THREE.MathUtils.clamp(normalized.y, -0.9999, 0.9999);
+  const latitude = Math.asin(sinLat);
+  const longitude = Math.atan2(normalized.z, normalized.x);
 
-  const latitude = Math.asin(THREE.MathUtils.clamp(normal.y, -1, 1));
+  const v = (latitude + Math.PI * 0.5) / Math.PI;
+  const y = THREE.MathUtils.clamp(Math.floor(v * height), 0, height - 1);
 
-  const longitude = Math.atan2(normal.z, normal.x);
+  const rowWidth = getRowWidth(y, height, maxWidth);
+  const u = (longitude + Math.PI) / (Math.PI * 2);
+  const stagger = y % 2 !== 0 ? 0.5 : 0.0;
 
-  /*
-   * [-PI, PI] -> [0, 1]
-   */
+  let x = Math.floor(u * rowWidth - stagger);
+  x = ((x % rowWidth) + rowWidth) % rowWidth;
 
-  let u = (longitude + Math.PI) / (Math.PI * 2);
-
-  u = ((u % 1) + 1) % 1;
-
-  /*
-   * Latitude -> row.
-   */
-
-  const continuousRow = ((latitude + Math.PI / 2) / Math.PI) * height - 0.5;
-
-  const row = Math.round(continuousRow);
-
-  const clampedRow = THREE.MathUtils.clamp(row, 0, height - 1);
-
-  /*
-   * Reverse stagger.
-   */
-
-  const rowOffset = clampedRow % 2 === 1 ? 0.5 : 0.0;
-
-  const continuousColumn = u * width - 0.5 - rowOffset;
-
-  const column = Math.round(continuousColumn);
-
-  return {
-    x: wrapX(column, width) + 1,
-
-    y: clampedRow + 1,
-  };
+  return { x, y };
 };

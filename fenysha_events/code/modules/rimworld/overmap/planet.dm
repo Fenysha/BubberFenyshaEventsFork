@@ -119,6 +119,8 @@
 	var/elevation_snow_low = RW_TERRAN_SNOW_LOW
 	var/elevation_snow_high = RW_TERRAN_SNOW_HIGH
 
+	var/noise_scale = RW_TERRAIN_NOISE_SCALE
+
 	var/terrain_seed
 	var/heat_seed
 	var/humidity_seed
@@ -143,7 +145,7 @@
 	var/list/biome_images = list()
 
 
-/datum/rimworld_planet/New(new_seed = null, new_planet_type = RW_PLANET_PRESET_TERRAN)
+/datum/rimworld_planet/New(new_seed = null, new_planet_type = RW_PLANET_PRESET_TERRAN, list/custom_params)
 	. = ..()
 
 	if(isnull(new_seed))
@@ -153,7 +155,57 @@
 
 	apply_preset(new_planet_type)
 	derive_seeds()
+	apply_custom_params(custom_params)
 
+/datum/rimworld_planet/proc/apply_custom_params(list/params)
+	if(!params || !islist(params))
+		return
+
+	if(!isnull(params["terrainSeed"]))
+		terrain_seed = params["terrainSeed"]
+	if(!isnull(params["heatSeed"]))
+		heat_seed = params["heatSeed"]
+	if(!isnull(params["humiditySeed"]))
+		humidity_seed = params["humiditySeed"]
+
+	if(!isnull(params["noiseScale"]))
+		noise_scale = params["noiseScale"]
+	if(!isnull(params["terrainScale"]))
+		terrain_scale = params["terrainScale"]
+	if(!isnull(params["heatScale"]))
+		heat_scale = params["heatScale"]
+	if(!isnull(params["humidityScale"]))
+		humidity_scale = params["humidityScale"]
+
+	if(!isnull(params["elevationCoastLow"]))
+		elevation_coast_low = params["elevationCoastLow"]
+	if(!isnull(params["elevationCoastHigh"]))
+		elevation_coast_high = params["elevationCoastHigh"]
+	if(!isnull(params["elevationLowlandLow"]))
+		elevation_lowland_low = params["elevationLowlandLow"]
+	if(!isnull(params["elevationLowlandHigh"]))
+		elevation_lowland_high = params["elevationLowlandHigh"]
+	if(!isnull(params["elevationHighlandLow"]))
+		elevation_highland_low = params["elevationHighlandLow"]
+	if(!isnull(params["elevationHighlandHigh"]))
+		elevation_highland_high = params["elevationHighlandHigh"]
+	if(!isnull(params["elevationMountainLow"]))
+		elevation_mountain_low = params["elevationMountainLow"]
+	if(!isnull(params["elevationMountainHigh"]))
+		elevation_mountain_high = params["elevationMountainHigh"]
+	if(!isnull(params["elevationSnowLow"]))
+		elevation_snow_low = params["elevationSnowLow"]
+	if(!isnull(params["elevationSnowHigh"]))
+		elevation_snow_high = params["elevationSnowHigh"]
+
+	if(!isnull(params["heatThresholdLow"]))
+		heat_threshold_low = params["heatThresholdLow"]
+	if(!isnull(params["heatThresholdHigh"]))
+		heat_threshold_high = params["heatThresholdHigh"]
+	if(!isnull(params["humidityThresholdLow"]))
+		humidity_threshold_low = params["humidityThresholdLow"]
+	if(!isnull(params["humidityThresholdHigh"]))
+		humidity_threshold_high = params["humidityThresholdHigh"]
 
 /datum/rimworld_planet/proc/apply_preset(new_planet_type)
 
@@ -294,10 +346,31 @@
 /datum/rimworld_planet/proc/get_humidity_seed()
 	return humidity_seed
 
+/datum/rimworld_planet/proc/get_row_width(y)
+	if(y < 1 || y > map_height)
+		return map_width
+
+	var/v = (y - 0.5) / map_height
+	var/latitude_deg = v * 180 - 90
+	var/count = round(map_width * cos(latitude_deg))
+
+	return max(6, count)
+
+/datum/rimworld_planet/proc/get_sample_x(x, y)
+	var/row_width = get_row_width(y)
+	var/normalized_x = (x - 0.5) / row_width
+	return clamp(floor(normalized_x * map_width) + 1, 1, map_width)
 
 /datum/rimworld_planet/proc/is_valid_coordinate(x, y)
-	return ((x >= 1) && (x <= map_width) && (y >= 1) && (y <= map_height))
+	if(y < 1 || y > map_height)
+		return FALSE
 
+	var/row_width = get_row_width(y)
+	return (x >= 1) && (x <= row_width)
+
+/datum/rimworld_planet/proc/wrap_x(x, y)
+	var/row_width = get_row_width(y)
+	return ((x - 1) % row_width + row_width) % row_width + 1
 
 /datum/rimworld_planet/proc/get_coordinate_index(x, y)
 	if(!is_valid_coordinate(x, y))
@@ -311,31 +384,31 @@
 	heat_maps = list()
 	humidity_maps = list()
 
-	heat_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[heat_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[heat_scale]", "[map_width]", "[heat_threshold_high]", "1.1")
-	heat_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[heat_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[heat_scale]", "[map_width]", "[heat_threshold_low]", "[heat_threshold_high]")
+	heat_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[heat_seed]", "[noise_scale]", "[heat_scale]", "[map_width]", "[heat_threshold_high]", "1.1")
+	heat_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[heat_seed]", "[noise_scale]", "[heat_scale]", "[map_width]", "[heat_threshold_low]", "[heat_threshold_high]")
 
-	humidity_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[humidity_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[humidity_scale]", "[map_width]", "[humidity_threshold_high]", "1.1")
-	humidity_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[humidity_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[humidity_scale]", "[map_width]", "[humidity_threshold_low]", "[humidity_threshold_high]")
+	humidity_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[humidity_seed]", "[noise_scale]", "[humidity_scale]", "[map_width]", "[humidity_threshold_high]", "1.1")
+	humidity_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[humidity_seed]", "[noise_scale]", "[humidity_scale]", "[map_width]", "[humidity_threshold_low]", "[humidity_threshold_high]")
 
 
 /datum/rimworld_planet/proc/generate_elevation_maps()
 
 	elevation_maps = list()
 
-	elevation_maps[RW_ELEVATION_OCEAN] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "[elevation_ocean_low]", "[elevation_ocean_high]")
-	elevation_maps[RW_ELEVATION_COAST] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "[elevation_coast_low]", "[elevation_coast_high]")
-	elevation_maps[RW_ELEVATION_LOWLAND] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "[elevation_lowland_low]", "[elevation_lowland_high]")
-	elevation_maps[RW_ELEVATION_HIGHLAND] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "[elevation_highland_low]", "[elevation_highland_high]")
-	elevation_maps[RW_ELEVATION_MOUNTAIN] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "[elevation_mountain_low]", "[elevation_mountain_high]")
-	elevation_maps[RW_ELEVATION_SNOW] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "[elevation_snow_low]", "[elevation_snow_high]")
+	elevation_maps[RW_ELEVATION_OCEAN] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_ocean_low]", "[elevation_ocean_high]")
+	elevation_maps[RW_ELEVATION_COAST] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_coast_low]", "[elevation_coast_high]")
+	elevation_maps[RW_ELEVATION_LOWLAND] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_lowland_low]", "[elevation_lowland_high]")
+	elevation_maps[RW_ELEVATION_HIGHLAND] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_highland_low]", "[elevation_highland_high]")
+	elevation_maps[RW_ELEVATION_MOUNTAIN] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_mountain_low]", "[elevation_mountain_high]")
+	elevation_maps[RW_ELEVATION_SNOW] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_snow_low]", "[elevation_snow_high]")
 
 
 /datum/rimworld_planet/proc/is_noise_value_true(map, x, y)
-
 	if(!map)
 		return FALSE
 
-	var/coordinate = map_width * (y - 1) + x
+	var/sample_x = get_sample_x(x, y)
+	var/coordinate = map_width * (y - 1) + sample_x
 
 	if(coordinate < 1 || coordinate > length(map))
 		return FALSE
@@ -398,171 +471,94 @@
 
 
 /datum/rimworld_planet/proc/get_temperature(x, y, heat_level = null)
-    if(!is_valid_coordinate(x, y))
-        return 0
+	if(!is_valid_coordinate(x, y))
+		return 0
 
-    /*
-     * 0 = south pole
-     * 0.5 = equator
-     * 1 = north pole
-     */
-    var/normalized_latitude = ((y - 1) / max(1, map_height - 1))
+	var/normalized_latitude = ((y - 1) / max(1, map_height - 1))
+	var/latitude_distance = abs(normalized_latitude - 0.5) * 2.0
+	var/latitude_temperature = (max(0, 1.0 - latitude_distance) ** 1.8)
 
-    /*
-     * 0 = equator
-     * 1 = pole
-     */
-    var/latitude_distance = abs(normalized_latitude - 0.5) * 2.0
+	var/heat = heat_level
+	if(isnull(heat))
+		heat = get_heat_level(x, y)
 
-    /*
-     * Strong global temperature gradient.
-     *
-     * Equator stays warm.
-     * Temperature falls rapidly toward poles.
-     */
-    var/latitude_temperature = (max(0, 1.0 - latitude_distance) ** 2.4)
+	var/heat_modifier = -0.15
+	if(heat == RW_CLIMATE_MEDIUM)
+		heat_modifier = 0.05
+	else if(heat == RW_CLIMATE_HIGH)
+		heat_modifier = 0.22
 
-    /*
-     * Local heat is only a regional modifier.
-     */
-    var/heat = heat_level
+	var/elevation = get_elevation_level(x, y)
+	var/elevation_modifier = 0.0
 
-    if(isnull(heat))
-        heat = get_heat_level(x, y)
+	switch(elevation)
+		if(RW_ELEVATION_HIGHLAND)
+			elevation_modifier = -0.10
+		if(RW_ELEVATION_MOUNTAIN)
+			elevation_modifier = -0.22
+		if(RW_ELEVATION_SNOW)
+			elevation_modifier = -0.35
 
-    var/heat_modifier = -0.08
+	var/temperature = (latitude_temperature * 0.60) + ((heat_modifier + 0.15) * 0.25) + ((elevation_modifier + 0.35) * 0.15)
 
-    if(heat == RW_CLIMATE_MEDIUM)
-        heat_modifier = 0.06
-    else if(heat == RW_CLIMATE_HIGH)
-        heat_modifier = 0.18
-
-    /*
-     * Elevation makes terrain colder.
-     */
-    var/elevation = get_elevation_level(x, y)
-
-    var/elevation_modifier = 0.0
-
-    switch(elevation)
-        if(RW_ELEVATION_HIGHLAND)
-            elevation_modifier = -0.08
-
-        if(RW_ELEVATION_MOUNTAIN)
-            elevation_modifier = -0.18
-
-        if(RW_ELEVATION_SNOW)
-            elevation_modifier = -0.30
-
-    /*
-     * Same weights as PlanetGenerator:
-     *
-     * 88% latitude
-     * 7% regional heat
-     * 5% elevation
-     */
-    var/temperature = (latitude_temperature * 0.88 + heat_modifier * 0.07 + elevation_modifier * 0.05)
-
-    return clamp(temperature,0,1)
+	return clamp(temperature, 0, 1)
 
 
 /datum/rimworld_planet/proc/get_biome(
-    x,
-    y,
-    elevation = null,
-    heat = null,
-    humidity = null
+	x,
+	y,
+	elevation = null,
+	heat = null,
+	humidity = null
 )
-    if(!is_valid_coordinate(x, y))
-        return RW_BIOME_OCEAN
+	if(!is_valid_coordinate(x, y))
+		return RW_BIOME_OCEAN
 
-    var/e = elevation
+	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
+	var/h = isnull(heat) ? get_heat_level(x, y) : heat
+	var/hm = isnull(humidity) ? get_humidity_level(x, y) : humidity
 
-    if(isnull(e))
-        e = get_elevation_level(x, y)
+	var/temperature = get_temperature(x, y, h)
 
-    var/h = heat
+	if(e == RW_ELEVATION_OCEAN)
+		if(temperature <= 0.8)
+			return RW_BIOME_SEA_ICE
+		return RW_BIOME_OCEAN
 
-    if(isnull(h))
-        h = get_heat_level(x, y)
+	if(e == RW_ELEVATION_COAST)
+		if(temperature <= 0.10)
+			return RW_BIOME_SEA_ICE
+		if(temperature >= 0.45 && hm == RW_CLIMATE_LOW)
+			return RW_BIOME_BEACH
+		return RW_BIOME_COAST
 
-    var/hm = humidity
+	if(temperature <= 0.10 || e == RW_ELEVATION_SNOW)
+		return RW_BIOME_SNOW
 
-    if(isnull(hm))
-        hm = get_humidity_level(x, y)
+	if(temperature <= 0.20 && e == RW_ELEVATION_MOUNTAIN)
+		return RW_BIOME_SNOW
 
-    var/temperature = get_temperature(x, y, h)
+	if(e == RW_ELEVATION_MOUNTAIN)
+		return RW_BIOME_MOUNTAINS
 
-    /*
-     * Water.
-     */
-    if(e == RW_ELEVATION_OCEAN)
-        return RW_BIOME_OCEAN
+	if(temperature < 0.30)
+		if(hm == RW_CLIMATE_HIGH)
+			return RW_BIOME_TAIGA
+		return RW_BIOME_TUNDRA
 
-    if(e == RW_ELEVATION_COAST)
-        if(temperature < 0.16)
-            return RW_BIOME_SNOW
+	if(temperature < 0.55)
+		if(hm == RW_CLIMATE_HIGH)
+			return RW_BIOME_TEMPERATE_FOREST
+		if(hm == RW_CLIMATE_MEDIUM)
+			return RW_BIOME_GRASSLAND
+		return RW_BIOME_SAVANNA
 
-        return RW_BIOME_BEACH
+	if(hm == RW_CLIMATE_HIGH)
+		return RW_BIOME_RAINFOREST
+	if(hm == RW_CLIMATE_MEDIUM)
+		return RW_BIOME_TROPICAL_FOREST
 
-    /*
-     * Large permanent polar regions.
-     */
-    if(temperature <= 0.08)
-        return RW_BIOME_SNOW
-
-    /*
-     * Very cold elevated terrain.
-     */
-    if(temperature <= 0.18 && e != RW_ELEVATION_LOWLAND)
-        return RW_BIOME_SNOW
-
-    /*
-     * Explicit snow elevation.
-     */
-    if(e == RW_ELEVATION_SNOW)
-        return RW_BIOME_SNOW
-
-    /*
-     * Mountains.
-     */
-    if(e == RW_ELEVATION_MOUNTAIN)
-        if(temperature < 0.26)
-            return RW_BIOME_SNOW
-
-        return RW_BIOME_MOUNTAINS
-
-    /*
-     * Cold.
-     */
-    if(temperature < 0.32)
-        if(hm == RW_CLIMATE_HIGH)
-            return RW_BIOME_TAIGA
-
-        return RW_BIOME_TUNDRA
-
-    /*
-     * Temperate.
-     */
-    if(temperature < 0.52)
-        if(hm == RW_CLIMATE_HIGH)
-            return RW_BIOME_TEMPERATE_FOREST
-
-        if(hm == RW_CLIMATE_MEDIUM)
-            return RW_BIOME_GRASSLAND
-
-        return RW_BIOME_SAVANNA
-
-    /*
-     * Hot / tropical.
-     */
-    if(hm == RW_CLIMATE_HIGH)
-        return RW_BIOME_RAINFOREST
-
-    if(hm == RW_CLIMATE_MEDIUM)
-        return RW_BIOME_TROPICAL_FOREST
-
-    return RW_BIOME_DESERT
+	return RW_BIOME_DESERT
 
 
 /datum/rimworld_planet/proc/get_tile_data(x, y)

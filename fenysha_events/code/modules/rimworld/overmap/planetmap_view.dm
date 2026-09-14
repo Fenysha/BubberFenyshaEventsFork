@@ -267,7 +267,37 @@
 			if(!planet_seed)
 				planet_seed = null
 
-			SSrimworld_planetmap.generate_planet(planet_type, planet_seed)
+			// Собираем точные пользовательские параметры генерации
+			var/list/custom_params = list()
+			var/list/param_keys = list(
+				"terrainSeed",
+				"heatSeed",
+				"humiditySeed",
+				"noiseScale",
+				"terrainScale",
+				"heatScale",
+				"humidityScale",
+				"elevationCoastLow",
+				"elevationCoastHigh",
+				"elevationLowlandLow",
+				"elevationLowlandHigh",
+				"elevationHighlandLow",
+				"elevationHighlandHigh",
+				"elevationMountainLow",
+				"elevationMountainHigh",
+				"elevationSnowLow",
+				"elevationSnowHigh",
+				"heatThresholdLow",
+				"heatThresholdHigh",
+				"humidityThresholdLow",
+				"humidityThresholdHigh"
+			)
+
+			for(var/key in param_keys)
+				if(!isnull(params[key]))
+					custom_params[key] = text2num(params[key])
+
+			SSrimworld_planetmap.generate_planet(planet_type, planet_seed, custom_params)
 			return TRUE
 
 		if("place_settlement")

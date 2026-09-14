@@ -73,46 +73,40 @@ const getPlanetLod = (distance: number): LodLevel =>
 const buildHexOutlineGeometry = (
   x: number,
   y: number,
-  width: number,
+  maxWidth: number,
   height: number,
   radius: number,
 ) => {
   const center = planetCoordinateToVector(
     x,
     y,
-    width,
+    maxWidth,
     height,
     radius,
   ).normalize();
 
-  const up = new THREE.Vector3(0, 1, 0);
-  const east = new THREE.Vector3().crossVectors(up, center);
-
-  if (east.lengthSq() < 0.000001) {
-    east.set(1, 0, 0);
-  }
-
-  east.normalize();
-
+  const up =
+    Math.abs(center.y) > 0.99
+      ? new THREE.Vector3(0, 0, 1)
+      : new THREE.Vector3(0, 1, 0);
+  const east = new THREE.Vector3().crossVectors(up, center).normalize();
   const north = new THREE.Vector3().crossVectors(center, east).normalize();
 
-  const latitude = Math.asin(THREE.MathUtils.clamp(center.y, -1, 1));
-
-  const cosLatitude = Math.max(Math.cos(latitude), 0.12);
-
-  const rx = ((Math.PI * 2) / width) * cosLatitude * 0.48;
-
-  const ry = (Math.PI / height) * 0.48;
+  // Размер гексагона постоянен по всей планете
+  const hexSize = ((Math.PI * 2) / maxWidth) * 0.52;
 
   const positions = new Float32Array(18);
 
   for (let i = 0; i < 6; i++) {
     const angle = Math.PI / 6 + (i * Math.PI) / 3;
 
+    const dx = Math.cos(angle) * hexSize;
+    const dy = Math.sin(angle) * hexSize;
+
     const point = center
       .clone()
-      .addScaledVector(east, Math.cos(angle) * rx)
-      .addScaledVector(north, Math.sin(angle) * ry)
+      .addScaledVector(east, dx)
+      .addScaledVector(north, dy)
       .normalize()
       .multiplyScalar(radius);
 
@@ -122,7 +116,6 @@ const buildHexOutlineGeometry = (
   }
 
   const geometry = new THREE.BufferGeometry();
-
   geometry.setAttribute(
     'position',
     new THREE.Float32BufferAttribute(positions, 3),

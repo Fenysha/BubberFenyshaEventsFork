@@ -57,6 +57,8 @@ export const ELEVATION_SNOW = '5';
 
 export const BIOME_OCEAN = 'ocean';
 export const BIOME_BEACH = 'beach';
+export const BIOME_COAST = 'coasts';
+export const BIOME_SEA_ICE = 'sea_ice';
 
 export const BIOME_TUNDRA = 'tundra';
 export const BIOME_TAIGA = 'taiga';
@@ -86,21 +88,22 @@ export const BIOME_SNOW = 'snow';
  */
 
 export const BIOME_COLORS: Record<string, number> = {
-  [BIOME_OCEAN]: 0x1b4d73,
-  [BIOME_BEACH]: 0xd7c27d,
+  [BIOME_OCEAN]: 0x133854,
+  [BIOME_COAST]: 0x2b729e,
 
-  [BIOME_TUNDRA]: 0x9ca89b,
-  [BIOME_TAIGA]: 0x4f6b55,
+  [BIOME_BEACH]: 0xe6d496,
+  [BIOME_DESERT]: 0xdfb05b,
+  [BIOME_SAVANNA]: 0xbe9f48,
 
-  [BIOME_TEMPERATE_FOREST]: 0x4f7f4f,
-  [BIOME_GRASSLAND]: 0x91a85c,
-  [BIOME_SAVANNA]: 0xb39a52,
+  [BIOME_GRASSLAND]: 0x82b347,
+  [BIOME_TEMPERATE_FOREST]: 0x488a48,
+  [BIOME_TAIGA]: 0x2e5c42,
 
-  [BIOME_DESERT]: 0xc9a45c,
+  [BIOME_TROPICAL_FOREST]: 0x2ca058,
+  [BIOME_RAINFOREST]: 0x116e34,
 
-  [BIOME_TROPICAL_FOREST]: 0x3f8a4f,
-  [BIOME_RAINFOREST]: 0x1f6b3a,
-
-  [BIOME_MOUNTAINS]: 0x6e6e6e,
-  [BIOME_SNOW]: 0xe8edf0,
+  [BIOME_TUNDRA]: 0x8e9e8c,
+  [BIOME_MOUNTAINS]: 0x727a85,
+  [BIOME_SEA_ICE]: 0xf0f5f8,
+  [BIOME_SNOW]: 0xf0f5f8,
 };

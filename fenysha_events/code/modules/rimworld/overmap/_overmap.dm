@@ -17,12 +17,11 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	return SS_INIT_SUCCESS
 
 
-/datum/controller/subsystem/rimworld_planetmap/proc/generate_planet(planet_type = RW_PLANET_PRESET_TERRAN, planet_seed = null)
-
+/datum/controller/subsystem/rimworld_planetmap/proc/generate_planet(planet_type = RW_PLANET_PRESET_TERRAN, planet_seed = null, list/custom_params = null)
 	if(planet)
 		qdel(planet)
 
-	planet = new /datum/rimworld_planet(planet_seed, planet_type)
+	planet = new /datum/rimworld_planet(planet_seed, planet_type, custom_params)
 	planet.generate()
 
 	for(var/datum/planetmap_view/view as anything in active_views)

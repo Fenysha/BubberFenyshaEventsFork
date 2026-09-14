@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
-import { Stack } from 'tgui-core/components';
 
 import { Planet } from './planet';
 import type { PlanetMapData, PlanetTile } from './types';
@@ -42,28 +41,43 @@ export const RimworldPlanetMap = () => {
         style={{
           padding: 0,
           overflow: 'hidden',
+          position: 'relative',
+          width: '100%',
+          height: '100%',
         }}
       >
-        <Stack fill>
-          <Stack.Item grow>
-            <Planet
-              data={data}
-              selectedX={data.selectedTile?.x}
-              selectedY={data.selectedTile?.y}
-              onTileClick={handleTileClick}
-              onObjectClick={handleObjectClick}
-            />
-          </Stack.Item>
-          <Stack.Item width="300px">
-            <div className="rimworld-planet-map__sidebar">
-              {viewType === 'admin' && <AdminPanel localTile={localTile} />}
-              {viewType === 'caravan' && <CaravanPanel localTile={localTile} />}
-              {viewType === 'overview' && (
-                <OverviewPanel localTile={localTile} />
-              )}
-            </div>
-          </Stack.Item>
-        </Stack>
+        {/* Карта планеты во весь экран */}
+        <Planet
+          data={data}
+          selectedX={data.selectedTile?.x}
+          selectedY={data.selectedTile?.y}
+          onTileClick={handleTileClick}
+          onObjectClick={handleObjectClick}
+        />
+
+        {/* Наложенная плавающая панель управления в правом нижнем углу */}
+        <div
+          className="rimworld-planet-map__overlay"
+          style={{
+            position: 'absolute',
+            bottom: '16px',
+            right: '16px',
+            width: '350px',
+            maxHeight: 'calc(100% - 32px)',
+            backgroundColor: 'rgba(18, 22, 30, 0.92)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: '6px',
+            padding: '12px',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.65)',
+            overflowY: 'auto',
+            zIndex: 10,
+          }}
+        >
+          {viewType === 'admin' && <AdminPanel localTile={localTile} />}
+          {viewType === 'caravan' && <CaravanPanel localTile={localTile} />}
+          {viewType === 'overview' && <OverviewPanel localTile={localTile} />}
+        </div>
       </Window.Content>
     </Window>
   );

@@ -30,256 +30,104 @@ varying vec3 vWorldNormal;
 const float PI = 3.14159265359;
 const float TWO_PI = 6.28318530718;
 
-float wrapX(
-  float value,
-  float width
-) {
-  return mod(
-    mod(value, width) + width,
-    width
-  );
+float wrapX(float value, float width) {
+  return mod(mod(value, width) + width, width);
 }
 
-vec3 sphericalDirection(
-  float longitude,
-  float latitude
-) {
+float getRowWidth(float row) {
+  float v = (row + 0.5) / mapSize.y;
+  float latitude = v * PI - PI * 0.5;
+  float count = floor(mapSize.x * cos(latitude) + 0.5);
+  return max(6.0, count);
+}
+
+vec3 tileCenterDirection(float column, float row) {
+  float rowWidth = getRowWidth(row);
+  float stagger = mod(row, 2.0) > 0.5 ? 0.5 : 0.0;
+
+  // Без fract/wrapX — тригонометрия cos/sin сама корректно обрабатывает полный круг (360°)
+  float u = (column + 0.5 + stagger) / rowWidth;
+  float v = (row + 0.5) / mapSize.y;
+
+  float longitude = u * TWO_PI - PI;
+  float latitude = v * PI - PI * 0.5;
+
   float cosLat = cos(latitude);
-
-  return normalize(
-    vec3(
-      cosLat * cos(longitude),
-      sin(latitude),
-      cosLat * sin(longitude)
-    )
+  return vec3(
+    cosLat * cos(longitude),
+    sin(latitude),
+    cosLat * sin(longitude)
   );
 }
 
-vec3 tileCenterDirection(
-  float column,
-  float row
-) {
-  float stagger =
-    mod(row, 2.0) > 0.5
-      ? 0.5
-      : 0.0;
+vec2 findNearestTile(vec3 surfaceDirection) {
+  float sinLat = clamp(surfaceDirection.y, -0.9999, 0.9999);
+  float latitude = asin(sinLat);
+  float longitude = atan(surfaceDirection.z, surfaceDirection.x);
 
-  float u =
-    (column + 0.5 + stagger)
-    / mapSize.x;
+  float v = (latitude + PI * 0.5) / PI;
+  float baseRow = clamp(floor(v * mapSize.y), 0.0, mapSize.y - 1.0);
+  float u = (longitude + PI) / TWO_PI;
 
-  u = fract(u);
-
-  float v =
-    (row + 0.5)
-    / mapSize.y;
-
-  float longitude =
-    u * TWO_PI - PI;
-
-  float latitude =
-    v * PI - PI * 0.5;
-
-  return sphericalDirection(
-    longitude,
-    latitude
-  );
-}
-
-vec2 findNearestTile(
-  vec3 surfaceDirection
-) {
-  float longitude =
-    atan(
-      surfaceDirection.z,
-      surfaceDirection.x
-    );
-
-  float latitude =
-    asin(
-      clamp(
-        surfaceDirection.y,
-        -1.0,
-        1.0
-      )
-    );
-
-  float mapX =
-    (
-      longitude + PI
-    ) / TWO_PI * mapSize.x;
-
-  float mapY =
-    (
-      latitude + PI * 0.5
-    ) / PI * mapSize.y;
-
-  float baseRow =
-    floor(mapY);
-
-  float bestDot = -1000.0;
-
+  float bestDot = -2.0;
   float bestColumn = 0.0;
-  float bestRow = 0.0;
+  float bestRow = baseRow;
 
-  /*
-   * Check neighbouring rows.
-   */
-  for (
-    int rowOffset = -2;
-    rowOffset <= 2;
-    rowOffset++
-  ) {
-    float row =
-      baseRow + float(rowOffset);
+  // Проверяем 3 соседних ряда
+  for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
+    float row = clamp(baseRow + float(rowOffset), 0.0, mapSize.y - 1.0);
+    float rowWidth = getRowWidth(row);
+    float stagger = mod(row, 2.0) > 0.5 ? 0.5 : 0.0;
 
-    if (
-      row < 0.0 ||
-      row >= mapSize.y
-    ) {
-      continue;
-    }
+    // Корректный поиск центральной колонки с учетом полу-тайлового сдвига
+    float centerCol = u * rowWidth - 0.5 - stagger;
+    float baseColumn = floor(centerCol);
 
-    float stagger =
-      mod(row, 2.0) > 0.5
-        ? 0.5
-        : 0.0;
+    // Окно в 4 колонки (-1..2) полностью перекрывает сдвиги stagger между рядами
+    for (int columnOffset = -1; columnOffset <= 2; columnOffset++) {
+      float column = baseColumn + float(columnOffset);
 
-    float baseColumn =
-      floor(
-        mapX - stagger
-      );
+      vec3 center = tileCenterDirection(column, row);
+      float currentDot = dot(surfaceDirection, center);
 
-    /*
-     * Check neighbouring columns,
-     * including longitude wrapping.
-     */
-    for (
-      int columnOffset = -2;
-      columnOffset <= 2;
-      columnOffset++
-    ) {
-      float column =
-        baseColumn +
-        float(columnOffset);
-
-      float wrappedColumn =
-        wrapX(
-          column,
-          mapSize.x
-        );
-
-      vec3 center =
-        tileCenterDirection(
-          wrappedColumn,
-          row
-        );
-
-      float currentDot =
-        dot(
-          surfaceDirection,
-          center
-        );
-
-      if (
-        currentDot >
-        bestDot
-      ) {
-        bestDot =
-          currentDot;
-
-        bestColumn =
-          wrappedColumn;
-
-        bestRow =
-          row;
+      if (currentDot > bestDot) {
+        bestDot = currentDot;
+        bestColumn = column;
+        bestRow = row;
       }
     }
   }
 
-  return vec2(
-    bestColumn,
-    bestRow
-  );
+  // Закольцовываем выбранную колонку только в самом конце перед отправкой в UV
+  float rowWidth = getRowWidth(bestRow);
+  float wrappedColumn = wrapX(bestColumn, rowWidth);
+
+  return vec2(wrappedColumn, bestRow);
 }
 
 void main() {
-  /*
-   * Use actual spherical position,
-   * not interpolated UV coordinates.
-   */
-  vec3 surfaceDirection =
-    normalize(vLocalPosition);
+  vec3 surfaceDirection = normalize(vLocalPosition);
+  vec2 tile = findNearestTile(surfaceDirection);
 
-  vec2 tile =
-    findNearestTile(
-      surfaceDirection
-    );
+  float rowWidth = getRowWidth(tile.y);
 
-  vec2 tileUv =
-    vec2(
-      (
-        tile.x + 0.5
-      ) / mapSize.x,
+  vec2 tileUv = vec2(
+    (tile.x + 0.5) / rowWidth,
+    (tile.y + 0.5) / mapSize.y
+  );
 
-      (
-        tile.y + 0.5
-      ) / mapSize.y
-    );
+  vec3 baseColor = texture2D(planetMap, tileUv).rgb;
+  vec3 normal = normalize(vWorldNormal);
+  vec3 sun = normalize(sunDirection);
 
-  vec3 baseColor =
-    texture2D(
-      planetMap,
-      tileUv
-    ).rgb;
+  float sunlight = max(dot(normal, sun), 0.0);
+  float illumination = mix(0.18, 1.0, smoothstep(0.0, 0.28, sunlight));
 
-  vec3 normal =
-    normalize(vWorldNormal);
+  vec3 color = baseColor * illumination;
+  float night = 1.0 - smoothstep(0.0, 0.25, sunlight);
+  color = mix(color, nightColor, night * 0.12);
 
-  vec3 sun =
-    normalize(sunDirection);
-
-  float sunlight =
-    max(
-      dot(normal, sun),
-      0.0
-    );
-
-  float illumination =
-    mix(
-      0.18,
-      1.0,
-      smoothstep(
-        0.0,
-        0.28,
-        sunlight
-      )
-    );
-
-  vec3 color =
-    baseColor *
-    illumination;
-
-  float night =
-    1.0 -
-    smoothstep(
-      0.0,
-      0.25,
-      sunlight
-    );
-
-  color =
-    mix(
-      color,
-      nightColor,
-      night * 0.12
-    );
-
-  gl_FragColor =
-    vec4(
-      color,
-      1.0
-    );
+  gl_FragColor = vec4(color, 1.0);
 }
 `;
 
