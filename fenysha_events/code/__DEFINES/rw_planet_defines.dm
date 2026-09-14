@@ -85,16 +85,9 @@
  */
 #define RW_TERRAIN_NOISE_SCALE 60
 
-/*
- * Terrain stamp size increased for large, organic continental landmasses.
- */
-#define RW_ELEVATION_STAMP_SIZE 120
-
-/*
- * Climate maps stamp sizes for broad regional climate zones.
- */
-#define RW_HEAT_STAMP_SIZE 140
-#define RW_HUMIDITY_STAMP_SIZE 130
+#define RW_ELEVATION_STAMP_SIZE 340
+#define RW_HEAT_STAMP_SIZE 150
+#define RW_HUMIDITY_STAMP_SIZE 140
 
 
 /**
@@ -110,22 +103,23 @@
 #define RW_TERRAN_HUMIDITY_HIGH 0.25
 
 #define RW_TERRAN_OCEAN_LOW -1.0
-#define RW_TERRAN_OCEAN_HIGH -0.05
+#define RW_TERRAN_OCEAN_HIGH -0.02
 
-#define RW_TERRAN_COAST_LOW -0.05
-#define RW_TERRAN_COAST_HIGH 0.08
+#define RW_TERRAN_COAST_LOW -0.02
+#define RW_TERRAN_COAST_HIGH 0.06
 
-#define RW_TERRAN_LOWLAND_LOW 0.08
-#define RW_TERRAN_LOWLAND_HIGH 0.42
+#define RW_TERRAN_LOWLAND_LOW 0.06
+#define RW_TERRAN_LOWLAND_HIGH 0.40
 
-#define RW_TERRAN_HIGHLAND_LOW 0.42
-#define RW_TERRAN_HIGHLAND_HIGH 0.65
+#define RW_TERRAN_HIGHLAND_LOW 0.40
+#define RW_TERRAN_HIGHLAND_HIGH 0.62
 
-#define RW_TERRAN_MOUNTAIN_LOW 0.65
-#define RW_TERRAN_MOUNTAIN_HIGH 0.82
+#define RW_TERRAN_MOUNTAIN_LOW 0.62
+#define RW_TERRAN_MOUNTAIN_HIGH 0.78
 
-#define RW_TERRAN_SNOW_LOW 0.82
+#define RW_TERRAN_SNOW_LOW 0.78
 #define RW_TERRAN_SNOW_HIGH 1.10
+
 
 
 /**

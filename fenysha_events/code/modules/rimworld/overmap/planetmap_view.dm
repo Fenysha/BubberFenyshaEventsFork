@@ -256,7 +256,23 @@
 
 /datum/planetmap_view/admin/handle_view_act(action, list/params)
 	switch(action)
+		if("toggle_rotation")
+			if(planet)
+				planet.auto_rotate = !planet.auto_rotate
+				SStgui.update_uis(src)
+			return TRUE
 
+		if("set_rotation_speed")
+			if(planet && !isnull(params["speed"]))
+				planet.rotation_speed = text2num(params["speed"])
+				SStgui.update_uis(src)
+			return TRUE
+
+		if("set_rotation_angle")
+			if(planet && !isnull(params["angle"]))
+				planet.rotation_angle = text2num(params["angle"])
+				SStgui.update_uis(src)
+			return TRUE
 		if("regenerate")
 			if(!can_regenerate)
 				return FALSE

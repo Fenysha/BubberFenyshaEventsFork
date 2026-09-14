@@ -299,10 +299,42 @@ export class PlanetGenerator {
 
     const temperature = this.getTemperature(x, y, h);
 
-    if (e === ELEVATION_OCEAN) {
-      if (temperature <= 0.1) {
+    const normalizedLatitude = (y - 1) / Math.max(1, this.data.height - 1);
+
+    const polarDistance = Math.abs((normalizedLatitude - 0.5) * 2.0);
+
+    if (polarDistance >= 0.82) {
+      if (e === ELEVATION_OCEAN || e === ELEVATION_COAST) {
         return BIOME_SEA_ICE;
       }
+
+      return BIOME_SNOW;
+    }
+
+    if (polarDistance >= 0.7) {
+      const polarStrength = Math.max(
+        0,
+        Math.min(1, (polarDistance - 0.7) / 0.12),
+      );
+
+      const polarTemperature = temperature * (1.0 - polarStrength);
+
+      if (e === ELEVATION_OCEAN || e === ELEVATION_COAST) {
+        if (polarTemperature <= 0.24) {
+          return BIOME_SEA_ICE;
+        }
+      } else {
+        if (polarTemperature <= 0.22 || e === ELEVATION_SNOW) {
+          return BIOME_SNOW;
+        }
+      }
+    }
+
+    if (e === ELEVATION_OCEAN) {
+      if (temperature <= 0.14) {
+        return BIOME_SEA_ICE;
+      }
+
       return BIOME_OCEAN;
     }
 
@@ -310,9 +342,11 @@ export class PlanetGenerator {
       if (temperature <= 0.1) {
         return BIOME_SEA_ICE;
       }
+
       if (temperature >= 0.45 && hm === CLIMATE_LOW) {
         return BIOME_BEACH;
       }
+
       return BIOME_COAST;
     }
 
@@ -329,22 +363,35 @@ export class PlanetGenerator {
     }
 
     if (temperature < 0.3) {
-      if (hm === CLIMATE_HIGH) return BIOME_TAIGA;
+      if (hm === CLIMATE_HIGH) {
+        return BIOME_TAIGA;
+      }
+
       return BIOME_TUNDRA;
     }
 
     if (temperature < 0.55) {
-      if (hm === CLIMATE_HIGH) return BIOME_TEMPERATE_FOREST;
-      if (hm === CLIMATE_MEDIUM) return BIOME_GRASSLAND;
+      if (hm === CLIMATE_HIGH) {
+        return BIOME_TEMPERATE_FOREST;
+      }
+
+      if (hm === CLIMATE_MEDIUM) {
+        return BIOME_GRASSLAND;
+      }
+
       return BIOME_SAVANNA;
     }
 
-    if (hm === CLIMATE_HIGH) return BIOME_RAINFOREST;
-    if (hm === CLIMATE_MEDIUM) return BIOME_TROPICAL_FOREST;
+    if (hm === CLIMATE_HIGH) {
+      return BIOME_RAINFOREST;
+    }
+
+    if (hm === CLIMATE_MEDIUM) {
+      return BIOME_TROPICAL_FOREST;
+    }
 
     return BIOME_DESERT;
   }
-
   public getTile(x: number, y: number): PlanetTile {
     const elevation = this.getElevation(x, y);
     const heat = this.getHeat(x, y);

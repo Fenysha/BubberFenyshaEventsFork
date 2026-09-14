@@ -254,7 +254,7 @@ const updateSelection = (
   group.visible = true;
 };
 
-// Actuall planet
+// Actual planet
 
 export const Planet = ({
   data,
@@ -265,6 +265,9 @@ export const Planet = ({
 }: PlanetProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<PlanetRuntime | null>(null);
+
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -335,6 +338,33 @@ export const Planet = ({
     fill.position.set(-4, -1, -3);
     scene.add(fill);
 
+    // 3D Модель Солнца на заднем плане
+    const sunGroup = new THREE.Group();
+    const sunDistance = 50;
+    const sunPos = PLANET_SUN_DIRECTION.clone()
+      .normalize()
+      .multiplyScalar(sunDistance);
+
+    const sunMeshGeometry = new THREE.SphereGeometry(3.5, 32, 32);
+    const sunMeshMaterial = new THREE.MeshBasicMaterial({ color: 0xfff3d1 });
+    const sunMesh = new THREE.Mesh(sunMeshGeometry, sunMeshMaterial);
+    sunMesh.position.copy(sunPos);
+    sunGroup.add(sunMesh);
+
+    const sunGlowGeometry = new THREE.SphereGeometry(5.2, 32, 32);
+    const sunGlowMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffaa22,
+      transparent: true,
+      opacity: 0.35,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+    });
+    const sunGlow = new THREE.Mesh(sunGlowGeometry, sunGlowMaterial);
+    sunGlow.position.copy(sunPos);
+    sunGroup.add(sunGlow);
+
+    scene.add(sunGroup);
+
     const stars = new THREE.Points(
       getSharedStarGeometry(),
       new THREE.PointsMaterial({
@@ -350,6 +380,10 @@ export const Planet = ({
 
     const planetGroup = new THREE.Group();
     scene.add(planetGroup);
+
+    if (data.rotationAngle != null) {
+      planetGroup.rotation.y = (data.rotationAngle * Math.PI) / 180;
+    }
 
     const cachedTexture = textureCache.get(mapIdentity);
     const initialTexture = cachedTexture ?? placeholderTexture;
@@ -573,9 +607,19 @@ export const Planet = ({
     const animate = () => {
       frame = requestAnimationFrame(animate);
 
+      const delta = clock.getDelta();
       const time = clock.getElapsedTime();
+
       cloudMaterial.uniforms.time.value = time;
       clouds.rotation.y = time * 0.012;
+
+      const currentData = dataRef.current;
+      if (currentData.autoRotate !== false) {
+        const speed = currentData.rotationSpeed ?? 1.0;
+        planetGroup.rotation.y += delta * 0.08 * speed;
+      }
+
+      sunGlow.scale.setScalar(1 + Math.sin(time * 1.5) * 0.03);
 
       const distance = controls.getDistance();
       const nextLod = getPlanetLod(distance);
@@ -635,6 +679,11 @@ export const Planet = ({
 
       clouds.geometry.dispose();
       cloudMaterial.dispose();
+
+      sunMeshGeometry.dispose();
+      sunMeshMaterial.dispose();
+      sunGlowGeometry.dispose();
+      sunGlowMaterial.dispose();
 
       selection.traverse((child) => {
         if (child instanceof THREE.LineLoop) {
