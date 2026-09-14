@@ -152,10 +152,13 @@
 		return
 
 	switch(action)
+		if("close")
+			SStgui.close_uis(src)
+			return TRUE
 
 		if("select_tile")
-			var/x = text2num(params["x"])
-			var/y = text2num(params["y"])
+			var/x = isnum(params["x"]) ? params["x"] : text2num(params["x"])
+			var/y = isnum(params["y"]) ? params["y"] : text2num(params["y"])
 
 			if(!on_select_tile(x, y))
 				return

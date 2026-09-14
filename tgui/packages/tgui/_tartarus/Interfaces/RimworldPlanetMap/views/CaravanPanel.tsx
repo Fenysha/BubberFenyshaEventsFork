@@ -1,18 +1,9 @@
 import { useBackend } from 'tgui/backend';
-
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import type { PlanetMapData } from '../types';
 
-import type { PlanetMapData, PlanetTile } from '../types';
-
-import { TileDetails } from './TileDetails';
-
-type CaravanPanelProps = {
-  localTile?: PlanetTile | null;
-};
-
-export const CaravanPanel = ({ localTile }: CaravanPanelProps) => {
+export const CaravanPanel = () => {
   const { act, data } = useBackend<PlanetMapData>();
-
   const view = data.view ?? {};
 
   return (
@@ -43,10 +34,6 @@ export const CaravanPanel = ({ localTile }: CaravanPanelProps) => {
             </LabeledList.Item>
           </LabeledList>
         </Section>
-      </Stack.Item>
-
-      <Stack.Item grow>
-        <TileDetails tile={localTile} title="Destination tile" />
       </Stack.Item>
 
       <Stack.Item>

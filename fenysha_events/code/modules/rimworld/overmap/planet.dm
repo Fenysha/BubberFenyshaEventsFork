@@ -93,7 +93,7 @@
 
 
 	var/rotation_angle = 0
-	var/rotation_speed = 1.0
+	var/rotation_speed = 0.001
 	var/auto_rotate = TRUE
 
 	var/terrain_scale = RW_ELEVATION_STAMP_SIZE

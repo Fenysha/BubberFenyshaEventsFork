@@ -12,14 +12,9 @@ import {
   Stack,
 } from 'tgui-core/components';
 
-import type { PlanetMapData, PlanetTile } from '../types';
-import { TileDetails } from './TileDetails';
+import type { PlanetMapData } from '../types';
 
-type AdminPanelProps = {
-  localTile?: PlanetTile | null;
-};
-
-export const AdminPanel = ({ localTile }: AdminPanelProps) => {
+export const AdminPanel = () => {
   const { act, data } = useBackend<PlanetMapData>();
 
   const selected = data.selectedTile;
@@ -75,6 +70,43 @@ export const AdminPanel = ({ localTile }: AdminPanelProps) => {
         </Section>
       </Stack.Item>
 
+      <Section title="Planet Rotation Control">
+        <LabeledList>
+          <LabeledList.Item label="Auto Rotation">
+            <Button
+              fluid
+              icon={data.autoRotate ? 'pause' : 'play'}
+              color={data.autoRotate ? 'warning' : 'success'}
+              onClick={() => act('toggle_rotation')}
+            >
+              {data.autoRotate ? 'Pause Rotation' : 'Start Rotation'}
+            </Button>
+          </LabeledList.Item>
+
+          <LabeledList.Item label="Rotation Speed">
+            <NumberInput
+              width="100%"
+              step={0.1}
+              minValue={-10}
+              maxValue={10}
+              value={data.rotationSpeed ?? 1.0}
+              onChange={(val) => act('set_rotation_speed', { speed: val })}
+            />
+          </LabeledList.Item>
+
+          <LabeledList.Item label="Manual Angle">
+            <NumberInput
+              width="100%"
+              step={15}
+              minValue={0}
+              maxValue={360}
+              value={Math.round(data.rotationAngle ?? 0)}
+              onChange={(val) => act('set_rotation_angle', { angle: val })}
+            />
+          </LabeledList.Item>
+        </LabeledList>
+      </Section>
+
       <Stack.Item>
         <Section title="Manual Generator Controls">
           <LabeledList>
@@ -98,7 +130,6 @@ export const AdminPanel = ({ localTile }: AdminPanelProps) => {
             </LabeledList.Item>
           </LabeledList>
 
-          {/* Масштабы шума и штампов */}
           <Collapsible title="Noise & Stamp Scales">
             <LabeledList>
               <LabeledList.Item label="Noise Scale">
@@ -143,7 +174,6 @@ export const AdminPanel = ({ localTile }: AdminPanelProps) => {
             </LabeledList>
           </Collapsible>
 
-          {/* Отдельные сиды */}
           <Collapsible title="Sub-Noise Seeds">
             <LabeledList>
               <LabeledList.Item label="Terrain Seed">
@@ -178,7 +208,6 @@ export const AdminPanel = ({ localTile }: AdminPanelProps) => {
             </LabeledList>
           </Collapsible>
 
-          {/* Пороги высот */}
           <Collapsible title="Elevation Thresholds">
             <LabeledList>
               <LabeledList.Item label="Coast Low / High">
@@ -300,7 +329,6 @@ export const AdminPanel = ({ localTile }: AdminPanelProps) => {
             </LabeledList>
           </Collapsible>
 
-          {/* Климатические пороги */}
           <Collapsible title="Climate Thresholds">
             <LabeledList>
               <LabeledList.Item label="Heat Low / High">
@@ -364,23 +392,21 @@ export const AdminPanel = ({ localTile }: AdminPanelProps) => {
         </Section>
       </Stack.Item>
 
-      <Stack.Item>
-        <TileDetails tile={localTile} title="Selected tile" />
-
-        {!!selectedObject && (
+      {!!selectedObject && (
+        <Stack.Item>
           <Section title="Selected object">
             <Box bold>{selectedObject.name}</Box>
             <Box color="label">{selectedObject.type}</Box>
             <Box color="label">ID: {selectedObject.id}</Box>
           </Section>
-        )}
-      </Stack.Item>
+        </Stack.Item>
+      )}
 
       <Stack.Item>
         <Section title="Place & Objects">
           <Input fluid value={objectName} onChange={setObjectName} />
 
-          <Stack>
+          <Stack mt={1}>
             <Stack.Item grow>
               <Button
                 fluid
@@ -410,7 +436,7 @@ export const AdminPanel = ({ localTile }: AdminPanelProps) => {
             </Stack.Item>
           </Stack>
 
-          <Stack>
+          <Stack mt={1}>
             <Stack.Item grow>
               <Button
                 fluid
@@ -433,12 +459,12 @@ export const AdminPanel = ({ localTile }: AdminPanelProps) => {
           </Stack>
 
           {data.view?.roadStartX != null && (
-            <Box color="label">
+            <Box color="label" mt={1}>
               Road start: {data.view.roadStartX}, {data.view.roadStartY}
             </Box>
           )}
 
-          <Stack>
+          <Stack mt={1}>
             <Stack.Item grow>
               <Button
                 fluid
