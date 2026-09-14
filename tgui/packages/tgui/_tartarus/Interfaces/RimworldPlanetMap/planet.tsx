@@ -1,17 +1,16 @@
 import { useEffect, useRef } from 'react';
-
 import * as THREE from 'three';
-
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
 import { loadCameraState, saveCameraState } from './camera';
 import { PLANET_RADIUS } from './generation/constants';
 import { PlanetGenerator } from './generation/generator';
 import type { PlanetMapData, PlanetObject, PlanetTile } from './types';
 import { getPlanetMapIdentity } from './types';
+
 import {
   PLANET_ATMOSPHERE_COLOR,
   PLANET_BACKGROUND,
-  PLANET_BORDER_COLOR,
   PLANET_FILL_COLOR,
   PLANET_NIGHT_COLOR,
   PLANET_SUN_COLOR,
@@ -22,7 +21,10 @@ import {
   planetCoordinateToVector,
   vectorToPlanetCoordinate,
 } from './visual/coordinates';
-import { buildHexPlanet } from './visual/geometry';
+
+import { buildPlanetGeometry, type LodLevel } from './visual/geometry';
+
+import { buildPlanetTexture } from './visual/planetTexture';
 
 import {
   ATMOSPHERE_FRAGMENT_SHADER,
@@ -31,26 +33,166 @@ import {
   CLOUD_VERTEX_SHADER,
   NIGHT_FRAGMENT_SHADER,
   NIGHT_VERTEX_SHADER,
+  PLANET_SURFACE_FRAGMENT_SHADER,
+  PLANET_SURFACE_VERTEX_SHADER,
 } from './visual/shaders';
 
-import { applyTileImages, loadTileImage } from './visual/tileImages';
+import { loadTileImage } from './visual/tileImages';
 
 type PlanetProps = {
   data: PlanetMapData;
-
   selectedX?: number;
   selectedY?: number;
-
   onTileClick?: (x: number, y: number, tile: PlanetTile) => void;
-
   onObjectClick?: (object: PlanetObject) => void;
 };
 
 type PlanetRuntime = {
   objectGroup: THREE.Group;
-  selectedMarker: THREE.Mesh;
+  selection: THREE.Group;
   generator: PlanetGenerator;
   surface: THREE.Mesh;
+  planetGroup: THREE.Group;
+  planetTexture: THREE.DataTexture;
+  surfaceMaterial: THREE.ShaderMaterial;
+  currentLod: LodLevel;
+};
+
+const LOD_DISTANCES = {
+  near: 3.6,
+  medium: 5.2,
+} as const;
+
+const getPlanetLod = (distance: number): LodLevel =>
+  distance < LOD_DISTANCES.near
+    ? 'near'
+    : distance < LOD_DISTANCES.medium
+      ? 'medium'
+      : 'far';
+
+const buildHexOutlineGeometry = (
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) => {
+  const center = planetCoordinateToVector(
+    x,
+    y,
+    width,
+    height,
+    radius,
+  ).normalize();
+
+  const up = new THREE.Vector3(0, 1, 0);
+  const east = new THREE.Vector3().crossVectors(up, center);
+
+  if (east.lengthSq() < 0.000001) {
+    east.set(1, 0, 0);
+  }
+
+  east.normalize();
+
+  const north = new THREE.Vector3().crossVectors(center, east).normalize();
+
+  const latitude = Math.asin(THREE.MathUtils.clamp(center.y, -1, 1));
+
+  const cosLatitude = Math.max(Math.cos(latitude), 0.12);
+
+  const rx = ((Math.PI * 2) / width) * cosLatitude * 0.48;
+
+  const ry = (Math.PI / height) * 0.48;
+
+  const positions = new Float32Array(18);
+
+  for (let i = 0; i < 6; i++) {
+    const angle = Math.PI / 6 + (i * Math.PI) / 3;
+
+    const point = center
+      .clone()
+      .addScaledVector(east, Math.cos(angle) * rx)
+      .addScaledVector(north, Math.sin(angle) * ry)
+      .normalize()
+      .multiplyScalar(radius);
+
+    positions[i * 3] = point.x;
+    positions[i * 3 + 1] = point.y;
+    positions[i * 3 + 2] = point.z;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+
+  return geometry;
+};
+
+const createSelection = (width: number, height: number) => {
+  const group = new THREE.Group();
+
+  group.visible = false;
+
+  const glow = new THREE.LineLoop(
+    buildHexOutlineGeometry(1, 1, width, height, PLANET_RADIUS + 0.022),
+    new THREE.LineBasicMaterial({
+      color: 0x6bbdff,
+      transparent: true,
+      opacity: 0.1,
+      depthWrite: false,
+    }),
+  );
+
+  const outline = new THREE.LineLoop(
+    buildHexOutlineGeometry(1, 1, width, height, PLANET_RADIUS + 0.013),
+    new THREE.LineBasicMaterial({
+      color: 0x9edcff,
+      transparent: true,
+      opacity: 0.92,
+      depthWrite: false,
+    }),
+  );
+
+  glow.renderOrder = 20;
+  outline.renderOrder = 21;
+
+  group.add(glow, outline);
+
+  return group;
+};
+
+const updateSelection = (
+  group: THREE.Group,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) => {
+  const glow = group.children[0] as THREE.LineLoop;
+  const outline = group.children[1] as THREE.LineLoop;
+
+  glow.geometry.dispose();
+  glow.geometry = buildHexOutlineGeometry(
+    x,
+    y,
+    width,
+    height,
+    PLANET_RADIUS + 0.022,
+  );
+
+  outline.geometry.dispose();
+  outline.geometry = buildHexOutlineGeometry(
+    x,
+    y,
+    width,
+    height,
+    PLANET_RADIUS + 0.013,
+  );
+
+  group.visible = true;
 };
 
 export const Planet = ({
@@ -83,21 +225,13 @@ export const Planet = ({
       return;
     }
 
-    /* ---------------------------------------------------------------------- */
-    /* Generator                                                               */
-    /* ---------------------------------------------------------------------- */
-
     const generator = new PlanetGenerator(data);
-
-    /* ---------------------------------------------------------------------- */
-    /* Scene                                                                   */
-    /* ---------------------------------------------------------------------- */
 
     const scene = new THREE.Scene();
 
     scene.background = PLANET_BACKGROUND.clone();
 
-    scene.fog = new THREE.FogExp2(PLANET_BACKGROUND, 0.012);
+    scene.fog = null;
 
     const camera = new THREE.PerspectiveCamera(
       38,
@@ -124,31 +258,22 @@ export const Planet = ({
 
     container.appendChild(renderer.domElement);
 
-    /* ---------------------------------------------------------------------- */
-    /* Controls                                                                */
-    /* ---------------------------------------------------------------------- */
-
     const controls = new OrbitControls(camera, renderer.domElement);
 
     controls.enablePan = false;
     controls.enableDamping = true;
-
     controls.dampingFactor = 0.06;
-
-    controls.minDistance = 2.6;
+    controls.minDistance = PLANET_RADIUS * 1.015;
     controls.maxDistance = 9;
-
     controls.rotateSpeed = 0.55;
 
     loadCameraState(camera, controls);
 
-    /* ---------------------------------------------------------------------- */
-    /* Lighting                                                                */
-    /* ---------------------------------------------------------------------- */
+    controls.target.set(0, 0, 0);
 
-    const ambient = new THREE.AmbientLight(0x6b8cae, 0.22);
+    controls.update();
 
-    scene.add(ambient);
+    scene.add(new THREE.AmbientLight(0x6b8cae, 0.22));
 
     const sun = new THREE.DirectionalLight(PLANET_SUN_COLOR, 2.8);
 
@@ -162,12 +287,7 @@ export const Planet = ({
 
     scene.add(fill);
 
-    /* ---------------------------------------------------------------------- */
-    /* Stars                                                                   */
-    /* ---------------------------------------------------------------------- */
-
     const starCount = 1800;
-
     const starPositions = new Float32Array(starCount * 3);
 
     for (let i = 0; i < starCount; i++) {
@@ -191,118 +311,38 @@ export const Planet = ({
       new THREE.BufferAttribute(starPositions, 3),
     );
 
-    const starMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.15,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0.85,
-      depthWrite: false,
-    });
-
-    const stars = new THREE.Points(starGeometry, starMaterial);
+    const stars = new THREE.Points(
+      starGeometry,
+      new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.15,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false,
+      }),
+    );
 
     scene.add(stars);
-
-    /* ---------------------------------------------------------------------- */
-    /* Planet root                                                             */
-    /* ---------------------------------------------------------------------- */
 
     const planetGroup = new THREE.Group();
 
     scene.add(planetGroup);
 
-    /* ---------------------------------------------------------------------- */
-    /* Surface                                                                  */
-    /* ---------------------------------------------------------------------- */
+    const planetTexture = buildPlanetTexture(data, generator);
 
-    const { surfaceGeometry, boundaryGeometry } = buildHexPlanet(
-      data,
-      generator,
-    );
-
-    const surfaceMaterial = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      flatShading: true,
-      roughness: 0.92,
-      metalness: 0.05,
-    });
-
-    const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
-
-    planetGroup.add(surface);
-
-    /* ---------------------------------------------------------------------- */
-    /* Borders                                                                  */
-    /* ---------------------------------------------------------------------- */
-
-    const boundaryMaterial = new THREE.LineBasicMaterial({
-      color: PLANET_BORDER_COLOR,
-      transparent: true,
-      opacity: 0.13,
-    });
-
-    const boundaries = new THREE.LineSegments(
-      boundaryGeometry,
-      boundaryMaterial,
-    );
-
-    boundaries.scale.setScalar(1.0015);
-
-    planetGroup.add(boundaries);
-
-    /* ---------------------------------------------------------------------- */
-    /* Atmosphere                                                               */
-    /* ---------------------------------------------------------------------- */
-
-    const atmosphereGeometry = new THREE.SphereGeometry(
-      PLANET_RADIUS * 1.075,
-      96,
-      96,
-    );
-
-    const atmosphereMaterial = new THREE.ShaderMaterial({
+    const surfaceMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        atmosphereColor: {
-          value: PLANET_ATMOSPHERE_COLOR.clone(),
+        planetMap: {
+          value: planetTexture,
+        },
+
+        mapSize: {
+          value: new THREE.Vector2(data.width, data.height),
         },
 
         sunDirection: {
-          value: PLANET_SUN_DIRECTION.clone(),
-        },
-      },
-
-      vertexShader: ATMOSPHERE_VERTEX_SHADER,
-
-      fragmentShader: ATMOSPHERE_FRAGMENT_SHADER,
-
-      side: THREE.BackSide,
-
-      blending: THREE.AdditiveBlending,
-
-      transparent: true,
-
-      depthWrite: false,
-    });
-
-    const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
-
-    planetGroup.add(atmosphere);
-
-    /* ---------------------------------------------------------------------- */
-    /* Night hemisphere                                                        */
-    /* ---------------------------------------------------------------------- */
-
-    const nightGeometry = new THREE.SphereGeometry(
-      PLANET_RADIUS * 1.002,
-      96,
-      96,
-    );
-
-    const nightMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        sunDirection: {
-          value: PLANET_SUN_DIRECTION.clone(),
+          value: PLANET_SUN_DIRECTION.clone().normalize(),
         },
 
         nightColor: {
@@ -310,30 +350,76 @@ export const Planet = ({
         },
       },
 
-      vertexShader: NIGHT_VERTEX_SHADER,
+      vertexShader: PLANET_SURFACE_VERTEX_SHADER,
 
-      fragmentShader: NIGHT_FRAGMENT_SHADER,
+      fragmentShader: PLANET_SURFACE_FRAGMENT_SHADER,
 
-      transparent: true,
-
-      depthWrite: false,
-
-      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      transparent: false,
+      depthWrite: true,
     });
 
-    const night = new THREE.Mesh(nightGeometry, nightMaterial);
+    let currentLod: LodLevel = 'medium';
+
+    const surface = new THREE.Mesh(
+      buildPlanetGeometry(data, currentLod),
+      surfaceMaterial,
+    );
+
+    surface.name = 'PlanetSurface';
+
+    planetGroup.add(surface);
+
+    const atmosphere = new THREE.Mesh(
+      new THREE.SphereGeometry(PLANET_RADIUS * 1.075, 96, 96),
+      new THREE.ShaderMaterial({
+        uniforms: {
+          atmosphereColor: {
+            value: PLANET_ATMOSPHERE_COLOR.clone(),
+          },
+
+          sunDirection: {
+            value: PLANET_SUN_DIRECTION.clone().normalize(),
+          },
+        },
+
+        vertexShader: ATMOSPHERE_VERTEX_SHADER,
+
+        fragmentShader: ATMOSPHERE_FRAGMENT_SHADER,
+
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+      }),
+    );
+
+    planetGroup.add(atmosphere);
+
+    const night = new THREE.Mesh(
+      new THREE.SphereGeometry(PLANET_RADIUS * 1.002, 96, 96),
+      new THREE.ShaderMaterial({
+        uniforms: {
+          sunDirection: {
+            value: PLANET_SUN_DIRECTION.clone().normalize(),
+          },
+
+          nightColor: {
+            value: PLANET_NIGHT_COLOR.clone(),
+          },
+        },
+
+        vertexShader: NIGHT_VERTEX_SHADER,
+
+        fragmentShader: NIGHT_FRAGMENT_SHADER,
+
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
 
     planetGroup.add(night);
-
-    /* ---------------------------------------------------------------------- */
-    /* Cloud layer                                                             */
-    /* ---------------------------------------------------------------------- */
-
-    const cloudGeometry = new THREE.SphereGeometry(
-      PLANET_RADIUS * 1.028,
-      96,
-      96,
-    );
 
     const cloudMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -347,57 +433,123 @@ export const Planet = ({
       fragmentShader: CLOUD_FRAGMENT_SHADER,
 
       transparent: true,
-
       depthWrite: false,
     });
 
-    const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    const clouds = new THREE.Mesh(
+      new THREE.SphereGeometry(PLANET_RADIUS * 1.028, 96, 96),
+      cloudMaterial,
+    );
 
     planetGroup.add(clouds);
 
-    /* ---------------------------------------------------------------------- */
-    /* Interactive objects                                                     */
-    /* ---------------------------------------------------------------------- */
-
     const objectGroup = new THREE.Group();
+
+    objectGroup.name = 'PlanetObjects';
 
     planetGroup.add(objectGroup);
 
-    const selectedGeometry = new THREE.SphereGeometry(0.045, 14, 14);
+    const selection = createSelection(data.width, data.height);
 
-    const selectedMaterial = new THREE.MeshBasicMaterial({
-      color: 0x7ecbff,
-    });
-
-    const selectedMarker = new THREE.Mesh(selectedGeometry, selectedMaterial);
-
-    selectedMarker.visible = false;
-
-    planetGroup.add(selectedMarker);
+    planetGroup.add(selection);
 
     runtimeRef.current = {
       objectGroup,
-      selectedMarker,
+      selection,
       generator,
       surface,
+      planetGroup,
+      planetTexture,
+      surfaceMaterial,
+      currentLod,
     };
 
-    applyTileImages(surface, data.tileImages, data.biomeImages);
+    const switchLod = (newLod: LodLevel) => {
+      if (newLod === currentLod) {
+        return;
+      }
 
-    /* ---------------------------------------------------------------------- */
-    /* Interaction                                                             */
-    /* ---------------------------------------------------------------------- */
+      const newGeometry = buildPlanetGeometry(data, newLod);
+
+      surface.geometry.dispose();
+      surface.geometry = newGeometry;
+
+      currentLod = newLod;
+
+      if (runtimeRef.current) {
+        runtimeRef.current.currentLod = newLod;
+      }
+    };
+
+    const zoomToSelection = () => {
+      const direction = camera.position
+        .clone()
+        .sub(controls.target)
+        .normalize();
+
+      const start = camera.position.clone();
+
+      const end = direction.multiplyScalar(PLANET_RADIUS * 1.045);
+
+      const started = performance.now();
+
+      const duration = 380;
+
+      const animateZoom = (now: number) => {
+        const t = THREE.MathUtils.clamp((now - started) / duration, 0, 1);
+
+        const eased = t * t * (3 - 2 * t);
+
+        camera.position.lerpVectors(start, end, eased);
+
+        controls.target.set(0, 0, 0);
+
+        controls.update();
+
+        if (t < 1) {
+          requestAnimationFrame(animateZoom);
+        }
+      };
+
+      requestAnimationFrame(animateZoom);
+    };
 
     const raycaster = new THREE.Raycaster();
 
     const mouse = new THREE.Vector2();
 
+    let pointerDownX = 0;
+    let pointerDownY = 0;
+    let pointerDragged = false;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      pointerDownX = event.clientX;
+
+      pointerDownY = event.clientY;
+
+      pointerDragged = false;
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (
+        Math.abs(event.clientX - pointerDownX) > 5 ||
+        Math.abs(event.clientY - pointerDownY) > 5
+      ) {
+        pointerDragged = true;
+      }
+    };
+
     const handleClick = (event: MouseEvent) => {
+      if (pointerDragged) {
+        pointerDragged = false;
+        return;
+      }
+
       const rect = renderer.domElement.getBoundingClientRect();
 
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
 
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      mouse.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
 
       raycaster.setFromCamera(mouse, camera);
 
@@ -415,7 +567,7 @@ export const Planet = ({
         return;
       }
 
-      const surfaceHits = raycaster.intersectObject(surface);
+      const surfaceHits = raycaster.intersectObject(surface, false);
 
       if (surfaceHits.length === 0) {
         return;
@@ -427,18 +579,24 @@ export const Planet = ({
 
       const { x, y } = vectorToPlanetCoordinate(point, data.width, data.height);
 
-      callbacksRef.current.onTileClick?.(x, y, generator.getTile(x, y));
+      const tile = generator.getTile(x, y);
+
+      callbacksRef.current.onTileClick?.(x, y, tile);
+
+      zoomToSelection();
     };
 
-    renderer.domElement.addEventListener('click', handleClick);
+    renderer.domElement.addEventListener('pointerdown', handlePointerDown);
 
-    /* ---------------------------------------------------------------------- */
-    /* Animation                                                               */
-    /* ---------------------------------------------------------------------- */
+    renderer.domElement.addEventListener('pointermove', handlePointerMove);
+
+    renderer.domElement.addEventListener('click', handleClick);
 
     let frame = 0;
 
     const clock = new THREE.Clock();
+
+    let lastLod: LodLevel = currentLod;
 
     const animate = () => {
       frame = requestAnimationFrame(animate);
@@ -447,11 +605,19 @@ export const Planet = ({
 
       cloudMaterial.uniforms.time.value = time;
 
-      /*
-       * Clouds rotate independently
-       * from the planet.
-       */
       clouds.rotation.y = time * 0.012;
+
+      const distance = controls.getDistance();
+
+      const nextLod = getPlanetLod(distance);
+
+      if (nextLod !== lastLod) {
+        switchLod(nextLod);
+
+        lastLod = nextLod;
+      }
+
+      controls.target.set(0, 0, 0);
 
       controls.update();
 
@@ -459,10 +625,6 @@ export const Planet = ({
     };
 
     animate();
-
-    /* ---------------------------------------------------------------------- */
-    /* Resize                                                                  */
-    /* ---------------------------------------------------------------------- */
 
     const resize = () => {
       const width = container.clientWidth;
@@ -478,19 +640,9 @@ export const Planet = ({
 
     window.addEventListener('resize', resize);
 
-    /* ---------------------------------------------------------------------- */
-    /* Camera saving                                                           */
-    /* ---------------------------------------------------------------------- */
-
-    const saveView = () => {
-      saveCameraState(camera, controls);
-    };
+    const saveView = () => saveCameraState(camera, controls);
 
     controls.addEventListener('change', saveView);
-
-    /* ---------------------------------------------------------------------- */
-    /* Cleanup                                                                 */
-    /* ---------------------------------------------------------------------- */
 
     return () => {
       saveCameraState(camera, controls);
@@ -501,35 +653,40 @@ export const Planet = ({
 
       window.removeEventListener('resize', resize);
 
+      renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
+
+      renderer.domElement.removeEventListener('pointermove', handlePointerMove);
+
       renderer.domElement.removeEventListener('click', handleClick);
 
       controls.removeEventListener('change', saveView);
 
       controls.dispose();
 
-      surfaceGeometry.dispose();
+      surface.geometry.dispose();
       surfaceMaterial.dispose();
+      planetTexture.dispose();
 
-      boundaryGeometry.dispose();
-      boundaryMaterial.dispose();
+      atmosphere.geometry.dispose();
+      (atmosphere.material as THREE.Material).dispose();
 
-      atmosphereGeometry.dispose();
-      atmosphereMaterial.dispose();
+      night.geometry.dispose();
+      (night.material as THREE.Material).dispose();
 
-      nightGeometry.dispose();
-      nightMaterial.dispose();
-
-      cloudGeometry.dispose();
+      clouds.geometry.dispose();
       cloudMaterial.dispose();
 
-      starGeometry.dispose();
-      starMaterial.dispose();
+      selection.traverse((child) => {
+        if (child instanceof THREE.LineLoop) {
+          child.geometry.dispose();
+          (child.material as THREE.Material).dispose();
+        }
+      });
 
-      selectedGeometry.dispose();
-      selectedMaterial.dispose();
+      starGeometry.dispose();
+      (stars.material as THREE.Material).dispose();
 
       renderer.dispose();
-
       renderer.domElement.remove();
     };
   }, [mapIdentity]);
@@ -541,7 +698,7 @@ export const Planet = ({
       return;
     }
 
-    const { objectGroup, surface } = runtime;
+    const { objectGroup } = runtime;
 
     while (objectGroup.children.length > 0) {
       const child = objectGroup.children[0];
@@ -552,9 +709,9 @@ export const Planet = ({
         child.geometry.dispose();
 
         if (Array.isArray(child.material)) {
-          for (const material of child.material) {
+          child.material.forEach((material) => {
             material.dispose();
-          }
+          });
         } else {
           child.material.dispose();
         }
@@ -562,18 +719,17 @@ export const Planet = ({
     }
 
     for (const object of data.objects ?? []) {
-      const geometry = new THREE.SphereGeometry(0.032, 12, 12);
-
-      const material = new THREE.MeshBasicMaterial({
-        color:
-          object.type === 'settlement'
-            ? 0xffc857
-            : object.type === 'road'
-              ? 0xc4a574
-              : 0xf0f4ff,
-      });
-
-      const marker = new THREE.Mesh(geometry, material);
+      const marker = new THREE.Mesh(
+        new THREE.SphereGeometry(0.032, 12, 12),
+        new THREE.MeshBasicMaterial({
+          color:
+            object.type === 'settlement'
+              ? 0xffc857
+              : object.type === 'road'
+                ? 0xc4a574
+                : 0xf0f4ff,
+        }),
+      );
 
       marker.position.copy(
         planetCoordinateToVector(
@@ -593,16 +749,7 @@ export const Planet = ({
         void loadTileImage(object.icon);
       }
     }
-
-    applyTileImages(surface, data.tileImages, data.biomeImages);
-  }, [
-    mapIdentity,
-    data.objects,
-    data.tileImages,
-    data.biomeImages,
-    data.width,
-    data.height,
-  ]);
+  }, [mapIdentity, data.objects, data.width, data.height]);
 
   useEffect(() => {
     const runtime = runtimeRef.current;
@@ -611,23 +758,18 @@ export const Planet = ({
       return;
     }
 
-    const { selectedMarker } = runtime;
-
     if (selectedX == null || selectedY == null) {
-      selectedMarker.visible = false;
+      runtime.selection.visible = false;
+
       return;
     }
 
-    selectedMarker.visible = true;
-
-    selectedMarker.position.copy(
-      planetCoordinateToVector(
-        selectedX,
-        selectedY,
-        data.width,
-        data.height,
-        PLANET_RADIUS + 0.055,
-      ),
+    updateSelection(
+      runtime.selection,
+      selectedX,
+      selectedY,
+      data.width,
+      data.height,
     );
   }, [mapIdentity, selectedX, selectedY, data.width, data.height]);
 

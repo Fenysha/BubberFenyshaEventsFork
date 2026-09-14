@@ -1,30 +1,20 @@
 import { useState } from 'react';
-
-import { Stack } from 'tgui-core/components';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
+import { Stack } from 'tgui-core/components';
 
 import { Planet } from './planet';
-import type {
-  PlanetMapData,
-  PlanetTile,
-} from './types';
+import type { PlanetMapData, PlanetTile } from './types';
 import { AdminPanel } from './views/AdminPanel';
 import { CaravanPanel } from './views/CaravanPanel';
 import { OverviewPanel } from './views/OverviewPanel';
 
 export const RimworldPlanetMap = () => {
-  const { data, act } =
-    useBackend<PlanetMapData>();
+  const { data, act } = useBackend<PlanetMapData>();
 
-  const [localTile, setLocalTile] =
-    useState<PlanetTile | null>(null);
+  const [localTile, setLocalTile] = useState<PlanetTile | null>(null);
 
-  const handleTileClick = (
-    x: number,
-    y: number,
-    tile: PlanetTile,
-  ) => {
+  const handleTileClick = (x: number, y: number, tile: PlanetTile) => {
     setLocalTile(tile);
     act('select_tile', {
       x,
@@ -32,9 +22,7 @@ export const RimworldPlanetMap = () => {
     });
   };
 
-  const handleObjectClick = (
-    object: PlanetMapData['objects'][number],
-  ) => {
+  const handleObjectClick = (object: PlanetMapData['objects'][number]) => {
     act('select_object', {
       id: object.id,
     });
@@ -68,12 +56,8 @@ export const RimworldPlanetMap = () => {
           </Stack.Item>
           <Stack.Item width="300px">
             <div className="rimworld-planet-map__sidebar">
-              {viewType === 'admin' && (
-                <AdminPanel localTile={localTile} />
-              )}
-              {viewType === 'caravan' && (
-                <CaravanPanel localTile={localTile} />
-              )}
+              {viewType === 'admin' && <AdminPanel localTile={localTile} />}
+              {viewType === 'caravan' && <CaravanPanel localTile={localTile} />}
               {viewType === 'overview' && (
                 <OverviewPanel localTile={localTile} />
               )}
