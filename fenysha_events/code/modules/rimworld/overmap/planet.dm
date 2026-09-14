@@ -37,21 +37,21 @@
  * TG's cave biome generator.
  */
 
-#define RW_CLIMATE_LOW 0
-#define RW_CLIMATE_MEDIUM 1
-#define RW_CLIMATE_HIGH 2
+#define RW_CLIMATE_LOW "0"
+#define RW_CLIMATE_MEDIUM "1"
+#define RW_CLIMATE_HIGH "2"
 
 
 /*
  * Elevation levels.
  */
 
-#define RW_ELEVATION_OCEAN 0
-#define RW_ELEVATION_COAST 1
-#define RW_ELEVATION_LOWLAND 2
-#define RW_ELEVATION_HIGHLAND 3
-#define RW_ELEVATION_MOUNTAIN 4
-#define RW_ELEVATION_SNOW 5
+#define RW_ELEVATION_OCEAN "0"
+#define RW_ELEVATION_COAST "1"
+#define RW_ELEVATION_LOWLAND "2"
+#define RW_ELEVATION_HIGHLAND "3"
+#define RW_ELEVATION_MOUNTAIN "4"
+#define RW_ELEVATION_SNOW "5"
 
 
 /*
@@ -95,6 +95,7 @@
 
 /proc/get_dist_2d(x1, y1, x2, y2)
 	return sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
+
 
 /*
  * Planet object types
@@ -280,6 +281,7 @@
 	 * Everything procedural must ultimately originate from this value.
 	 */
 	var/seed
+
 	/*
 	 * Logical dimensions of the strategic map.
 	 *
@@ -287,11 +289,8 @@
 	 *
 	 * These are planetary coordinates.
 	 */
-	var/map_width = 512
-	var/map_height = 256
-
-
-
+	var/map_width = 2048
+	var/map_height = 1024
 
 	// Base terrain scale.
 	var/terrain_scale = RW_ELEVATION_STAMP_SIZE
@@ -315,15 +314,12 @@
 	var/humidity_threshold_low = RW_LOW_THRESHOLD
 	var/humidity_threshold_high = RW_HIGH_THRESHOLD
 
-
 	/*
-	 *
 	 * Never generate these randomly.
 	 *
 	 * They must always be derived from the master seed, otherwise loading
 	 * the same planet would produce a different world.
 	 */
-
 	var/terrain_seed
 	var/heat_seed
 	var/humidity_seed
@@ -354,27 +350,15 @@
 /*
  * Seed derivation
  *
- * Different domains receive different derived seeds.
- *
- * The exact constants are arbitrary but stable.
- *
- * IMPORTANT:
- * Do not change them after publishing worlds, otherwise existing planets
- * will regenerate differently.
+ * Используем маленький диапазон (0..50000), как в cave_generator,
+ * чтобы избежать переполнения и проблем с точностью в BYOND.
  */
-
-#define RW_SEED_MODULUS 2147483647
-#define RW_SEED_MULTIPLIER 1103515245
-#define RW_SEED_INCREMENT 12345
-
 /datum/rimworld_planet/proc/derive_seeds()
-	terrain_seed = (seed * RW_SEED_MULTIPLIER + RW_SEED_INCREMENT) % RW_SEED_MODULUS
-	heat_seed = (terrain_seed * RW_SEED_MULTIPLIER + RW_SEED_INCREMENT) % RW_SEED_MODULUS
-	humidity_seed = (heat_seed * RW_SEED_MULTIPLIER + RW_SEED_INCREMENT) % RW_SEED_MODULUS
+	var/base = abs(seed) % 50001
 
-#undef RW_SEED_MODULUS
-#undef RW_SEED_MULTIPLIER
-#undef RW_SEED_INCREMENT
+	terrain_seed = base
+	heat_seed = (base + 10000) % 50001
+	humidity_seed = (base + 20000) % 50001
 
 
 /datum/rimworld_planet/proc/get_terrain_seed()
@@ -403,77 +387,113 @@
 /*
  * Noise generation
  */
-
-
 /datum/rimworld_planet/proc/generate_climate_maps()
-
 	heat_maps = list()
 	humidity_maps = list()
 
-	/*
-	 * HIGH heat.
-	 */
-	heat_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[heat_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[heat_scale]", "[map_width]", "[heat_threshold_high]", "1.1")
+	// HIGH heat
+	heat_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[heat_seed]", "60", "[heat_scale]", "[map_width]", "[heat_threshold_high]", "1.1")
 
-	/*
-	 * MEDIUM heat.
-	 */
-	heat_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[heat_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[heat_scale]", "[map_width]", "[heat_threshold_low]", "[heat_threshold_high]")
+	// MEDIUM heat
+	heat_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[heat_seed]", "60", "[heat_scale]", "[map_width]", "[heat_threshold_low]", "[heat_threshold_high]")
 
-	/*
-	 * HIGH humidity.
-	 */
-	humidity_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[humidity_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[humidity_scale]", "[map_width]", "[humidity_threshold_high]", "1.1")
+	// HIGH humidity
+	humidity_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[humidity_seed]", "60", "[humidity_scale]", "[map_width]", "[humidity_threshold_high]", "1.1")
 
-	/*
-	 * MEDIUM humidity.
-	 */
-	humidity_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[humidity_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[humidity_scale]", "[map_width]", "[humidity_threshold_low]", "[humidity_threshold_high]")
+	// MEDIUM humidity
+	humidity_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[humidity_seed]", "60", "[humidity_scale]", "[map_width]", "[humidity_threshold_low]", "[humidity_threshold_high]")
 
 
 /datum/rimworld_planet/proc/generate_elevation_maps()
-
 	elevation_maps = list()
 
-	/*
-	 * Ocean / very low terrain.
-	 */
-	elevation_maps[RW_ELEVATION_OCEAN] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "-0.45", "-0.15")
+	// Ocean
+	elevation_maps[RW_ELEVATION_OCEAN] = rustg_dbp_generate("[terrain_seed]", "60", "[terrain_scale]", "[map_width]", "-1.0", "-0.25")
+
+	// Coast
+	elevation_maps[RW_ELEVATION_COAST] = rustg_dbp_generate("[terrain_seed]", "60", "[terrain_scale]", "[map_width]", "-0.25", "-0.08")
+
+	// Lowland
+	elevation_maps[RW_ELEVATION_LOWLAND] = rustg_dbp_generate("[terrain_seed]", "60", "[terrain_scale]", "[map_width]", "-0.08", "0.12")
+
+	// Highland
+	elevation_maps[RW_ELEVATION_HIGHLAND] = rustg_dbp_generate("[terrain_seed]", "60", "[terrain_scale]", "[map_width]", "0.12", "0.28")
+
+	// Mountain
+	elevation_maps[RW_ELEVATION_MOUNTAIN] = rustg_dbp_generate("[terrain_seed]", "60", "[terrain_scale]", "[map_width]", "0.28", "0.48")
+
+	// Snow
+	elevation_maps[RW_ELEVATION_SNOW] = rustg_dbp_generate("[terrain_seed]", "60", "[terrain_scale]", "[map_width]", "0.48", "1.1")
 
 
-	/*
-	 * Coast.
-	 */
-	elevation_maps[RW_ELEVATION_COAST] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "-0.15", "-0.05")
+/datum/rimworld_planet/proc/is_noise_value_true(map, x, y)
+	if(!map)
+		return FALSE
+
+	// Точно такой же расчёт координаты, как в cave_generator
+	var/coordinate = map_width * (y - 1) + x
+
+	// Защита (на случай если height > width или строка короче)
+	if(coordinate < 1 || coordinate > length(map))
+		return FALSE
+
+	return text2num(map[coordinate])
 
 
-	/*
-	 * Highlands.
-	 */
-	elevation_maps[RW_ELEVATION_HIGHLAND] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "0.10", "0.25")
+/datum/rimworld_planet/proc/get_heat_level(x, y)
+	if(!is_valid_coordinate(x, y))
+		return RW_CLIMATE_LOW
 
-	/*
-	 * Mountains.
-	 */
-	elevation_maps[RW_ELEVATION_MOUNTAIN] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "0.25", "0.45")
+	// Сначала HIGH, потом MEDIUM — точно как в biome-коде cave_generator
+	if(is_noise_value_true(heat_maps[RW_CLIMATE_HIGH], x, y))
+		return RW_CLIMATE_HIGH
 
+	if(is_noise_value_true(heat_maps[RW_CLIMATE_MEDIUM], x, y))
+		return RW_CLIMATE_MEDIUM
 
-	/*
-	 * Snow/high mountain mask.
-	 */
-	elevation_maps[RW_ELEVATION_SNOW] = rustg_dbp_generate("[terrain_seed]", "[RW_TERRAIN_NOISE_SCALE]", "[terrain_scale]", "[map_width]", "0.45", "1.1")
+	return RW_CLIMATE_LOW
 
 
+/datum/rimworld_planet/proc/get_humidity_level(x, y)
+	if(!is_valid_coordinate(x, y))
+		return RW_CLIMATE_LOW
 
+	if(is_noise_value_true(humidity_maps[RW_CLIMATE_HIGH], x, y))
+		return RW_CLIMATE_HIGH
+
+	if(is_noise_value_true(humidity_maps[RW_CLIMATE_MEDIUM], x, y))
+		return RW_CLIMATE_MEDIUM
+
+	return RW_CLIMATE_LOW
+
+
+/datum/rimworld_planet/proc/get_elevation_level(x, y)
+	if(!is_valid_coordinate(x, y))
+		return RW_ELEVATION_OCEAN
+
+	// Приоритет от самого высокого уровня к самому низкому
+	if(is_noise_value_true(elevation_maps[RW_ELEVATION_SNOW], x, y))
+		return RW_ELEVATION_SNOW
+
+	if(is_noise_value_true(elevation_maps[RW_ELEVATION_MOUNTAIN], x, y))
+		return RW_ELEVATION_MOUNTAIN
+
+	if(is_noise_value_true(elevation_maps[RW_ELEVATION_HIGHLAND], x, y))
+		return RW_ELEVATION_HIGHLAND
+
+	if(is_noise_value_true(elevation_maps[RW_ELEVATION_LOWLAND], x, y))
+		return RW_ELEVATION_LOWLAND
+
+	if(is_noise_value_true(elevation_maps[RW_ELEVATION_COAST], x, y))
+		return RW_ELEVATION_COAST
+
+	if(is_noise_value_true(elevation_maps[RW_ELEVATION_OCEAN], x, y))
+		return RW_ELEVATION_OCEAN
+
+	return RW_ELEVATION_LOWLAND
 
 /datum/rimworld_planet/proc/generate()
-
 	var/start_time = REALTIMEOFDAY
-
-	/*
-	 * Always derive the seeds again in case the master seed was changed
-	 * before generation.
-	 */
 
 	derive_seeds()
 
@@ -486,145 +506,29 @@
 	return TRUE
 
 
-/*
- * --------------------------------------------------------------------------
- * Noise map access
- * --------------------------------------------------------------------------
- */
-
-/datum/rimworld_planet/proc/is_noise_value_true(map, x, y)
-
-	if(!map)
-		return FALSE
-
-	var/coordinate = get_coordinate_index(x, y)
-
-	if(!coordinate)
-		return FALSE
-
-	return text2num(map[coordinate])
-
-
-/datum/rimworld_planet/proc/get_heat_level(x, y)
-
-	if(!is_valid_coordinate(x, y))
-		return RW_CLIMATE_LOW
-
-	if(is_noise_value_true(
-		heat_maps[RW_CLIMATE_HIGH],
-		x,
-		y,
-	))
-		return RW_CLIMATE_HIGH
-
-	if(is_noise_value_true(
-		heat_maps[RW_CLIMATE_MEDIUM],
-		x,
-		y,
-	))
-		return RW_CLIMATE_MEDIUM
-
-	return RW_CLIMATE_LOW
-
-
-/datum/rimworld_planet/proc/get_humidity_level(x, y)
-
-	if(!is_valid_coordinate(x, y))
-		return RW_CLIMATE_LOW
-
-	if(is_noise_value_true(
-		humidity_maps[RW_CLIMATE_HIGH],
-		x,
-		y,
-	))
-		return RW_CLIMATE_HIGH
-
-	if(is_noise_value_true(
-		humidity_maps[RW_CLIMATE_MEDIUM],
-		x,
-		y,
-	))
-		return RW_CLIMATE_MEDIUM
-
-	return RW_CLIMATE_LOW
-
-
-/datum/rimworld_planet/proc/get_elevation_level(x, y)
-
-	if(!is_valid_coordinate(x, y))
-		return RW_ELEVATION_OCEAN
-
-	/*
-	 * Highest threshold first.
-	 */
-
-	if(is_noise_value_true(
-		elevation_maps[RW_ELEVATION_SNOW],
-		x,
-		y,
-	))
-		return RW_ELEVATION_SNOW
-
-	if(is_noise_value_true(
-		elevation_maps[RW_ELEVATION_MOUNTAIN],
-		x,
-		y,
-	))
-		return RW_ELEVATION_MOUNTAIN
-
-	if(is_noise_value_true(
-		elevation_maps[RW_ELEVATION_HIGHLAND],
-		x,
-		y,
-	))
-		return RW_ELEVATION_HIGHLAND
-
-	if(is_noise_value_true(
-		elevation_maps[RW_ELEVATION_COAST],
-		x,
-		y,
-	))
-		return RW_ELEVATION_COAST
-
-	if(is_noise_value_true(
-		elevation_maps[RW_ELEVATION_OCEAN],
-		x,
-		y,
-	))
-		return RW_ELEVATION_OCEAN
-
-	return RW_ELEVATION_LOWLAND
-
 
 /*
  * Temperature
  *
- * For now temperature is a normalized conceptual value derived from:
+ * Normalized conceptual value derived from:
  *
- *     heat noise
+ *     heat noise level
  *     latitude
  *
- * This is useful because planetary temperature should naturally become
- * colder toward the poles.
+ * Planetary temperature naturally becomes colder toward the poles.
  */
 
-
 /datum/rimworld_planet/proc/get_temperature(x, y)
-
 	if(!is_valid_coordinate(x, y))
 		return 0
 
-	var/latitude = abs(
-		((y - 1) / max(1, map_height - 1)) * 2 - 1
-	)
+	var/latitude = abs(((y - 1) / max(1, map_height - 1)) * 2 - 1)
 
 	/*
 	 * Latitude factor:
-	 *
 	 * 0 = equator
 	 * 1 = pole
 	 */
-
 	var/latitude_modifier = 1 - latitude
 
 	var/heat_level = get_heat_level(x, y)
@@ -634,17 +538,14 @@
 	switch(heat_level)
 		if(RW_CLIMATE_HIGH)
 			heat_modifier = 1.0
-
 		if(RW_CLIMATE_MEDIUM)
 			heat_modifier = 0.6
-
 		else
 			heat_modifier = 0.2
 
 	/*
 	 * Weighted combination.
 	 */
-
 	return clamp((latitude_modifier * 0.55) + (heat_modifier * 0.45), 0, 1)
 
 
@@ -656,9 +557,7 @@
  * Then heat + humidity determine the terrestrial biome.
  */
 
-
 /datum/rimworld_planet/proc/get_biome(x, y)
-
 	if(!is_valid_coordinate(x, y))
 		return RW_BIOME_OCEAN
 
@@ -669,76 +568,58 @@
 	/*
 	 * Water.
 	 */
-
 	if(elevation == RW_ELEVATION_OCEAN)
 		return RW_BIOME_OCEAN
 
 	if(elevation == RW_ELEVATION_COAST)
 		return RW_BIOME_BEACH
 
-
 	/*
-	 * Mountains.
+	 * Mountains / high elevation.
 	 */
-
 	if(elevation == RW_ELEVATION_SNOW)
 		return RW_BIOME_SNOW
 
 	if(elevation == RW_ELEVATION_MOUNTAIN)
 		return RW_BIOME_MOUNTAINS
 
-
 	/*
 	 * Cold climates.
 	 */
-
 	if(heat == RW_CLIMATE_LOW)
-
 		switch(humidity)
 			if(RW_CLIMATE_HIGH)
 				return RW_BIOME_TAIGA
-
 			if(RW_CLIMATE_MEDIUM)
 				return RW_BIOME_TUNDRA
-
 			else
 				return RW_BIOME_TUNDRA
-
 
 	/*
 	 * Medium heat.
 	 */
-
 	if(heat == RW_CLIMATE_MEDIUM)
-
 		switch(humidity)
 			if(RW_CLIMATE_HIGH)
 				return RW_BIOME_TEMPERATE_FOREST
-
 			if(RW_CLIMATE_MEDIUM)
 				return RW_BIOME_GRASSLAND
-
 			else
-				return RW_BIOME_GRASSLAND
-
+				return RW_BIOME_SAVANNA
 
 	/*
 	 * Hot climates.
 	 */
-
 	switch(humidity)
 		if(RW_CLIMATE_HIGH)
 			return RW_BIOME_RAINFOREST
-
 		if(RW_CLIMATE_MEDIUM)
 			return RW_BIOME_TROPICAL_FOREST
-
 		else
 			return RW_BIOME_DESERT
 
 
 /*
- *
  * This is intended for server-side requests:
  *
  *     click tile
@@ -750,26 +631,18 @@
  * It is NOT intended to be sent for the whole planet.
  */
 
-
 /datum/rimworld_planet/proc/get_tile_data(x, y)
-
 	if(!is_valid_coordinate(x, y))
 		return null
 
 	return list(
 		"x" = x,
 		"y" = y,
-
 		"elevation" = get_elevation_level(x, y),
-
 		"temperature" = get_temperature(x, y),
-
 		"heat" = get_heat_level(x, y),
-
 		"humidity" = get_humidity_level(x, y),
-
 		"biome" = get_biome(x, y),
-
 		"objects" = get_objects_at(x, y),
 	)
 
@@ -784,9 +657,7 @@
  * An object can later be moved without changing its identity.
  */
 
-
 /datum/rimworld_planet/proc/generate_object_id(prefix = "object")
-
 	var/id
 
 	do
@@ -802,9 +673,7 @@
  * --------------------------------------------------------------------------
  */
 
-
 /datum/rimworld_planet/proc/add_object(datum/rimworld_planet_object/object)
-
 	if(!object)
 		return FALSE
 
@@ -818,10 +687,8 @@
 
 	if(istype(object, /datum/rimworld_planet_object/settlement))
 		settlements[object.id] = object
-
 	else if(istype(object, /datum/rimworld_planet_object/point_of_interest))
 		points_of_interest[object.id] = object
-
 	else if(istype(object, /datum/rimworld_planet_object/road))
 		roads[object.id] = object
 
@@ -834,16 +701,13 @@
  * --------------------------------------------------------------------------
  */
 
-
 /datum/rimworld_planet/proc/remove_object(object_id)
-
 	var/datum/rimworld_planet_object/object = objects[object_id]
 
 	if(!object)
 		return FALSE
 
 	objects -= object_id
-
 	settlements -= object_id
 	points_of_interest -= object_id
 	roads -= object_id
@@ -857,18 +721,14 @@
  * --------------------------------------------------------------------------
  */
 
-
 /datum/rimworld_planet/proc/get_object(object_id)
-
 	return objects[object_id]
 
 
 /datum/rimworld_planet/proc/get_objects_at(x, y)
-
 	var/list/result = list()
 
 	for(var/object_id in objects)
-
 		var/datum/rimworld_planet_object/object = objects[object_id]
 
 		if(object.x == x && object.y == y)
@@ -883,22 +743,13 @@
  * --------------------------------------------------------------------------
  */
 
-
 /datum/rimworld_planet/proc/get_objects_in_radius(x, y, radius)
-
 	var/list/result = list()
 
 	for(var/object_id in objects)
-
 		var/datum/rimworld_planet_object/object = objects[object_id]
 
-		if(get_dist_2d(
-				x,
-				y,
-				object.x,
-				object.y,
-			) <= radius
-		)
+		if(get_dist_2d(x, y, object.x, object.y) <= radius)
 			result += list(object.get_data())
 
 	return result
@@ -910,9 +761,7 @@
  * --------------------------------------------------------------------------
  */
 
-
 /datum/rimworld_planet/proc/move_object(object_id, new_x, new_y)
-
 	var/datum/rimworld_planet_object/object = objects[object_id]
 
 	if(!object)
@@ -928,7 +777,6 @@
 	 * Roads store their own endpoints, so they do not use this procedure
 	 * in normal operation.
 	 */
-
 	return TRUE
 
 
@@ -938,25 +786,22 @@
  * --------------------------------------------------------------------------
  */
 
-
 /datum/rimworld_planet/proc/create_settlement(
 		x,
 		y,
 		settlement_name = "Settlement",
 	)
-
 	if(!is_valid_coordinate(x, y))
 		return null
 
 	var/id = generate_object_id("settlement")
 
-	var/datum/rimworld_planet_object/settlement/object = \
-		new /datum/rimworld_planet_object/settlement(
-			id,
-			x,
-			y,
-			settlement_name,
-		)
+	var/datum/rimworld_planet_object/settlement/object = new /datum/rimworld_planet_object/settlement(
+		id,
+		x,
+		y,
+		settlement_name,
+	)
 
 	if(!add_object(object))
 		qdel(object)
@@ -970,19 +815,17 @@
 		y,
 		poi_name = "Point of Interest",
 	)
-
 	if(!is_valid_coordinate(x, y))
 		return null
 
 	var/id = generate_object_id("poi")
 
-	var/datum/rimworld_planet_object/point_of_interest/object = \
-		new /datum/rimworld_planet_object/point_of_interest(
-			id,
-			x,
-			y,
-			poi_name,
-		)
+	var/datum/rimworld_planet_object/point_of_interest/object = new /datum/rimworld_planet_object/point_of_interest(
+		id,
+		x,
+		y,
+		poi_name,
+	)
 
 	if(!add_object(object))
 		qdel(object)
@@ -997,7 +840,6 @@
 		end_x,
 		end_y,
 	)
-
 	if(!is_valid_coordinate(start_x, start_y))
 		return null
 
@@ -1006,14 +848,13 @@
 
 	var/id = generate_object_id("road")
 
-	var/datum/rimworld_planet_object/road/object = \
-		new /datum/rimworld_planet_object/road(
-			id,
-			start_x,
-			start_y,
-			end_x,
-			end_y,
-		)
+	var/datum/rimworld_planet_object/road/object = new /datum/rimworld_planet_object/road(
+		id,
+		start_x,
+		start_y,
+		end_x,
+		end_y,
+	)
 
 	if(!add_object(object))
 		qdel(object)
@@ -1038,62 +879,44 @@
  * Only interactive objects are serialized.
  */
 
-
 /datum/rimworld_planet/proc/get_interactive_objects()
-
 	var/list/result = list()
 
 	for(var/object_id in objects)
-
 		var/datum/rimworld_planet_object/object = objects[object_id]
-
-		result += list(
-			object.get_data()
-		)
+		result += list(object.get_data())
 
 	return result
 
 
 /datum/rimworld_planet/proc/get_map_data()
-
 	return list(
 		/*
 		 * Planet.
 		 */
-
 		"name" = name,
-
 		"seed" = seed,
-
 		"width" = map_width,
 		"height" = map_height,
-
 
 		/*
 		 * Generator configuration.
 		 *
 		 * TGUI needs these values to produce the exact same visual map.
 		 */
-
 		"terrainScale" = terrain_scale,
 		"heatScale" = heat_scale,
 		"humidityScale" = humidity_scale,
-
 		"noiseScale" = RW_TERRAIN_NOISE_SCALE,
-
 		"heatThresholdLow" = heat_threshold_low,
 		"heatThresholdHigh" = heat_threshold_high,
-
 		"humidityThresholdLow" = humidity_threshold_low,
 		"humidityThresholdHigh" = humidity_threshold_high,
-
 
 		/*
 		 * Interactive objects.
 		 */
-
 		"objects" = get_interactive_objects(),
-
 
 		/*
 		 * Generator version.
@@ -1103,8 +926,7 @@
 		 * Once worlds exist in production, changing the generation algorithm
 		 * should bump this value instead of silently breaking old worlds.
 		 */
-
-		"generatorVersion" = 1,
+		"generatorVersion" = 2,
 	)
 
 
@@ -1114,9 +936,7 @@
  * --------------------------------------------------------------------------
  */
 
-
 /datum/rimworld_planet/Destroy()
-
 	elevation_maps = null
 	heat_maps = null
 	humidity_maps = null
@@ -1129,12 +949,6 @@
 
 	return ..()
 
-
-/*
- * --------------------------------------------------------------------------
- * Cleanup
- * --------------------------------------------------------------------------
- */
 
 #undef RW_CLIMATE_LOW
 #undef RW_CLIMATE_MEDIUM
