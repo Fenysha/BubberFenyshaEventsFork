@@ -91,6 +91,11 @@
 	var/map_width = 2048
 	var/map_height = 1024
 
+
+	var/rotation_angle = 0
+	var/rotation_speed = 1.0
+	var/auto_rotate = TRUE
+
 	var/terrain_scale = RW_ELEVATION_STAMP_SIZE
 	var/heat_scale = RW_HEAT_STAMP_SIZE
 	var/humidity_scale = RW_HUMIDITY_STAMP_SIZE
@@ -520,8 +525,31 @@
 
 	var/temperature = get_temperature(x, y, h)
 
+	var/normalized_latitude = ((y - 1) / max(1, map_height - 1))
+	var/polar_distance = abs((normalized_latitude - 0.5) * 2.0)
+
+	if(polar_distance >= 0.82)
+		if(e == RW_ELEVATION_OCEAN || e == RW_ELEVATION_COAST)
+			return RW_BIOME_SEA_ICE
+		return RW_BIOME_SNOW
+
+	if(polar_distance >= 0.70)
+		var/polar_temperature = temperature
+
+		var/polar_strength = (polar_distance - 0.70) / 0.12
+		polar_strength = clamp(polar_strength, 0, 1)
+
+		polar_temperature = polar_temperature * (1.0 - polar_strength)
+
+		if(e == RW_ELEVATION_OCEAN || e == RW_ELEVATION_COAST)
+			if(polar_temperature <= 0.24)
+				return RW_BIOME_SEA_ICE
+		else
+			if(polar_temperature <= 0.22 || e == RW_ELEVATION_SNOW)
+				return RW_BIOME_SNOW
+
 	if(e == RW_ELEVATION_OCEAN)
-		if(temperature <= 0.8)
+		if(temperature <= 0.14)
 			return RW_BIOME_SEA_ICE
 		return RW_BIOME_OCEAN
 
@@ -555,6 +583,7 @@
 
 	if(hm == RW_CLIMATE_HIGH)
 		return RW_BIOME_RAINFOREST
+
 	if(hm == RW_CLIMATE_MEDIUM)
 		return RW_BIOME_TROPICAL_FOREST
 
@@ -785,6 +814,10 @@
 		"name" = name,
 		"seed" = seed,
 		"planetType" = planet_type,
+
+		"rotationAngle" = rotation_angle,
+		"rotationSpeed" = rotation_speed,
+		"autoRotate"    = auto_rotate,
 
 		"terrainSeed" = terrain_seed,
 		"heatSeed" = heat_seed,

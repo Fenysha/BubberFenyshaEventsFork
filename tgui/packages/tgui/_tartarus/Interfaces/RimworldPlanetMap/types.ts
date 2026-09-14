@@ -84,6 +84,13 @@ export type PlanetMapData = {
   humidityThresholdHigh: number;
 
   /**
+   * Dynamic Rotation parameters.
+   */
+  rotationAngle?: number;
+  rotationSpeed?: number;
+  autoRotate?: BooleanLike;
+
+  /**
    * Interactive objects.
    */
   objects: PlanetObject[];
