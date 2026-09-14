@@ -1,9 +1,7 @@
 import * as THREE from 'three';
 
 import { BIOME_COLORS } from '../generation/constants';
-
 import type { PlanetGenerator } from '../generation/generator';
-
 import type { PlanetMapData } from '../types';
 
 const stableVariation = (x: number, y: number, seed: number): number => {
@@ -30,20 +28,22 @@ export const buildPlanetTexture = (
 
       const color = new THREE.Color(BIOME_COLORS[tile.biome] ?? 0xff00ff);
 
+      color.convertLinearToSRGB();
+
       const variation = stableVariation(x, y, data.terrainSeed);
+
+      color.multiplyScalar(variation);
 
       const index = (y * width + x) * 4;
 
-      pixels[index] = Math.round(
-        THREE.MathUtils.clamp(color.r * variation, 0, 1) * 255,
-      );
+      pixels[index] = Math.round(THREE.MathUtils.clamp(color.r, 0, 1) * 255);
 
       pixels[index + 1] = Math.round(
-        THREE.MathUtils.clamp(color.g * variation, 0, 1) * 255,
+        THREE.MathUtils.clamp(color.g, 0, 1) * 255,
       );
 
       pixels[index + 2] = Math.round(
-        THREE.MathUtils.clamp(color.b * variation, 0, 1) * 255,
+        THREE.MathUtils.clamp(color.b, 0, 1) * 255,
       );
 
       pixels[index + 3] = 255;
@@ -60,13 +60,16 @@ export const buildPlanetTexture = (
 
   texture.colorSpace = THREE.SRGBColorSpace;
 
-  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapS = THREE.RepeatWrapping;
+
   texture.wrapT = THREE.ClampToEdgeWrapping;
 
   texture.magFilter = THREE.NearestFilter;
+
   texture.minFilter = THREE.NearestFilter;
 
   texture.generateMipmaps = false;
+
   texture.flipY = false;
 
   texture.needsUpdate = true;

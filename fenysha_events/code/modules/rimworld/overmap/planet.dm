@@ -397,68 +397,172 @@
 	return RW_ELEVATION_OCEAN
 
 
-/datum/rimworld_planet/proc/get_temperature(x, y)
+/datum/rimworld_planet/proc/get_temperature(x, y, heat_level = null)
+    if(!is_valid_coordinate(x, y))
+        return 0
 
-	if(!is_valid_coordinate(x, y))
-		return 0
+    /*
+     * 0 = south pole
+     * 0.5 = equator
+     * 1 = north pole
+     */
+    var/normalized_latitude = ((y - 1) / max(1, map_height - 1))
 
-	var/latitude = abs(((y - 1) / max(1, map_height - 1)) * 2 - 1)
-	var/latitude_modifier = 1 - latitude
-	var/heat_level = get_heat_level(x, y)
+    /*
+     * 0 = equator
+     * 1 = pole
+     */
+    var/latitude_distance = abs(normalized_latitude - 0.5) * 2.0
 
-	var/heat_modifier = 0.2
+    /*
+     * Strong global temperature gradient.
+     *
+     * Equator stays warm.
+     * Temperature falls rapidly toward poles.
+     */
+    var/latitude_temperature = (max(0, 1.0 - latitude_distance) ** 2.4)
 
-	if(heat_level == RW_CLIMATE_HIGH)
-		heat_modifier = 1.0
-	else if(heat_level == RW_CLIMATE_MEDIUM)
-		heat_modifier = 0.6
+    /*
+     * Local heat is only a regional modifier.
+     */
+    var/heat = heat_level
 
-	return clamp((latitude_modifier * 0.55) + (heat_modifier * 0.45), 0, 1)
+    if(isnull(heat))
+        heat = get_heat_level(x, y)
+
+    var/heat_modifier = -0.08
+
+    if(heat == RW_CLIMATE_MEDIUM)
+        heat_modifier = 0.06
+    else if(heat == RW_CLIMATE_HIGH)
+        heat_modifier = 0.18
+
+    /*
+     * Elevation makes terrain colder.
+     */
+    var/elevation = get_elevation_level(x, y)
+
+    var/elevation_modifier = 0.0
+
+    switch(elevation)
+        if(RW_ELEVATION_HIGHLAND)
+            elevation_modifier = -0.08
+
+        if(RW_ELEVATION_MOUNTAIN)
+            elevation_modifier = -0.18
+
+        if(RW_ELEVATION_SNOW)
+            elevation_modifier = -0.30
+
+    /*
+     * Same weights as PlanetGenerator:
+     *
+     * 88% latitude
+     * 7% regional heat
+     * 5% elevation
+     */
+    var/temperature = (latitude_temperature * 0.88 + heat_modifier * 0.07 + elevation_modifier * 0.05)
+
+    return clamp(temperature,0,1)
 
 
-/datum/rimworld_planet/proc/get_biome(x, y)
+/datum/rimworld_planet/proc/get_biome(
+    x,
+    y,
+    elevation = null,
+    heat = null,
+    humidity = null
+)
+    if(!is_valid_coordinate(x, y))
+        return RW_BIOME_OCEAN
 
-	if(!is_valid_coordinate(x, y))
-		return RW_BIOME_OCEAN
+    var/e = elevation
 
-	var/elevation = get_elevation_level(x, y)
-	var/heat = get_heat_level(x, y)
-	var/humidity = get_humidity_level(x, y)
+    if(isnull(e))
+        e = get_elevation_level(x, y)
 
-	if(elevation == RW_ELEVATION_OCEAN)
-		return RW_BIOME_OCEAN
+    var/h = heat
 
-	if(elevation == RW_ELEVATION_COAST)
-		return RW_BIOME_BEACH
+    if(isnull(h))
+        h = get_heat_level(x, y)
 
-	if(elevation == RW_ELEVATION_SNOW)
-		return RW_BIOME_SNOW
+    var/hm = humidity
 
-	if(elevation == RW_ELEVATION_MOUNTAIN)
-		return RW_BIOME_MOUNTAINS
+    if(isnull(hm))
+        hm = get_humidity_level(x, y)
 
-	if(heat == RW_CLIMATE_LOW)
-		if(humidity == RW_CLIMATE_HIGH)
-			return RW_BIOME_TAIGA
+    var/temperature = get_temperature(x, y, h)
 
-		return RW_BIOME_TUNDRA
+    /*
+     * Water.
+     */
+    if(e == RW_ELEVATION_OCEAN)
+        return RW_BIOME_OCEAN
 
-	if(heat == RW_CLIMATE_MEDIUM)
-		if(humidity == RW_CLIMATE_HIGH)
-			return RW_BIOME_TEMPERATE_FOREST
+    if(e == RW_ELEVATION_COAST)
+        if(temperature < 0.16)
+            return RW_BIOME_SNOW
 
-		if(humidity == RW_CLIMATE_MEDIUM)
-			return RW_BIOME_GRASSLAND
+        return RW_BIOME_BEACH
 
-		return RW_BIOME_SAVANNA
+    /*
+     * Large permanent polar regions.
+     */
+    if(temperature <= 0.08)
+        return RW_BIOME_SNOW
 
-	if(humidity == RW_CLIMATE_HIGH)
-		return RW_BIOME_RAINFOREST
+    /*
+     * Very cold elevated terrain.
+     */
+    if(temperature <= 0.18 && e != RW_ELEVATION_LOWLAND)
+        return RW_BIOME_SNOW
 
-	if(humidity == RW_CLIMATE_MEDIUM)
-		return RW_BIOME_TROPICAL_FOREST
+    /*
+     * Explicit snow elevation.
+     */
+    if(e == RW_ELEVATION_SNOW)
+        return RW_BIOME_SNOW
 
-	return RW_BIOME_DESERT
+    /*
+     * Mountains.
+     */
+    if(e == RW_ELEVATION_MOUNTAIN)
+        if(temperature < 0.26)
+            return RW_BIOME_SNOW
+
+        return RW_BIOME_MOUNTAINS
+
+    /*
+     * Cold.
+     */
+    if(temperature < 0.32)
+        if(hm == RW_CLIMATE_HIGH)
+            return RW_BIOME_TAIGA
+
+        return RW_BIOME_TUNDRA
+
+    /*
+     * Temperate.
+     */
+    if(temperature < 0.52)
+        if(hm == RW_CLIMATE_HIGH)
+            return RW_BIOME_TEMPERATE_FOREST
+
+        if(hm == RW_CLIMATE_MEDIUM)
+            return RW_BIOME_GRASSLAND
+
+        return RW_BIOME_SAVANNA
+
+    /*
+     * Hot / tropical.
+     */
+    if(hm == RW_CLIMATE_HIGH)
+        return RW_BIOME_RAINFOREST
+
+    if(hm == RW_CLIMATE_MEDIUM)
+        return RW_BIOME_TROPICAL_FOREST
+
+    return RW_BIOME_DESERT
 
 
 /datum/rimworld_planet/proc/get_tile_data(x, y)

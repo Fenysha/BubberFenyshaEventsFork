@@ -1,7 +1,23 @@
-import type * as THREE from 'three';
 import type { BooleanLike } from 'tgui-core/react';
+import type * as THREE from 'three';
 
 export type PlanetViewType = 'admin' | 'caravan' | 'overview';
+
+export const selectedPlanetTileToPlanetTile = (
+  tile: SelectedPlanetTile | null | undefined,
+): PlanetTile | null => {
+  if (!tile) {
+    return null;
+  }
+
+  return {
+    biome: tile.biome ?? 'unknown',
+    temperature: tile.temperature ?? 0,
+    heat: tile.heat ?? '0',
+    humidity: tile.humidity ?? '0',
+    elevation: tile.elevation ?? '0',
+  };
+};
 
 export type PlanetMapData = {
   name: string;
@@ -109,7 +125,6 @@ export type PlanetMapData = {
   biomeImages?: Record<string, string>;
 };
 
-
 export type PlanetViewData = {
   caravanId?: string | null;
   originX?: number | null;
@@ -122,7 +137,6 @@ export type PlanetViewData = {
   roadStartY?: number | null;
 };
 
-
 export type PlanetTile = {
   biome: string;
   temperature: number;
@@ -130,7 +144,6 @@ export type PlanetTile = {
   humidity: string;
   elevation: string;
 };
-
 
 export type SelectedPlanetTile = {
   x: number;
@@ -145,13 +158,11 @@ export type SelectedPlanetTile = {
   biome?: string;
 };
 
-
 export type PlanetTileImage = {
   x: number;
   y: number;
   src: string;
 };
-
 
 export type PlanetObject = {
   id: string;
@@ -174,29 +185,18 @@ export type PlanetObject = {
   end_y?: number;
 };
 
-
 export type PlanetGeometry = {
   surfaceGeometry: THREE.BufferGeometry;
   boundaryGeometry: THREE.BufferGeometry;
 };
 
-
 export type PlanetCallbacks = {
-  onTileClick?: (
-    x: number,
-    y: number,
-    tile: PlanetTile,
-  ) => void;
+  onTileClick?: (x: number, y: number, tile: PlanetTile) => void;
 
-  onObjectClick?: (
-    object: PlanetObject,
-  ) => void;
+  onObjectClick?: (object: PlanetObject) => void;
 };
 
-
-export const getPlanetMapIdentity = (
-  data: PlanetMapData,
-): string =>
+export const getPlanetMapIdentity = (data: PlanetMapData): string =>
   [
     data.generationRevision,
     data.seed,

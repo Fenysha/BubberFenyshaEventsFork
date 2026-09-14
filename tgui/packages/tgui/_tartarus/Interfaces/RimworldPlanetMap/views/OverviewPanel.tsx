@@ -1,16 +1,17 @@
 import { useBackend } from 'tgui/backend';
-import { Box, LabeledList, Section, Stack } from 'tgui-core/components';
+
+import { LabeledList, Section, Stack } from 'tgui-core/components';
 
 import type { PlanetMapData, PlanetTile } from '../types';
+
+import { TileDetails } from './TileDetails';
 
 type OverviewPanelProps = {
   localTile?: PlanetTile | null;
 };
 
-export const OverviewPanel = (props: OverviewPanelProps) => {
+export const OverviewPanel = ({ localTile }: OverviewPanelProps) => {
   const { data } = useBackend<PlanetMapData>();
-
-  const selected = data.selectedTile;
 
   return (
     <Stack fill vertical>
@@ -18,27 +19,24 @@ export const OverviewPanel = (props: OverviewPanelProps) => {
         <Section title="Planet">
           <LabeledList>
             <LabeledList.Item label="Name">{data.name}</LabeledList.Item>
+
             <LabeledList.Item label="Type">{data.planetType}</LabeledList.Item>
+
+            <LabeledList.Item label="Seed">{data.seed}</LabeledList.Item>
+
+            <LabeledList.Item label="Map">
+              {data.width} × {data.height}
+            </LabeledList.Item>
+
+            <LabeledList.Item label="Revision">
+              {data.generationRevision}
+            </LabeledList.Item>
           </LabeledList>
         </Section>
       </Stack.Item>
 
       <Stack.Item grow>
-        <Section fill title="Tile">
-          {!selected && <Box color="label">Click a hex to inspect it.</Box>}
-          {!!selected && (
-            <LabeledList>
-              <LabeledList.Item label="X">{selected.x}</LabeledList.Item>
-              <LabeledList.Item label="Y">{selected.y}</LabeledList.Item>
-              <LabeledList.Item label="Biome">
-                {props.localTile?.biome ?? selected.biome ?? '—'}
-              </LabeledList.Item>
-              <LabeledList.Item label="Elevation">
-                {props.localTile?.elevation ?? '—'}
-              </LabeledList.Item>
-            </LabeledList>
-          )}
-        </Section>
+        <TileDetails tile={localTile} title="Tile information" />
       </Stack.Item>
     </Stack>
   );

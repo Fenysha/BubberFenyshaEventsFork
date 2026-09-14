@@ -1,17 +1,9 @@
 export const PLANET_SURFACE_VERTEX_SHADER = `
-varying vec2 vUv;
+varying vec3 vLocalPosition;
 varying vec3 vWorldNormal;
 
 void main() {
-  vec3 n = normalize(position);
-
-  float longitude = atan(n.z, n.x);
-  float latitude = asin(clamp(n.y, -1.0, 1.0));
-
-  vUv = vec2(
-    (longitude + 3.14159265359) / 6.28318530718,
-    (latitude + 1.57079632679) / 3.14159265359
-  );
+  vLocalPosition = position;
 
   vWorldNormal = normalize(
     mat3(modelMatrix) * normal
@@ -32,105 +24,208 @@ uniform vec2 mapSize;
 uniform vec3 sunDirection;
 uniform vec3 nightColor;
 
-varying vec2 vUv;
-
+varying vec3 vLocalPosition;
 varying vec3 vWorldNormal;
 
-float wrapX(float x, float width) {
+const float PI = 3.14159265359;
+const float TWO_PI = 6.28318530718;
+
+float wrapX(
+  float value,
+  float width
+) {
   return mod(
-    mod(x, width) + width,
+    mod(value, width) + width,
     width
   );
 }
 
-void main() {
-  vec2 mapPos = vUv * mapSize;
+vec3 sphericalDirection(
+  float longitude,
+  float latitude
+) {
+  float cosLat = cos(latitude);
 
-  float baseRow = floor(mapPos.y);
+  return normalize(
+    vec3(
+      cosLat * cos(longitude),
+      sin(latitude),
+      cosLat * sin(longitude)
+    )
+  );
+}
 
-  float bestDistance = 1e20;
-  vec2 bestCenter = vec2(0.0);
-
-  /*
-   * Search neighbouring rows/columns.
-   *
-   * This is the actual staggered hex Voronoi
-   * selection instead of rectangular UV cells.
-   */
-  for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
-    float row = baseRow + float(rowOffset);
-
-    if (row < 0.0 || row >= mapSize.y) {
-      continue;
-    }
-
-    float stagger = mod(row, 2.0) > 0.5
+vec3 tileCenterDirection(
+  float column,
+  float row
+) {
+  float stagger =
+    mod(row, 2.0) > 0.5
       ? 0.5
       : 0.0;
 
+  float u =
+    (column + 0.5 + stagger)
+    / mapSize.x;
+
+  u = fract(u);
+
+  float v =
+    (row + 0.5)
+    / mapSize.y;
+
+  float longitude =
+    u * TWO_PI - PI;
+
+  float latitude =
+    v * PI - PI * 0.5;
+
+  return sphericalDirection(
+    longitude,
+    latitude
+  );
+}
+
+vec2 findNearestTile(
+  vec3 surfaceDirection
+) {
+  float longitude =
+    atan(
+      surfaceDirection.z,
+      surfaceDirection.x
+    );
+
+  float latitude =
+    asin(
+      clamp(
+        surfaceDirection.y,
+        -1.0,
+        1.0
+      )
+    );
+
+  float mapX =
+    (
+      longitude + PI
+    ) / TWO_PI * mapSize.x;
+
+  float mapY =
+    (
+      latitude + PI * 0.5
+    ) / PI * mapSize.y;
+
+  float baseRow =
+    floor(mapY);
+
+  float bestDot = -1000.0;
+
+  float bestColumn = 0.0;
+  float bestRow = 0.0;
+
+  /*
+   * Check neighbouring rows.
+   */
+  for (
+    int rowOffset = -2;
+    rowOffset <= 2;
+    rowOffset++
+  ) {
+    float row =
+      baseRow + float(rowOffset);
+
+    if (
+      row < 0.0 ||
+      row >= mapSize.y
+    ) {
+      continue;
+    }
+
+    float stagger =
+      mod(row, 2.0) > 0.5
+        ? 0.5
+        : 0.0;
+
     float baseColumn =
-      floor(mapPos.x - stagger);
-
-    for (int columnOffset = -1; columnOffset <= 1; columnOffset++) {
-      float column =
-        baseColumn + float(columnOffset);
-
-      float wrappedColumn =
-        wrapX(column, mapSize.x);
-
-      vec2 center = vec2(
-        wrappedColumn +
-          0.5 +
-          stagger,
-
-        row + 0.5
+      floor(
+        mapX - stagger
       );
 
-      vec2 delta = mapPos - center;
+    /*
+     * Check neighbouring columns,
+     * including longitude wrapping.
+     */
+    for (
+      int columnOffset = -2;
+      columnOffset <= 2;
+      columnOffset++
+    ) {
+      float column =
+        baseColumn +
+        float(columnOffset);
 
-      /*
-       * Horizontal wrapping.
-       */
-      if (delta.x > mapSize.x * 0.5) {
-        delta.x -= mapSize.x;
-      }
+      float wrappedColumn =
+        wrapX(
+          column,
+          mapSize.x
+        );
 
-      if (delta.x < -mapSize.x * 0.5) {
-        delta.x += mapSize.x;
-      }
+      vec3 center =
+        tileCenterDirection(
+          wrappedColumn,
+          row
+        );
 
-      float distanceToCenter =
-        dot(delta, delta);
+      float currentDot =
+        dot(
+          surfaceDirection,
+          center
+        );
 
-      if (distanceToCenter < bestDistance) {
-        bestDistance = distanceToCenter;
-        bestCenter = center;
+      if (
+        currentDot >
+        bestDot
+      ) {
+        bestDot =
+          currentDot;
+
+        bestColumn =
+          wrappedColumn;
+
+        bestRow =
+          row;
       }
     }
   }
 
-  float selectedRow =
-    clamp(
-      floor(bestCenter.y),
-      0.0,
-      mapSize.y - 1.0
-    );
-
-  float selectedStagger =
-    mod(selectedRow, 2.0) > 0.5
-      ? 0.5
-      : 0.0;
-
-  float selectedColumn =
-    wrapX(
-      floor(bestCenter.x - selectedStagger),
-      mapSize.x
-    );
-
-  vec2 tileUv = vec2(
-    (selectedColumn + 0.5) / mapSize.x,
-    (selectedRow + 0.5) / mapSize.y
+  return vec2(
+    bestColumn,
+    bestRow
   );
+}
+
+void main() {
+  /*
+   * Use actual spherical position,
+   * not interpolated UV coordinates.
+   */
+  vec3 surfaceDirection =
+    normalize(vLocalPosition);
+
+  vec2 tile =
+    findNearestTile(
+      surfaceDirection
+    );
+
+  vec2 tileUv =
+    vec2(
+      (
+        tile.x + 0.5
+      ) / mapSize.x,
+
+      (
+        tile.y + 0.5
+      ) / mapSize.y
+    );
 
   vec3 baseColor =
     texture2D(
@@ -138,9 +233,6 @@ void main() {
       tileUv
     ).rgb;
 
-  /*
-   * Planet lighting.
-   */
   vec3 normal =
     normalize(vWorldNormal);
 
@@ -155,31 +247,39 @@ void main() {
 
   float illumination =
     mix(
-      0.20,
+      0.18,
       1.0,
-      sunlight
+      smoothstep(
+        0.0,
+        0.28,
+        sunlight
+      )
     );
 
   vec3 color =
-    baseColor * illumination;
+    baseColor *
+    illumination;
 
   float night =
     1.0 -
     smoothstep(
-      0.02,
-      0.32,
+      0.0,
+      0.25,
       sunlight
     );
 
   color =
     mix(
       color,
-      nightColor * 0.45,
-      night * 0.15
+      nightColor,
+      night * 0.12
     );
 
   gl_FragColor =
-    vec4(color, 1.0);
+    vec4(
+      color,
+      1.0
+    );
 }
 `;
 
