@@ -9,7 +9,7 @@ DAMAGE_MULTIPLIER 1
 REVIVAL_POD_PLANTS
 
 ## amount of time (in hundredths of seconds) for which a brain retains the "spark of life" after the person's death (set to -1 for infinite)
-REVIVAL_BRAIN_LIFE -1
+REVIVAL_BRAIN_LIFE 3000
 
 ## OOC DURING ROUND ###
 ## Comment this out if you want OOC to be automatically disabled during the round, it will be enabled during the lobby and after the round end results.
@@ -94,10 +94,10 @@ ROUNDSTART_BLUE_ALERT 1
 ## GAME MODES ###
 
 ## Uncomment to not send a roundstart intercept report.
-#NO_INTERCEPT_REPORT
+NO_INTERCEPT_REPORT
 
 ## Uncomment to exclude dynamic info in the roundstart report.
-#NO_DYNAMIC_REPORT
+NO_DYNAMIC_REPORT
 
 ## Percent weight reductions for three of the most recent modes
 
@@ -141,7 +141,7 @@ PROTECT_ROLES_FROM_ANTAGONIST
 ## "NON_HUMAN_WHITELIST": non-humans will not be able to play as heads of staff, unless that job incorporates the "allow non-humans" flag (Which can be configured via a variable or the job config txt).
 ## "ENFORCED": non-humans cannot be heads of staff, only humans can. the "allow non-humans" setting will be ignored.
 ## Uncomment to enable a human authority mode of your choice.
-#HUMAN_AUTHORITY HUMAN_WHITELIST
+HUMAN_AUTHORITY NON_HUMAN_WHITELIST
 
 ## If late-joining players have a chance to become a traitor/changeling
 ALLOW_LATEJOIN_ANTAGONISTS
@@ -173,18 +173,18 @@ EVENTS_FREQUENCY_UPPER 4200
 ## AI ###
 
 ## Allow the AI job to be picked.
-ALLOW_AI
+#ALLOW_AI
 
 ## Allow the AI Multicamera feature to be used by AI players
 ALLOW_AI_MULTICAM
 
 ## Secborg ###
 ## Uncomment to prevent the security cyborg model from being chosen
-#DISABLE_SECBORG
+DISABLE_SECBORG
 
 ## Peacekeeper Borg ###
 ## Uncomment to prevent the peacekeeper cyborg model from being chosen
-#DISABLE_PEACEBORG
+DISABLE_PEACEBORG
 
 ## AWAY MISSIONS ###
 
@@ -213,13 +213,13 @@ MINIMAL_ACCESS_THRESHOLD 10
 ## This is intended for servers with low populations - where there are not enough
 ## players to fill all roles, so players need to do more than just one job.
 ## This option is ignored if MINIMAL_ACCESS_THRESHOLD is used.
-#JOBS_HAVE_MINIMAL_ACCESS
+JOBS_HAVE_MINIMAL_ACCESS
 
 ## Uncomment to give assistants maint access.
-#ASSISTANTS_HAVE_MAINT_ACCESS
+ASSISTANTS_HAVE_MAINT_ACCESS
 
 ## Uncoment to give security maint access. Note that if you deactivate JOBS_HAVE_MINIMAL_ACCESS security already gets maint from that.
-#SECURITY_HAS_MAINT_ACCESS
+SECURITY_HAS_MAINT_ACCESS
 
 ## Uncomment to give everyone maint access.
 EVERYONE_HAS_MAINT_ACCESS
@@ -236,7 +236,7 @@ DEPSEC_ACCESS_LEVEL 1
 
 ## GHOST INTERACTION ###
 ## Uncomment to let ghosts spin chairs. You may be wondering why this is a config option. Don't ask.
-#GHOST_INTERACTION
+GHOST_INTERACTION
 
 ## NEAR-DEATH EXPERIENCE ###
 ## Comment this out to disable mobs hearing ghosts when unconscious and very close to death
@@ -404,30 +404,30 @@ ROUNDSTART_RACES ethereal
 #ROUNDSTART_RACES golem
 
 ## SKYRAT RACES DOWN THERE
-ROUNDSTART_RACES mammal
+# ROUNDSTART_RACES mammal
 ROUNDSTART_RACES vulpkanin
 ROUNDSTART_RACES tajaran
-ROUNDSTART_RACES akula
+#ROUNDSTART_RACES akula
 ROUNDSTART_RACES unathi
 ROUNDSTART_RACES skrell
-ROUNDSTART_RACES humanoid
-ROUNDSTART_RACES xeno
-ROUNDSTART_RACES slimeperson
-ROUNDSTART_RACES podweak
+#ROUNDSTART_RACES humanoid
+#ROUNDSTART_RACES xeno
+#ROUNDSTART_RACES slimeperson
+#ROUNDSTART_RACES podweak
 ROUNDSTART_RACES dwarf
-ROUNDSTART_RACES vox
-ROUNDSTART_RACES aquatic
-ROUNDSTART_RACES insect
+# ROUNDSTART_RACES vox
+# ROUNDSTART_RACES aquatic
+# ROUNDSTART_RACES insect
 ROUNDSTART_RACES synth
 ROUNDSTART_RACES ghoul
 ROUNDSTART_RACES shadekin
 
 ## BUBBER RACES DOWN HERE
-ROUNDSTART_RACES lesser_abductor
-ROUNDSTART_RACES zombie
-ROUNDSTART_RACES protean
-ROUNDSTART_RACES cursekin
-ROUNDSTART_RACES serpentid
+# ROUNDSTART_RACES lesser_abductor
+# ROUNDSTART_RACES zombie
+# ROUNDSTART_RACES protean
+# ROUNDSTART_RACES cursekin
+# ROUNDSTART_RACES serpentid
 
 ##-------------------------------------------------------------------------------------------
 
@@ -462,7 +462,7 @@ OVERFLOW_JOB Assistant
 OVERFLOW_CAP -1
 
 ## Uncomment to bring back old grey suit assistants instead of the now default rainbow colored assistants.
-#GREY_ASSISTANTS
+GREY_ASSISTANTS
 
 ##Limit Spell Choices##
 ## Uncomment to disallow wizards from using certain spells that may be too chaotic/fun for your playerbase
@@ -563,7 +563,7 @@ MAXFINE 2000
 
 ## Comment if you wish to enable title music playing at the lobby screen. This flag is disabled by default to facilitate better code testing on local machines.
 ## Do keep in mind that this flag will not affect individual player's preferences: if they opt-out on your server, it will never play for them.
-DISALLOW_TITLE_MUSIC
+# DISALLOW_TITLE_MUSIC
 
 ## If enabled, then when the database is disabled, all players will get tutorials.
 ## This is primarily useful for developing tutorials. If you have a proper DB setup, you
