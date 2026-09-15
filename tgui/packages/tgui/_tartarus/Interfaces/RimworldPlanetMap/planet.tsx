@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2026 Fenysha
+ * SPDX-License-Identifier: MIT
+ *
+ * Original implementation by Fenysha.
+ */
+
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';

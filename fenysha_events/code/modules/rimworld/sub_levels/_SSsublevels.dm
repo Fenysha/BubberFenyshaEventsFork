@@ -22,27 +22,28 @@ SUBSYSTEM_DEF(sub_levels)
 	root_nodes += root
 	return root
 
-/datum/map_spatial_node/proc/allocate_sub_level(req_w, req_h, res_id = 0, res_name = "")
-	if(reserved)
-		return null
+/datum/controller/subsystem/sub_levels/proc/create_sub_level(width, height, name = "")
+	width = clamp(width, SUB_LEVEL_MIN_SIZE, SUB_LEVEL_MAX_SIZE)
+	height = clamp(height, SUB_LEVEL_MIN_SIZE, SUB_LEVEL_MAX_SIZE)
+	if(!length(name))
+		name = "Sub-Level #[next_id]"
 
-	if(bounds.width < req_w * 2 || bounds.height < req_h * 2)
-		if(bounds.width >= req_w && bounds.height >= req_h && !split)
-			reserved = TRUE
-			reservation = new /datum/turf_reservation/sub_level(src, res_id, res_name)
-			return reservation
-		return null
-
-	if(!split)
-		if(!subdivide())
-			return null
-
-	for(var/datum/map_spatial_node/child in children)
-		var/datum/turf_reservation/sub_level/res = child.allocate_sub_level(req_w, req_h, res_id, res_name)
+	var/res_id = next_id++
+	var/datum/turf_reservation/sub_level/res = null
+	for(var/datum/map_spatial_node/root in root_nodes)
+		res = root.allocate_sub_level(width, height, res_id, name)
 		if(res)
-			return res
+			break
 
-	return null
+	if(!res)
+		var/datum/map_spatial_node/new_root = allocate_new_root_z_level()
+		res = new_root.allocate_sub_level(width, height, res_id, name)
+
+	if(!res)
+		CRASH("SSsub_levels: Faied to allocate sublevel of size [width]x[height]")
+
+	active_reservations["[res.id]"] = res
+	return res
 
 /datum/controller/subsystem/sub_levels/proc/unregister_reservation(datum/turf_reservation/sub_level/res)
 	if(res.id)
@@ -77,7 +78,7 @@ SUBSYSTEM_DEF(sub_levels)
 
 	if(target && user)
 		user.forceMove(target)
-		to_chat(user, span_notice("Телепортирован в под-уровень '[res.name]' ([res.width]x[res.height], Z:[BL.z])."))
+		to_chat(user, span_notice("Jumped to sub-level '[res.name]' ([res.width]x[res.height], Z:[BL.z])."))
 		return TRUE
 	return FALSE
 

@@ -73,6 +73,28 @@
 	if(calculate_cordon_turfs(BL, TR))
 		generate_cordon()
 
+/datum/map_spatial_node/proc/allocate_sub_level(req_w, req_h, res_id = 0, res_name = "")
+	if(reserved)
+		return null
+
+	if(bounds.width < req_w * 2 || bounds.height < req_h * 2)
+		if(bounds.width >= req_w && bounds.height >= req_h && !split)
+			reserved = TRUE
+			reservation = new /datum/turf_reservation/sub_level(src, res_id, res_name)
+			return reservation
+		return null
+
+	if(!split)
+		if(!subdivide())
+			return null
+
+	for(var/datum/map_spatial_node/child in children)
+		var/datum/turf_reservation/sub_level/res = child.allocate_sub_level(req_w, req_h, res_id, res_name)
+		if(res)
+			return res
+
+	return null
+
 /datum/turf_reservation/sub_level/Destroy()
 	SSsub_levels.unregister_reservation(src)
 	if(node)
@@ -162,4 +184,12 @@
 	return length(inners) ? pick(inners) : null
 
 /datum/turf_reservation/sub_level/proc/contains_turf(turf/T)
-	return SUB_LEVEL_CONTAINS_TURF(src, T)
+	if(!T)
+		return FALSE
+
+	var/turf/BL = get_bottom_left_turf()
+	var/turf/TR = get_top_right_turf()
+	if(!BL || !TR || T.z != BL.z)
+		return FALSE
+
+	return (T.x >= BL.x && T.x <= TR.x && T.y >= BL.y && T.y <= TR.y)

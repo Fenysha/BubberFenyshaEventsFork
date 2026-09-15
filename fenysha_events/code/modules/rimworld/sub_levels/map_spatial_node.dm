@@ -44,28 +44,6 @@
 	split = TRUE
 	return TRUE
 
-/datum/map_spatial_node/proc/allocate_sub_level(req_w, req_h, res_id = 0, res_name = "")
-	if(reserved)
-		return null
-
-	if(bounds.width <= req_w * 2 || bounds.height <= req_h * 2)
-		if(bounds.width >= req_w && bounds.height >= req_h && !split)
-			reserved = TRUE
-			reservation = new /datum/turf_reservation/sub_level(src, res_id, res_name)
-			return reservation
-		return null
-
-	if(!split)
-		if(!subdivide())
-			return null
-
-	for(var/datum/map_spatial_node/child in children)
-		var/datum/turf_reservation/sub_level/res = child.allocate_sub_level(req_w, req_h, res_id, res_name)
-		if(res)
-			return res
-
-	return null
-
 /datum/map_spatial_node/proc/check_merge()
 	if(!split)
 		return

@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2026 Fenysha
+ * SPDX-License-Identifier: MIT
+ *
+ * Original implementation by Fenysha.
+ */
+
+
 SUBSYSTEM_DEF(rimworld_planetmap)
 
 	name = "\[RW\] Planet map"
