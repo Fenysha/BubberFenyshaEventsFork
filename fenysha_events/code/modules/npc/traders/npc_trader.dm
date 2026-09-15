@@ -310,10 +310,6 @@
 	if(!ai_controller || ai_controller.ai_status == AI_IDLE)
 		return FALSE
 
-	var/interupt_key = ai_controller.blackboard[BB_NPC_TRADER_INTERUPT_KEY] || BB_BASIC_MOB_CURRENT_TARGET
-	if(ai_controller.blackboard[interupt_key])
-		return TRUE
-
 	var/list/allowed_factions = ai_controller.blackboard[BB_NPC_TRAIDER_TRAID_FACTION]
 	if((allowed_factions && length(allowed_factions)) && !faction_check(allowed_factions, user.get_faction()))
 		return TRUE

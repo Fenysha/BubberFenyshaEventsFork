@@ -75,8 +75,8 @@
 	. = ..()
 	AddElement(/datum/element/footstep, FOOTSTEP_MOB_SHOE)
 	AddElement(/datum/element/basic_eating)
-	AddElement(/datum/element/ai_pull_awareness)
-	AddElement(/datum/element/ai_social_awareness)
+	// AddElement(/datum/element/ai_pull_awareness)
+	// AddElement(/datum/element/ai_social_awareness)
 	AddElement(/datum/element/npc_talk, CALLBACK(src, PROC_REF(handle_npc_talk)))
 
 	if(randomize_mutant_colors || (species != /datum/species/human))

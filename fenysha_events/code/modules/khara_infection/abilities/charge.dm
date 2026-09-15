@@ -1,8 +1,3 @@
-/datum/ai_planning_subtree/targeted_mob_ability/check_range/charge
-	ability_key = BB_MOB_ABILITY_FAST_CHARGE
-	min_range = 3
-	finish_planning = FALSE
-
 
 /datum/action/cooldown/mob_cooldown/boss_charge
 	name = "Charge"
@@ -73,12 +68,6 @@
 #define ZIGZAG_CHARGE_DAMAGE_MIN 15
 #define ZIGZAG_CHARGE_DAMAGE_MAX 25
 #define ZIGZAG_CHARGE_KNOCKDOWN (2 SECONDS)
-
-
-/datum/ai_planning_subtree/targeted_mob_ability/check_range/zigzag_charge
-	ability_key = BB_MOB_ABILITY_ZIGZAG_CHARGE
-	min_range = 2
-	finish_planning = FALSE
 
 /datum/action/cooldown/mob_cooldown/zigzag_charge
 	name = "Zigzag Charge"

@@ -2,7 +2,6 @@
 	icon = 'fenysha_events/icons/turf/shipwalls.dmi'
 	icon_state = "ship_walls-0"
 	base_icon_state = "ship_walls"
-	sheet_type = /obj/item/stack/sheet/spaceship
 	// Must stay in ascending group id order; unsorted lists make bitmask_smooth() runtime on every neighbour check.
 	smoothing_groups = SMOOTH_GROUP_SHUTTLE_PARTS + SMOOTH_GROUP_CLOSED_TURFS
 	canSmoothWith = SMOOTH_GROUP_SHUTTLE_PARTS + SMOOTH_GROUP_AIRLOCK + SMOOTH_GROUP_SURVIVAL_TITANIUM_POD
@@ -47,7 +46,6 @@
 	icon = 'fenysha_events/icons/turf/shipwindows.dmi'
 	icon_state = "pod_window-0"
 	base_icon_state = "pod_window"
-	glass_type = /obj/item/stack/sheet/spaceshipglass
 	smoothing_flags = SMOOTH_BITMASK
 	smoothing_groups = SMOOTH_GROUP_SHUTTLE_PARTS + SMOOTH_GROUP_WINDOW_FULLTILE_SHUTTLE
 	canSmoothWith = SMOOTH_GROUP_WINDOW_FULLTILE_SHUTTLE

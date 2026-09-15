@@ -28,11 +28,11 @@
 #define BB_MEMORY_LAST_TARGET "bb_memo_last_target"
 #define BB_MEMORY_LAST_TARGET_TIME "bb_memo_last_target_time"
 
-#define BB_MEMORY_ENEMIES_LIST "enemies_list"
-
 #define KHARA_CAST_LESSER "Lesser"
 #define KHARA_CAST_ADAPTED "Adapted"
 #define KHARA_CAST_ASSIMILATING "Assimilating"
+
+#define BB_MEMORY_ENEMIES_LIST "enemies_list"
 
 #define KHARA_POWER_WEAK 1
 #define KHARA_POWER_STRONG 2

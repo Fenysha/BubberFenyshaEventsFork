@@ -154,7 +154,7 @@
 	mob_biotypes = MOB_ORGANIC|MOB_BUG|MOB_SPECIAL
 	speak_emote = list("growls")
 	damage_coeff = list(BRUTE = 1.3, BURN = 0.7, TOX = 0, STAMINA = 1, OXY = 0)
-	basic_mob_flags = FLAMMABLE_MOB|IMMUNE_TO_FISTS|REMAIN_DENSE_WHILE_DEAD
+	basic_mob_flags = FLAMMABLE_MOB|REMAIN_DENSE_WHILE_DEAD
 	status_flags = CANSTUN
 	speed = 1
 	maxHealth = 250
@@ -350,7 +350,7 @@
 			stop_regenerating()
 			return
 
-		var/heal_mod = HAS_TRAIT(src, TRAIT_CRITICAL_CONDITION) ? 2 : 1
+		var/heal_mod = stat
 		if(health_regen_per_second && adjust_brute_loss(-1 * heal_mod * health_regen_per_second * seconds_per_tick, updating_health = FALSE))
 			updatehealth()
 

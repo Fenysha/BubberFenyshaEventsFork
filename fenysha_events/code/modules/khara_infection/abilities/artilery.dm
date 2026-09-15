@@ -7,11 +7,6 @@
 #define ARTILLERY_DIRECT_DAMAGE 60
 #define ARTILLERY_AOE_DAMAGE 30
 
-/datum/ai_planning_subtree/targeted_mob_ability/check_range/artilery
-	ability_key = BB_MOB_ABILITY_ARTILERY
-	min_range = 3
-	finish_planning = TRUE
-
 /obj/projectile/mutant_artillery
 	name = "blood artillery shell"
 	icon_state = "blastwave"

@@ -130,7 +130,7 @@ GLOBAL_LIST_EMPTY(sneak_pod_list)
 
 	if(!next_pod)
 		return FALSE
-	if(C.stat != CONSCIOUS)
+	if(C.stat != STABLE)
 		return
 	if(HAS_TRAIT(C, TRAIT_GIANT))
 		C.balloon_alert(C, "I'm too big!")
@@ -157,7 +157,7 @@ GLOBAL_LIST_EMPTY(sneak_pod_list)
 	return TRUE
 
 /obj/structure/sneak_pod/proc/attempt_move(mob/living/C, atom/newloc)
-	if(!(C in crawlers) || C.stat != CONSCIOUS || !C.resting)
+	if(!(C in crawlers) || C.stat != STABLE || !C.resting)
 		balloon_alert(C, "Movement interrupted!")
 		return
 	if(!can_crawl_into(C, newloc))

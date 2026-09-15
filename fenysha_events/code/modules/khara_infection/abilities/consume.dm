@@ -21,7 +21,7 @@
 		return FALSE
 
 	var/amputation_chance = base_amputation_chance
-	if(carbon_target.stat != CONSCIOUS)
+	if(carbon_target.stat != STABLE)
 		amputation_chance += 100
 
 	StartCooldown()

@@ -727,7 +727,7 @@
 /datum/component/buckshot_roulette_participant/proc/can_perform_turn()
 	if(player_completely_dead() || HAS_TRAIT(player, TRAIT_BUCKSHOT_SKIPTURN))
 		return FALSE
-	if(player.stat != CONSCIOUS || player.incapacitated)
+	if(player.stat != STABLE || player.incapacitated)
 		return FALSE
 	return TRUE
 

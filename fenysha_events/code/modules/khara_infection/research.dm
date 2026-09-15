@@ -132,7 +132,7 @@
 	)
 
 /obj/item/ranged_experi_scanner/ranged_interact_with_atom(atom/interacting_with, mob/living/user, list/modifiers)
-	if(QDELETED(interacting_with) || QDELETED(user) || user.stat != CONSCIOUS)
+	if(QDELETED(interacting_with) || QDELETED(user) || user.stat != STABLE)
 		return
 	if(get_dist(get_turf(src), interacting_with) > max_distance)
 		balloon_alert(user, "Too far away!")

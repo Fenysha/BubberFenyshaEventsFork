@@ -112,7 +112,7 @@
 /obj/machinery/door/manual_airlock/proc/start_turning(mob/user, opening = TRUE)
 	if(auto_turning || valve_blocked)
 		return
-	if(!user.Adjacent(src) || user.stat != CONSCIOUS)
+	if(!user.Adjacent(src) || user.stat != STABLE)
 		return
 
 	if((turns == max_turns && !opening) || (turns == 0 && opening))
@@ -150,7 +150,7 @@
 	update_overlays()
 
 /obj/machinery/door/manual_airlock/proc/continue_turning(mob/user, opening = FALSE)
-	if(!auto_turning || valve_blocked || turns >= max_turns || !user.Adjacent(src) || user.stat != CONSCIOUS)
+	if(!auto_turning || valve_blocked || turns >= max_turns || !user.Adjacent(src) || user.stat != STABLE)
 		stop_turning(user)
 		return
 
@@ -175,7 +175,7 @@
 	addtimer(CALLBACK(src, PROC_REF(continue_turning), user, opening), turn_delay)
 
 /obj/machinery/door/manual_airlock/proc/can_continue_turning(mob/user)
-	return user.Adjacent(src) && user.stat == CONSCIOUS && !valve_blocked && auto_turning
+	return user.Adjacent(src) && user.stat == STABLE && !valve_blocked && auto_turning
 
 
 /obj/machinery/door/manual_airlock/attackby(obj/item/I, mob/user, params)

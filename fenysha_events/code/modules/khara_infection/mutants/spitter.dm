@@ -58,21 +58,3 @@
 
 
 /datum/ai_controller/basic_controller/khara_spitter
-	blackboard = list(
-		BB_TARGETING_STRATEGY = /datum/targeting_strategy/basic,
-		BB_TARGET_PRIORITY_STRATEGY = /datum/target_priority_strategy/mutant,
-		BB_BASIC_MOB_FLEE_DISTANCE = 5,
-		BB_BASIC_MOB_OVERRIDE_VISION_RANGE = 15,
-	)
-
-	ai_movement = /datum/ai_movement/jps
-	idle_behavior = /datum/idle_behavior/idle_random_walk/less_walking
-	planning_subtrees = list(
-		/datum/ai_planning_subtree/escape_captivity,
-		/datum/ai_planning_subtree/pull_response/push_after,
-		/datum/ai_planning_subtree/target_retaliate/check_faction,
-		/datum/ai_planning_subtree/weighted_find_target,
-		/datum/ai_planning_subtree/targeted_mob_ability/knockdown,
-		/datum/ai_planning_subtree/flee_target/if_to_close,
-		/datum/ai_planning_subtree/targeted_mob_ability/check_range/fogball,
-	)

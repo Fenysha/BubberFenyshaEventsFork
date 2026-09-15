@@ -72,18 +72,3 @@
 
 
 /datum/ai_controller/basic_controller/boss_spreader
-	blackboard = list(
-		BB_TARGETING_STRATEGY = /datum/targeting_strategy/basic,
-		BB_BASIC_MOB_FLEE_DISTANCE = 5,
-	)
-
-	ai_movement = /datum/ai_movement/basic_avoidance
-	idle_behavior = /datum/idle_behavior/idle_random_walk/less_walking
-	planning_subtrees = list(
-		/datum/ai_planning_subtree/escape_captivity,
-		/datum/ai_planning_subtree/simple_find_target,
-		/datum/ai_planning_subtree/target_retaliate/check_faction,
-		/datum/ai_planning_subtree/targeted_mob_ability/check_range/rumble,
-		/datum/ai_planning_subtree/targeted_mob_ability/check_range/meat_ball,
-		/datum/ai_planning_subtree/targeted_mob_ability/check_range/bone_shards,
-	)

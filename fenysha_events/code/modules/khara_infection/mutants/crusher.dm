@@ -48,19 +48,3 @@
 
 
 /datum/ai_controller/basic_controller/crusher
-
-	blackboard = list(
-		BB_TARGETING_STRATEGY = /datum/targeting_strategy/basic,
-	)
-
-	ai_movement = /datum/ai_movement/basic_avoidance
-	idle_behavior = /datum/idle_behavior/idle_random_walk/less_walking
-	planning_subtrees = list(
-		/datum/ai_planning_subtree/escape_captivity,
-		/datum/ai_planning_subtree/simple_find_target,
-		/datum/ai_planning_subtree/target_retaliate/check_faction,
-		/datum/ai_planning_subtree/targeted_mob_ability/check_range/crushing_wave,
-		/datum/ai_planning_subtree/targeted_mob_ability/check_range/crushing_charge,
-		/datum/ai_planning_subtree/basic_melee_attack_subtree,
-	)
-

@@ -7,12 +7,6 @@
 #define KHARA_MAX_LINE_SPREAD 8
 
 
-/datum/ai_planning_subtree/targeted_mob_ability/check_range/fogball
-	ability_key = BB_MOB_ABILITY_FOGBALL
-	min_range = 2
-	finish_planning = TRUE
-
-
 /obj/projectile/khara_fog
 	name = "khara fog sphere"
 	icon_state = "leaper"
