@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Fenysha
+ * All rights reserved.
+ */
+
 export const PLANET_SURFACE_VERTEX_SHADER = `
 varying vec3 vLocalPosition;
 varying vec3 vWorldNormal;

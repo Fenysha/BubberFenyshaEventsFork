@@ -1,8 +1,6 @@
 /*
  * Copyright (c) 2026 Fenysha
- * SPDX-License-Identifier: MIT
- *
- * Original implementation by Fenysha.
+ * All rights reserved.
  */
 
 import type { PlanetMapData, PlanetTile } from '../types';
