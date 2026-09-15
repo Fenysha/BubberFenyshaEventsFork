@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2026 Fenysha
- * SPDX-License-Identifier: MIT
- *
- * Original implementation by Fenysha.
- */
-
 /datum/rimworld_planet_object
 
 	var/id

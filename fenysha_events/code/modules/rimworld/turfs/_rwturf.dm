@@ -238,3 +238,84 @@
 
 
 /turf/closed/rw_wall/rock
+
+
+/turf/open/rimworld
+	name = "ground"
+	desc = "The ground."
+	baseturfs = /turf/open/bottom_or_region
+
+	/// Fertility of the soil (0.0 - 2.0+). Affects plant growth speed and quality.
+	var/fertility = 1.0
+	/// Higher = can support heavier buildings/furniture.
+	var/structure_weight_capacity = 100
+	/// Current total weight of all structures/objects currently on this turf.
+	var/current_structure_weight = 0
+
+	/// Whether this terrain is considered "fertile" for automatic farm designation etc.
+	var/is_fertile = TRUE
+	/// Whether heavy machinery / multi-tile structures can be placed here.
+	var/can_support_heavy = TRUE
+	/// Whether the turf can be tilled / turned into farmland.
+	var/can_be_tilled = TRUE
+
+	var/tiled_type
+	/// Softness of the ground (affects sinking, footprints, some constructions).
+	var/softness = 0.5		// 0.0 = hard rock, 1.0 = deep mud
+
+
+	/// Temperature modifier (added to ambient temperature).
+	var/temperature_mod = 0
+	/// Humidity / moisture level (0.0 – 1.0). Affects plant growth & some buildings.
+	var/moisture = 0.5
+	/// Whether water can pool / flood here easily.
+	var/floodable = TRUE
+
+
+
+/turf/open/rimworld/Initialize(mapload)
+	. = ..()
+	update_appearance()
+
+
+/turf/open/rimworld/proc/get_fertility()
+	return fertility
+
+
+/turf/open/rimworld/proc/get_structure_weight_capacity()
+	return structure_weight_capacity
+
+
+/turf/open/rimworld/proc/can_support_structure(obj/structure/S)
+	return TRUE
+
+
+/turf/open/rimworld/proc/add_structure_weight(amount)
+	current_structure_weight = max(0, current_structure_weight + amount)
+	return current_structure_weight
+
+
+/turf/open/rimworld/proc/remove_structure_weight(amount)
+	current_structure_weight = max(0, current_structure_weight - amount)
+	return current_structure_weight
+
+
+/turf/open/rimworld/proc/is_overloaded()
+	return current_structure_weight > structure_weight_capacity
+
+
+/turf/open/rimworld/proc/can_grow_plants()
+	return is_fertile && fertility > 0.1
+
+
+/turf/open/rimworld/proc/get_growth_multiplier()
+	return fertility * (0.5 + moisture * 0.5)
+
+
+/turf/open/rimworld/attackby(obj/item/I, mob/user, params)
+	if(can_be_tilled && I.tool_behaviour == TOOL_HOE && tiled_type)
+		if(do_after(user, 3 SECONDS, src))
+			to_chat(user, span_notice("You till the ground."))
+			ChangeTurf(tiled_type)
+			return TRUE
+	return ..()
