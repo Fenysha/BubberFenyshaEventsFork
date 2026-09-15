@@ -1,14 +1,15 @@
 # Fenýsha Events
 
 **Fenýsha Events** is a downstream fork of [Bubberstation](https://github.com/Bubberstation/Bubberstation), focused on running custom events and story-driven rounds.
+
 ## About
 
 Fenýsha Events differs from its upstream primarily by:
 
-* Removing explicit sexual and ERP content.
-* Reducing furry-oriented content.
-* Removing kink-focused mechanics and content.
-* Focusing on events, storytelling and atmosphere.
+- Removing explicit sexual and ERP content.
+- Reducing furry-oriented content.
+- Removing kink-focused mechanics and content.
+- Focusing on events, storytelling and atmosphere.
 
 The project is intended primarily as a platform for custom events and experimental scenarios.
 
@@ -55,8 +56,8 @@ Fenýsha Events is based on TGStation and may incorporate changes from upstream.
 
 Upstream documentation and development resources can be found at:
 
-* [TGStation](https://github.com/tgstation/tgstation)
-* [TGStation Wiki](https://tgstation13.org/wiki/Main_Page)
+- [TGStation](https://github.com/tgstation/tgstation)
+- [TGStation Wiki](https://tgstation13.org/wiki/Main_Page)
 
 ---
 

@@ -347,7 +347,7 @@
 			if(new_body_size == RESIZE_DEFAULT_SIZE)
 				alterer.update_transform(RESIZE_DEFAULT_SIZE / alterer.current_size)
 			else
-				alterer.update_transform(new_body_size)
+				alterer.update_transform(new_body_size / alterer.current_size)
 
 #if !defined(NOERP)
 		if("Genitals")

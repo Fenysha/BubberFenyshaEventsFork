@@ -171,6 +171,7 @@
 #endif
 		"borg_upgrade_expand",
 		"borg_upgrade_shrink",
+		"waddle_module"
 	)
 
 /datum/techweb_node/borg_utility/New()
