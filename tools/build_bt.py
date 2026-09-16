@@ -268,7 +268,8 @@ def main() -> int:
         # BUBBER EDIT BEGIN
         repo_root / 'modular_skyrat',
         repo_root / 'modular_zubbers',
-        repo_root / 'fenysha_events'
+        repo_root / 'fenysha_events',
+        repo_root / 'modular_zubbers'
         # BUBBER EDIT END
     ]
 
