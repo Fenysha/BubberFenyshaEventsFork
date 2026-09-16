@@ -1,4 +1,10 @@
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   Box,
   Button,
@@ -517,13 +523,19 @@ export const TrainMapCanvas = (props: TrainMapCanvasProps) => {
       ctx.lineCap = 'round';
 
       ctx.beginPath();
-      ctx.moveTo(path.start_x + perpX * railGap, path.start_y + perpY * railGap);
+      ctx.moveTo(
+        path.start_x + perpX * railGap,
+        path.start_y + perpY * railGap,
+      );
       ctx.lineTo(cx + perpX * railGap, cy + perpY * railGap);
       ctx.lineTo(path.end_x + perpX * railGap, path.end_y + perpY * railGap);
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.moveTo(path.start_x - perpX * railGap, path.start_y - perpY * railGap);
+      ctx.moveTo(
+        path.start_x - perpX * railGap,
+        path.start_y - perpY * railGap,
+      );
       ctx.lineTo(cx - perpX * railGap, cy - perpY * railGap);
       ctx.lineTo(path.end_x - perpX * railGap, path.end_y - perpY * railGap);
       ctx.stroke();
@@ -1346,7 +1358,9 @@ const StationEditorModal = (props: StationEditorModalProps) => {
           </Stack.Item>
         </Stack>
 
-        <Box style={{ maxHeight: '440px', overflowY: 'auto', paddingRight: '6px' }}>
+        <Box
+          style={{ maxHeight: '440px', overflowY: 'auto', paddingRight: '6px' }}
+        >
           <Section title="Variables">
             <LabeledList>
               <LabeledList.Item label="Name">

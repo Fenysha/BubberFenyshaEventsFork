@@ -82,7 +82,6 @@ export const BIOME_MOUNTAINS = 'mountains';
 
 export const BIOME_SNOW = 'snow';
 
-
 /*
  * ----------------------------------------------------------------------------
  * Planet materials
@@ -123,26 +122,26 @@ export const SUBBIOME_MARSH = 'marsh';
  *
  * These are purely visual and do not affect generation.
  */
-
 export const BIOME_COLORS: Record<string, number> = {
-  [BIOME_OCEAN]: 0x0f2a40,
-  [BIOME_COAST]: 0x2d688d,
-  [BIOME_LAKE]: 0x255d83,
-  [BIOME_RIVER]: 0x337aa5,
+  [BIOME_OCEAN]: 0x2b526b,
+  [BIOME_COAST]: 0x5f8795,
+  [BIOME_LAKE]: 0x4f7f91,
+  [BIOME_RIVER]: 0x6b9bb0,
 
-  [BIOME_BEACH]: 0xe3cb8b,
-  [BIOME_DESERT]: 0xd4a155,
-  [BIOME_SAVANNA]: 0xa09650,
+  [BIOME_BEACH]: 0xd8c58f,
 
-  [BIOME_GRASSLAND]: 0x6b9e42,
-  [BIOME_TEMPERATE_FOREST]: 0x3d703e,
-  [BIOME_TAIGA]: 0x275240,
+  [BIOME_DESERT]: 0xd6bd7a,
+  [BIOME_SAVANNA]: 0xb0aa68,
+  [BIOME_GRASSLAND]: 0x8da85b,
 
-  [BIOME_TROPICAL_FOREST]: 0x2a854d,
-  [BIOME_RAINFOREST]: 0x155e34,
+  [BIOME_TEMPERATE_FOREST]: 0x5d8248,
+  [BIOME_TAIGA]: 0x4f6947,
+  [BIOME_TROPICAL_FOREST]: 0x4d8749,
+  [BIOME_RAINFOREST]: 0x39733f,
 
-  [BIOME_TUNDRA]: 0x7d8a7c,
-  [BIOME_MOUNTAINS]: 0x636c75,
-  [BIOME_SEA_ICE]: 0xcce3ed,
-  [BIOME_SNOW]: 0xf0f5f7,
+  [BIOME_TUNDRA]: 0x8f9789,
+  [BIOME_MOUNTAINS]: 0x77786f,
+
+  [BIOME_SEA_ICE]: 0xbfcbd0,
+  [BIOME_SNOW]: 0xe4e5df,
 };

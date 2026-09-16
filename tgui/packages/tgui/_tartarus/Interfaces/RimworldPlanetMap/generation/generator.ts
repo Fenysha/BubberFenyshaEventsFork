@@ -30,85 +30,92 @@ import {
   ELEVATION_OCEAN,
   ELEVATION_SNOW,
   PLANET_MATERIAL_GRANITE,
+  PLANET_MATERIAL_JADE,
   PLANET_MATERIAL_LIMESTONE,
   PLANET_MATERIAL_MARBLE,
+  PLANET_MATERIAL_NONE,
   PLANET_MATERIAL_OBSIDIAN,
   PLANET_MATERIAL_SANDSTONE,
   PLANET_MATERIAL_SLATE,
-  PLANET_MATERIAL_JADE,
-  PLANET_MATERIAL_NONE,
   SUBBIOME_DEEP_OCEAN,
-  SUBBIOME_SHORE,
-  SUBBIOME_HILLS,
-  SUBBIOME_ROCKY_HILLS,
-  SUBBIOME_MARSH,
-  SUBBIOME_PLAINS,
   SUBBIOME_FOREST,
   SUBBIOME_FOREST_HILLS,
-  SUBBIOME_TUNDRA_PLAINS,
-  SUBBIOME_SNOWFIELDS,
   SUBBIOME_FROZEN_OCEAN,
+  SUBBIOME_HILLS,
+  SUBBIOME_MARSH,
+  SUBBIOME_PLAINS,
+  SUBBIOME_ROCKY_HILLS,
+  SUBBIOME_SHORE,
+  SUBBIOME_SNOWFIELDS,
+  SUBBIOME_TUNDRA_PLAINS,
 } from './constants';
 
-import { DbpSampler } from './dbp';
+import {
+  getLayerCell,
+  getPlanetLayers,
+  type PlanetLayer,
+  type PlanetLayers,
+  type PlanetLayersHandle,
+} from './planetNoise';
+
+export type PlanetGeneratorState = 'loading' | 'ready' | 'error';
 
 export class PlanetGenerator {
   public readonly data: PlanetMapData;
-
-  private readonly terrain: DbpSampler;
-  private readonly heat: DbpSampler;
-  private readonly humidity: DbpSampler;
-  private readonly geology: DbpSampler;
-  private readonly precipitation: DbpSampler;
+  private readonly layersHandle: PlanetLayersHandle;
 
   public constructor(data: PlanetMapData) {
     this.data = data;
-
-    this.terrain = new DbpSampler({
-      seed: data.terrainSeed,
-      accuracy: data.noiseScale,
-      stampSize: data.terrainScale,
-      worldSize: data.width,
-    });
-
-    this.heat = new DbpSampler({
-      seed: data.heatSeed,
-      accuracy: data.noiseScale,
-      stampSize: data.heatScale,
-      worldSize: data.width,
-    });
-
-    this.humidity = new DbpSampler({
-      seed: data.humiditySeed,
-      accuracy: data.noiseScale,
-      stampSize: data.humidityScale,
-      worldSize: data.width,
-    });
-
-    this.geology = new DbpSampler({
-      seed: data.geologySeed,
-      accuracy: data.noiseScale,
-      stampSize: data.geologyScale,
-      worldSize: data.width,
-    });
-
-    this.precipitation = new DbpSampler({
-      seed: data.precipitationSeed,
-      accuracy: data.noiseScale,
-      stampSize: data.precipitationScale,
-      worldSize: data.width,
-    });
+    this.layersHandle = getPlanetLayers(
+      data.seed,
+      data.generationRevision,
+      data.width,
+      data.height,
+    );
   }
+
+  public getState(): PlanetGeneratorState {
+    if (this.layersHandle.hasError()) {
+      return 'error';
+    }
+    if (this.layersHandle.isReady()) {
+      return 'ready';
+    }
+    return 'loading';
+  }
+
+  public isReady(): boolean {
+    return this.layersHandle.isReady();
+  }
+
+  public isLoading(): boolean {
+    return this.layersHandle.isLoading();
+  }
+
+  public getError(): Error | null {
+    return this.layersHandle.getError();
+  }
+
+  private getLayers(): PlanetLayers | null {
+    return this.layersHandle.get();
+  }
+
+  private clamp(value: number, low: number, high: number): number {
+    return Math.max(low, Math.min(high, value));
+  }
+
+  // ==========================================================================
+  // Coordinates
+  // ==========================================================================
 
   public getRowWidth(y: number): number {
     if (y < 1 || y > this.data.height) {
       return this.data.width;
     }
-
     const v = (y - 0.5) / this.data.height;
-    const latitudeRad = ((v * 180 - 90) * Math.PI) / 180;
+    const latitudeDeg = v * 180 - 90;
+    const latitudeRad = (latitudeDeg * Math.PI) / 180;
     const count = Math.round(this.data.width * Math.cos(latitudeRad));
-
     return Math.max(6, count);
   }
 
@@ -119,152 +126,83 @@ export class PlanetGenerator {
     return x >= 1 && x <= this.getRowWidth(y);
   }
 
-  private sampleContinuousNoise(
-    sampler: DbpSampler,
+  /** Sample X on the full rectangular grid (1-based). */
+  private getSampleX(x: number, y: number): number {
+    const rowWidth = this.getRowWidth(y);
+    const normalizedX = (x - 0.5) / rowWidth;
+    return this.clamp(
+      Math.floor(normalizedX * this.data.width) + 1,
+      1,
+      this.data.width,
+    );
+  }
+
+  private readLayer(
+    layer: PlanetLayer | undefined,
     x: number,
     y: number,
   ): number {
-    const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
-    const polarFade = Math.sin(baseLat * Math.PI);
-
-    const s = (this.data.seed ?? 0) % 5000;
-    const angleDeg = (x * 0.85 + y * 0.35 + s) % 360;
-    // Смещение y плавно уменьшается к полюсам
-    const warpY = Math.max(
-      1,
-      Math.min(
-        this.data.height,
-        Math.round(y + Math.sin((angleDeg * Math.PI) / 180) * 15 * polarFade),
-      ),
-    );
-
-    const rowWidth = this.getRowWidth(warpY);
-    const normX = (x - 0.5) / rowWidth;
-    const noiseX = normX * this.data.width;
-    const noiseY = warpY - 0.5;
-
-    const x0 = Math.floor(noiseX);
-    const y0 = Math.floor(noiseY);
-    const x1 = (x0 + 1) % this.data.width;
-    const y1 = Math.min(this.data.height - 1, Math.max(0, y0 + 1));
-
-    const fx = noiseX - x0;
-    const fy = noiseY - y0;
-
-    const v00 = sampler.sample(x0, y0);
-    const v10 = sampler.sample(x1, y0);
-    const v01 = sampler.sample(x0, y1);
-    const v11 = sampler.sample(x1, y1);
-
-    const top = v00 + fx * (v10 - v00);
-    const bottom = v01 + fx * (v11 - v01);
-
-    return top + fy * (bottom - top);
+    if (!layer || !this.valid(x, y)) {
+      return 0;
+    }
+    const sampleX = this.getSampleX(x, y);
+    return getLayerCell(layer, sampleX, y);
   }
 
-  private isNoiseInRange(
-    sampler: DbpSampler,
-    x: number,
-    y: number,
-    low: number,
-    high: number,
-  ): boolean {
-    const val = this.sampleContinuousNoise(sampler, x, y);
-    return val >= low && val < high;
-  }
+  // ==========================================================================
+  // Elevation (0..5)
+  // ==========================================================================
 
   public getElevation(x: number, y: number): string {
     if (!this.valid(x, y)) {
       return ELEVATION_OCEAN;
     }
 
-    if (
-      this.isNoiseInRange(
-        this.terrain,
-        x,
-        y,
-        this.data.elevationSnowLow,
-        this.data.elevationSnowHigh,
-      )
-    ) {
-      return ELEVATION_SNOW;
+    const layers = this.getLayers();
+    if (!layers) {
+      return ELEVATION_OCEAN;
     }
 
-    if (
-      this.isNoiseInRange(
-        this.terrain,
-        x,
-        y,
-        this.data.elevationMountainLow,
-        this.data.elevationMountainHigh,
-      )
-    ) {
-      return ELEVATION_MOUNTAIN;
+    const value = this.readLayer(layers.elevation, x, y);
+    switch (value) {
+      case 1:
+        return ELEVATION_COAST;
+      case 2:
+        return ELEVATION_LOWLAND;
+      case 3:
+        return ELEVATION_HIGHLAND;
+      case 4:
+        return ELEVATION_MOUNTAIN;
+      case 5:
+        return ELEVATION_SNOW;
+      default:
+        return ELEVATION_OCEAN;
     }
-
-    if (
-      this.isNoiseInRange(
-        this.terrain,
-        x,
-        y,
-        this.data.elevationHighlandLow,
-        this.data.elevationHighlandHigh,
-      )
-    ) {
-      return ELEVATION_HIGHLAND;
-    }
-
-    if (
-      this.isNoiseInRange(
-        this.terrain,
-        x,
-        y,
-        this.data.elevationLowlandLow,
-        this.data.elevationLowlandHigh,
-      )
-    ) {
-      return ELEVATION_LOWLAND;
-    }
-
-    if (
-      this.isNoiseInRange(
-        this.terrain,
-        x,
-        y,
-        this.data.elevationCoastLow,
-        this.data.elevationCoastHigh,
-      )
-    ) {
-      return ELEVATION_COAST;
-    }
-
-    return ELEVATION_OCEAN;
   }
+
+  // ==========================================================================
+  // Climate (0..2)
+  // ==========================================================================
 
   public getHeat(x: number, y: number): string {
     if (!this.valid(x, y)) {
       return CLIMATE_LOW;
     }
 
-    if (
-      this.isNoiseInRange(this.heat, x, y, this.data.heatThresholdHigh, 1.1)
-    ) {
-      return CLIMATE_HIGH;
+    const layers = this.getLayers();
+    if (!layers) {
+      return CLIMATE_LOW;
     }
 
-    if (
-      this.isNoiseInRange(
-        this.heat,
-        x,
-        y,
-        this.data.heatThresholdLow,
-        this.data.heatThresholdHigh,
-      )
-    ) {
-      return CLIMATE_MEDIUM;
+    const value = this.readLayer(layers.heat, x, y);
+    switch (value) {
+      case 1:
+        return CLIMATE_MEDIUM;
+      case 2:
+        return CLIMATE_HIGH;
+      default:
+        return CLIMATE_LOW;
     }
-
-    return CLIMATE_LOW;
   }
 
   public getHumidity(x: number, y: number): string {
@@ -272,32 +210,25 @@ export class PlanetGenerator {
       return CLIMATE_LOW;
     }
 
-    if (
-      this.isNoiseInRange(
-        this.humidity,
-        x,
-        y,
-        this.data.humidityThresholdHigh,
-        1.1,
-      )
-    ) {
-      return CLIMATE_HIGH;
+    const layers = this.getLayers();
+    if (!layers) {
+      return CLIMATE_LOW;
     }
 
-    if (
-      this.isNoiseInRange(
-        this.humidity,
-        x,
-        y,
-        this.data.humidityThresholdLow,
-        this.data.humidityThresholdHigh,
-      )
-    ) {
-      return CLIMATE_MEDIUM;
+    const value = this.readLayer(layers.humidity, x, y);
+    switch (value) {
+      case 1:
+        return CLIMATE_MEDIUM;
+      case 2:
+        return CLIMATE_HIGH;
+      default:
+        return CLIMATE_LOW;
     }
-
-    return CLIMATE_LOW;
   }
+
+  // ==========================================================================
+  // Latitude
+  // ==========================================================================
 
   private getLatitudeOffset(
     x: number,
@@ -311,39 +242,29 @@ export class PlanetGenerator {
     const e = elevation ?? this.getElevation(x, y);
 
     const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
-    // Затухание волн у полюсов (0 на полюсах, 1 на экваторе)
     const polarFade = Math.sin(baseLat * Math.PI);
 
-    let climateOffset = 0.0;
-    if (h === CLIMATE_HIGH) {
-      climateOffset += 0.08;
-    } else if (h === CLIMATE_LOW) {
-      climateOffset -= 0.08;
-    }
+    let climateOffset = 0;
+    if (h === CLIMATE_HIGH) climateOffset += 0.08;
+    else if (h === CLIMATE_LOW) climateOffset -= 0.08;
 
-    if (hm === CLIMATE_HIGH) {
-      climateOffset -= 0.04;
-    } else if (hm === CLIMATE_LOW) {
-      climateOffset += 0.04;
-    }
+    if (hm === CLIMATE_HIGH) climateOffset -= 0.04;
+    else if (hm === CLIMATE_LOW) climateOffset += 0.04;
 
-    if (e === ELEVATION_MOUNTAIN || e === ELEVATION_HIGHLAND) {
+    if (e === ELEVATION_MOUNTAIN || e === ELEVATION_HIGHLAND)
       climateOffset -= 0.07;
-    } else if (e === ELEVATION_SNOW) {
-      climateOffset -= 0.12;
-    }
+    else if (e === ELEVATION_SNOW) climateOffset -= 0.12;
 
     const s = (this.data.seed ?? 0) % 10000;
-    const angle1Deg = (x * 0.35 + y * 0.15 + s) % 360;
-    const angle2Deg = (x * 0.85 - y * 0.45 + s * 1.3) % 360;
-    const angle3Deg = (x * 1.7 + y * 1.1 + s * 2.1) % 360;
-
+    const angle1 = (x * 0.35 + y * 0.15 + s) % 360;
+    const angle2 = (x * 0.85 - y * 0.45 + s * 1.3) % 360;
+    const angle3 = (x * 1.7 + y * 1.1 + s * 2.1) % 360;
     const toRad = Math.PI / 180;
-    // Гасим волны на полюсах через polarFade
+
     const wave =
-      (Math.sin(angle1Deg * toRad) * 0.06 +
-        Math.cos(angle2Deg * toRad) * 0.04 +
-        Math.sin(angle3Deg * toRad) * 0.02) *
+      (Math.sin(angle1 * toRad) * 0.06 +
+        Math.cos(angle2 * toRad) * 0.04 +
+        Math.sin(angle3 * toRad) * 0.02) *
       polarFade;
 
     return climateOffset + wave;
@@ -353,40 +274,13 @@ export class PlanetGenerator {
     if (!this.valid(x, y)) {
       return 0;
     }
-
     const normalized = (y - 0.5) / this.data.height;
     return normalized * 180 - 90;
   }
 
-  private getMaterialFromNoise(value: number, elevation: string): string {
-    // Ocean cells do not expose a surface rock type.
-    if (elevation === ELEVATION_OCEAN) {
-      return PLANET_MATERIAL_NONE;
-    }
-
-    const geology = value;
-
-    if (geology < 0.20) {
-      return PLANET_MATERIAL_GRANITE;
-    }
-    if (geology < 0.40) {
-      return PLANET_MATERIAL_LIMESTONE;
-    }
-    if (geology < 0.60) {
-      return PLANET_MATERIAL_SANDSTONE;
-    }
-    if (geology < 0.78) {
-      return PLANET_MATERIAL_SLATE;
-    }
-    if (geology < 0.94) {
-      return PLANET_MATERIAL_MARBLE;
-    }
-    if (geology < 0.995) {
-      return PLANET_MATERIAL_OBSIDIAN;
-    }
-
-    return PLANET_MATERIAL_JADE;
-  }
+  // ==========================================================================
+  // Materials (geology 0..6)
+  // ==========================================================================
 
   public getMaterial(x: number, y: number, elevation?: string): string {
     if (!this.valid(x, y)) {
@@ -394,9 +288,33 @@ export class PlanetGenerator {
     }
 
     const e = elevation ?? this.getElevation(x, y);
-    const geology = this.sampleContinuousNoise(this.geology, x, y);
+    if (e === ELEVATION_OCEAN) {
+      return PLANET_MATERIAL_NONE;
+    }
 
-    return this.getMaterialFromNoise(geology, e);
+    const layers = this.getLayers();
+    if (!layers) {
+      return PLANET_MATERIAL_GRANITE;
+    }
+
+    const geo = this.readLayer(layers.geology, x, y);
+    switch (geo) {
+      case 0:
+      case 1:
+        return PLANET_MATERIAL_GRANITE;
+      case 2:
+        return PLANET_MATERIAL_LIMESTONE;
+      case 3:
+        return PLANET_MATERIAL_SANDSTONE;
+      case 4:
+        return PLANET_MATERIAL_SLATE;
+      case 5:
+        return PLANET_MATERIAL_MARBLE;
+      case 6:
+        return PLANET_MATERIAL_OBSIDIAN;
+      default:
+        return PLANET_MATERIAL_GRANITE;
+    }
   }
 
   private getMaterialTemperatureModifier(material: string): number {
@@ -404,7 +322,7 @@ export class PlanetGenerator {
       case PLANET_MATERIAL_GRANITE:
         return -0.005;
       case PLANET_MATERIAL_LIMESTONE:
-        return 0.000;
+        return 0;
       case PLANET_MATERIAL_SANDSTONE:
         return 0.012;
       case PLANET_MATERIAL_SLATE:
@@ -419,6 +337,10 @@ export class PlanetGenerator {
         return 0;
     }
   }
+
+  // ==========================================================================
+  // Temperature
+  // ==========================================================================
 
   public getTemperature(
     x: number,
@@ -437,25 +359,18 @@ export class PlanetGenerator {
 
     const latitudeOffset = this.getLatitudeOffset(x, y, heatLevel);
     const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
-    const normalizedLatitude = Math.max(
-      0,
-      Math.min(1, baseLat + latitudeOffset),
-    );
-
-    const latitudeDistance = Math.abs(normalizedLatitude - 0.5) * 2.0;
-    const latitudeTemperature = Math.max(0, 1.0 - latitudeDistance) ** 1.8;
+    const normalizedLatitude = this.clamp(baseLat + latitudeOffset, 0, 1);
+    const latitudeDistance = Math.abs(normalizedLatitude - 0.5) * 2;
+    const latitudeTemperature = Math.max(0, 1 - latitudeDistance) ** 1.8;
 
     let heatModifier = -0.15;
-    if (heatLevel === CLIMATE_MEDIUM) {
-      heatModifier = 0.05;
-    } else if (heatLevel === CLIMATE_HIGH) {
-      heatModifier = 0.22;
-    }
+    if (heatLevel === CLIMATE_MEDIUM) heatModifier = 0.05;
+    else if (heatLevel === CLIMATE_HIGH) heatModifier = 0.22;
 
-    let elevationModifier = 0.0;
+    let elevationModifier = 0;
     switch (e) {
       case ELEVATION_HIGHLAND:
-        elevationModifier = -0.10;
+        elevationModifier = -0.1;
         break;
       case ELEVATION_MOUNTAIN:
         elevationModifier = -0.22;
@@ -468,27 +383,24 @@ export class PlanetGenerator {
     const materialModifier = this.getMaterialTemperatureModifier(m);
 
     const temperature =
-      latitudeTemperature * 0.60 +
+      latitudeTemperature * 0.6 +
       (heatModifier + 0.15) * 0.25 +
       (elevationModifier + 0.35) * 0.15 +
       materialModifier;
 
-    return Math.max(0, Math.min(1, temperature));
+    return this.clamp(temperature, 0, 1);
   }
 
-  private getPrecipitationNoiseCategory(
-    x: number,
-    y: number,
-  ): number {
-    const value = this.sampleContinuousNoise(this.precipitation, x, y);
+  // ==========================================================================
+  // Precipitation (layer 0..2)
+  // ==========================================================================
 
-    if (value < 0.33) {
+  private getPrecipitationNoiseCategory(x: number, y: number): number {
+    const layers = this.getLayers();
+    if (!layers) {
       return 0;
     }
-    if (value < 0.66) {
-      return 1;
-    }
-    return 2;
+    return this.readLayer(layers.precipitation, x, y);
   }
 
   private getPrecipitationBase(category: number): number {
@@ -496,25 +408,10 @@ export class PlanetGenerator {
       case 2:
         return 0.78;
       case 1:
-        return 0.50;
+        return 0.5;
       default:
-        return 0.20;
+        return 0.2;
     }
-  }
-
-  private getPrecipitationCategoryServerCompatible(
-    category: number,
-    humidity: string,
-  ): number {
-    let value = this.getPrecipitationBase(category);
-
-    if (humidity === CLIMATE_HIGH) {
-      value += 0.06;
-    } else if (humidity === CLIMATE_LOW) {
-      value -= 0.05;
-    }
-
-    return value;
   }
 
   public getPrecipitation(
@@ -532,27 +429,21 @@ export class PlanetGenerator {
     const hm = humidity ?? this.getHumidity(x, y);
     const e = elevation ?? this.getElevation(x, y);
 
-    let precipitation = this.getPrecipitationCategoryServerCompatible(
+    let precipitation = this.getPrecipitationBase(
       this.getPrecipitationNoiseCategory(x, y),
-      hm,
     );
 
+    if (hm === CLIMATE_HIGH) precipitation += 0.06;
+    else if (hm === CLIMATE_LOW) precipitation -= 0.05;
+
     const latitude = Math.abs(this.getLatitude(x, y)) / 90;
-
-    // Moist equatorial belt, drier polar air.
     precipitation += (1 - latitude) * 0.08 - latitude * 0.05;
+    precipitation += (t - 0.5) * 0.1;
 
-    // Warm air can carry more moisture; very cold cells get a modest penalty.
-    precipitation += (t - 0.5) * 0.10;
+    if (e === ELEVATION_HIGHLAND) precipitation += 0.025;
+    else if (e === ELEVATION_MOUNTAIN) precipitation += 0.055;
 
-    // Elevated terrain provides a mild orographic boost.
-    if (e === ELEVATION_HIGHLAND) {
-      precipitation += 0.025;
-    } else if (e === ELEVATION_MOUNTAIN) {
-      precipitation += 0.055;
-    }
-
-    return Math.max(0, Math.min(1, precipitation));
+    return this.clamp(precipitation, 0, 1);
   }
 
   public getRainfall(
@@ -563,9 +454,7 @@ export class PlanetGenerator {
   ): number {
     const t = temperature ?? this.getTemperature(x, y);
     const p = precipitation ?? this.getPrecipitation(x, y, t);
-
-    // Transition between rain and snow around the freezing band.
-    const rainFactor = Math.max(0, Math.min(1, (t - 0.20) / 0.18));
+    const rainFactor = this.clamp((t - 0.2) / 0.18, 0, 1);
     return p * rainFactor;
   }
 
@@ -590,16 +479,16 @@ export class PlanetGenerator {
     const e = elevation ?? this.getElevation(x, y);
 
     let value = p * 0.78;
-    if (e === ELEVATION_LOWLAND) {
-      value += 0.08;
-    } else if (e === ELEVATION_HIGHLAND) {
-      value += 0.03;
-    } else if (e === ELEVATION_MOUNTAIN) {
-      value -= 0.04;
-    }
+    if (e === ELEVATION_LOWLAND) value += 0.08;
+    else if (e === ELEVATION_HIGHLAND) value += 0.03;
+    else if (e === ELEVATION_MOUNTAIN) value -= 0.04;
 
-    return Math.max(0, Math.min(1, value));
+    return this.clamp(value, 0, 1);
   }
+
+  // ==========================================================================
+  // Sub-biome / Biome (same logic as before)
+  // ==========================================================================
 
   public getSubBiome(
     x: number,
@@ -619,24 +508,17 @@ export class PlanetGenerator {
     const t = temperature ?? this.getTemperature(x, y);
 
     if (e === ELEVATION_OCEAN) {
-      if (b === BIOME_SEA_ICE) {
-        return SUBBIOME_FROZEN_OCEAN;
-      }
-      return SUBBIOME_DEEP_OCEAN;
+      return b === BIOME_SEA_ICE ? SUBBIOME_FROZEN_OCEAN : SUBBIOME_DEEP_OCEAN;
     }
-
     if (b === BIOME_SEA_ICE || b === BIOME_SNOW) {
       return SUBBIOME_SNOWFIELDS;
     }
-
     if (e === ELEVATION_COAST || b === BIOME_BEACH || b === BIOME_COAST) {
       return SUBBIOME_SHORE;
     }
-
     if (e === ELEVATION_MOUNTAIN || b === BIOME_MOUNTAINS) {
       return SUBBIOME_ROCKY_HILLS;
     }
-
     if (e === ELEVATION_HIGHLAND) {
       if (
         b === BIOME_TEMPERATE_FOREST ||
@@ -648,11 +530,9 @@ export class PlanetGenerator {
       }
       return SUBBIOME_HILLS;
     }
-
     if (e === ELEVATION_LOWLAND && p >= 0.72 && t > 0.24) {
       return SUBBIOME_MARSH;
     }
-
     if (
       b === BIOME_TEMPERATE_FOREST ||
       b === BIOME_TROPICAL_FOREST ||
@@ -661,11 +541,9 @@ export class PlanetGenerator {
     ) {
       return SUBBIOME_FOREST;
     }
-
     if (b === BIOME_TUNDRA) {
       return SUBBIOME_TUNDRA_PLAINS;
     }
-
     return SUBBIOME_PLAINS;
   }
 
@@ -677,124 +555,76 @@ export class PlanetGenerator {
     humidity?: string,
     material?: string,
   ): string {
+    if (!this.valid(x, y)) {
+      return BIOME_OCEAN;
+    }
+
     const e = elevation ?? this.getElevation(x, y);
     const h = heat ?? this.getHeat(x, y);
     const hm = humidity ?? this.getHumidity(x, y);
     const m = material ?? this.getMaterial(x, y, e);
-
     const temperature = this.getTemperature(x, y, h, e, m);
-
     const latitudeOffset = this.getLatitudeOffset(x, y, h, hm, e);
     const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
-    const normalizedLatitude = Math.max(
-      0,
-      Math.min(1, baseLat + latitudeOffset),
-    );
-
-    const polarDistance = Math.abs((normalizedLatitude - 0.5) * 2.0);
+    const normalizedLatitude = this.clamp(baseLat + latitudeOffset, 0, 1);
+    const polarDistance = Math.abs((normalizedLatitude - 0.5) * 2);
 
     if (polarDistance >= 0.82) {
-      if (e === ELEVATION_OCEAN || e === ELEVATION_COAST) {
-        return BIOME_SEA_ICE;
-      }
-
-      return BIOME_SNOW;
+      return e === ELEVATION_OCEAN || e === ELEVATION_COAST
+        ? BIOME_SEA_ICE
+        : BIOME_SNOW;
     }
 
     if (polarDistance >= 0.7) {
-      const polarStrength = Math.max(
-        0,
-        Math.min(1, (polarDistance - 0.7) / 0.12),
-      );
-
-      const polarTemperature = temperature * (1.0 - polarStrength);
+      const polarStrength = this.clamp((polarDistance - 0.7) / 0.12, 0, 1);
+      const polarTemperature = temperature * (1 - polarStrength);
 
       if (e === ELEVATION_OCEAN || e === ELEVATION_COAST) {
-        if (polarTemperature <= 0.24) {
-          return BIOME_SEA_ICE;
-        }
-      } else {
-        if (polarTemperature <= 0.22 || e === ELEVATION_SNOW) {
-          return BIOME_SNOW;
-        }
+        if (polarTemperature <= 0.24) return BIOME_SEA_ICE;
+      } else if (polarTemperature <= 0.22 || e === ELEVATION_SNOW) {
+        return BIOME_SNOW;
       }
     }
 
     if (e === ELEVATION_OCEAN) {
-      if (temperature <= 0.14) {
-        return BIOME_SEA_ICE;
-      }
-
-      return BIOME_OCEAN;
+      return temperature <= 0.14 ? BIOME_SEA_ICE : BIOME_OCEAN;
     }
 
     if (e === ELEVATION_COAST) {
-      if (temperature <= 0.1) {
-        return BIOME_SEA_ICE;
-      }
-
-      if (temperature >= 0.45 && hm === CLIMATE_LOW) {
-        return BIOME_BEACH;
-      }
-
+      if (temperature <= 0.1) return BIOME_SEA_ICE;
+      if (temperature >= 0.45 && hm === CLIMATE_LOW) return BIOME_BEACH;
       return BIOME_COAST;
     }
 
-    if (temperature <= 0.1 || e === ELEVATION_SNOW) {
-      return BIOME_SNOW;
-    }
-
-    if (temperature <= 0.2 && e === ELEVATION_MOUNTAIN) {
-      return BIOME_SNOW;
-    }
-
-    if (e === ELEVATION_MOUNTAIN) {
-      return BIOME_MOUNTAINS;
-    }
+    if (temperature <= 0.1 || e === ELEVATION_SNOW) return BIOME_SNOW;
+    if (temperature <= 0.2 && e === ELEVATION_MOUNTAIN) return BIOME_SNOW;
+    if (e === ELEVATION_MOUNTAIN) return BIOME_MOUNTAINS;
 
     if (temperature < 0.3) {
-      if (hm === CLIMATE_HIGH) {
-        return BIOME_TAIGA;
-      }
-
-      return BIOME_TUNDRA;
+      return hm === CLIMATE_HIGH ? BIOME_TAIGA : BIOME_TUNDRA;
     }
 
     if (temperature < 0.55) {
-      if (hm === CLIMATE_HIGH) {
-        return BIOME_TEMPERATE_FOREST;
-      }
-
-      if (hm === CLIMATE_MEDIUM) {
-        return BIOME_GRASSLAND;
-      }
-
+      if (hm === CLIMATE_HIGH) return BIOME_TEMPERATE_FOREST;
+      if (hm === CLIMATE_MEDIUM) return BIOME_GRASSLAND;
       return BIOME_SAVANNA;
     }
 
-    if (hm === CLIMATE_HIGH) {
-      return BIOME_RAINFOREST;
-    }
-
-    if (hm === CLIMATE_MEDIUM) {
-      return BIOME_TROPICAL_FOREST;
-    }
-
+    if (hm === CLIMATE_HIGH) return BIOME_RAINFOREST;
+    if (hm === CLIMATE_MEDIUM) return BIOME_TROPICAL_FOREST;
     return BIOME_DESERT;
   }
+
+  // ==========================================================================
+  // Tile
+  // ==========================================================================
 
   public getTile(x: number, y: number): PlanetTile {
     const elevation = this.getElevation(x, y);
     const heat = this.getHeat(x, y);
     const humidity = this.getHumidity(x, y);
     const material = this.getMaterial(x, y, elevation);
-    const temperature = this.getTemperature(
-      x,
-      y,
-      heat,
-      elevation,
-      material,
-    );
+    const temperature = this.getTemperature(x, y, heat, elevation, material);
     const precipitation = this.getPrecipitation(
       x,
       y,

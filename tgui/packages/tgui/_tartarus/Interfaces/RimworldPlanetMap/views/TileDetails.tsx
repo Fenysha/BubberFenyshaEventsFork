@@ -1,24 +1,13 @@
-import {
-  Box,
-  Icon,
-  LabeledList,
-  Section,
-} from 'tgui-core/components';
+import { Box, Icon, LabeledList, Section } from 'tgui-core/components';
 
-import type {
-  PlanetTile,
-  SelectedPlanetTile,
-} from '../types';
+import type { PlanetTile, SelectedPlanetTile } from '../types';
 
 type TileDetailsProps = {
   tile?: PlanetTile | SelectedPlanetTile | null;
   title?: string;
 };
 
-const formatNumber = (
-  value: number | undefined | null,
-  digits = 3,
-) => {
+const formatNumber = (value: number | undefined | null, digits = 3) => {
   if (value == null || Number.isNaN(value)) {
     return '—';
   }
@@ -26,9 +15,7 @@ const formatNumber = (
   return value.toFixed(digits);
 };
 
-const formatPercent = (
-  value: number | undefined | null,
-) => {
+const formatPercent = (value: number | undefined | null) => {
   if (value == null || Number.isNaN(value)) {
     return '—';
   }
@@ -36,18 +23,14 @@ const formatPercent = (
   return `${(value * 100).toFixed(1)}%`;
 };
 
-const formatEnum = (
-  value: string | undefined | null,
-) => {
+const formatEnum = (value: string | undefined | null) => {
   if (!value) {
     return '—';
   }
 
   return value
     .replaceAll('_', ' ')
-    .replace(/\b\w/g, (character) =>
-      character.toUpperCase(),
-    );
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 };
 
 export const TileDetails = ({
@@ -56,9 +39,7 @@ export const TileDetails = ({
 }: TileDetailsProps) => {
   if (!tile) {
     return (
-      <Section title={title}>
-        Click a tile on the planet to inspect it.
-      </Section>
+      <Section title={title}>Click a tile on the planet to inspect it.</Section>
     );
   }
 
@@ -72,9 +53,7 @@ export const TileDetails = ({
         </LabeledList.Item>
 
         <LabeledList.Item label="Latitude">
-          {tile.latitude != null
-            ? `${formatNumber(tile.latitude, 2)}°`
-            : '—'}
+          {tile.latitude != null ? `${formatNumber(tile.latitude, 2)}°` : '—'}
         </LabeledList.Item>
 
         <LabeledList.Item label="Biome">
@@ -122,38 +101,23 @@ export const TileDetails = ({
         </LabeledList.Item>
 
         <LabeledList.Item label="Objects">
-          {!!tile.objects?.length ? (
+          {tile.objects?.length ? (
             tile.objects.map((object) => (
-              <Box
-                key={object.id}
-                mb={0.5}
-              >
-                {object.icon && (
-                  <Icon
-                    name={object.icon}
-                    mr={1}
-                  />
-                )}
+              <Box key={object.id} mb={0.5}>
+                {object.icon && <Icon name={object.icon} mr={1} />}
 
                 <strong>{object.name}</strong>
 
-                <Box
-                  as="span"
-                  color="label"
-                  ml={1}
-                >
+                <Box as="span" color="label" ml={1}>
                   ({formatEnum(object.type)})
                 </Box>
               </Box>
             ))
           ) : (
-            <Box color="label">
-              None
-            </Box>
+            <Box color="label">None</Box>
           )}
         </LabeledList.Item>
       </LabeledList>
     </Section>
   );
 };
-

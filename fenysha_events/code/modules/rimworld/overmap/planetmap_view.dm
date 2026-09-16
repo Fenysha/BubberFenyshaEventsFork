@@ -13,7 +13,6 @@
 	var/selected_y
 	var/selected_object_id
 
-
 /datum/planetmap_view/New(mob/user, datum/rimworld_planet/new_planet)
 	viewer = user
 	planet = new_planet
@@ -60,6 +59,8 @@
 	data["canSelectTiles"] = can_select_tiles
 	return data
 
+/datum/planetmap_view/ui_assets(mob/user)
+	return list(get_asset_datum(/datum/asset/simple/rimworld_planet_layers))
 
 /datum/planetmap_view/ui_data(mob/user)
 	if(!planet)

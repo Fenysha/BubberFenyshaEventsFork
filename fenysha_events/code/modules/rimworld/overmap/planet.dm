@@ -1,5 +1,4 @@
 /datum/rimworld_planet_object
-
 	var/id
 	var/object_type = RW_OBJECT_TYPE_OBJECT
 	var/name = "Unknown"
@@ -8,18 +7,17 @@
 	var/icon = null
 	var/list/data = list()
 
-
 /datum/rimworld_planet_object/New(new_id, new_x, new_y, new_name = null)
 	id = new_id
 	x = new_x
 	y = new_y
-
 	if(new_name)
 		name = new_name
-
 	. = ..()
 
-
+/**
+ * Returns a serializable copy of this object's data.
+ */
 /datum/rimworld_planet_object/proc/get_data()
 	return list(
 		"id" = id,
@@ -31,83 +29,52 @@
 		"data" = data.Copy()
 	)
 
-
 /datum/rimworld_planet_object/settlement
-
 	object_type = RW_OBJECT_TYPE_SETTLEMENT
 
-
-/datum/rimworld_planet_object/settlement/New(
-	new_id,
-	new_x,
-	new_y,
-	new_name = RW_OBJECT_NAME_SETTLEMENT
-)
+/datum/rimworld_planet_object/settlement/New(new_id, new_x, new_y, new_name = RW_OBJECT_NAME_SETTLEMENT)
 	. = ..(new_id, new_x, new_y, new_name)
-
 	data = list(
 		"population" = 0,
 		"faction" = null,
 		"settlement_type" = "village"
 	)
 
-
+/**
+ * Sets the settlement population (clamped to >= 0).
+ */
 /datum/rimworld_planet_object/settlement/proc/set_population(value)
 	data["population"] = max(0, value)
 
-
+/**
+ * Sets the settlement faction.
+ */
 /datum/rimworld_planet_object/settlement/proc/set_faction(faction)
 	data["faction"] = faction
 
-
 /datum/rimworld_planet_object/point_of_interest
-
 	object_type = RW_OBJECT_TYPE_POINT_OF_INTEREST
 
-
-/datum/rimworld_planet_object/point_of_interest/New(
-	new_id,
-	new_x,
-	new_y,
-	new_name = RW_OBJECT_NAME_POINT_OF_INTEREST
-)
+/datum/rimworld_planet_object/point_of_interest/New(new_id, new_x, new_y, new_name = RW_OBJECT_NAME_POINT_OF_INTEREST)
 	. = ..(new_id, new_x, new_y, new_name)
-
 	data = list(
 		"poi_type" = RW_POI_TYPE_UNKNOWN,
 		"discovered" = FALSE
 	)
 
-
 /datum/rimworld_planet_object/road
-
 	object_type = RW_OBJECT_TYPE_ROAD
-
 	var/start_x
 	var/start_y
 	var/end_x
 	var/end_y
 
-
-/datum/rimworld_planet_object/road/New(
-	new_id,
-	new_start_x,
-	new_start_y,
-	new_end_x,
-	new_end_y
-)
-	. = ..(
-		new_id,
-		new_start_x,
-		new_start_y,
-		RW_OBJECT_NAME_ROAD
-	)
-
+/datum/rimworld_planet_object/road/New(new_id, new_start_x, new_start_y, new_end_x, new_end_y)
+	. = ..(new_id, new_start_x, new_start_y, RW_OBJECT_NAME_ROAD)
 	start_x = new_start_x
 	start_y = new_start_y
 	end_x = new_end_x
 	end_y = new_end_y
-
 	data = list(
 		"start_x" = start_x,
 		"start_y" = start_y,
@@ -115,27 +82,19 @@
 		"end_y" = end_y
 	)
 
-
 /datum/rimworld_planet_object/road/get_data()
-
 	. = ..()
-
 	.["start_x"] = start_x
 	.["start_y"] = start_y
 	.["end_x"] = end_x
 	.["end_y"] = end_y
 
-
 /datum/rimworld_planet
-
 	var/name = "Unnamed Planet"
 	var/seed
 	var/planet_type = RW_PLANET_PRESET_TERRAN
-
 	var/map_width = 2048
 	var/map_height = 1024
-
-
 	var/rotation_angle = 0
 	var/rotation_speed = 0.001
 	var/auto_rotate = TRUE
@@ -148,41 +107,37 @@
 
 	var/heat_threshold_low = RW_TERRAN_HEAT_LOW
 	var/heat_threshold_high = RW_TERRAN_HEAT_HIGH
-
 	var/humidity_threshold_low = RW_TERRAN_HUMIDITY_LOW
 	var/humidity_threshold_high = RW_TERRAN_HUMIDITY_HIGH
 
 	var/elevation_ocean_low = RW_TERRAN_OCEAN_LOW
 	var/elevation_ocean_high = RW_TERRAN_OCEAN_HIGH
-
 	var/elevation_coast_low = RW_TERRAN_COAST_LOW
 	var/elevation_coast_high = RW_TERRAN_COAST_HIGH
-
 	var/elevation_lowland_low = RW_TERRAN_LOWLAND_LOW
 	var/elevation_lowland_high = RW_TERRAN_LOWLAND_HIGH
-
 	var/elevation_highland_low = RW_TERRAN_HIGHLAND_LOW
 	var/elevation_highland_high = RW_TERRAN_HIGHLAND_HIGH
-
 	var/elevation_mountain_low = RW_TERRAN_MOUNTAIN_LOW
 	var/elevation_mountain_high = RW_TERRAN_MOUNTAIN_HIGH
-
 	var/elevation_snow_low = RW_TERRAN_SNOW_LOW
 	var/elevation_snow_high = RW_TERRAN_SNOW_HIGH
 
 	var/noise_scale = RW_TERRAIN_NOISE_SCALE
 
+	// Derived seeds (currently unused by Rust; kept for future / compatibility)
 	var/terrain_seed
 	var/heat_seed
 	var/humidity_seed
 	var/geology_seed
 	var/precipitation_seed
 
-	var/list/elevation_maps
-	var/list/heat_maps
-	var/list/humidity_maps
-	var/list/geology_maps
-	var/list/precipitation_maps
+	/// Generated layer names -> TRUE
+	var/list/generated_layers = list()
+	/// Generated layer names -> exported file path
+	var/list/layer_files = list()
+	/// Simple cache: "layer:x:y" -> value
+	var/list/cell_cache = list()
 
 	var/list/objects = list()
 	var/list/settlements = list()
@@ -190,28 +145,26 @@
 	var/list/roads = list()
 	var/list/discovered_regions = list()
 
-	/// Incremented whenever generator parameters change. Clients rebuild from this.
+	/// Incremented whenever generator parameters change
 	var/generation_revision = 0
-
-	/// Sparse overlay art: "[x]:[y]" -> asset key/url. Never a full-grid payload.
+	/// Sparse overlay art: "[x]:[y]" -> asset key/url
 	var/list/tile_images = list()
-
-	/// Optional biome -> asset key/url. Empty until tile art exists.
+	/// Optional biome -> asset key/url
 	var/list/biome_images = list()
-
 
 /datum/rimworld_planet/New(new_seed = null, new_planet_type = RW_PLANET_PRESET_TERRAN, list/custom_params)
 	. = ..()
-
 	if(isnull(new_seed))
-		seed = rand(1, 2000000000)
+		seed = rand(1, 100000)
 	else
 		seed = new_seed
-
 	apply_preset(new_planet_type)
 	derive_seeds()
 	apply_custom_params(custom_params)
 
+/**
+ * Applies optional custom generation parameters.
+ */
 /datum/rimworld_planet/proc/apply_custom_params(list/params)
 	if(!params || !islist(params))
 		return
@@ -226,7 +179,6 @@
 		geology_seed = params["geologySeed"]
 	if(!isnull(params["precipitationSeed"]))
 		precipitation_seed = params["precipitationSeed"]
-
 	if(!isnull(params["noiseScale"]))
 		noise_scale = params["noiseScale"]
 	if(!isnull(params["terrainScale"]))
@@ -239,7 +191,10 @@
 		geology_scale = params["geologyScale"]
 	if(!isnull(params["precipitationScale"]))
 		precipitation_scale = params["precipitationScale"]
-
+	if(!isnull(params["elevationOceanLow"]))
+		elevation_ocean_low = params["elevationOceanLow"]
+	if(!isnull(params["elevationOceanHigh"]))
+		elevation_ocean_high = params["elevationOceanHigh"]
 	if(!isnull(params["elevationCoastLow"]))
 		elevation_coast_low = params["elevationCoastLow"]
 	if(!isnull(params["elevationCoastHigh"]))
@@ -260,7 +215,6 @@
 		elevation_snow_low = params["elevationSnowLow"]
 	if(!isnull(params["elevationSnowHigh"]))
 		elevation_snow_high = params["elevationSnowHigh"]
-
 	if(!isnull(params["heatThresholdLow"]))
 		heat_threshold_low = params["heatThresholdLow"]
 	if(!isnull(params["heatThresholdHigh"]))
@@ -270,25 +224,23 @@
 	if(!isnull(params["humidityThresholdHigh"]))
 		humidity_threshold_high = params["humidityThresholdHigh"]
 
+/**
+ * Applies a named planet preset (Terran, Ice, Desert, Ocean).
+ */
 /datum/rimworld_planet/proc/apply_preset(new_planet_type)
-
 	switch(new_planet_type)
-
 		if(RW_PLANET_PRESET_TERRAN)
 			planet_type = RW_PLANET_PRESET_TERRAN
 			name = "Terran Planet"
-
 			terrain_scale = RW_ELEVATION_STAMP_SIZE
 			heat_scale = RW_HEAT_STAMP_SIZE
 			humidity_scale = RW_HUMIDITY_STAMP_SIZE
 			geology_scale = 96
 			precipitation_scale = 110
-
 			heat_threshold_low = RW_TERRAN_HEAT_LOW
 			heat_threshold_high = RW_TERRAN_HEAT_HIGH
 			humidity_threshold_low = RW_TERRAN_HUMIDITY_LOW
 			humidity_threshold_high = RW_TERRAN_HUMIDITY_HIGH
-
 			elevation_ocean_low = RW_TERRAN_OCEAN_LOW
 			elevation_ocean_high = RW_TERRAN_OCEAN_HIGH
 			elevation_coast_low = RW_TERRAN_COAST_LOW
@@ -301,22 +253,18 @@
 			elevation_mountain_high = RW_TERRAN_MOUNTAIN_HIGH
 			elevation_snow_low = RW_TERRAN_SNOW_LOW
 			elevation_snow_high = RW_TERRAN_SNOW_HIGH
-
 		if(RW_PLANET_PRESET_ICE)
 			planet_type = RW_PLANET_PRESET_ICE
 			name = "Ice Planet"
-
 			terrain_scale = 72
 			heat_scale = 120
 			humidity_scale = 100
 			geology_scale = 80
 			precipitation_scale = 100
-
 			heat_threshold_low = RW_ICE_HEAT_LOW
 			heat_threshold_high = RW_ICE_HEAT_HIGH
 			humidity_threshold_low = RW_ICE_HUMIDITY_LOW
 			humidity_threshold_high = RW_ICE_HUMIDITY_HIGH
-
 			elevation_ocean_low = RW_ICE_OCEAN_LOW
 			elevation_ocean_high = RW_ICE_OCEAN_HIGH
 			elevation_coast_low = RW_ICE_COAST_LOW
@@ -329,22 +277,18 @@
 			elevation_mountain_high = RW_ICE_MOUNTAIN_HIGH
 			elevation_snow_low = RW_ICE_SNOW_LOW
 			elevation_snow_high = RW_ICE_SNOW_HIGH
-
 		if(RW_PLANET_PRESET_DESERT)
 			planet_type = RW_PLANET_PRESET_DESERT
 			name = "Desert Planet"
-
 			terrain_scale = 68
 			heat_scale = 100
 			humidity_scale = 120
 			geology_scale = 88
 			precipitation_scale = 130
-
 			heat_threshold_low = RW_DESERT_HEAT_LOW
 			heat_threshold_high = RW_DESERT_HEAT_HIGH
 			humidity_threshold_low = RW_DESERT_HUMIDITY_LOW
 			humidity_threshold_high = RW_DESERT_HUMIDITY_HIGH
-
 			elevation_ocean_low = RW_DESERT_OCEAN_LOW
 			elevation_ocean_high = RW_DESERT_OCEAN_HIGH
 			elevation_coast_low = RW_DESERT_COAST_LOW
@@ -357,22 +301,18 @@
 			elevation_mountain_high = RW_DESERT_MOUNTAIN_HIGH
 			elevation_snow_low = RW_DESERT_SNOW_LOW
 			elevation_snow_high = RW_DESERT_SNOW_HIGH
-
 		if(RW_PLANET_PRESET_OCEAN)
 			planet_type = RW_PLANET_PRESET_OCEAN
 			name = "Ocean Planet"
-
 			terrain_scale = 100
 			heat_scale = 110
 			humidity_scale = 110
 			geology_scale = 110
 			precipitation_scale = 105
-
 			heat_threshold_low = RW_OCEAN_HEAT_LOW
 			heat_threshold_high = RW_OCEAN_HEAT_HIGH
 			humidity_threshold_low = RW_OCEAN_HUMIDITY_LOW
 			humidity_threshold_high = RW_OCEAN_HUMIDITY_HIGH
-
 			elevation_ocean_low = RW_OCEAN_OCEAN_LOW
 			elevation_ocean_high = RW_OCEAN_OCEAN_HIGH
 			elevation_coast_low = RW_OCEAN_COAST_LOW
@@ -385,36 +325,38 @@
 			elevation_mountain_high = RW_OCEAN_MOUNTAIN_HIGH
 			elevation_snow_low = RW_OCEAN_SNOW_LOW
 			elevation_snow_high = RW_OCEAN_SNOW_HIGH
-
 		else
 			apply_preset(RW_PLANET_PRESET_TERRAN)
 
-
-#define RW_SEED_MODULUS 2147483647
-#define RW_SEED_MULTIPLIER 1103515245
+// 6-digit seed space (000000 .. 999999)
+#define RW_SEED_MODULUS 1000000
+#define RW_SEED_MULTIPLIER 1103515
 #define RW_SEED_INCREMENT 12345
 
-
+/**
+ * Derives secondary seeds from the main 6-digit seed.
+ * Uses a small LCG so intermediate values stay within BYOND numeric precision.
+ * Note: the Rust generator currently uses only the main seed + fixed offsets;
+ * these derived seeds are kept for UI / future use.
+ */
 /datum/rimworld_planet/proc/derive_seeds()
-	terrain_seed = ((seed * RW_SEED_MULTIPLIER) + RW_SEED_INCREMENT) % RW_SEED_MODULUS
+	var/s = seed % RW_SEED_MODULUS
+
+	terrain_seed = ((s * RW_SEED_MULTIPLIER) + RW_SEED_INCREMENT) % RW_SEED_MODULUS
 	heat_seed = ((terrain_seed * RW_SEED_MULTIPLIER) + RW_SEED_INCREMENT) % RW_SEED_MODULUS
 	humidity_seed = ((heat_seed * RW_SEED_MULTIPLIER) + RW_SEED_INCREMENT) % RW_SEED_MODULUS
 	geology_seed = ((humidity_seed * RW_SEED_MULTIPLIER) + RW_SEED_INCREMENT) % RW_SEED_MODULUS
 	precipitation_seed = ((geology_seed * RW_SEED_MULTIPLIER) + RW_SEED_INCREMENT) % RW_SEED_MODULUS
 
-
 #undef RW_SEED_MODULUS
 #undef RW_SEED_MULTIPLIER
 #undef RW_SEED_INCREMENT
 
-
 /datum/rimworld_planet/proc/get_terrain_seed()
 	return terrain_seed
 
-
 /datum/rimworld_planet/proc/get_heat_seed()
 	return heat_seed
-
 
 /datum/rimworld_planet/proc/get_humidity_seed()
 	return humidity_seed
@@ -425,152 +367,249 @@
 /datum/rimworld_planet/proc/get_precipitation_seed()
 	return precipitation_seed
 
+/**
+ * Returns the effective row width at the given latitude (for spherical projection).
+ */
 /datum/rimworld_planet/proc/get_row_width(y)
 	if(y < 1 || y > map_height)
 		return map_width
-
 	var/v = (y - 0.5) / map_height
 	var/latitude_deg = v * 180 - 90
 	var/count = round(map_width * cos(latitude_deg))
-
 	return max(6, count)
 
+/**
+ * Converts a local row X into a sample X on the full-width grid.
+ */
 /datum/rimworld_planet/proc/get_sample_x(x, y)
 	var/row_width = get_row_width(y)
 	var/normalized_x = (x - 0.5) / row_width
 	return clamp(floor(normalized_x * map_width) + 1, 1, map_width)
 
+/**
+ * Returns whether the given coordinates are valid on this planet.
+ */
 /datum/rimworld_planet/proc/is_valid_coordinate(x, y)
 	if(y < 1 || y > map_height)
 		return FALSE
-
 	var/row_width = get_row_width(y)
-	return (x >= 1) && (x <= row_width)
+	return x >= 1 && x <= row_width
 
+/**
+ * Wraps X coordinate around the current row width.
+ */
 /datum/rimworld_planet/proc/wrap_x(x, y)
 	var/row_width = get_row_width(y)
-	return ((x - 1) % row_width + row_width) % row_width + 1
+	return (((x - 1) % row_width + row_width) % row_width) + 1
 
+/**
+ * Converts 2D coordinates into a linear index (1-based).
+ */
 /datum/rimworld_planet/proc/get_coordinate_index(x, y)
 	if(!is_valid_coordinate(x, y))
 		return null
-
 	return map_width * (y - 1) + x
 
+/**
+ * Clears generated layer metadata and the cell cache.
+ */
+/datum/rimworld_planet/proc/clear_noise_maps()
+	generated_layers = list()
+	layer_files = list()
+	cell_cache = list()
 
-/datum/rimworld_planet/proc/generate_climate_maps()
+/**
+ * Returns whether the elevation layer has been generated.
+ */
+/datum/rimworld_planet/proc/maps_generated()
+	return generated_layers["elevation"] == TRUE
 
-	heat_maps = list()
-	humidity_maps = list()
+/**
+ * Ensures all planet layers exist; generates them if needed.
+ */
+/datum/rimworld_planet/proc/ensure_maps()
+	if(maps_generated())
+		return TRUE
+	return generate()
 
-	heat_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[heat_seed]", "[noise_scale]", "[heat_scale]", "[map_width]", "[heat_threshold_high]", "1.1")
-	heat_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[heat_seed]", "[noise_scale]", "[heat_scale]", "[map_width]", "[heat_threshold_low]", "[heat_threshold_high]")
+/**
+ * Generates all planet layers via Rust and records their file paths.
+ */
+/datum/rimworld_planet/proc/generate()
+	var/start_time = REALTIMEOFDAY
+	derive_seeds()
+	clear_noise_maps()
 
-	humidity_maps[RW_CLIMATE_HIGH] = rustg_dbp_generate("[humidity_seed]", "[noise_scale]", "[humidity_scale]", "[map_width]", "[humidity_threshold_high]", "1.1")
-	humidity_maps[RW_CLIMATE_MEDIUM] = rustg_dbp_generate("[humidity_seed]", "[noise_scale]", "[humidity_scale]", "[map_width]", "[humidity_threshold_low]", "[humidity_threshold_high]")
+	var/list/layers = list(
+		"elevation",
+		"heat",
+		"humidity",
+		"precipitation",
+		"geology"
+	)
+	var/layers_json = json_encode(layers)
+	var/output_dir = "data/rimworld_planets/[seed]"
 
+	var/result = rustg_tp_planet_generate(
+		seed,
+		map_width,
+		map_height,
+		layers_json,
+		output_dir
+	)
 
-/datum/rimworld_planet/proc/generate_geology_maps()
-	geology_maps = list()
-	geology_maps["granite"] = rustg_dbp_generate("[geology_seed]", "[noise_scale]", "[geology_scale]", "[map_width]", "0.0", "0.20")
-	geology_maps["limestone"] = rustg_dbp_generate("[geology_seed]", "[noise_scale]", "[geology_scale]", "[map_width]", "0.20", "0.40")
-	geology_maps["sandstone"] = rustg_dbp_generate("[geology_seed]", "[noise_scale]", "[geology_scale]", "[map_width]", "0.40", "0.60")
-	geology_maps["slate"] = rustg_dbp_generate("[geology_seed]", "[noise_scale]", "[geology_scale]", "[map_width]", "0.60", "0.78")
-	geology_maps["marble"] = rustg_dbp_generate("[geology_seed]", "[noise_scale]", "[geology_scale]", "[map_width]", "0.78", "0.94")
-	geology_maps["obsidian"] = rustg_dbp_generate("[geology_seed]", "[noise_scale]", "[geology_scale]", "[map_width]", "0.94", "0.995")
-	geology_maps["jade"] = rustg_dbp_generate("[geology_seed]", "[noise_scale]", "[geology_scale]", "[map_width]", "0.995", "1.1")
-
-/datum/rimworld_planet/proc/generate_precipitation_maps()
-	precipitation_maps = list()
-	precipitation_maps["low"] = rustg_dbp_generate("[precipitation_seed]", "[noise_scale]", "[precipitation_scale]", "[map_width]", "0.0", "0.33")
-	precipitation_maps["medium"] = rustg_dbp_generate("[precipitation_seed]", "[noise_scale]", "[precipitation_scale]", "[map_width]", "0.33", "0.66")
-	precipitation_maps["high"] = rustg_dbp_generate("[precipitation_seed]", "[noise_scale]", "[precipitation_scale]", "[map_width]", "0.66", "1.1")
-
-
-/datum/rimworld_planet/proc/generate_elevation_maps()
-
-	elevation_maps = list()
-
-	elevation_maps[RW_ELEVATION_OCEAN] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_ocean_low]", "[elevation_ocean_high]")
-	elevation_maps[RW_ELEVATION_COAST] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_coast_low]", "[elevation_coast_high]")
-	elevation_maps[RW_ELEVATION_LOWLAND] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_lowland_low]", "[elevation_lowland_high]")
-	elevation_maps[RW_ELEVATION_HIGHLAND] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_highland_low]", "[elevation_highland_high]")
-	elevation_maps[RW_ELEVATION_MOUNTAIN] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_mountain_low]", "[elevation_mountain_high]")
-	elevation_maps[RW_ELEVATION_SNOW] = rustg_dbp_generate("[terrain_seed]", "[noise_scale]", "[terrain_scale]", "[map_width]", "[elevation_snow_low]", "[elevation_snow_high]")
-
-
-/datum/rimworld_planet/proc/is_noise_value_true(map, x, y)
-	if(!map)
+	if(!result)
+		log_world("[name] planetary generation failed: Rust returned no result.")
+		return FALSE
+	if(findtext(result, "ERROR") == 1)
+		log_world("[name] planetary generation failed: [result]")
 		return FALSE
 
-	var/base_lat = (y - 1) / max(1, map_height - 1)
-	var/polar_fade = sin(base_lat * 180)
-
-	var/s = seed % 5000
-	var/angle = ((x * 0.85 + y * 0.35 + s) % 360)
-	var/warp_y = clamp(round(y + sin(angle) * 15 * polar_fade), 1, map_height)
-
-	var/sample_x = get_sample_x(x, warp_y)
-	var/coordinate = map_width * (warp_y - 1) + sample_x
-
-	if(coordinate < 1 || coordinate > length(map))
+	var/list/export_data
+	try
+		export_data = json_decode(result)
+	catch
+		log_world("[name] planetary generation returned invalid JSON: [result]")
 		return FALSE
 
-	return text2num(map[coordinate])
+	if(!export_data || export_data["status"] != "ok")
+		log_world("[name] planetary generation returned an invalid result: [result]")
+		return FALSE
 
-/datum/rimworld_planet/proc/get_heat_level(x, y)
+	var/list/exported_layers = export_data["layers"]
+	if(!islist(exported_layers))
+		log_world("[name] planetary generator did not return layer information.")
+		return FALSE
 
+	generated_layers = list()
+	layer_files = list()
+
+	for(var/list/layer in exported_layers)
+		var/layer_name = layer["name"]
+		var/layer_path = layer["path"]
+		if(!layer_name || !layer_path)
+			continue
+		generated_layers[layer_name] = TRUE
+		layer_files[layer_name] = layer_path
+
+	if(!maps_generated())
+		log_world("[name] planetary generator did not create the elevation layer.")
+		return FALSE
+
+	generation_revision++
+	GLOB.rimworld_planet_noise_revision = generation_revision
+	var/datum/asset/simple/rimworld_planet_layers/asset = get_asset_datum(/datum/asset/simple/rimworld_planet_layers)
+	asset.register_for_planet(src)
+	log_world("[name] planetary parameters ready in [(REALTIMEOFDAY - start_time) / 10]s. Generated [length(generated_layers)] planet layers.")
+	return TRUE
+
+/**
+ * Returns the file path of a generated layer, or null.
+ */
+/datum/rimworld_planet/proc/get_layer_file(layer_name)
+	if(!generated_layers[layer_name])
+		return null
+	return layer_files[layer_name]
+
+/**
+ * Returns whether the named layer has been generated.
+ */
+/datum/rimworld_planet/proc/has_layer(layer_name)
+	return generated_layers[layer_name] == TRUE
+
+/**
+ * Reads a single packed value from a layer file (with simple caching).
+ */
+/datum/rimworld_planet/proc/get_layer_value(layer_name, x, y)
 	if(!is_valid_coordinate(x, y))
-		return RW_CLIMATE_LOW
+		return null
+	if(!generated_layers[layer_name])
+		return null
 
-	if(is_noise_value_true(heat_maps[RW_CLIMATE_HIGH], x, y))
-		return RW_CLIMATE_HIGH
+	var/cache_key = "[layer_name]:[x]:[y]"
+	if(!isnull(cell_cache[cache_key]))
+		return cell_cache[cache_key]
 
-	if(is_noise_value_true(heat_maps[RW_CLIMATE_MEDIUM], x, y))
-		return RW_CLIMATE_MEDIUM
+	var/path = layer_files[layer_name]
+	if(!path)
+		return null
 
-	return RW_CLIMATE_LOW
+	var/value = rustg_tp_planet_get_cell(path, x, y)
+	if(isnull(value))
+		return null
 
+	cell_cache[cache_key] = value
+	return value
 
-/datum/rimworld_planet/proc/get_humidity_level(x, y)
-
-	if(!is_valid_coordinate(x, y))
-		return RW_CLIMATE_LOW
-
-	if(is_noise_value_true(humidity_maps[RW_CLIMATE_HIGH], x, y))
-		return RW_CLIMATE_HIGH
-
-	if(is_noise_value_true(humidity_maps[RW_CLIMATE_MEDIUM], x, y))
-		return RW_CLIMATE_MEDIUM
-
-	return RW_CLIMATE_LOW
-
-
+/**
+ * Returns the elevation level at the given coordinates.
+ */
 /datum/rimworld_planet/proc/get_elevation_level(x, y)
-
 	if(!is_valid_coordinate(x, y))
 		return RW_ELEVATION_OCEAN
 
-	if(is_noise_value_true(elevation_maps[RW_ELEVATION_SNOW], x, y))
-		return RW_ELEVATION_SNOW
-
-	if(is_noise_value_true(elevation_maps[RW_ELEVATION_MOUNTAIN], x, y))
-		return RW_ELEVATION_MOUNTAIN
-
-	if(is_noise_value_true(elevation_maps[RW_ELEVATION_HIGHLAND], x, y))
-		return RW_ELEVATION_HIGHLAND
-
-	if(is_noise_value_true(elevation_maps[RW_ELEVATION_LOWLAND], x, y))
-		return RW_ELEVATION_LOWLAND
-
-	if(is_noise_value_true(elevation_maps[RW_ELEVATION_COAST], x, y))
-		return RW_ELEVATION_COAST
-
-	if(is_noise_value_true(elevation_maps[RW_ELEVATION_OCEAN], x, y))
+	var/value = get_layer_value("elevation", x, y)
+	if(isnull(value))
 		return RW_ELEVATION_OCEAN
 
+	switch(value)
+		if(0)
+			return RW_ELEVATION_OCEAN
+		if(1)
+			return RW_ELEVATION_COAST
+		if(2)
+			return RW_ELEVATION_LOWLAND
+		if(3)
+			return RW_ELEVATION_HIGHLAND
+		if(4)
+			return RW_ELEVATION_MOUNTAIN
+		if(5)
+			return RW_ELEVATION_SNOW
 	return RW_ELEVATION_OCEAN
 
+/**
+ * Returns the heat (climate) level at the given coordinates.
+ */
+/datum/rimworld_planet/proc/get_heat_level(x, y)
+	if(!is_valid_coordinate(x, y))
+		return RW_CLIMATE_LOW
+
+	var/value = get_layer_value("heat", x, y)
+	if(isnull(value))
+		return RW_CLIMATE_LOW
+
+	switch(value)
+		if(0)
+			return RW_CLIMATE_LOW
+		if(1)
+			return RW_CLIMATE_MEDIUM
+		if(2)
+			return RW_CLIMATE_HIGH
+	return RW_CLIMATE_LOW
+
+/**
+ * Returns the humidity (climate) level at the given coordinates.
+ */
+/datum/rimworld_planet/proc/get_humidity_level(x, y)
+	if(!is_valid_coordinate(x, y))
+		return RW_CLIMATE_LOW
+
+	var/value = get_layer_value("humidity", x, y)
+	if(isnull(value))
+		return RW_CLIMATE_LOW
+
+	switch(value)
+		if(0)
+			return RW_CLIMATE_LOW
+		if(1)
+			return RW_CLIMATE_MEDIUM
+		if(2)
+			return RW_CLIMATE_HIGH
+	return RW_CLIMATE_LOW
+
+/**
+ * Returns a small latitude-based climate offset.
+ */
 /datum/rimworld_planet/proc/get_latitude_offset(x, y, heat = null, humidity = null, elevation = null)
 	var/h = isnull(heat) ? get_heat_level(x, y) : heat
 	var/hm = isnull(humidity) ? get_humidity_level(x, y) : humidity
@@ -578,8 +617,8 @@
 
 	var/base_lat = (y - 1) / max(1, map_height - 1)
 	var/polar_fade = sin(base_lat * 180)
-
 	var/climate_offset = 0.0
+
 	if(h == RW_CLIMATE_HIGH)
 		climate_offset += 0.08
 	else if(h == RW_CLIMATE_LOW)
@@ -599,79 +638,81 @@
 	var/angle1 = ((x * 0.35 + y * 0.15 + s) % 360)
 	var/angle2 = ((x * 0.85 - y * 0.45 + s * 1.3) % 360)
 	var/angle3 = ((x * 1.7 + y * 1.1 + s * 2.1) % 360)
-
 	var/wave = ((sin(angle1) * 0.06) + (cos(angle2) * 0.04) + (sin(angle3) * 0.02)) * polar_fade
 
 	return climate_offset + wave
 
-
+/**
+ * Returns latitude in degrees (-90 .. 90).
+ */
 /datum/rimworld_planet/proc/get_latitude(x, y)
 	if(!is_valid_coordinate(x, y))
 		return 0
-
 	var/normalized = (y - 0.5) / map_height
 	return normalized * 180 - 90
 
+/**
+ * Returns the surface material at the given coordinates.
+ */
 /datum/rimworld_planet/proc/get_material(x, y, elevation = null)
-
 	if(!is_valid_coordinate(x, y))
 		return RW_MATERIAL_NONE
 
 	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
-
 	if(e == RW_ELEVATION_OCEAN)
 		return RW_MATERIAL_NONE
 
-	if(is_noise_value_true(geology_maps[RW_MATERIAL_GRANITE], x, y))
-		return RW_MATERIAL_GRANITE
-
-	if(is_noise_value_true(geology_maps[RW_MATERIAL_LIMESTONE], x, y))
-		return RW_MATERIAL_LIMESTONE
-
-	if(is_noise_value_true(geology_maps[RW_MATERIAL_SANDSTONE], x, y))
-		return RW_MATERIAL_SANDSTONE
-
-	if(is_noise_value_true(geology_maps[RW_MATERIAL_SLATE], x, y))
-		return RW_MATERIAL_SLATE
-
-	if(is_noise_value_true(geology_maps[RW_MATERIAL_MARBLE], x, y))
-		return RW_MATERIAL_MARBLE
-
-	if(is_noise_value_true(geology_maps[RW_MATERIAL_OBSIDIAN], x, y))
-		return RW_MATERIAL_OBSIDIAN
-
-	if(is_noise_value_true(geology_maps[RW_MATERIAL_JADE], x, y))
-		return RW_MATERIAL_JADE
-
+	var/geo = get_geology_value(x, y)
+	switch(geo)
+		if(0, 1)
+			return RW_MATERIAL_GRANITE
+		if(2)
+			return RW_MATERIAL_LIMESTONE
+		if(3)
+			return RW_MATERIAL_SANDSTONE
+		if(4)
+			return RW_MATERIAL_SLATE
+		if(5)
+			return RW_MATERIAL_MARBLE
+		if(6)
+			return RW_MATERIAL_OBSIDIAN
 	return RW_MATERIAL_GRANITE
 
+/**
+ * Returns the raw geology value (0-6) at the given coordinates.
+ */
+/datum/rimworld_planet/proc/get_geology_value(x, y)
+	if(!is_valid_coordinate(x, y))
+		return 0
+	var/value = get_layer_value("geology", x, y)
+	if(isnull(value))
+		return 0
+	return value
+
+/**
+ * Returns a temperature modifier based on material.
+ */
 /datum/rimworld_planet/proc/get_material_temperature_modifier(material)
-
 	switch(material)
-
 		if(RW_MATERIAL_GRANITE)
 			return -0.005
-
 		if(RW_MATERIAL_LIMESTONE)
 			return 0
-
 		if(RW_MATERIAL_SANDSTONE)
 			return 0.012
-
 		if(RW_MATERIAL_SLATE)
 			return -0.008
-
 		if(RW_MATERIAL_MARBLE)
 			return 0.008
-
 		if(RW_MATERIAL_OBSIDIAN)
 			return 0.018
-
 		if(RW_MATERIAL_JADE)
 			return 0.004
-
 	return 0
 
+/**
+ * Returns normalized temperature (0-1) at the given coordinates.
+ */
 /datum/rimworld_planet/proc/get_temperature(x, y, heat_level = null, elevation = null, material = null)
 	if(!is_valid_coordinate(x, y))
 		return 0
@@ -711,31 +752,42 @@
 
 	var/material_modifier = get_material_temperature_modifier(m)
 	var/temperature = (latitude_temperature * 0.60) + ((heat_modifier + 0.15) * 0.25) + ((elevation_modifier + 0.35) * 0.15) + material_modifier
-
 	return clamp(temperature, 0, 1)
 
+/**
+ * Returns the precipitation noise category (low/medium/high).
+ */
 /datum/rimworld_planet/proc/get_precipitation_noise_category(x, y)
-
-	if(is_noise_value_true(precipitation_maps[RW_PRECIPITATION_LOW], x, y))
+	if(!is_valid_coordinate(x, y))
 		return RW_PRECIPITATION_CATEGORY_LOW
 
-	if(is_noise_value_true(precipitation_maps[RW_PRECIPITATION_MEDIUM], x, y))
-		return RW_PRECIPITATION_CATEGORY_MEDIUM
+	var/value = get_layer_value("precipitation", x, y)
+	if(isnull(value))
+		return RW_PRECIPITATION_CATEGORY_LOW
 
-	return RW_PRECIPITATION_CATEGORY_HIGH
+	switch(value)
+		if(0)
+			return RW_PRECIPITATION_CATEGORY_LOW
+		if(1)
+			return RW_PRECIPITATION_CATEGORY_MEDIUM
+		if(2)
+			return RW_PRECIPITATION_CATEGORY_HIGH
+	return RW_PRECIPITATION_CATEGORY_LOW
 
+/**
+ * Returns the base precipitation value for a category.
+ */
 /datum/rimworld_planet/proc/get_precipitation_base(category)
-
 	switch(category)
-
 		if(RW_PRECIPITATION_CATEGORY_HIGH)
 			return 0.78
-
 		if(RW_PRECIPITATION_CATEGORY_MEDIUM)
 			return 0.50
-
 	return 0.20
 
+/**
+ * Returns normalized precipitation (0-1) at the given coordinates.
+ */
 /datum/rimworld_planet/proc/get_precipitation(x, y, temperature = null, humidity = null, elevation = null)
 	if(!is_valid_coordinate(x, y))
 		return 0
@@ -743,6 +795,7 @@
 	var/t = isnull(temperature) ? get_temperature(x, y) : temperature
 	var/hm = isnull(humidity) ? get_humidity_level(x, y) : humidity
 	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
+
 	var/category = get_precipitation_noise_category(x, y)
 	var/precipitation = get_precipitation_base(category)
 
@@ -762,22 +815,31 @@
 
 	return clamp(precipitation, 0, 1)
 
+/**
+ * Returns rainfall amount (precipitation that falls as rain).
+ */
 /datum/rimworld_planet/proc/get_rainfall(x, y, temperature = null, precipitation = null)
 	var/t = isnull(temperature) ? get_temperature(x, y) : temperature
-	var/p = isnull(precipitation) ? get_precipitation(x, y, t) : precipitation
+	var/p = isnull(precipitation) ? get_precipitation(x, y) : precipitation
 	var/rain_factor = clamp((t - 0.20) / 0.18, 0, 1)
 	return p * rain_factor
 
+/**
+ * Returns snowfall amount (precipitation that falls as snow).
+ */
 /datum/rimworld_planet/proc/get_snowfall(x, y, temperature = null, precipitation = null)
 	var/t = isnull(temperature) ? get_temperature(x, y) : temperature
 	var/p = isnull(precipitation) ? get_precipitation(x, y, t) : precipitation
 	return max(0, p - get_rainfall(x, y, t, p))
 
+/**
+ * Returns water availability (0-1) at the given coordinates.
+ */
 /datum/rimworld_planet/proc/get_water_availability(x, y, precipitation = null, elevation = null)
 	var/p = isnull(precipitation) ? get_precipitation(x, y) : precipitation
 	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
-	var/value = p * 0.78
 
+	var/value = p * 0.78
 	if(e == RW_ELEVATION_LOWLAND)
 		value += 0.08
 	else if(e == RW_ELEVATION_HIGHLAND)
@@ -787,15 +849,10 @@
 
 	return clamp(value, 0, 1)
 
-/datum/rimworld_planet/proc/get_sub_biome(
-	x,
-	y,
-	biome = null,
-	elevation = null,
-	precipitation = null,
-	temperature = null
-)
-
+/**
+ * Returns the sub-biome at the given coordinates.
+ */
+/datum/rimworld_planet/proc/get_sub_biome(x, y, biome = null, elevation = null, precipitation = null, temperature = null)
 	if(!is_valid_coordinate(x, y))
 		return RW_SUBBIOME_PLAINS
 
@@ -807,50 +864,29 @@
 	if(e == RW_ELEVATION_OCEAN)
 		if(b == RW_BIOME_SEA_ICE)
 			return RW_SUBBIOME_FROZEN_OCEAN
-
 		return RW_SUBBIOME_DEEP_OCEAN
-
 	if(b == RW_BIOME_SEA_ICE || b == RW_BIOME_SNOW)
 		return RW_SUBBIOME_SNOWFIELDS
-
 	if(e == RW_ELEVATION_COAST || b == RW_BIOME_BEACH || b == RW_BIOME_COAST)
 		return RW_SUBBIOME_SHORE
-
 	if(e == RW_ELEVATION_MOUNTAIN || b == RW_BIOME_MOUNTAINS)
 		return RW_SUBBIOME_ROCKY_HILLS
-
 	if(e == RW_ELEVATION_HIGHLAND)
-		if( b == RW_BIOME_TEMPERATE_FOREST || \
-			b == RW_BIOME_TROPICAL_FOREST || \
-			b == RW_BIOME_RAINFOREST || \
-			b == RW_BIOME_TAIGA \
-		)
+		if(b == RW_BIOME_TEMPERATE_FOREST || b == RW_BIOME_TROPICAL_FOREST || b == RW_BIOME_RAINFOREST || b == RW_BIOME_TAIGA)
 			return RW_SUBBIOME_FOREST_HILLS
-
 		return RW_SUBBIOME_HILLS
-
 	if(e == RW_ELEVATION_LOWLAND && p >= 0.72 && t > 0.24)
 		return RW_SUBBIOME_MARSH
-
-	if( b == RW_BIOME_TEMPERATE_FOREST || \
-		b == RW_BIOME_TROPICAL_FOREST || \
-		b == RW_BIOME_RAINFOREST || \
-		b == RW_BIOME_TAIGA \
-	)
+	if(b == RW_BIOME_TEMPERATE_FOREST || b == RW_BIOME_TROPICAL_FOREST || b == RW_BIOME_RAINFOREST || b == RW_BIOME_TAIGA)
 		return RW_SUBBIOME_FOREST
-
 	if(b == RW_BIOME_TUNDRA)
 		return RW_SUBBIOME_TUNDRA_PLAINS
-
 	return RW_SUBBIOME_PLAINS
 
-/datum/rimworld_planet/proc/get_biome(
-	x,
-	y,
-	elevation = null,
-	heat = null,
-	humidity = null
-)
+/**
+ * Returns the biome at the given coordinates.
+ */
+/datum/rimworld_planet/proc/get_biome(x, y, elevation = null, heat = null, humidity = null)
 	if(!is_valid_coordinate(x, y))
 		return RW_BIOME_OCEAN
 
@@ -858,9 +894,7 @@
 	var/h = isnull(heat) ? get_heat_level(x, y) : heat
 	var/hm = isnull(humidity) ? get_humidity_level(x, y) : humidity
 	var/material = get_material(x, y, e)
-
 	var/temperature = get_temperature(x, y, h, e, material)
-
 	var/latitude_offset = get_latitude_offset(x, y, h, hm, e)
 	var/base_lat = (y - 1) / max(1, map_height - 1)
 	var/normalized_latitude = clamp(base_lat + latitude_offset, 0, 1)
@@ -873,12 +907,9 @@
 
 	if(polar_distance >= 0.70)
 		var/polar_temperature = temperature
-
 		var/polar_strength = (polar_distance - 0.70) / 0.12
 		polar_strength = clamp(polar_strength, 0, 1)
-
 		polar_temperature = polar_temperature * (1.0 - polar_strength)
-
 		if(e == RW_ELEVATION_OCEAN || e == RW_ELEVATION_COAST)
 			if(polar_temperature <= 0.24)
 				return RW_BIOME_SEA_ICE
@@ -900,36 +931,30 @@
 
 	if(temperature <= 0.10 || e == RW_ELEVATION_SNOW)
 		return RW_BIOME_SNOW
-
 	if(temperature <= 0.20 && e == RW_ELEVATION_MOUNTAIN)
 		return RW_BIOME_SNOW
-
 	if(e == RW_ELEVATION_MOUNTAIN)
 		return RW_BIOME_MOUNTAINS
-
 	if(temperature < 0.30)
 		if(hm == RW_CLIMATE_HIGH)
 			return RW_BIOME_TAIGA
 		return RW_BIOME_TUNDRA
-
 	if(temperature < 0.55)
 		if(hm == RW_CLIMATE_HIGH)
 			return RW_BIOME_TEMPERATE_FOREST
 		if(hm == RW_CLIMATE_MEDIUM)
 			return RW_BIOME_GRASSLAND
 		return RW_BIOME_SAVANNA
-
 	if(hm == RW_CLIMATE_HIGH)
 		return RW_BIOME_RAINFOREST
-
 	if(hm == RW_CLIMATE_MEDIUM)
 		return RW_BIOME_TROPICAL_FOREST
-
 	return RW_BIOME_DESERT
 
-
+/**
+ * Returns a full data packet for a single tile.
+ */
 /datum/rimworld_planet/proc/get_tile_data(x, y)
-
 	if(!is_valid_coordinate(x, y))
 		return null
 
@@ -966,64 +991,24 @@
 
 	return tile
 
-
-/datum/rimworld_planet/proc/clear_noise_maps()
-	elevation_maps = null
-	heat_maps = null
-	humidity_maps = null
-	geology_maps = null
-	precipitation_maps = null
-
-
-/datum/rimworld_planet/proc/maps_generated()
-	return !isnull(elevation_maps) && length(elevation_maps) && !isnull(heat_maps) && length(heat_maps) && !isnull(humidity_maps) && length(humidity_maps) && !isnull(geology_maps) && length(geology_maps) && !isnull(precipitation_maps) && length(precipitation_maps)
-
-
-/datum/rimworld_planet/proc/ensure_maps()
-	if(maps_generated())
-		return TRUE
-
-	generate_climate_maps()
-	generate_elevation_maps()
-	generate_geology_maps()
-	generate_precipitation_maps()
-
-	return maps_generated()
-
-
-/datum/rimworld_planet/proc/generate()
-
-	var/start_time = REALTIMEOFDAY
-
-	derive_seeds()
-	clear_noise_maps()
-	ensure_maps()
-	generation_revision++
-
-	log_world("[name] planetary parameters ready in [(REALTIMEOFDAY - start_time) / 10]s. Terrain is reconstructed on clients from seeds.")
-
-	return TRUE
-
-
+/**
+ * Generates a unique object id with the given prefix.
+ */
 /datum/rimworld_planet/proc/generate_object_id(prefix = "object")
-
 	var/id
-
 	do
 		id = "[prefix]_[rand(1, 2000000000)]"
 	while(objects[id])
-
 	return id
 
-
+/**
+ * Adds an object to the planet. Returns TRUE on success.
+ */
 /datum/rimworld_planet/proc/add_object(datum/rimworld_planet_object/object)
-
 	if(!object)
 		return FALSE
-
 	if(!is_valid_coordinate(object.x, object.y))
 		return FALSE
-
 	if(objects[object.id])
 		return FALSE
 
@@ -1038,11 +1023,11 @@
 
 	return TRUE
 
-
+/**
+ * Removes an object by id. Returns TRUE on success.
+ */
 /datum/rimworld_planet/proc/remove_object(object_id)
-
 	var/datum/rimworld_planet_object/object = objects[object_id]
-
 	if(!object)
 		return FALSE
 
@@ -1050,260 +1035,236 @@
 	settlements -= object_id
 	points_of_interest -= object_id
 	roads -= object_id
-
 	return TRUE
 
-
+/**
+ * Returns an object by id, or null.
+ */
 /datum/rimworld_planet/proc/get_object(object_id)
 	return objects[object_id]
 
-
+/**
+ * Returns all objects located at the given coordinates.
+ */
 /datum/rimworld_planet/proc/get_objects_at(x, y)
-
 	var/list/result = list()
-
 	for(var/object_id in objects)
-
 		var/datum/rimworld_planet_object/object = objects[object_id]
-
 		if(object.x == x && object.y == y)
 			result += list(object.get_data())
-
 	return result
 
-
+/**
+ * Returns all objects within the given radius.
+ */
 /datum/rimworld_planet/proc/get_objects_in_radius(x, y, radius)
-
 	var/list/result = list()
-
 	for(var/object_id in objects)
-
 		var/datum/rimworld_planet_object/object = objects[object_id]
-
 		if(get_dist_2d(x, y, object.x, object.y) <= radius)
 			result += list(object.get_data())
-
 	return result
 
-
+/**
+ * Moves an object to new coordinates. Returns TRUE on success.
+ */
 /datum/rimworld_planet/proc/move_object(object_id, new_x, new_y)
-
 	var/datum/rimworld_planet_object/object = objects[object_id]
-
 	if(!object)
 		return FALSE
-
 	if(!is_valid_coordinate(new_x, new_y))
 		return FALSE
-
 	object.x = new_x
 	object.y = new_y
-
 	return TRUE
 
-
+/**
+ * Creates and registers a new settlement.
+ */
 /datum/rimworld_planet/proc/create_settlement(x, y, settlement_name = "Settlement")
-
 	if(!is_valid_coordinate(x, y))
 		return null
-
 	var/id = generate_object_id("settlement")
 	var/datum/rimworld_planet_object/settlement/object = new /datum/rimworld_planet_object/settlement(id, x, y, settlement_name)
-
 	if(!add_object(object))
 		qdel(object)
 		return null
-
 	return object
 
-
+/**
+ * Creates and registers a new point of interest.
+ */
 /datum/rimworld_planet/proc/create_point_of_interest(x, y, poi_name = "Point of Interest")
-
 	if(!is_valid_coordinate(x, y))
 		return null
-
 	var/id = generate_object_id("poi")
 	var/datum/rimworld_planet_object/point_of_interest/object = new /datum/rimworld_planet_object/point_of_interest(id, x, y, poi_name)
-
 	if(!add_object(object))
 		qdel(object)
 		return null
-
 	return object
 
-
+/**
+ * Creates and registers a new road.
+ */
 /datum/rimworld_planet/proc/create_road(start_x, start_y, end_x, end_y)
-
 	if(!is_valid_coordinate(start_x, start_y))
 		return null
-
 	if(!is_valid_coordinate(end_x, end_y))
 		return null
-
 	var/id = generate_object_id("road")
 	var/datum/rimworld_planet_object/road/object = new /datum/rimworld_planet_object/road(id, start_x, start_y, end_x, end_y)
-
 	if(!add_object(object))
 		qdel(object)
 		return null
-
 	return object
 
-
+/**
+ * Returns a list of all interactive objects.
+ */
 /datum/rimworld_planet/proc/get_interactive_objects()
-
 	var/list/result = list()
-
 	for(var/object_id in objects)
-
 		var/datum/rimworld_planet_object/object = objects[object_id]
-
 		result += list(object.get_data())
-
 	return result
 
-
+/**
+ * Returns static generator / planet configuration data.
+ */
 /datum/rimworld_planet/proc/get_generator_data()
-
 	return list(
 		"name" = name,
 		"seed" = seed,
 		"planetType" = planet_type,
-
 		"rotationAngle" = rotation_angle,
 		"rotationSpeed" = rotation_speed,
-		"autoRotate"    = auto_rotate,
-
+		"autoRotate" = auto_rotate,
 		"terrainSeed" = terrain_seed,
 		"heatSeed" = heat_seed,
 		"humiditySeed" = humidity_seed,
 		"geologySeed" = geology_seed,
 		"precipitationSeed" = precipitation_seed,
-
 		"width" = map_width,
 		"height" = map_height,
-
 		"terrainScale" = terrain_scale,
 		"heatScale" = heat_scale,
 		"humidityScale" = humidity_scale,
 		"geologyScale" = geology_scale,
 		"precipitationScale" = precipitation_scale,
 		"noiseScale" = noise_scale,
-
 		"elevationOceanLow" = elevation_ocean_low,
 		"elevationOceanHigh" = elevation_ocean_high,
-
 		"elevationCoastLow" = elevation_coast_low,
 		"elevationCoastHigh" = elevation_coast_high,
-
 		"elevationLowlandLow" = elevation_lowland_low,
 		"elevationLowlandHigh" = elevation_lowland_high,
-
 		"elevationHighlandLow" = elevation_highland_low,
 		"elevationHighlandHigh" = elevation_highland_high,
-
 		"elevationMountainLow" = elevation_mountain_low,
 		"elevationMountainHigh" = elevation_mountain_high,
-
 		"elevationSnowLow" = elevation_snow_low,
 		"elevationSnowHigh" = elevation_snow_high,
-
 		"heatThresholdLow" = heat_threshold_low,
 		"heatThresholdHigh" = heat_threshold_high,
-
 		"humidityThresholdLow" = humidity_threshold_low,
 		"humidityThresholdHigh" = humidity_threshold_high,
-
+		"generatedLayers" = generated_layers.Copy(),
+		"layerFiles" = layer_files.Copy(),
 		"generatorVersion" = RW_PLANET_GENERATOR_VERSION,
 		"generationRevision" = generation_revision,
-		"presets" = list(RW_PLANET_PRESET_TERRAN, RW_PLANET_PRESET_ICE, RW_PLANET_PRESET_DESERT, RW_PLANET_PRESET_OCEAN),
-		"biomeImages" = get_biome_images_payload(),
+		"presets" = list(
+			RW_PLANET_PRESET_TERRAN,
+			RW_PLANET_PRESET_ICE,
+			RW_PLANET_PRESET_DESERT,
+			RW_PLANET_PRESET_OCEAN
+		),
+		"biomeImages" = get_biome_images_payload()
 	)
 
-
+/**
+ * Returns runtime data (objects, revision, tile images, etc.).
+ */
 /datum/rimworld_planet/proc/get_runtime_data()
-
 	return list(
 		"objects" = get_interactive_objects(),
 		"generationRevision" = generation_revision,
 		"tileImages" = get_tile_images_payload(),
 		"mapsLoaded" = maps_generated(),
+		"generatedLayers" = generated_layers.Copy()
 	)
 
-
+/**
+ * Returns the full map payload (generator + runtime).
+ */
 /datum/rimworld_planet/proc/get_map_data()
-
 	. = get_generator_data()
-
 	var/list/runtime = get_runtime_data()
-
 	for(var/key in runtime)
 		.[key] = runtime[key]
 
-
+/**
+ * Builds a cache key for a tile image.
+ */
 /datum/rimworld_planet/proc/tile_image_key(x, y)
 	return "[x]:[y]"
 
-
+/**
+ * Sets or clears a sparse tile image overlay.
+ */
 /datum/rimworld_planet/proc/set_tile_image(x, y, image_ref)
-
 	if(!is_valid_coordinate(x, y))
 		return FALSE
-
 	if(!image_ref)
 		tile_images -= tile_image_key(x, y)
 		return TRUE
-
 	tile_images[tile_image_key(x, y)] = image_ref
-
 	return TRUE
 
-
+/**
+ * Returns the tile image (if any) at the given coordinates.
+ */
 /datum/rimworld_planet/proc/get_tile_image(x, y)
-
 	if(!length(tile_images))
 		return null
-
 	return tile_images[tile_image_key(x, y)]
 
-
+/**
+ * Sets or clears a biome image.
+ */
 /datum/rimworld_planet/proc/set_biome_image(biome, image_ref)
-
 	if(!biome)
 		return FALSE
-
 	if(!image_ref)
 		biome_images -= biome
 		return TRUE
-
 	biome_images[biome] = image_ref
-
 	return TRUE
 
-
+/**
+ * Returns the sparse tile images payload for the client.
+ */
 /datum/rimworld_planet/proc/get_tile_images_payload()
-
 	var/list/result = list()
-
 	for(var/key in tile_images)
 		var/list/coords = splittext(key, ":")
-
 		if(length(coords) < 2)
 			continue
-
-		result += list(list("x" = text2num(coords[1]), "y" = text2num(coords[2]), "src" = tile_images[key]))
-
+		result += list(list(
+			"x" = text2num(coords[1]),
+			"y" = text2num(coords[2]),
+			"src" = tile_images[key]
+		))
 	return result
 
-
+/**
+ * Returns the biome images payload.
+ */
 /datum/rimworld_planet/proc/get_biome_images_payload()
 	return biome_images?.Copy() || list()
 
-
 /datum/rimworld_planet/Destroy()
-
 	clear_noise_maps()
-
 	objects = null
 	settlements = null
 	points_of_interest = null
@@ -1311,5 +1272,4 @@
 	discovered_regions = null
 	tile_images = null
 	biome_images = null
-
 	return ..()

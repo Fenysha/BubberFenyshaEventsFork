@@ -47,25 +47,22 @@ export const AdminPanel = () => {
     elevationLowlandHigh: data.elevationLowlandHigh ?? 0.18,
 
     elevationHighlandLow: data.elevationHighlandLow ?? 0.18,
-    elevationHighlandHigh: data.elevationHighlandHigh ?? 0.30,
+    elevationHighlandHigh: data.elevationHighlandHigh ?? 0.3,
 
-    elevationMountainLow: data.elevationMountainLow ?? 0.30,
+    elevationMountainLow: data.elevationMountainLow ?? 0.3,
     elevationMountainHigh: data.elevationMountainHigh ?? 0.42,
 
     elevationSnowLow: data.elevationSnowLow ?? 0.42,
-    elevationSnowHigh: data.elevationSnowHigh ?? 0.50,
+    elevationSnowHigh: data.elevationSnowHigh ?? 0.5,
 
-    heatThresholdLow: data.heatThresholdLow ?? -0.20,
+    heatThresholdLow: data.heatThresholdLow ?? -0.2,
     heatThresholdHigh: data.heatThresholdHigh ?? 0.25,
 
     humidityThresholdLow: data.humidityThresholdLow ?? -0.18,
     humidityThresholdHigh: data.humidityThresholdHigh ?? 0.25,
   });
 
-  const updateParam = (
-    key: string,
-    value: number | string,
-  ) => {
+  const updateParam = (key: string, value: number | string) => {
     setParams((prev) => ({
       ...prev,
       [key]: value,
@@ -80,17 +77,11 @@ export const AdminPanel = () => {
       <Stack.Item>
         <Section title="Planet Info">
           <LabeledList>
-            <LabeledList.Item label="Name">
-              {data.name}
-            </LabeledList.Item>
+            <LabeledList.Item label="Name">{data.name}</LabeledList.Item>
 
-            <LabeledList.Item label="Type">
-              {data.planetType}
-            </LabeledList.Item>
+            <LabeledList.Item label="Type">{data.planetType}</LabeledList.Item>
 
-            <LabeledList.Item label="Seed">
-              {data.seed}
-            </LabeledList.Item>
+            <LabeledList.Item label="Seed">{data.seed}</LabeledList.Item>
 
             <LabeledList.Item label="Revision">
               {data.generationRevision}
@@ -108,9 +99,7 @@ export const AdminPanel = () => {
               color={data.autoRotate ? 'warning' : 'success'}
               onClick={() => act('toggle_rotation')}
             >
-              {data.autoRotate
-                ? 'Pause Rotation'
-                : 'Start Rotation'}
+              {data.autoRotate ? 'Pause Rotation' : 'Start Rotation'}
             </Button>
           </LabeledList.Item>
 
@@ -154,9 +143,7 @@ export const AdminPanel = () => {
                 width="100%"
                 selected={params.planetType}
                 options={presets}
-                onSelected={(value) =>
-                  updateParam('planetType', value)
-                }
+                onSelected={(value) => updateParam('planetType', value)}
               />
             </LabeledList.Item>
 
@@ -166,9 +153,7 @@ export const AdminPanel = () => {
                 minValue={0}
                 maxValue={2000000000}
                 value={params.seed}
-                onChange={(value) =>
-                  updateParam('seed', value)
-                }
+                onChange={(value) => updateParam('seed', value)}
               />
             </LabeledList.Item>
           </LabeledList>
@@ -181,9 +166,7 @@ export const AdminPanel = () => {
                   minValue={1}
                   maxValue={500}
                   value={params.noiseScale}
-                  onChange={(value) =>
-                    updateParam('noiseScale', value)
-                  }
+                  onChange={(value) => updateParam('noiseScale', value)}
                 />
               </LabeledList.Item>
 
@@ -193,9 +176,7 @@ export const AdminPanel = () => {
                   minValue={1}
                   maxValue={500}
                   value={params.terrainScale}
-                  onChange={(value) =>
-                    updateParam('terrainScale', value)
-                  }
+                  onChange={(value) => updateParam('terrainScale', value)}
                 />
               </LabeledList.Item>
 
@@ -205,9 +186,7 @@ export const AdminPanel = () => {
                   minValue={1}
                   maxValue={500}
                   value={params.heatScale}
-                  onChange={(value) =>
-                    updateParam('heatScale', value)
-                  }
+                  onChange={(value) => updateParam('heatScale', value)}
                 />
               </LabeledList.Item>
 
@@ -217,9 +196,7 @@ export const AdminPanel = () => {
                   minValue={1}
                   maxValue={500}
                   value={params.humidityScale}
-                  onChange={(value) =>
-                    updateParam('humidityScale', value)
-                  }
+                  onChange={(value) => updateParam('humidityScale', value)}
                 />
               </LabeledList.Item>
 
@@ -229,9 +206,7 @@ export const AdminPanel = () => {
                   minValue={1}
                   maxValue={500}
                   value={params.geologyScale}
-                  onChange={(value) =>
-                    updateParam('geologyScale', value)
-                  }
+                  onChange={(value) => updateParam('geologyScale', value)}
                 />
               </LabeledList.Item>
 
@@ -241,9 +216,7 @@ export const AdminPanel = () => {
                   minValue={1}
                   maxValue={500}
                   value={params.precipitationScale}
-                  onChange={(value) =>
-                    updateParam('precipitationScale', value)
-                  }
+                  onChange={(value) => updateParam('precipitationScale', value)}
                 />
               </LabeledList.Item>
             </LabeledList>
@@ -257,9 +230,7 @@ export const AdminPanel = () => {
                   minValue={0}
                   maxValue={2000000000}
                   value={params.terrainSeed}
-                  onChange={(value) =>
-                    updateParam('terrainSeed', value)
-                  }
+                  onChange={(value) => updateParam('terrainSeed', value)}
                 />
               </LabeledList.Item>
 
@@ -269,9 +240,7 @@ export const AdminPanel = () => {
                   minValue={0}
                   maxValue={2000000000}
                   value={params.heatSeed}
-                  onChange={(value) =>
-                    updateParam('heatSeed', value)
-                  }
+                  onChange={(value) => updateParam('heatSeed', value)}
                 />
               </LabeledList.Item>
 
@@ -281,9 +250,7 @@ export const AdminPanel = () => {
                   minValue={0}
                   maxValue={2000000000}
                   value={params.humiditySeed}
-                  onChange={(value) =>
-                    updateParam('humiditySeed', value)
-                  }
+                  onChange={(value) => updateParam('humiditySeed', value)}
                 />
               </LabeledList.Item>
 
@@ -293,9 +260,7 @@ export const AdminPanel = () => {
                   minValue={0}
                   maxValue={2000000000}
                   value={params.geologySeed}
-                  onChange={(value) =>
-                    updateParam('geologySeed', value)
-                  }
+                  onChange={(value) => updateParam('geologySeed', value)}
                 />
               </LabeledList.Item>
 
@@ -305,9 +270,7 @@ export const AdminPanel = () => {
                   minValue={0}
                   maxValue={2000000000}
                   value={params.precipitationSeed}
-                  onChange={(value) =>
-                    updateParam('precipitationSeed', value)
-                  }
+                  onChange={(value) => updateParam('precipitationSeed', value)}
                 />
               </LabeledList.Item>
             </LabeledList>
@@ -323,10 +286,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationCoastLow}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationCoastLow',
-                          value,
-                        )
+                        updateParam('elevationCoastLow', value)
                       }
                     />
                   </Stack.Item>
@@ -337,10 +297,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationCoastHigh}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationCoastHigh',
-                          value,
-                        )
+                        updateParam('elevationCoastHigh', value)
                       }
                     />
                   </Stack.Item>
@@ -355,10 +312,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationLowlandLow}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationLowlandLow',
-                          value,
-                        )
+                        updateParam('elevationLowlandLow', value)
                       }
                     />
                   </Stack.Item>
@@ -369,10 +323,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationLowlandHigh}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationLowlandHigh',
-                          value,
-                        )
+                        updateParam('elevationLowlandHigh', value)
                       }
                     />
                   </Stack.Item>
@@ -387,10 +338,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationHighlandLow}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationHighlandLow',
-                          value,
-                        )
+                        updateParam('elevationHighlandLow', value)
                       }
                     />
                   </Stack.Item>
@@ -401,10 +349,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationHighlandHigh}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationHighlandHigh',
-                          value,
-                        )
+                        updateParam('elevationHighlandHigh', value)
                       }
                     />
                   </Stack.Item>
@@ -419,10 +364,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationMountainLow}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationMountainLow',
-                          value,
-                        )
+                        updateParam('elevationMountainLow', value)
                       }
                     />
                   </Stack.Item>
@@ -433,10 +375,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationMountainHigh}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationMountainHigh',
-                          value,
-                        )
+                        updateParam('elevationMountainHigh', value)
                       }
                     />
                   </Stack.Item>
@@ -451,10 +390,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationSnowLow}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationSnowLow',
-                          value,
-                        )
+                        updateParam('elevationSnowLow', value)
                       }
                     />
                   </Stack.Item>
@@ -465,10 +401,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.elevationSnowHigh}
                       onChange={(value) =>
-                        updateParam(
-                          'elevationSnowHigh',
-                          value,
-                        )
+                        updateParam('elevationSnowHigh', value)
                       }
                     />
                   </Stack.Item>
@@ -487,10 +420,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.heatThresholdLow}
                       onChange={(value) =>
-                        updateParam(
-                          'heatThresholdLow',
-                          value,
-                        )
+                        updateParam('heatThresholdLow', value)
                       }
                     />
                   </Stack.Item>
@@ -501,10 +431,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.heatThresholdHigh}
                       onChange={(value) =>
-                        updateParam(
-                          'heatThresholdHigh',
-                          value,
-                        )
+                        updateParam('heatThresholdHigh', value)
                       }
                     />
                   </Stack.Item>
@@ -519,10 +446,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.humidityThresholdLow}
                       onChange={(value) =>
-                        updateParam(
-                          'humidityThresholdLow',
-                          value,
-                        )
+                        updateParam('humidityThresholdLow', value)
                       }
                     />
                   </Stack.Item>
@@ -533,10 +457,7 @@ export const AdminPanel = () => {
                       step={0.01}
                       value={params.humidityThresholdHigh}
                       onChange={(value) =>
-                        updateParam(
-                          'humidityThresholdHigh',
-                          value,
-                        )
+                        updateParam('humidityThresholdHigh', value)
                       }
                     />
                   </Stack.Item>
@@ -561,28 +482,18 @@ export const AdminPanel = () => {
       {!!selectedObject && (
         <Stack.Item>
           <Section title="Selected Object">
-            <Box bold>
-              {selectedObject.name}
-            </Box>
+            <Box bold>{selectedObject.name}</Box>
 
-            <Box color="label">
-              {selectedObject.type}
-            </Box>
+            <Box color="label">{selectedObject.type}</Box>
 
-            <Box color="label">
-              ID: {selectedObject.id}
-            </Box>
+            <Box color="label">ID: {selectedObject.id}</Box>
           </Section>
         </Stack.Item>
       )}
 
       <Stack.Item>
         <Section title="Place & Objects">
-          <Input
-            fluid
-            value={objectName}
-            onChange={setObjectName}
-          />
+          <Input fluid value={objectName} onChange={setObjectName} />
 
           <Stack mt={1}>
             <Stack.Item grow>
@@ -619,9 +530,7 @@ export const AdminPanel = () => {
               <Button
                 fluid
                 disabled={!hasSelection}
-                onClick={() =>
-                  act('mark_road_start')
-                }
+                onClick={() => act('mark_road_start')}
               >
                 Road start
               </Button>
@@ -631,9 +540,7 @@ export const AdminPanel = () => {
               <Button
                 fluid
                 disabled={!hasSelection}
-                onClick={() =>
-                  act('place_road')
-                }
+                onClick={() => act('place_road')}
               >
                 Road here
               </Button>
@@ -641,12 +548,8 @@ export const AdminPanel = () => {
           </Stack>
 
           {data.view?.roadStartX != null && (
-            <Box
-              color="label"
-              mt={1}
-            >
-              Road start: {data.view.roadStartX},{' '}
-              {data.view.roadStartY}
+            <Box color="label" mt={1}>
+              Road start: {data.view.roadStartX}, {data.view.roadStartY}
             </Box>
           )}
 
@@ -656,9 +559,7 @@ export const AdminPanel = () => {
                 fluid
                 color="bad"
                 disabled={!selectedObject}
-                onClick={() =>
-                  act('remove_object')
-                }
+                onClick={() => act('remove_object')}
               >
                 Remove object
               </Button>
@@ -667,12 +568,8 @@ export const AdminPanel = () => {
             <Stack.Item grow>
               <Button
                 fluid
-                disabled={
-                  !selectedObject || !hasSelection
-                }
-                onClick={() =>
-                  act('move_object')
-                }
+                disabled={!selectedObject || !hasSelection}
+                onClick={() => act('move_object')}
               >
                 Move here
               </Button>
@@ -683,4 +580,3 @@ export const AdminPanel = () => {
     </Stack>
   );
 };
-

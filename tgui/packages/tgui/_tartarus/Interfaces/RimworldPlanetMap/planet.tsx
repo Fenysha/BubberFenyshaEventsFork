@@ -274,7 +274,10 @@ export const Planet = ({
   const dataRef = useRef(data);
   dataRef.current = data;
 
-  const [isLoading, setIsLoading] = useState(false);
+  const mapIdentity = getPlanetMapIdentity(data);
+
+  // Инициализация загрузки мгновенно при рендере, если текстуры нет в кэше
+  const [isLoading, setIsLoading] = useState(() => !textureCache.has(mapIdentity));
 
   const callbacksRef = useRef({
     onTileClick,
@@ -285,8 +288,6 @@ export const Planet = ({
     onTileClick,
     onObjectClick,
   };
-
-  const mapIdentity = getPlanetMapIdentity(data);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -431,22 +432,33 @@ export const Planet = ({
     } else {
       setIsLoading(true);
 
-      animFrameId = requestAnimationFrame(() => {
-        const texture = buildPlanetTexture(data, generator);
+      const buildTextureWhenReady = () => {
+        if (generator.isReady()) {
+          const texture = buildPlanetTexture(data, generator);
 
-        if (textureCache.size >= MAX_TEXTURE_CACHE_SIZE) {
-          const firstKey = textureCache.keys().next().value;
-          if (firstKey) {
-            textureCache.get(firstKey)?.dispose();
-            textureCache.delete(firstKey);
+          if (textureCache.size >= MAX_TEXTURE_CACHE_SIZE) {
+            const firstKey = textureCache.keys().next().value;
+            if (firstKey) {
+              textureCache.get(firstKey)?.dispose();
+              textureCache.delete(firstKey);
+            }
           }
-        }
-        textureCache.set(mapIdentity, texture);
+          textureCache.set(mapIdentity, texture);
 
-        surfaceMaterial.uniforms.planetMap.value = texture;
-        surfaceMaterial.needsUpdate = true;
-        setIsLoading(false);
-      });
+          surfaceMaterial.uniforms.planetMap.value = texture;
+          surfaceMaterial.needsUpdate = true;
+          setIsLoading(false);
+          animFrameId = null;
+        } else if (generator.getState() === 'error') {
+          console.error('[Planet] Planet generator error:', generator.getError());
+          setIsLoading(false);
+          animFrameId = null;
+        } else {
+          animFrameId = requestAnimationFrame(buildTextureWhenReady);
+        }
+      };
+
+      animFrameId = requestAnimationFrame(buildTextureWhenReady);
     }
 
     const atmosphere = new THREE.Mesh(

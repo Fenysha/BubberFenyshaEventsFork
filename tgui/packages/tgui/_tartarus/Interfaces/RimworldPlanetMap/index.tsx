@@ -4,11 +4,7 @@ import { Window } from 'tgui/layouts';
 import { Button, Stack } from 'tgui-core/components';
 
 import { Planet } from './planet';
-import type {
-  PlanetMapData,
-  PlanetTile,
-  SelectedPlanetTile,
-} from './types';
+import type { PlanetMapData, PlanetTile } from './types';
 
 import { AdminPanel } from './views/AdminPanel';
 import { CaravanPanel } from './views/CaravanPanel';
@@ -36,11 +32,7 @@ export const RimworldPlanetMap = () => {
     };
   }, [act]);
 
-  const handleTileClick = (
-    x: number,
-    y: number,
-    tile: PlanetTile,
-  ) => {
+  const handleTileClick = (x: number, y: number, tile: PlanetTile) => {
     const selectedTile: PlanetTile = {
       ...tile,
       x,
@@ -54,9 +46,7 @@ export const RimworldPlanetMap = () => {
     });
   };
 
-  const handleObjectClick = (
-    object: PlanetMapData['objects'][number],
-  ) => {
+  const handleObjectClick = (object: PlanetMapData['objects'][number]) => {
     act('select_object', {
       id: object.id,
     });
@@ -89,8 +79,7 @@ export const RimworldPlanetMap = () => {
         precipitation: data.selectedTile.precipitation ?? 0,
         rainfall: data.selectedTile.rainfall ?? 0,
         snowfall: data.selectedTile.snowfall ?? 0,
-        waterAvailability:
-          data.selectedTile.waterAvailability ?? 0,
+        waterAvailability: data.selectedTile.waterAvailability ?? 0,
         elevation: data.selectedTile.elevation ?? '0',
         objects: data.selectedTile.objects ?? [],
       };
@@ -99,11 +88,9 @@ export const RimworldPlanetMap = () => {
     return null;
   })();
 
-  const selectedX =
-    localTile?.x ?? data.selectedTile?.x;
+  const selectedX = localTile?.x ?? data.selectedTile?.x;
 
-  const selectedY =
-    localTile?.y ?? data.selectedTile?.y;
+  const selectedY = localTile?.y ?? data.selectedTile?.y;
 
   return (
     <Window
@@ -155,49 +142,36 @@ export const RimworldPlanetMap = () => {
               <Button
                 icon={showRightPanel ? 'eye-slash' : 'eye'}
                 selected={showRightPanel}
-                tooltip={
-                  showRightPanel
-                    ? 'Hide Controls'
-                    : 'Show Controls'
-                }
-                onClick={() =>
-                  setShowRightPanel(
-                    (previous) => !previous,
-                  )
-                }
+                tooltip={showRightPanel ? 'Hide Controls' : 'Show Controls'}
+                onClick={() => setShowRightPanel((previous) => !previous)}
               >
-                {showRightPanel
-                  ? 'Hide Panel'
-                  : 'Show Panel'}
+                {showRightPanel ? 'Hide Panel' : 'Show Panel'}
               </Button>
             </Stack.Item>
           </Stack>
         </div>
 
         {activeTile && (
-        <div
-          className="rimworld-planet-map__tile-overlay"
-          style={{
-            position: 'absolute',
-            bottom: '16px',
-            left: '16px',
-            width: '340px',
-            maxHeight: 'calc(100% - 32px)',
-            backgroundColor: 'rgba(18, 22, 30, 0.94)',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '6px',
-            padding: '12px',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.65)',
-            overflowY: 'auto',
-            zIndex: 30,
-          }}
-        >
-          <TileDetails
-            tile={activeTile}
-            title="Selected Tile"
-          />
-        </div>
+          <div
+            className="rimworld-planet-map__tile-overlay"
+            style={{
+              position: 'absolute',
+              bottom: '16px',
+              left: '16px',
+              width: '340px',
+              maxHeight: 'calc(100% - 32px)',
+              backgroundColor: 'rgba(18, 22, 30, 0.94)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '6px',
+              padding: '12px',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.65)',
+              overflowY: 'auto',
+              zIndex: 30,
+            }}
+          >
+            <TileDetails tile={activeTile} title="Selected Tile" />
+          </div>
         )}
 
         {showRightPanel && (
@@ -209,31 +183,22 @@ export const RimworldPlanetMap = () => {
               right: '16px',
               width: '350px',
               maxHeight: 'calc(100% - 32px)',
-              backgroundColor:
-                'rgba(18, 22, 30, 0.92)',
+              backgroundColor: 'rgba(18, 22, 30, 0.92)',
               backdropFilter: 'blur(8px)',
-              border:
-                '1px solid rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
               borderRadius: '6px',
               padding: '12px',
-              boxShadow:
-                '0 8px 24px rgba(0, 0, 0, 0.65)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.65)',
               overflowY: 'auto',
               zIndex: 10,
               pointerEvents: 'auto',
             }}
           >
-            {viewType === 'admin' && (
-              <AdminPanel />
-            )}
+            {viewType === 'admin' && <AdminPanel />}
 
-            {viewType === 'caravan' && (
-              <CaravanPanel />
-            )}
+            {viewType === 'caravan' && <CaravanPanel />}
 
-            {viewType === 'overview' && (
-              <OverviewPanel />
-            )}
+            {viewType === 'overview' && <OverviewPanel />}
           </div>
         )}
       </Window.Content>

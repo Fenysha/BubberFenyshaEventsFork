@@ -1,4 +1,5 @@
 /// MOD_INCLUDE_BEGIN
+#include "code\__DEFINES\__rustg.dm"
 #include "code\__DEFINES\hypothermia.dm"
 #include "code\__DEFINES\mapping.dm"
 #include "code\__DEFINES\object_pool.dm"
@@ -164,6 +165,7 @@
 #include "code\modules\quicker_spawn\observer.dm"
 #include "code\modules\rimworld\overmap\_overmap.dm"
 #include "code\modules\rimworld\overmap\planet.dm"
+#include "code\modules\rimworld\overmap\noise_asset.dm"
 #include "code\modules\rimworld\overmap\planetmap_view.dm"
 #include "code\modules\rimworld\overmap\map_tile.dm"
 #include "code\modules\rimworld\sub_levels\map_spatial_node.dm"
