@@ -279,11 +279,21 @@
 
 
 /datum/planetmap_view/admin/get_view_data()
-	return list(
+	var/list/data = list(
 		"roadStartX" = road_start_x,
 		"roadStartY" = road_start_y,
 	)
 
+	if(planet && !isnull(selected_x) && !isnull(selected_y))
+		var/datum/planet_cell/cell = planet.get_cell(
+			selected_x,
+			selected_y
+		)
+
+		if(cell)
+			data["cell"] = cell.get_data()
+
+	return data
 
 /datum/planetmap_view/admin/clear_selection()
 	. = ..()
@@ -310,6 +320,7 @@
 				planet.rotation_angle = text2num(params["angle"])
 				SStgui.update_uis(src)
 			return TRUE
+
 		if("regenerate")
 			if(!can_regenerate)
 				return FALSE
@@ -320,7 +331,6 @@
 			if(!planet_seed)
 				planet_seed = null
 
-			// Собираем точные пользовательские параметры генерации
 			var/list/custom_params = list()
 			var/list/param_keys = list(
 				"terrainSeed",
@@ -349,19 +359,37 @@
 				"humidityThresholdLow",
 				"humidityThresholdHigh"
 			)
+
 			for(var/key in param_keys)
 				if(!isnull(params[key]))
 					custom_params[key] = text2num(params[key])
 
-			SSrimworld_planetmap.generate_planet(planet_type, planet_seed, custom_params)
+			SSrimworld_planetmap.generate_planet(
+				planet_type,
+				planet_seed,
+				custom_params
+			)
+
 			SStgui.try_update_ui(usr, src)
 			return TRUE
 
-		if("place_settlement")
-			return place_settlement(params)
+		if("load_cell")
+			return load_selected_cell()
 
-		if("place_poi")
-			return place_poi(params)
+		if("unload_cell")
+			return unload_selected_cell()
+
+		if("reload_cell")
+			return reload_selected_cell()
+
+		if("create_object")
+			return create_object(params)
+
+		if("remove_object")
+			return remove_selected_object(params)
+
+		if("move_object")
+			return move_selected_object(params)
 
 		if("mark_road_start")
 			if(isnull(selected_x) || isnull(selected_y))
@@ -369,16 +397,14 @@
 
 			road_start_x = selected_x
 			road_start_y = selected_y
+			SStgui.update_uis(src)
 			return TRUE
 
-		if("place_road")
-			return place_road(params)
-
-		if("remove_object")
-			return remove_selected_object(params)
-
-		if("move_object")
-			return move_selected_object(params)
+		if("clear_road_start")
+			road_start_x = null
+			road_start_y = null
+			SStgui.update_uis(src)
+			return TRUE
 
 	return FALSE
 
@@ -407,10 +433,74 @@
 	selected_y = object.y
 	return TRUE
 
+/datum/planetmap_view/admin/proc/get_selected_cell()
+	if(!planet)
+		return null
 
-/datum/planetmap_view/admin/proc/place_poi(list/params)
+	if(isnull(selected_x) || isnull(selected_y))
+		return null
+
+	return planet.get_or_create_cell(
+		selected_x,
+		selected_y,
+		FALSE
+	)
+
+
+/datum/planetmap_view/admin/proc/load_selected_cell()
 	if(!can_edit)
 		return FALSE
+
+	var/datum/planet_cell/cell = get_selected_cell()
+	if(!cell)
+		return FALSE
+
+	if(!cell.ensure_loaded())
+		return FALSE
+
+	SStgui.update_uis(src)
+	return TRUE
+
+
+/datum/planetmap_view/admin/proc/unload_selected_cell()
+	if(!can_edit)
+		return FALSE
+
+	var/datum/planet_cell/cell = planet.get_cell(
+		selected_x,
+		selected_y
+	)
+
+	if(!cell)
+		return FALSE
+
+	if(!cell.unload())
+		return FALSE
+
+	SStgui.update_uis(src)
+	return TRUE
+
+
+/datum/planetmap_view/admin/proc/reload_selected_cell()
+	if(!can_edit)
+		return FALSE
+
+	var/datum/planet_cell/cell = get_selected_cell()
+	if(!cell)
+		return FALSE
+
+	if(!cell.reload())
+		return FALSE
+
+	SStgui.update_uis(src)
+	return TRUE
+
+
+/datum/planetmap_view/admin/proc/create_object(list/params)
+	if(!can_edit || !planet)
+		return FALSE
+
+	var/object_type = lowertext(params["type"])
 
 	var/x = text2num(params["x"])
 	var/y = text2num(params["y"])
@@ -421,8 +511,50 @@
 	if(isnull(y))
 		y = selected_y
 
-	var/poi_name = params["name"] || "Point of Interest"
-	var/datum/rimworld_planet_object/object = planet.create_point_of_interest(x, y, poi_name)
+	if(isnull(x) || isnull(y))
+		return FALSE
+
+	var/object_name = params["name"] || "Object"
+
+	var/datum/rimworld_planet_object/object
+
+	switch(object_type)
+		if("settlement")
+			object = planet.create_settlement(
+				x,
+				y,
+				object_name
+			)
+
+		if("poi")
+			object = planet.create_point_of_interest(
+				x,
+				y,
+				object_name
+			)
+
+		if("road")
+			var/start_x = text2num(params["startX"])
+			var/start_y = text2num(params["startY"])
+
+			if(isnull(start_x))
+				start_x = road_start_x
+
+			if(isnull(start_y))
+				start_y = road_start_y
+
+			if(isnull(start_x) || isnull(start_y))
+				return FALSE
+
+			object = planet.create_road(
+				start_x,
+				start_y,
+				x,
+				y
+			)
+
+		else
+			return FALSE
 
 	if(!object)
 		return FALSE
@@ -430,40 +562,24 @@
 	selected_object_id = object.id
 	selected_x = object.x
 	selected_y = object.y
-	return TRUE
 
+	var/load_immediately = !!params["loadImmediately"]
 
-/datum/planetmap_view/admin/proc/place_road(list/params)
-	if(!can_edit)
-		return FALSE
+	if(load_immediately)
+		var/datum/planet_cell/cell = planet.get_or_create_cell(
+			object.x,
+			object.y,
+			FALSE
+		)
 
-	var/start_x = text2num(params["startX"])
-	var/start_y = text2num(params["startY"])
-	var/end_x = text2num(params["endX"])
-	var/end_y = text2num(params["endY"])
+		if(cell)
+			cell.ensure_loaded(object.name)
 
-	if(isnull(start_x))
-		start_x = road_start_x
-
-	if(isnull(start_y))
-		start_y = road_start_y
-
-	if(isnull(end_x))
-		end_x = selected_x
-
-	if(isnull(end_y))
-		end_y = selected_y
-
-	var/datum/rimworld_planet_object/object = planet.create_road(start_x, start_y, end_x, end_y)
-
-	if(!object)
-		return FALSE
-
-	selected_object_id = object.id
 	road_start_x = null
 	road_start_y = null
-	return TRUE
 
+	SStgui.update_uis(src)
+	return TRUE
 
 /datum/planetmap_view/admin/proc/remove_selected_object(list/params)
 	if(!can_edit)

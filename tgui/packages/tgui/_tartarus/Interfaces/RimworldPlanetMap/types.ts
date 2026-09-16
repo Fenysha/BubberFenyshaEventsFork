@@ -92,23 +92,53 @@ export type PlanetMapData = {
   selectedTile?: SelectedPlanetTile | null;
   selectedObject?: PlanetObject | null;
 
-  view?: PlanetViewData;
+  view?: PlanetMapViewData;
 
   tileImages?: PlanetTileImage[];
   biomeImages?: Record<string, string>;
 };
 
-export type PlanetViewData = {
-  caravanId?: string | null;
-  originX?: number | null;
-  originY?: number | null;
-  destinationX?: number | null;
-  destinationY?: number | null;
-  canTravel?: BooleanLike;
-  status?: string;
+export interface PlanetCellData {
+  id: string;
+  x: number;
+  y: number;
+
+  elevation: number;
+  heat: number;
+  humidity: number;
+  material: number;
+  latitude: number;
+  temperature: number;
+  precipitation: number;
+  rainfall: number;
+  snowfall: number;
+  waterAvailability: number;
+
+  biome: string;
+  subBiome: string;
+
+  objects: PlanetObject[];
+
+  image?: string | null;
+  mapsLoaded: boolean;
+
+  isGenerated: boolean;
+  isGenerating: boolean;
+
+  subLevelId?: string | null;
+
+  weatherType: string;
+  weatherIntensity: number;
+
+  localWidth: number;
+  localHeight: number;
+}
+
+export interface PlanetMapViewData {
   roadStartX?: number | null;
   roadStartY?: number | null;
-};
+  cell?: PlanetCellData | null;
+}
 
 export type PlanetTile = {
   x?: number;
