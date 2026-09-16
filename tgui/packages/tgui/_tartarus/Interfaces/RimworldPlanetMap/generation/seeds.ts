@@ -39,10 +39,14 @@ export function deriveSeeds(seed: number) {
   const heatSeed = nextSeed(terrainSeed);
 
   const humiditySeed = nextSeed(heatSeed);
+  const geologySeed = nextSeed(humiditySeed);
+  const precipitationSeed = nextSeed(geologySeed);
 
   return {
     terrainSeed,
     heatSeed,
     humiditySeed,
+    geologySeed,
+    precipitationSeed,
   };
 }

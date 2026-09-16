@@ -29,6 +29,25 @@ import {
   ELEVATION_MOUNTAIN,
   ELEVATION_OCEAN,
   ELEVATION_SNOW,
+  PLANET_MATERIAL_GRANITE,
+  PLANET_MATERIAL_LIMESTONE,
+  PLANET_MATERIAL_MARBLE,
+  PLANET_MATERIAL_OBSIDIAN,
+  PLANET_MATERIAL_SANDSTONE,
+  PLANET_MATERIAL_SLATE,
+  PLANET_MATERIAL_JADE,
+  PLANET_MATERIAL_NONE,
+  SUBBIOME_DEEP_OCEAN,
+  SUBBIOME_SHORE,
+  SUBBIOME_HILLS,
+  SUBBIOME_ROCKY_HILLS,
+  SUBBIOME_MARSH,
+  SUBBIOME_PLAINS,
+  SUBBIOME_FOREST,
+  SUBBIOME_FOREST_HILLS,
+  SUBBIOME_TUNDRA_PLAINS,
+  SUBBIOME_SNOWFIELDS,
+  SUBBIOME_FROZEN_OCEAN,
 } from './constants';
 
 import { DbpSampler } from './dbp';
@@ -39,6 +58,8 @@ export class PlanetGenerator {
   private readonly terrain: DbpSampler;
   private readonly heat: DbpSampler;
   private readonly humidity: DbpSampler;
+  private readonly geology: DbpSampler;
+  private readonly precipitation: DbpSampler;
 
   public constructor(data: PlanetMapData) {
     this.data = data;
@@ -61,6 +82,20 @@ export class PlanetGenerator {
       seed: data.humiditySeed,
       accuracy: data.noiseScale,
       stampSize: data.humidityScale,
+      worldSize: data.width,
+    });
+
+    this.geology = new DbpSampler({
+      seed: data.geologySeed,
+      accuracy: data.noiseScale,
+      stampSize: data.geologyScale,
+      worldSize: data.width,
+    });
+
+    this.precipitation = new DbpSampler({
+      seed: data.precipitationSeed,
+      accuracy: data.noiseScale,
+      stampSize: data.precipitationScale,
       worldSize: data.width,
     });
   }
@@ -314,12 +349,91 @@ export class PlanetGenerator {
     return climateOffset + wave;
   }
 
-  public getTemperature(x: number, y: number, heat?: string): number {
+  public getLatitude(x: number, y: number): number {
+    if (!this.valid(x, y)) {
+      return 0;
+    }
+
+    const normalized = (y - 0.5) / this.data.height;
+    return normalized * 180 - 90;
+  }
+
+  private getMaterialFromNoise(value: number, elevation: string): string {
+    // Ocean cells do not expose a surface rock type.
+    if (elevation === ELEVATION_OCEAN) {
+      return PLANET_MATERIAL_NONE;
+    }
+
+    const geology = value;
+
+    if (geology < 0.20) {
+      return PLANET_MATERIAL_GRANITE;
+    }
+    if (geology < 0.40) {
+      return PLANET_MATERIAL_LIMESTONE;
+    }
+    if (geology < 0.60) {
+      return PLANET_MATERIAL_SANDSTONE;
+    }
+    if (geology < 0.78) {
+      return PLANET_MATERIAL_SLATE;
+    }
+    if (geology < 0.94) {
+      return PLANET_MATERIAL_MARBLE;
+    }
+    if (geology < 0.995) {
+      return PLANET_MATERIAL_OBSIDIAN;
+    }
+
+    return PLANET_MATERIAL_JADE;
+  }
+
+  public getMaterial(x: number, y: number, elevation?: string): string {
+    if (!this.valid(x, y)) {
+      return PLANET_MATERIAL_NONE;
+    }
+
+    const e = elevation ?? this.getElevation(x, y);
+    const geology = this.sampleContinuousNoise(this.geology, x, y);
+
+    return this.getMaterialFromNoise(geology, e);
+  }
+
+  private getMaterialTemperatureModifier(material: string): number {
+    switch (material) {
+      case PLANET_MATERIAL_GRANITE:
+        return -0.005;
+      case PLANET_MATERIAL_LIMESTONE:
+        return 0.000;
+      case PLANET_MATERIAL_SANDSTONE:
+        return 0.012;
+      case PLANET_MATERIAL_SLATE:
+        return -0.008;
+      case PLANET_MATERIAL_MARBLE:
+        return 0.008;
+      case PLANET_MATERIAL_OBSIDIAN:
+        return 0.018;
+      case PLANET_MATERIAL_JADE:
+        return 0.004;
+      default:
+        return 0;
+    }
+  }
+
+  public getTemperature(
+    x: number,
+    y: number,
+    heat?: string,
+    elevation?: string,
+    material?: string,
+  ): number {
     if (!this.valid(x, y)) {
       return 0;
     }
 
     const heatLevel = heat ?? this.getHeat(x, y);
+    const e = elevation ?? this.getElevation(x, y);
+    const m = material ?? this.getMaterial(x, y, e);
 
     const latitudeOffset = this.getLatitudeOffset(x, y, heatLevel);
     const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
@@ -327,6 +441,7 @@ export class PlanetGenerator {
       0,
       Math.min(1, baseLat + latitudeOffset),
     );
+
     const latitudeDistance = Math.abs(normalizedLatitude - 0.5) * 2.0;
     const latitudeTemperature = Math.max(0, 1.0 - latitudeDistance) ** 1.8;
 
@@ -337,12 +452,10 @@ export class PlanetGenerator {
       heatModifier = 0.22;
     }
 
-    const elevation = this.getElevation(x, y);
     let elevationModifier = 0.0;
-
-    switch (elevation) {
+    switch (e) {
       case ELEVATION_HIGHLAND:
-        elevationModifier = -0.1;
+        elevationModifier = -0.10;
         break;
       case ELEVATION_MOUNTAIN:
         elevationModifier = -0.22;
@@ -352,12 +465,208 @@ export class PlanetGenerator {
         break;
     }
 
+    const materialModifier = this.getMaterialTemperatureModifier(m);
+
     const temperature =
-      latitudeTemperature * 0.6 +
+      latitudeTemperature * 0.60 +
       (heatModifier + 0.15) * 0.25 +
-      (elevationModifier + 0.35) * 0.15;
+      (elevationModifier + 0.35) * 0.15 +
+      materialModifier;
 
     return Math.max(0, Math.min(1, temperature));
+  }
+
+  private getPrecipitationNoiseCategory(
+    x: number,
+    y: number,
+  ): number {
+    const value = this.sampleContinuousNoise(this.precipitation, x, y);
+
+    if (value < 0.33) {
+      return 0;
+    }
+    if (value < 0.66) {
+      return 1;
+    }
+    return 2;
+  }
+
+  private getPrecipitationBase(category: number): number {
+    switch (category) {
+      case 2:
+        return 0.78;
+      case 1:
+        return 0.50;
+      default:
+        return 0.20;
+    }
+  }
+
+  private getPrecipitationCategoryServerCompatible(
+    category: number,
+    humidity: string,
+  ): number {
+    let value = this.getPrecipitationBase(category);
+
+    if (humidity === CLIMATE_HIGH) {
+      value += 0.06;
+    } else if (humidity === CLIMATE_LOW) {
+      value -= 0.05;
+    }
+
+    return value;
+  }
+
+  public getPrecipitation(
+    x: number,
+    y: number,
+    temperature?: number,
+    humidity?: string,
+    elevation?: string,
+  ): number {
+    if (!this.valid(x, y)) {
+      return 0;
+    }
+
+    const t = temperature ?? this.getTemperature(x, y);
+    const hm = humidity ?? this.getHumidity(x, y);
+    const e = elevation ?? this.getElevation(x, y);
+
+    let precipitation = this.getPrecipitationCategoryServerCompatible(
+      this.getPrecipitationNoiseCategory(x, y),
+      hm,
+    );
+
+    const latitude = Math.abs(this.getLatitude(x, y)) / 90;
+
+    // Moist equatorial belt, drier polar air.
+    precipitation += (1 - latitude) * 0.08 - latitude * 0.05;
+
+    // Warm air can carry more moisture; very cold cells get a modest penalty.
+    precipitation += (t - 0.5) * 0.10;
+
+    // Elevated terrain provides a mild orographic boost.
+    if (e === ELEVATION_HIGHLAND) {
+      precipitation += 0.025;
+    } else if (e === ELEVATION_MOUNTAIN) {
+      precipitation += 0.055;
+    }
+
+    return Math.max(0, Math.min(1, precipitation));
+  }
+
+  public getRainfall(
+    x: number,
+    y: number,
+    temperature?: number,
+    precipitation?: number,
+  ): number {
+    const t = temperature ?? this.getTemperature(x, y);
+    const p = precipitation ?? this.getPrecipitation(x, y, t);
+
+    // Transition between rain and snow around the freezing band.
+    const rainFactor = Math.max(0, Math.min(1, (t - 0.20) / 0.18));
+    return p * rainFactor;
+  }
+
+  public getSnowfall(
+    x: number,
+    y: number,
+    temperature?: number,
+    precipitation?: number,
+  ): number {
+    const t = temperature ?? this.getTemperature(x, y);
+    const p = precipitation ?? this.getPrecipitation(x, y, t);
+    return Math.max(0, p - this.getRainfall(x, y, t, p));
+  }
+
+  public getWaterAvailability(
+    x: number,
+    y: number,
+    precipitation?: number,
+    elevation?: string,
+  ): number {
+    const p = precipitation ?? this.getPrecipitation(x, y);
+    const e = elevation ?? this.getElevation(x, y);
+
+    let value = p * 0.78;
+    if (e === ELEVATION_LOWLAND) {
+      value += 0.08;
+    } else if (e === ELEVATION_HIGHLAND) {
+      value += 0.03;
+    } else if (e === ELEVATION_MOUNTAIN) {
+      value -= 0.04;
+    }
+
+    return Math.max(0, Math.min(1, value));
+  }
+
+  public getSubBiome(
+    x: number,
+    y: number,
+    biome?: string,
+    elevation?: string,
+    precipitation?: number,
+    temperature?: number,
+  ): string {
+    if (!this.valid(x, y)) {
+      return SUBBIOME_PLAINS;
+    }
+
+    const e = elevation ?? this.getElevation(x, y);
+    const b = biome ?? this.getBiome(x, y);
+    const p = precipitation ?? this.getPrecipitation(x, y, temperature);
+    const t = temperature ?? this.getTemperature(x, y);
+
+    if (e === ELEVATION_OCEAN) {
+      if (b === BIOME_SEA_ICE) {
+        return SUBBIOME_FROZEN_OCEAN;
+      }
+      return SUBBIOME_DEEP_OCEAN;
+    }
+
+    if (b === BIOME_SEA_ICE || b === BIOME_SNOW) {
+      return SUBBIOME_SNOWFIELDS;
+    }
+
+    if (e === ELEVATION_COAST || b === BIOME_BEACH || b === BIOME_COAST) {
+      return SUBBIOME_SHORE;
+    }
+
+    if (e === ELEVATION_MOUNTAIN || b === BIOME_MOUNTAINS) {
+      return SUBBIOME_ROCKY_HILLS;
+    }
+
+    if (e === ELEVATION_HIGHLAND) {
+      if (
+        b === BIOME_TEMPERATE_FOREST ||
+        b === BIOME_TROPICAL_FOREST ||
+        b === BIOME_RAINFOREST ||
+        b === BIOME_TAIGA
+      ) {
+        return SUBBIOME_FOREST_HILLS;
+      }
+      return SUBBIOME_HILLS;
+    }
+
+    if (e === ELEVATION_LOWLAND && p >= 0.72 && t > 0.24) {
+      return SUBBIOME_MARSH;
+    }
+
+    if (
+      b === BIOME_TEMPERATE_FOREST ||
+      b === BIOME_TROPICAL_FOREST ||
+      b === BIOME_RAINFOREST ||
+      b === BIOME_TAIGA
+    ) {
+      return SUBBIOME_FOREST;
+    }
+
+    if (b === BIOME_TUNDRA) {
+      return SUBBIOME_TUNDRA_PLAINS;
+    }
+
+    return SUBBIOME_PLAINS;
   }
 
   public getBiome(
@@ -366,12 +675,14 @@ export class PlanetGenerator {
     elevation?: string,
     heat?: string,
     humidity?: string,
+    material?: string,
   ): string {
     const e = elevation ?? this.getElevation(x, y);
     const h = heat ?? this.getHeat(x, y);
     const hm = humidity ?? this.getHumidity(x, y);
+    const m = material ?? this.getMaterial(x, y, e);
 
-    const temperature = this.getTemperature(x, y, h);
+    const temperature = this.getTemperature(x, y, h, e, m);
 
     const latitudeOffset = this.getLatitudeOffset(x, y, h, hm, e);
     const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
@@ -476,14 +787,53 @@ export class PlanetGenerator {
     const elevation = this.getElevation(x, y);
     const heat = this.getHeat(x, y);
     const humidity = this.getHumidity(x, y);
-    const temperature = this.getTemperature(x, y, heat);
-    const biome = this.getBiome(x, y, elevation, heat, humidity);
+    const material = this.getMaterial(x, y, elevation);
+    const temperature = this.getTemperature(
+      x,
+      y,
+      heat,
+      elevation,
+      material,
+    );
+    const precipitation = this.getPrecipitation(
+      x,
+      y,
+      temperature,
+      humidity,
+      elevation,
+    );
+    const rainfall = this.getRainfall(x, y, temperature, precipitation);
+    const snowfall = this.getSnowfall(x, y, temperature, precipitation);
+    const waterAvailability = this.getWaterAvailability(
+      x,
+      y,
+      precipitation,
+      elevation,
+    );
+    const biome = this.getBiome(x, y, elevation, heat, humidity, material);
+    const subBiome = this.getSubBiome(
+      x,
+      y,
+      biome,
+      elevation,
+      precipitation,
+      temperature,
+    );
 
     return {
+      x,
+      y,
       biome,
+      subBiome,
+      material,
+      latitude: this.getLatitude(x, y),
       temperature,
       heat,
       humidity,
+      precipitation,
+      rainfall,
+      snowfall,
+      waterAvailability,
       elevation,
     };
   }

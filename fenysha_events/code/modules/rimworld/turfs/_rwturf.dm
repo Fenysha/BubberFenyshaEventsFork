@@ -245,6 +245,20 @@
 	desc = "The ground."
 	baseturfs = /turf/open/bottom_or_region
 
+
+	flags_1 = NO_SCREENTIPS_1 | CAN_BE_DIRTY_1
+	turf_flags = IS_SOLID | NO_RUST
+
+	footstep = FOOTSTEP_FLOOR
+	barefootstep = FOOTSTEP_HARD_BAREFOOT
+	clawfootstep = FOOTSTEP_HARD_CLAW
+	heavyfootstep = FOOTSTEP_GENERIC_HEAVY
+
+	underfloor_accessibility = UNDERFLOOR_INTERACTABLE
+	smoothing_groups = SMOOTH_GROUP_TURF_OPEN
+	canSmoothWith = SMOOTH_GROUP_TURF_OPEN + SMOOTH_GROUP_OPEN_FLOOR
+
+
 	/// Fertility of the soil (0.0 - 2.0+). Affects plant growth speed and quality.
 	var/fertility = 1.0
 	/// Higher = can support heavier buildings/furniture.
@@ -266,7 +280,7 @@
 
 	/// Temperature modifier (added to ambient temperature).
 	var/temperature_mod = 0
-	/// Humidity / moisture level (0.0 – 1.0). Affects plant growth & some buildings.
+	/// Humidity / moisture level (0.0 - 1.0). Affects plant growth & some buildings.
 	var/moisture = 0.5
 	/// Whether water can pool / flood here easily.
 	var/floodable = TRUE
@@ -319,3 +333,18 @@
 			ChangeTurf(tiled_type)
 			return TRUE
 	return ..()
+
+
+/turf/open/rimworld/grass
+	name = "Grass"
+	icon = 'fenysha_events/icons/turf/floors/nature/grass.dmi'
+	icon_state = "0"
+
+	edge_priority = 7
+	fertility = 1.0
+	structure_weight_capacity = 100
+	can_be_tilled = TRUE
+
+/turf/open/rimworld/grass/Initialize(mapload)
+	icon_state = "[rand(0, 5)]"
+	. = ..()

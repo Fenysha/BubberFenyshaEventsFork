@@ -66,10 +66,12 @@
 		return list()
 
 	var/list/data = planet.get_runtime_data()
+
 	data["viewType"] = view_type
 	data["selectedTile"] = get_selected_tile_payload()
 	data["selectedObject"] = get_selected_object_payload()
 	data["view"] = get_view_data()
+
 	return data
 
 
@@ -96,10 +98,15 @@
 
 
 /datum/planetmap_view/proc/get_selected_tile_payload()
-	if(isnull(selected_x) || isnull(selected_y) || !planet)
+	if(isnull(selected_x) || isnull(selected_y))
 		return null
 
-	return planet.get_tile_data(selected_x, selected_y)
+	if(!planet)
+		return null
+
+	var/list/tile = planet.get_tile_data(selected_x, selected_y)
+
+	return tile
 
 
 /datum/planetmap_view/proc/get_selected_object_payload()
@@ -119,23 +126,37 @@
 	if(!can_select_tiles)
 		return FALSE
 
-	if(!planet?.is_valid_coordinate(x, y))
+	if(!planet)
+		return FALSE
+
+	if(!planet.is_valid_coordinate(x, y))
 		return FALSE
 
 	selected_x = x
 	selected_y = y
+
+	SStgui.update_uis(src)
+
 	return TRUE
 
 
 /datum/planetmap_view/proc/on_select_object(object_id)
-	if(!planet?.get_object(object_id))
+	if(!planet)
+		return FALSE
+
+	if(!planet.get_object(object_id))
 		return FALSE
 
 	var/datum/rimworld_planet_object/object = planet.get_object(object_id)
+
 	selected_object_id = object_id
 	selected_x = object.x
 	selected_y = object.y
+
+	SStgui.update_uis(src)
+
 	return TRUE
+
 
 
 /datum/planetmap_view/proc/handle_view_act(action, list/params)
@@ -152,27 +173,39 @@
 		return
 
 	switch(action)
+
 		if("close")
 			SStgui.close_uis(src)
 			return TRUE
 
 		if("select_tile")
-			var/x = isnum(params["x"]) ? params["x"] : text2num(params["x"])
-			var/y = isnum(params["y"]) ? params["y"] : text2num(params["y"])
+			var/x = params["x"]
+			var/y = params["y"]
+
+			if(!isnum(x))
+				x = text2num("[x]")
+
+			if(!isnum(y))
+				y = text2num("[y]")
+
+			if(isnull(x) || isnull(y))
+				return FALSE
 
 			if(!on_select_tile(x, y))
-				return
+				return FALSE
 
-			. = TRUE
+			return TRUE
 
 		if("select_object")
+			if(isnull(params["id"]))
+				return FALSE
+
 			if(!on_select_object(params["id"]))
-				return
+				return FALSE
 
-			. = TRUE
+			return TRUE
 
-		else
-			. = handle_view_act(action, params)
+	return handle_view_act(action, params)
 
 
 /datum/planetmap_view/overview
@@ -292,10 +325,14 @@
 				"terrainSeed",
 				"heatSeed",
 				"humiditySeed",
+				"geologySeed",
+				"precipitationSeed",
 				"noiseScale",
 				"terrainScale",
 				"heatScale",
 				"humidityScale",
+				"geologyScale",
+				"precipitationScale",
 				"elevationCoastLow",
 				"elevationCoastHigh",
 				"elevationLowlandLow",
@@ -311,7 +348,6 @@
 				"humidityThresholdLow",
 				"humidityThresholdHigh"
 			)
-
 			for(var/key in param_keys)
 				if(!isnull(params[key]))
 					custom_params[key] = text2num(params[key])

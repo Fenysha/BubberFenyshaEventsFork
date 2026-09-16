@@ -1,6 +1,65 @@
 /datum/biome/rimworld
 	var/biome_key
 
+	/// Weighted list of possible open turf types. If empty, falls back to open_turf_type.
+	var/list/open_turf_types = list()
+	/// Weighted list of possible closed (wall / mineral) turf types. If empty, falls back to closed_turf_type.
+	var/list/closed_turf_types = list()
+
+	/// Optional secondary open turf used for transitional / edge geological features.
+	var/open_turf_type_secondary
+	/// Optional secondary closed turf used for transitional / edge geological features.
+	var/closed_turf_type_secondary
+
+	/// Chance (0-100) that a turf will use the secondary type when a geological transition is detected.
+	var/transition_chance = 35
+
+/datum/biome/rimworld/New()
+	. = ..()
+	if(length(open_turf_types))
+		open_turf_types = expand_weights(fill_with_ones(open_turf_types))
+	if(length(closed_turf_types))
+		closed_turf_types = expand_weights(fill_with_ones(closed_turf_types))
+
+/// Picks an open turf type, optionally using secondary types for geological transitions.
+/datum/biome/rimworld/proc/pick_open_turf(turf/gen_turf, is_transition = FALSE)
+	if(is_transition && open_turf_type_secondary && prob(transition_chance))
+		return open_turf_type_secondary
+	if(length(open_turf_types))
+		return pick(open_turf_types)
+	return open_turf_type
+
+/// Picks a closed turf type, optionally using secondary types for geological transitions.
+/datum/biome/rimworld/proc/pick_closed_turf(turf/gen_turf, is_transition = FALSE)
+	if(is_transition && closed_turf_type_secondary && prob(transition_chance))
+		return closed_turf_type_secondary
+	if(length(closed_turf_types))
+		return pick(closed_turf_types)
+	return closed_turf_type
+
+/datum/biome/rimworld/generate_turf_for_terrain(turf/gen_turf, closed)
+	// Detect a simple transition by looking at neighbouring turfs that already exist.
+	// This is cheap and works because the generator processes in a roughly coherent order.
+	var/is_transition = FALSE
+	for(var/dir in GLOB.cardinals)
+		var/turf/neighbor = get_step(gen_turf, dir)
+		if(!neighbor)
+			continue
+		// If the neighbour is already a different open/closed state we treat this as an edge.
+		if(istype(neighbor, /turf/closed) != closed)
+			is_transition = TRUE
+			break
+
+	var/turf_type
+	if(closed)
+		turf_type = pick_closed_turf(gen_turf, is_transition)
+	else
+		turf_type = pick_open_turf(gen_turf, is_transition)
+
+	var/turf/new_turf = new turf_type(gen_turf)
+	return new_turf
+
+
 /datum/rimworld_planet
 	var/list/possible_biomes
 

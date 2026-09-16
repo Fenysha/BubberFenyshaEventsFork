@@ -14,9 +14,16 @@ export const selectedPlanetTileToPlanetTile = (
     x: tile.x,
     y: tile.y,
     biome: tile.biome ?? 'Unknown',
+    subBiome: tile.subBiome ?? 'plains',
+    material: tile.material ?? 'none',
+    latitude: tile.latitude ?? 0,
     temperature: tile.temperature ?? 0,
     heat: tile.heat ?? '0',
     humidity: tile.humidity ?? '0',
+    precipitation: tile.precipitation ?? 0,
+    rainfall: tile.rainfall ?? 0,
+    snowfall: tile.snowfall ?? 0,
+    waterAvailability: tile.waterAvailability ?? 0,
     elevation: tile.elevation ?? '0',
     objects: 'objects' in tile ? tile.objects : [],
   };
@@ -24,25 +31,14 @@ export const selectedPlanetTileToPlanetTile = (
 
 export type PlanetMapData = {
   name: string;
-
   seed: number;
-
-  /**
-   * Informational only.
-   *
-   * PlanetGenerator does NOT use this value to make decisions.
-   * All actual parameters are already expanded below.
-   */
   planetType: string;
 
-  /**
-   * Explicit derived seeds.
-   *
-   * These come directly from the server.
-   */
   terrainSeed: number;
   heatSeed: number;
   humiditySeed: number;
+  geologySeed: number;
+  precipitationSeed: number;
 
   width: number;
   height: number;
@@ -50,62 +46,36 @@ export type PlanetMapData = {
   terrainScale: number;
   heatScale: number;
   humidityScale: number;
+  geologyScale: number;
+  precipitationScale: number;
 
-  /**
-   * Corresponds directly to rustg_dbp_generate(...).
-   */
   noiseScale: number;
 
-  /**
-   * Elevation ranges.
-   */
   elevationOceanLow: number;
   elevationOceanHigh: number;
-
   elevationCoastLow: number;
   elevationCoastHigh: number;
-
   elevationLowlandLow: number;
   elevationLowlandHigh: number;
-
   elevationHighlandLow: number;
   elevationHighlandHigh: number;
-
   elevationMountainLow: number;
   elevationMountainHigh: number;
-
   elevationSnowLow: number;
   elevationSnowHigh: number;
 
-  /**
-   * Climate ranges.
-   */
   heatThresholdLow: number;
   heatThresholdHigh: number;
-
   humidityThresholdLow: number;
   humidityThresholdHigh: number;
 
-  /**
-   * Dynamic Rotation parameters.
-   */
   rotationAngle?: number;
   rotationSpeed?: number;
   autoRotate?: BooleanLike;
 
-  /**
-   * Interactive objects.
-   */
   objects: PlanetObject[];
 
-  /**
-   * Deterministic generator format.
-   */
   generatorVersion: number;
-
-  /**
-   * Bumps whenever the server regenerates generator parameters.
-   */
   generationRevision: number;
 
   presets?: string[];
@@ -124,14 +94,7 @@ export type PlanetMapData = {
 
   view?: PlanetViewData;
 
-  /**
-   * Sparse per-tile overlay art. Never a full-resolution grid.
-   */
   tileImages?: PlanetTileImage[];
-
-  /**
-   * Optional biome -> asset path. Unused until tile art exists.
-   */
   biomeImages?: Record<string, string>;
 };
 
@@ -150,10 +113,21 @@ export type PlanetViewData = {
 export type PlanetTile = {
   x?: number;
   y?: number;
+
   biome: string;
+  subBiome: string;
+  material: string;
+
+  latitude: number;
   temperature: number;
   heat: string;
   humidity: string;
+
+  precipitation: number;
+  rainfall: number;
+  snowfall: number;
+  waterAvailability: number;
+
   elevation: string;
   objects?: PlanetObject[];
 };
@@ -164,11 +138,19 @@ export type SelectedPlanetTile = {
   objects: PlanetObject[];
   image?: string | null;
   mapsLoaded?: BooleanLike;
+
   elevation?: string;
   temperature?: number;
   heat?: string;
   humidity?: string;
   biome?: string;
+  subBiome?: string;
+  material?: string;
+  latitude?: number;
+  precipitation?: number;
+  rainfall?: number;
+  snowfall?: number;
+  waterAvailability?: number;
 };
 
 export type PlanetTileImage = {
@@ -179,21 +161,14 @@ export type PlanetTileImage = {
 
 export type PlanetObject = {
   id: string;
-
   type: string;
-
   name: string;
-
   x: number;
   y: number;
-
   icon: string | null;
-
   data: Record<string, unknown>;
-
   start_x?: number;
   start_y?: number;
-
   end_x?: number;
   end_y?: number;
 };
@@ -205,7 +180,6 @@ export type PlanetGeometry = {
 
 export type PlanetCallbacks = {
   onTileClick?: (x: number, y: number, tile: PlanetTile) => void;
-
   onObjectClick?: (object: PlanetObject) => void;
 };
 
@@ -216,11 +190,15 @@ export const getPlanetMapIdentity = (data: PlanetMapData): string =>
     data.terrainSeed,
     data.heatSeed,
     data.humiditySeed,
+    data.geologySeed,
+    data.precipitationSeed,
     data.width,
     data.height,
     data.terrainScale,
     data.heatScale,
     data.humidityScale,
+    data.geologyScale,
+    data.precipitationScale,
     data.noiseScale,
     data.planetType,
   ].join(':');

@@ -60,6 +60,9 @@ export const BIOME_BEACH = 'beach';
 export const BIOME_COAST = 'coasts';
 export const BIOME_SEA_ICE = 'sea_ice';
 
+export const BIOME_LAKE = 'lake';
+export const BIOME_RIVER = 'river';
+
 export const BIOME_TUNDRA = 'tundra';
 export const BIOME_TAIGA = 'taiga';
 
@@ -79,6 +82,40 @@ export const BIOME_MOUNTAINS = 'mountains';
 
 export const BIOME_SNOW = 'snow';
 
+
+/*
+ * ----------------------------------------------------------------------------
+ * Planet materials
+ * ----------------------------------------------------------------------------
+ */
+
+export const PLANET_MATERIAL_NONE = 'none';
+export const PLANET_MATERIAL_GRANITE = 'granite';
+export const PLANET_MATERIAL_LIMESTONE = 'limestone';
+export const PLANET_MATERIAL_SANDSTONE = 'sandstone';
+export const PLANET_MATERIAL_SLATE = 'slate';
+export const PLANET_MATERIAL_MARBLE = 'marble';
+export const PLANET_MATERIAL_OBSIDIAN = 'obsidian';
+export const PLANET_MATERIAL_JADE = 'jade';
+
+/*
+ * ----------------------------------------------------------------------------
+ * Sub-biomes
+ * ----------------------------------------------------------------------------
+ */
+
+export const SUBBIOME_DEEP_OCEAN = 'deep_ocean';
+export const SUBBIOME_FROZEN_OCEAN = 'frozen_ocean';
+export const SUBBIOME_SHORE = 'shore';
+export const SUBBIOME_PLAINS = 'plains';
+export const SUBBIOME_HILLS = 'hills';
+export const SUBBIOME_ROCKY_HILLS = 'rocky_hills';
+export const SUBBIOME_FOREST = 'forest';
+export const SUBBIOME_FOREST_HILLS = 'forest_hills';
+export const SUBBIOME_TUNDRA_PLAINS = 'tundra_plains';
+export const SUBBIOME_SNOWFIELDS = 'snowfields';
+export const SUBBIOME_MARSH = 'marsh';
+
 /*
  * ----------------------------------------------------------------------------
  * Biome colors
@@ -90,6 +127,8 @@ export const BIOME_SNOW = 'snow';
 export const BIOME_COLORS: Record<string, number> = {
   [BIOME_OCEAN]: 0x0f2a40,
   [BIOME_COAST]: 0x2d688d,
+  [BIOME_LAKE]: 0x255d83,
+  [BIOME_RIVER]: 0x337aa5,
 
   [BIOME_BEACH]: 0xe3cb8b,
   [BIOME_DESERT]: 0xd4a155,
