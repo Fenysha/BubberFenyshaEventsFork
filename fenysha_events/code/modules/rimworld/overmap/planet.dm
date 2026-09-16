@@ -440,31 +440,51 @@
 	derive_seeds()
 	clear_noise_maps()
 
-	var/list/layers = list(
-		"elevation",
-		"heat",
-		"humidity",
-		"precipitation",
-		"geology"
+	var/list/config = list(
+		"seed" = seed,
+		"width" = map_width,
+		"height" = map_height,
+		"output_dir" = "data/rimworld_planets/[seed]",
+		"scales" = list(
+			"terrain" = terrain_scale,
+			"heat" = heat_scale,
+			"humidity" = humidity_scale,
+			"geology" = geology_scale,
+			"precipitation" = precipitation_scale,
+			"noise" = noise_scale
+		),
+		"elevation" = list(
+			"ocean_low" = elevation_ocean_low,
+			"ocean_high" = elevation_ocean_high,
+			"coast_low" = elevation_coast_low,
+			"coast_high" = elevation_coast_high,
+			"lowland_low" = elevation_lowland_low,
+			"lowland_high" = elevation_lowland_high,
+			"highland_low" = elevation_highland_low,
+			"highland_high" = elevation_highland_high,
+			"mountain_low" = elevation_mountain_low,
+			"mountain_high" = elevation_mountain_high,
+			"snow_low" = elevation_snow_low,
+			"snow_high" = elevation_snow_high
+		),
+		"climate" = list(
+			"heat_low" = heat_threshold_low,
+			"heat_high" = heat_threshold_high,
+			"humidity_low" = humidity_threshold_low,
+			"humidity_high" = humidity_threshold_high
+		)
 	)
-	var/layers_json = json_encode(layers)
-	var/output_dir = "data/rimworld_planets/[seed]"
 
-	var/result = rustg_tp_planet_generate(
-		seed,
-		map_width,
-		map_height,
-		layers_json,
-		output_dir
-	)
+	var/json_config = json_encode(config)
+	var/result = rustg_tp_planet_generate(json_config)
 
 	if(!result)
 		log_world("[name] planetary generation failed: Rust returned no result.")
 		return FALSE
-	if(findtext(result, "ERROR") == 1)
+
+	if(findtext(result, "ERROR:") == 1)
 		log_world("[name] planetary generation failed: [result]")
 		return FALSE
-
 	var/list/export_data
 	try
 		export_data = json_decode(result)
@@ -526,7 +546,8 @@
 	if(!generated_layers[layer_name])
 		return null
 
-	var/cache_key = "[layer_name]:[x]:[y]"
+	var/sample_x = get_sample_x(x, y)
+	var/cache_key = "[layer_name]:[sample_x]:[y]"
 	if(!isnull(cell_cache[cache_key]))
 		return cell_cache[cache_key]
 
@@ -534,7 +555,7 @@
 	if(!path)
 		return null
 
-	var/value = rustg_tp_planet_get_cell(path, x, y)
+	var/value = rustg_tp_planet_get_cell(path, sample_x, y)
 	if(isnull(value))
 		return null
 

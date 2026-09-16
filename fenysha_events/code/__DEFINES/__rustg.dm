@@ -1,23 +1,18 @@
-
 /**
  * Low-level call into the Rust planet generator.
  */
-#define rustg_raw_tp_planet_generate(seed, width, height, layers_json, output_dir) \
-	RUSTG_CALL(RUST_G, "tp_planet_generate")(seed, width, height, layers_json, output_dir)
+#define rustg_raw_tp_planet_generate(config_json) \
+	RUSTG_CALL(RUST_G, "tp_planet_generate")(config_json)
 
 /**
  * Generates planet layers via Rust and writes them to disk.
  * Returns a JSON string on success or an error string starting with "ERROR: ".
  */
-/proc/rustg_tp_planet_generate(seed, width, height, layers_json, output_dir)
-	if(!isnum(seed) || !isnum(width) || !isnum(height))
-		return "ERROR: seed, width and height must be numbers"
-	if(!istext(layers_json) || !length(layers_json))
-		return "ERROR: layers_json must be a non-empty string"
-	if(!istext(output_dir) || !length(output_dir))
-		return "ERROR: output_dir must be a non-empty string"
+/proc/rustg_tp_planet_generate(config_json)
+	if(!length(config_json))
+		return "ERROR: config_json must be a list"
 
-	return rustg_raw_tp_planet_generate("[seed]", "[width]", "[height]", layers_json, output_dir)
+	return rustg_raw_tp_planet_generate(config_json)
 
 /**
  * Low-level call that reads a single packed cell from a layer file.
