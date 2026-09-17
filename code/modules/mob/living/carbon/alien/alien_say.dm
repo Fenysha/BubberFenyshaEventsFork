@@ -13,7 +13,7 @@
 	for(var/mob/player in GLOB.player_list)
 		var/shown = translated_line(player.client, rendered, message, client)
 		if(!IS_UNCONSCIOUS_OR_CRIT(player) && player.hivecheck())
-			to_chat(player, rendered, type = MESSAGE_TYPE_RADIO, avoid_highlighting = player == src)
+			to_chat(player, shown, type = MESSAGE_TYPE_RADIO, avoid_highlighting = player == src)
 		else if(player in GLOB.dead_mob_list)
 			var/link = FOLLOW_LINK(player, src)
 			to_chat(player, "[link] [shown]", type = MESSAGE_TYPE_RADIO)

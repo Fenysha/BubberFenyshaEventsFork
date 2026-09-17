@@ -380,7 +380,6 @@
 						/obj/item/clothing/erp_leash,
 						/obj/item/clicker
 						)
-#endif
 
 /// Cyborgs are bad at dancing too
 /obj/item/borg/upgrade/waddle_module
@@ -400,3 +399,4 @@
 	. = ..()
 	if(.)
 		borg.remove_quirk(/datum/quirk/waddle)
+#endif
