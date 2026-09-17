@@ -171,6 +171,7 @@
 #include "code\modules\rimworld\overmap\planet_helpers.dm"
 #include "code\modules\rimworld\overmap\noise_asset.dm"
 #include "code\modules\rimworld\overmap\planetmap_view.dm"
+#include "code\modules\rimworld\overmap\planet_icons.dm"
 #include "code\modules\rimworld\sub_levels\map_spatial_node.dm"
 #include "code\modules\rimworld\sub_levels\sub_level.dm"
 #include "code\modules\rimworld\sub_levels\_SSsublevels.dm"

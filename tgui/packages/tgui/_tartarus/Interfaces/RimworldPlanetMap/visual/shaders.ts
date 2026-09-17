@@ -50,7 +50,6 @@ vec3 tileCenterDirection(float column, float row) {
   float rowWidth = getRowWidth(row);
   float stagger = mod(row, 2.0) > 0.5 ? 0.5 : 0.0;
 
-  // Без fract/wrapX — тригонометрия cos/sin сама корректно обрабатывает полный круг (360°)
   float u = (column + 0.5 + stagger) / rowWidth;
   float v = (row + 0.5) / mapSize.y;
 
@@ -78,17 +77,14 @@ vec2 findNearestTile(vec3 surfaceDirection) {
   float bestColumn = 0.0;
   float bestRow = baseRow;
 
-  // Проверяем 3 соседних ряда
   for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
     float row = clamp(baseRow + float(rowOffset), 0.0, mapSize.y - 1.0);
     float rowWidth = getRowWidth(row);
     float stagger = mod(row, 2.0) > 0.5 ? 0.5 : 0.0;
 
-    // Корректный поиск центральной колонки с учетом полу-тайлового сдвига
     float centerCol = u * rowWidth - 0.5 - stagger;
     float baseColumn = floor(centerCol);
 
-    // Окно в 4 колонки (-1..2) полностью перекрывает сдвиги stagger между рядами
     for (int columnOffset = -1; columnOffset <= 2; columnOffset++) {
       float column = baseColumn + float(columnOffset);
 
@@ -103,7 +99,6 @@ vec2 findNearestTile(vec3 surfaceDirection) {
     }
   }
 
-  // Закольцовываем выбранную колонку только в самом конце перед отправкой в UV
   float rowWidth = getRowWidth(bestRow);
   float wrappedColumn = wrapX(bestColumn, rowWidth);
 
@@ -115,21 +110,22 @@ void main() {
   vec2 tile = findNearestTile(surfaceDirection);
 
   float rowWidth = getRowWidth(tile.y);
+  float stagger = mod(tile.y, 2.0) > 0.5 ? 0.5 : 0.0;
 
-  vec2 tileUv = vec2(
-    (tile.x + 0.5) / rowWidth,
+  vec2 planetUv = vec2(
+    (tile.x + 0.5 + stagger) / rowWidth,
     (tile.y + 0.5) / mapSize.y
   );
 
-  vec3 baseColor = texture2D(planetMap, tileUv).rgb;
+  vec3 baseColor = texture2D(planetMap, planetUv).rgb;
   vec3 normal = normalize(vWorldNormal);
   vec3 sun = normalize(sunDirection);
 
   float sunlight = max(dot(normal, sun), 0.0);
   float illumination = mix(0.18, 1.0, smoothstep(0.0, 0.28, sunlight));
-
   vec3 color = baseColor * illumination;
-  float night = 1.0 - smoothstep(0.0, 0.25, sunlight);
+
+  float night = 1.0 - smoothstep(0.0, 0.30, sunlight);
   color = mix(color, nightColor, night * 0.12);
 
   gl_FragColor = vec4(color, 1.0);

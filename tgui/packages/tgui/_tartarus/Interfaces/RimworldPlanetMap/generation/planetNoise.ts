@@ -83,7 +83,9 @@ function parseTpl1(buffer: ArrayBuffer, expectedName: string): PlanetLayer {
   const height = view.getUint32(16, true);
 
   if (width === 0 || height === 0) {
-    throw new Error(`Layer ${expectedName}: invalid dimensions ${width}x${height}`);
+    throw new Error(
+      `Layer ${expectedName}: invalid dimensions ${width}x${height}`,
+    );
   }
 
   const payload = bytes.subarray(20);
@@ -160,7 +162,9 @@ async function loadLayer(name: LayerName): Promise<PlanetLayer> {
   const buffer = await response.arrayBuffer();
 
   // eslint-disable-next-line no-console
-  console.info(`[PlanetLayers] ${assetName} loaded, ${buffer.byteLength} bytes`);
+  console.info(
+    `[PlanetLayers] ${assetName} loaded, ${buffer.byteLength} bytes`,
+  );
 
   return parseTpl1(buffer, name);
 }

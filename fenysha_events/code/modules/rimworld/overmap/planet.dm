@@ -4,7 +4,7 @@
 	var/name = "Unknown"
 	var/x = 1
 	var/y = 1
-	var/icon = null
+	var/icon = RW_PLANET_CELL_TOWN_ICON
 	var/list/data = list()
 
 /datum/rimworld_planet_object/New(new_id, new_x, new_y, new_name = null)
@@ -31,6 +31,7 @@
 
 /datum/rimworld_planet_object/settlement
 	object_type = RW_OBJECT_TYPE_SETTLEMENT
+	icon = RW_PLANET_CELL_TOWN
 
 /datum/rimworld_planet_object/settlement/New(new_id, new_x, new_y, new_name = RW_OBJECT_NAME_SETTLEMENT)
 	. = ..(new_id, new_x, new_y, new_name)

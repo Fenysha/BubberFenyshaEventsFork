@@ -60,7 +60,10 @@
 	return data
 
 /datum/planetmap_view/ui_assets(mob/user)
-	return list(get_asset_datum(/datum/asset/simple/rimworld_planet_layers))
+	return list(
+		get_asset_datum(/datum/asset/simple/rimworld_planet_layers),
+		get_asset_datum(/datum/asset/simple/rimworld_planet_icons),
+	)
 
 /datum/planetmap_view/ui_data(mob/user)
 	if(!planet)

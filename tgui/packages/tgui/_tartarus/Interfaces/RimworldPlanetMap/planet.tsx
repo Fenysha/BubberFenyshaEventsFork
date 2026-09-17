@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { resolveAsset } from 'tgui/assets';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -28,7 +29,6 @@ import {
 } from './visual/coordinates';
 
 import { buildPlanetGeometry, type LodLevel } from './visual/geometry';
-
 import { buildPlanetTexture } from './visual/planetTexture';
 
 import {
@@ -41,8 +41,6 @@ import {
   PLANET_SURFACE_FRAGMENT_SHADER,
   PLANET_SURFACE_VERTEX_SHADER,
 } from './visual/shaders';
-
-import { loadTileImage } from './visual/tileImages';
 
 type PlanetProps = {
   data: PlanetMapData;
@@ -58,7 +56,7 @@ type PlanetRuntime = {
   generator: PlanetGenerator;
   surface: THREE.Mesh;
   planetGroup: THREE.Group;
-  planetTexture: THREE.DataTexture;
+  planetTexture: THREE.CanvasTexture | THREE.DataTexture;
   surfaceMaterial: THREE.ShaderMaterial;
   currentLod: LodLevel;
 };
@@ -75,11 +73,11 @@ const getPlanetLod = (distance: number): LodLevel =>
       ? 'medium'
       : 'far';
 
-const textureCache = new Map<string, THREE.DataTexture>();
+const textureCache = new Map<string, THREE.CanvasTexture>();
 const MAX_TEXTURE_CACHE_SIZE = 8;
 
 const createPlaceholderTexture = (): THREE.DataTexture => {
-  const pixels = new Uint8Array([15, 25, 45, 255]);
+  const pixels = new Uint8Array([60, 90, 120, 255]);
   const texture = new THREE.DataTexture(
     pixels,
     1,
@@ -93,7 +91,31 @@ const createPlaceholderTexture = (): THREE.DataTexture => {
 
 const placeholderTexture = createPlaceholderTexture();
 
+const objectTextureCache = new Map<string, THREE.Texture>();
+const sharedTextureLoader = new THREE.TextureLoader();
+
+const loadObjectTexture = (iconName: string): THREE.Texture | null => {
+  const assetName = `rimworld_planet_icon_${iconName}.png`;
+  if (objectTextureCache.has(assetName)) {
+    return objectTextureCache.get(assetName)!;
+  }
+
+  try {
+    const src = resolveAsset(assetName);
+    if (src) {
+      const texture = sharedTextureLoader.load(src);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      objectTextureCache.set(assetName, texture);
+      return texture;
+    }
+  } catch (error) {
+    console.warn(`[Planet] Failed to resolve asset "${assetName}":`, error);
+  }
+  return null;
+};
+
 const geometryCache = new Map<string, THREE.BufferGeometry>();
+const MAX_GEOMETRY_CACHE_SIZE = 12;
 
 const getCachedPlanetGeometry = (
   data: PlanetMapData,
@@ -103,6 +125,14 @@ const getCachedPlanetGeometry = (
   let geom = geometryCache.get(key);
   if (!geom) {
     geom = buildPlanetGeometry(data, lod);
+
+    if (geometryCache.size >= MAX_GEOMETRY_CACHE_SIZE) {
+      const firstKey = geometryCache.keys().next().value;
+      if (firstKey) {
+        geometryCache.get(firstKey)?.dispose();
+        geometryCache.delete(firstKey);
+      }
+    }
     geometryCache.set(key, geom);
   }
   return geom;
@@ -134,14 +164,16 @@ const getSharedStarGeometry = (): THREE.BufferGeometry => {
   return sharedStarGeometry;
 };
 
-const sharedMarkerGeometry = new THREE.SphereGeometry(0.032, 12, 12);
+const sharedMarkerGeometry = new THREE.SphereGeometry(0.018, 12, 12);
 const sharedMarkerMaterials = {
   settlement: new THREE.MeshBasicMaterial({ color: 0xffc857 }),
   road: new THREE.MeshBasicMaterial({ color: 0xc4a574 }),
   default: new THREE.MeshBasicMaterial({ color: 0xf0f4ff }),
 };
 
-// Helpers
+const HEIGHT_SELECTION_OUTLINE = PLANET_RADIUS + 0.003;
+const HEIGHT_SELECTION_GLOW = PLANET_RADIUS + 0.005;
+const HEIGHT_OBJECT_MARKER = PLANET_RADIUS + 0.004;
 
 const buildHexOutlineGeometry = (
   x: number,
@@ -201,7 +233,7 @@ const createSelection = (width: number, height: number) => {
   group.visible = false;
 
   const glow = new THREE.LineLoop(
-    buildHexOutlineGeometry(1, 1, width, height, PLANET_RADIUS + 0.022),
+    buildHexOutlineGeometry(1, 1, width, height, HEIGHT_SELECTION_GLOW),
     new THREE.LineBasicMaterial({
       color: 0x6bbdff,
       transparent: true,
@@ -211,7 +243,7 @@ const createSelection = (width: number, height: number) => {
   );
 
   const outline = new THREE.LineLoop(
-    buildHexOutlineGeometry(1, 1, width, height, PLANET_RADIUS + 0.013),
+    buildHexOutlineGeometry(1, 1, width, height, HEIGHT_SELECTION_OUTLINE),
     new THREE.LineBasicMaterial({
       color: 0x9edcff,
       transparent: true,
@@ -244,7 +276,7 @@ const updateSelection = (
     y,
     width,
     height,
-    PLANET_RADIUS + 0.022,
+    HEIGHT_SELECTION_GLOW,
   );
 
   outline.geometry.dispose();
@@ -253,13 +285,11 @@ const updateSelection = (
     y,
     width,
     height,
-    PLANET_RADIUS + 0.013,
+    HEIGHT_SELECTION_OUTLINE,
   );
 
   group.visible = true;
 };
-
-// Actual planet
 
 export const Planet = ({
   data,
@@ -276,8 +306,9 @@ export const Planet = ({
 
   const mapIdentity = getPlanetMapIdentity(data);
 
-  // Инициализация загрузки мгновенно при рендере, если текстуры нет в кэше
-  const [isLoading, setIsLoading] = useState(() => !textureCache.has(mapIdentity));
+  const [isLoading, setIsLoading] = useState(
+    () => !textureCache.has(mapIdentity),
+  );
 
   const callbacksRef = useRef({
     onTileClick,
@@ -290,6 +321,7 @@ export const Planet = ({
   };
 
   useEffect(() => {
+    let isMounted = true;
     const container = containerRef.current;
     if (!container) {
       return;
@@ -344,7 +376,6 @@ export const Planet = ({
     fill.position.set(-4, -1, -3);
     scene.add(fill);
 
-    // 3D Модель Солнца на заднем плане
     const sunGroup = new THREE.Group();
     const sunDistance = 50;
     const sunPos = PLANET_SUN_DIRECTION.clone()
@@ -416,7 +447,7 @@ export const Planet = ({
       depthWrite: true,
     });
 
-    let currentLod: LodLevel = 'medium';
+    let currentLod: LodLevel = getPlanetLod(controls.getDistance());
 
     const surface = new THREE.Mesh(
       getCachedPlanetGeometry(data, currentLod),
@@ -434,30 +465,43 @@ export const Planet = ({
 
       const buildTextureWhenReady = () => {
         if (generator.isReady()) {
-          const texture = buildPlanetTexture(data, generator);
+          try {
+            const texture = buildPlanetTexture(data, generator);
 
-          if (textureCache.size >= MAX_TEXTURE_CACHE_SIZE) {
-            const firstKey = textureCache.keys().next().value;
-            if (firstKey) {
-              textureCache.get(firstKey)?.dispose();
-              textureCache.delete(firstKey);
+            if (textureCache.size >= MAX_TEXTURE_CACHE_SIZE) {
+              const firstKey = textureCache.keys().next().value;
+              if (firstKey) {
+                textureCache.get(firstKey)?.dispose();
+                textureCache.delete(firstKey);
+              }
             }
-          }
-          textureCache.set(mapIdentity, texture);
+            textureCache.set(mapIdentity, texture);
 
-          surfaceMaterial.uniforms.planetMap.value = texture;
-          surfaceMaterial.needsUpdate = true;
-          setIsLoading(false);
-          animFrameId = null;
+            if (surfaceMaterial.uniforms.planetMap) {
+              surfaceMaterial.uniforms.planetMap.value = texture;
+              surfaceMaterial.needsUpdate = true;
+            }
+          } catch (error) {
+            console.error('[Planet] Texture generation error:', error);
+          } finally {
+            if (isMounted) {
+              setIsLoading(false);
+            }
+            animFrameId = null;
+          }
         } else if (generator.getState() === 'error') {
-          console.error('[Planet] Planet generator error:', generator.getError());
-          setIsLoading(false);
+          console.error(
+            '[Planet] Planet generator error:',
+            generator.getError(),
+          );
+          if (isMounted) {
+            setIsLoading(false);
+          }
           animFrameId = null;
         } else {
           animFrameId = requestAnimationFrame(buildTextureWhenReady);
         }
       };
-
       animFrameId = requestAnimationFrame(buildTextureWhenReady);
     }
 
@@ -594,6 +638,9 @@ export const Planet = ({
 
         if (hit) {
           callbacksRef.current.onObjectClick?.(hit);
+
+          const tile = generator.getTile(hit.x, hit.y);
+          callbacksRef.current.onTileClick?.(hit.x, hit.y, tile);
         }
         return;
       }
@@ -627,7 +674,9 @@ export const Planet = ({
       const delta = clock.getDelta();
       const time = clock.getElapsedTime();
 
-      cloudMaterial.uniforms.time.value = time;
+      if (cloudMaterial?.uniforms?.time) {
+        cloudMaterial.uniforms.time.value = time;
+      }
       clouds.rotation.y = time * 0.012;
 
       const currentData = dataRef.current;
@@ -646,10 +695,46 @@ export const Planet = ({
         lastLod = nextLod;
       }
 
+      if (runtimeRef.current?.objectGroup) {
+        const tileWidthInUnits = (Math.PI * 2 * PLANET_RADIUS) / data.width;
+        const minSpriteScale = tileWidthInUnits * 0.45;
+        const maxSpriteScale = 0.22;
+
+        const zoomProgress = THREE.MathUtils.clamp(
+          (distance - 2.2) / (10.0 - 2.2),
+          0.0,
+          1.0,
+        );
+
+        const spriteScale = THREE.MathUtils.lerp(
+          minSpriteScale,
+          maxSpriteScale,
+          zoomProgress,
+        );
+        const markerScale = THREE.MathUtils.lerp(0.5, 2.0, zoomProgress);
+
+        runtimeRef.current.objectGroup.children.forEach((child) => {
+          child.visible = true;
+
+          if (child instanceof THREE.Sprite) {
+            child.scale.set(spriteScale, spriteScale, 1);
+            if (child.material) {
+              child.material.opacity = 1.0;
+            }
+          } else if (child instanceof THREE.Mesh) {
+            child.scale.setScalar(markerScale);
+          }
+        });
+      }
+
       controls.target.set(0, 0, 0);
       controls.update();
 
-      renderer.render(scene, camera);
+      try {
+        renderer.render(scene, camera);
+      } catch (error) {
+        console.error('[Planet] Render error:', error);
+      }
     };
 
     animate();
@@ -669,6 +754,7 @@ export const Planet = ({
     controls.addEventListener('change', saveView);
 
     return () => {
+      isMounted = false;
       saveCameraState(camera, controls);
 
       if (animFrameId !== null) {
@@ -730,31 +816,48 @@ export const Planet = ({
     }
 
     for (const object of data.objects ?? []) {
-      const material =
-        object.type === 'settlement'
-          ? sharedMarkerMaterials.settlement
-          : object.type === 'road'
-            ? sharedMarkerMaterials.road
-            : sharedMarkerMaterials.default;
+      let objectMesh: THREE.Object3D;
 
-      const marker = new THREE.Mesh(sharedMarkerGeometry, material);
+      if (object.icon) {
+        const texture = loadObjectTexture(object.icon);
+        if (texture) {
+          const spriteMaterial = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            opacity: 1.0,
+            depthTest: true,
+            depthWrite: false,
+          });
+          const sprite = new THREE.Sprite(spriteMaterial);
+          sprite.renderOrder = 10;
+          objectMesh = sprite;
+        } else {
+          const material = sharedMarkerMaterials.default;
+          objectMesh = new THREE.Mesh(sharedMarkerGeometry, material);
+        }
+      } else {
+        const material =
+          object.type === 'settlement'
+            ? sharedMarkerMaterials.settlement
+            : object.type === 'road'
+              ? sharedMarkerMaterials.road
+              : sharedMarkerMaterials.default;
 
-      marker.position.copy(
+        objectMesh = new THREE.Mesh(sharedMarkerGeometry, material);
+      }
+
+      objectMesh.position.copy(
         planetCoordinateToVector(
           object.x,
           object.y,
           data.width,
           data.height,
-          PLANET_RADIUS + 0.04,
+          HEIGHT_OBJECT_MARKER,
         ),
       );
 
-      marker.userData.object = object;
-      objectGroup.add(marker);
-
-      if (object.icon) {
-        void loadTileImage(object.icon);
-      }
+      objectMesh.userData.object = object;
+      objectGroup.add(objectMesh);
     }
   }, [mapIdentity, data.objects, data.width, data.height]);
 
@@ -788,24 +891,49 @@ export const Planet = ({
         position: 'relative',
       }}
     >
+      <style>
+        {`
+          @keyframes planetLoadSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+
       {isLoading && (
         <div
+          className="rimworld-planet-map__loading"
           style={{
             position: 'absolute',
             top: '16px',
             left: '16px',
-            padding: '6px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '8px 14px 8px 10px',
             backgroundColor: 'rgba(10, 14, 22, 0.85)',
             border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '4px',
-            color: '#8ab4f8',
+            borderRadius: '6px',
+            color: '#c8d6ee',
             fontSize: '12px',
             pointerEvents: 'none',
             zIndex: 5,
             backdropFilter: 'blur(4px)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
           }}
         >
-          Loading Planet...
+          <div
+            style={{
+              width: '14px',
+              height: '14px',
+              flexShrink: 0,
+              borderRadius: '50%',
+              border: '2px solid rgba(138, 180, 248, 0.25)',
+              borderTopColor: '#8ab4f8',
+              animation: 'planetLoadSpin 0.8s linear infinite',
+            }}
+          />
+          <span>Generating terrain&hellip;</span>
         </div>
       )}
     </div>
