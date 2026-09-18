@@ -57,11 +57,11 @@
 	 * Extra keys allowed if a biome wants staggered wall types.
 	 */
 	var/list/closed_turf_by_height = list(
-		RW_HEIGHT_BAND_SOLID = /turf/closed/rw_wall/rock/auto,
+		RW_HEIGHT_BAND_KEY_SOLID = /turf/closed/rw_wall/rock/auto,
 	)
 
 	var/list/closed_turf_by_height_transition = list(
-		RW_HEIGHT_BAND_SOLID = /turf/closed/rw_wall/rock/auto,
+		RW_HEIGHT_BAND_KEY_SOLID = /turf/closed/rw_wall/rock/auto,
 	)
 
 	var/open_turf_type_cave = null

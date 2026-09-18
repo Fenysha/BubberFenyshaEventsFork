@@ -18,3 +18,7 @@
 #define RW_HEIGHT_BAND_KEY_SOLID "0.86"
 
 #define RW_HEIGHT_TRANSITION_DELTA  (0.10)
+
+
+#define RW_CAVEGUN_TRUE  "caves_true"
+#define RW_CAVEGUN_FALSE "caves_false"

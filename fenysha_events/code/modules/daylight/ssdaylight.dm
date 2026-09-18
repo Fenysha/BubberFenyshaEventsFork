@@ -355,7 +355,7 @@ SUBSYSTEM_DEF(daylight)
 
 /// Lights newly-loaded daylight turfs. Call this after dropping a map template into the world (e.g. a train
 /// station) so the daylight system picks up the new turfs automatically - no manual passes needed.
-/datum/controller/subsystem/daylight/proc/handle_loaded_turfs(list/turfs)
+/datum/controller/subsystem/daylight/proc/handle_loaded_turfs(list/turfs, rebuild_leaks = TRUE)
 	if(!setup_complete || !length(turfs))
 		return
 	// Template turfs arrive after the area built its base lighting. On an offset z-level that ambient is a
@@ -383,7 +383,8 @@ SUBSYSTEM_DEF(daylight)
 		CHECK_TICK
 
 	// New terrain moves daylight boundaries, and a daylight area spans far more than the loaded block.
-	rebuild_daylight_leaks()
+	if(rebuild_leaks)
+		rebuild_daylight_leaks()
 
 /// Re-applies (or removes) the daylight overlay on a single turf - called from /turf/AfterChange so that a turf
 /// replaced by ChangeTurf (a fresh object with no overlays) is re-lit, since the area's one-time pass never re-runs.

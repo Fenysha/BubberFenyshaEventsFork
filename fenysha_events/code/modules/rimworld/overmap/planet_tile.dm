@@ -4,8 +4,15 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	name = "Rim"
 	icon_state = "green"
 
+	area_flags = VALID_TERRITORY | BLOBS_ALLOWED | CULT_PERMITTED
+	area_flags_mapping = CAVES_ALLOWED | FLORA_ALLOWED | MOB_SPAWN_ALLOWED
+
+
+
+	default_gravity = TRUE
 	/// Planet cell we are in
 	var/datum/planet_cell/cell
+
 
 /area/rimworld/Initialize(mapload)
 	. = ..()

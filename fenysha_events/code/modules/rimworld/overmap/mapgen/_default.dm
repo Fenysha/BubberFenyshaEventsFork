@@ -1,111 +1,73 @@
-/**
- * Creates an atom without running Initialize.
- *
- * The INITIALIZATION_INSSATOMS state is active ONLY for the duration of this
- * single `new` call (including any nested `new` inside that atom's New()).
- * It is cleared before this proc returns, so CHECK_TICK / other systems are
- * unaffected and keep normal immediate initialization.
- *
- * Collect the returned atoms and pass them to InitializeAtoms() when ready.
- */
-/datum/controller/subsystem/atoms/proc/NewUninitialized(path, atom/newloc)
-	if(!ispath(path, /atom))
-		CRASH("NewUninitialized: [path] is not an /atom path")
+/datum/controller/subsystem/atoms/proc/NewUninitialized(atom_path, atom/newloc)
+	if(!ispath(atom_path, /atom))
+		CRASH("NewUninitialized: [atom_path] is not an /atom path")
 
 	var/static/uid = 0
 	uid = WRAP_UID(uid + 1)
+
 	var/source = "NewUninitialized [uid]"
 
 	set_tracked_initalized(INITIALIZATION_INSSATOMS, source)
-	var/atom/created = new path(newloc)
+
+	var/atom/created = new atom_path(newloc)
+
 	clear_tracked_initalize(source)
 
 	return created
 
 
-/**
- * Same as NewUninitialized, but forwards extra arguments to New/Initialize later.
- * Extra args are stored on the atom only if you need them — by default mapload
- * InitializeAtoms always passes list(TRUE) as mapload.
- *
- * Prefer NewUninitialized for turfs; use this when the type expects args.
- */
-/datum/controller/subsystem/atoms/proc/NewUninitializedArgs(path, atom/newloc, list/extra_args)
-	if(!ispath(path, /atom))
-		CRASH("NewUninitializedArgs: [path] is not an /atom path")
+/datum/controller/subsystem/atoms/proc/NewUninitializedArgs(
+	atom_path,
+	atom/newloc,
+	list/extra_args
+)
+	if(!ispath(atom_path, /atom))
+		CRASH("NewUninitializedArgs: [atom_path] is not an /atom path")
 
 	var/static/uid = 0
 	uid = WRAP_UID(uid + 1)
+
 	var/source = "NewUninitializedArgs [uid]"
 
 	set_tracked_initalized(INITIALIZATION_INSSATOMS, source)
+
 	var/atom/created
+
 	if(length(extra_args))
-		created = new path(arglist(list(newloc) + extra_args))
+		created = new atom_path(arglist(list(newloc) + extra_args))
 	else
-		created = new path(newloc)
+		created = new atom_path(newloc)
+
 	clear_tracked_initalize(source)
 
 	return created
 
 
-/datum/map_generator/sub_level
-	/// Parent planetary map.
-	var/datum/rimworld_planet/planet
 
-	/// Planet cell currently being generated.
+/datum/map_generator/sub_level
+	var/datum/rimworld_planet/planet
 	var/datum/planet_cell/cell
 
-	/// Global planetary cell coordinates.
 	var/planet_x = 1
 	var/planet_y = 1
 
-	/// Cached 3x3 neighbourhood of macro elevation values.
 	var/list/elevation_matrix
 
-	/// Whether Rust should generate cave information.
 	var/generate_caves = TRUE
 
-	/// ------------------------------------------------------------------------
-	/// Generated local data
-	/// ------------------------------------------------------------------------
-
-	/// Complete local heightmap returned by Rust.
-	/// Index:
-	///
-	///     width * (local_y - 1) + local_x
-	///
 	var/list/heights
-
-	/// Complete cave mask returned by Rust.
 	var/list/cave_mask
 
-	/// Local map dimensions.
 	var/width = 0
 	var/height = 0
 
-	/// Biome controlling local turf selection.
 	var/datum/biome/rimworld/target_biome
-
-	/// Area assigned to the generated cell.
 	var/area/rimworld/rimworld_area
 
-	/// ------------------------------------------------------------------------
-	/// Generated atom collections
-	/// ------------------------------------------------------------------------
-
-	/// Every newly generated turf.
 	var/list/generated_turfs = list()
-
-	/// Only open turfs.
-	/// Used later for flora / feature / fauna population.
 	var/list/generated_open_turfs = list()
-
-	/// All atoms that still need deferred initialization.
-	/// The area is inserted first.
 	var/list/pending_init = list()
 
-	/// TRUE after InitializeAtoms() has been executed for the whole map.
 	var/turfs_initialized = FALSE
 
 
@@ -119,9 +81,7 @@
 	planet_x = px
 	planet_y = py
 	cell = C
-
 	cache_planetary_neighborhood()
-
 
 
 /datum/map_generator/sub_level/proc/cache_planetary_neighborhood()
@@ -136,48 +96,30 @@
 
 		for(var/dy in -1 to 1)
 			var/dy_key = "[dy]"
-
 			var/target_x = planet_x + dx
 			var/target_y = planet_y + dy
 			var/value
 
 			if(planet.is_valid_coordinate(target_x, target_y))
-				value = planet.get_elevation_level(
-					target_x,
-					target_y
-				)
+				value = planet.get_elevation_level(target_x, target_y)
 			else
-				value = planet.get_elevation_level(
-					planet_x,
-					planet_y
-				)
+				value = planet.get_elevation_level(planet_x, planet_y)
 
-			// Normalize the value to a real number.
-			// get_elevation_level() may return a textual value.
 			if(!isnum(value))
 				value = text2num("[value]")
 
 			if(isnull(value))
 				log_world(
-					"RimWorld sub-level: invalid elevation value \
-					for planetary coordinate [target_x],[target_y]."
+					"RimWorld sub-level: invalid elevation value for planetary coordinate [target_x],[target_y]."
 				)
 				return FALSE
 
-			// Elevation categories are represented by u8 on the Rust side.
 			value = clamp(round(value), 0, 255)
-
 			elevation_matrix[dx_key][dy_key] = value
 
 	return TRUE
 
 
-/**
- * Resolves the RimWorld biome used for this planetary cell.
- *
- * The macro biome is determined by the planetary generator from elevation,
- * heat and humidity.
- */
 /datum/map_generator/sub_level/proc/get_target_biome()
 	if(!planet)
 		return null
@@ -211,20 +153,12 @@
 	if(biome_type)
 		resolved_biome = SSmapping.biomes[biome_type]
 
-	// Never fall back to a biome outside the RimWorld hierarchy.
 	if(!istype(resolved_biome, /datum/biome/rimworld))
 		resolved_biome = SSmapping.biomes[/datum/biome/rimworld/grassland]
 
 	return resolved_biome
 
 
-/**
- * Determines whether a local heightmap position lies on a geological
- * transition.
- *
- * This operates directly on the heightmap, so generation order does not
- * matter.
- */
 /datum/map_generator/sub_level/proc/is_geological_transition_xy(
 	local_x,
 	local_y
@@ -241,22 +175,18 @@
 	var/index = width * (local_y - 1) + local_x
 	var/current_height = heights[index]
 
-	// West
 	if(local_x > 1)
 		if(abs(current_height - heights[index - 1]) >= RW_HEIGHT_TRANSITION_DELTA)
 			return TRUE
 
-	// East
 	if(local_x < width)
 		if(abs(current_height - heights[index + 1]) >= RW_HEIGHT_TRANSITION_DELTA)
 			return TRUE
 
-	// South
 	if(local_y > 1)
 		if(abs(current_height - heights[index - width]) >= RW_HEIGHT_TRANSITION_DELTA)
 			return TRUE
 
-	// North
 	if(local_y < height)
 		if(abs(current_height - heights[index + width]) >= RW_HEIGHT_TRANSITION_DELTA)
 			return TRUE
@@ -264,31 +194,25 @@
 	return FALSE
 
 
-/**
- * ============================================================================
- * Preparation
- * ============================================================================
- *
- * Does everything which must exist before individual turfs can be placed.
- *
- * Nothing is initialized here.
- */
 /datum/map_generator/sub_level/proc/prepare_sub_level_terrain(
 	datum/turf_reservation/sub_level/reservation
 )
 	if(!planet || !cell || !reservation)
 		return FALSE
 
-	var/turf/BL = reservation.get_bottom_left_turf()
-	var/turf/TR = reservation.get_top_right_turf()
+	var/turf/BL = reservation.get_inner_bottom_left_turf()
+	var/turf/TR = reservation.get_inner_top_right_turf()
 
 	if(!BL || !TR)
 		return FALSE
 
-	width = reservation.width
-	height = reservation.height
+	width = reservation.inner_width
+	height = reservation.inner_height
 
-	if(width <= 0 || height <= 0)
+	if(
+		width != RW_SUBLEVEL_INNER_WIDTH \
+		|| height != RW_SUBLEVEL_INNER_HEIGHT
+	)
 		return FALSE
 
 	target_biome = get_target_biome()
@@ -298,7 +222,6 @@
 			"RimWorld sub-level: unable to resolve biome for [planet_x],[planet_y]."
 		)
 		return FALSE
-
 
 	if(!length(elevation_matrix))
 		cache_planetary_neighborhood()
@@ -310,32 +233,25 @@
 		text2num("[elevation_matrix["-1"]["-1"]]"),
 		text2num("[elevation_matrix["0"]["-1"]]"),
 		text2num("[elevation_matrix["1"]["-1"]]"),
-
 		text2num("[elevation_matrix["-1"]["0"]]"),
 		text2num("[elevation_matrix["0"]["0"]]"),
 		text2num("[elevation_matrix["1"]["0"]]"),
-
 		text2num("[elevation_matrix["-1"]["1"]]"),
 		text2num("[elevation_matrix["0"]["1"]]"),
 		text2num("[elevation_matrix["1"]["1"]]")
 	)
 
-
 	var/list/config = list(
 		"planet_seed" = planet.seed,
 		"planet_x" = planet_x,
 		"planet_y" = planet_y,
-
 		"width" = width,
 		"height" = height,
-
 		"neighbourhood" = neigh,
-
 		"local_seed" = 0,
-
 		"density_bias" = 0.0,
 		"smooth_passes" = 1,
-		"caves" = generate_caves
+		"caves" = generate_caves ? RW_CAVEGUN_TRUE : RW_CAVEGUN_FALSE
 	)
 
 	var/result = rustg_tp_sublevel_generate(json_encode(config))
@@ -348,13 +264,7 @@
 
 	var/list/export = json_decode(result)
 
-	if(!islist(export))
-		log_world(
-			"Sub-level generation returned invalid JSON payload."
-		)
-		return FALSE
-
-	if(export["status"] != "ok")
+	if(!islist(export) || export["status"] != "ok")
 		log_world(
 			"Sub-level generation returned bad payload."
 		)
@@ -370,8 +280,7 @@
 
 	if(length(heights) != width * height)
 		log_world(
-			"Sub-level heightmap size mismatch. \
-			Expected [width * height], got [length(heights)]."
+			"Sub-level heightmap size mismatch. Expected [width * height], got [length(heights)]."
 		)
 		return FALSE
 
@@ -385,7 +294,6 @@
 			return FALSE
 
 		heights[i] = clamp(value, 0, 1)
-
 
 	cave_mask = export["cave_mask"]
 
@@ -401,7 +309,10 @@
 		for(var/i in 1 to length(cave_mask))
 			cave_mask[i] = text2num("[cave_mask[i]]") != 0
 
-	rimworld_area = SSatoms.NewUninitialized(/area/rimworld, null)
+	rimworld_area = SSatoms.NewUninitialized(
+		/area/rimworld,
+		null
+	)
 
 	if(!rimworld_area)
 		return FALSE
@@ -411,16 +322,12 @@
 	rimworld_area.daylight = TRUE
 	rimworld_area.outdoors = TRUE
 
-	// Area must be initialized before it can be registered.
 	pending_init = list(rimworld_area)
-
 	generated_turfs = list()
 	generated_open_turfs = list()
-
 	turfs_initialized = FALSE
 
 	return TRUE
-
 
 
 /datum/map_generator/sub_level/proc/place_sub_level_turf(
@@ -437,19 +344,27 @@
 	if(local_y < 1 || local_y > height)
 		return null
 
-	var/turf/BL = reservation.get_bottom_left_turf()
+	var/turf/inner_BL = reservation.get_inner_bottom_left_turf()
 
-	if(!BL)
+	if(!inner_BL)
 		return null
 
-	var/world_x = BL.x + local_x - 1
-	var/world_y = BL.y + local_y - 1
+	var/world_x = inner_BL.x + local_x - 1
+	var/world_y = inner_BL.y + local_y - 1
 
-	var/turf/source_turf = locate(world_x, world_y, BL.z)
+	var/turf/source_turf = locate(
+		world_x,
+		world_y,
+		inner_BL.z
+	)
 
 	if(!source_turf)
 		return null
-	source_turf.change_area(get_area(source_turf), rimworld_area)
+
+	source_turf.change_area(
+		get_area(source_turf),
+		rimworld_area
+	)
 
 	var/index = width * (local_y - 1) + local_x
 
@@ -463,11 +378,11 @@
 	if(length(cave_mask))
 		is_cave = cave_mask[index]
 
-	var/is_transition = is_geological_transition_xy(local_x, local_y)
+	var/is_transition = is_geological_transition_xy(
+		local_x,
+		local_y
+	)
 
-	/**
-	 * The biome determines the physical turf.
-	 */
 	var/turf_type = target_biome.get_turf_for_height(
 		terrain_height,
 		is_cave,
@@ -477,12 +392,22 @@
 	if(!turf_type)
 		turf_type = /turf/open/genturf
 
-	/**
-	 * Create the new turf without Initialize().
-	 */
-	var/turf/new_turf = SSatoms.NewUninitialized(turf_type, source_turf)
+	var/turf/new_turf = SSatoms.NewUninitialized(
+		turf_type,
+		source_turf
+	)
+
 	if(!new_turf)
 		return null
+
+	if(SSmapping.used_turfs[source_turf] == reservation)
+		SSmapping.used_turfs -= source_turf
+
+	SSmapping.used_turfs[new_turf] = reservation
+
+	new_turf.turf_flags = \
+		(new_turf.turf_flags | RESERVATION_TURF) \
+		& ~UNUSED_RESERVATION_TURF
 
 	generated_turfs += new_turf
 	pending_init += new_turf
@@ -493,36 +418,6 @@
 	return new_turf
 
 
-/**
- *
- * This is intentionally executed ONCE after every turf has been placed.
- *
- * There is no tick slicing here.
- *
- * The entire map becomes initialized as one operation.
- */
-/datum/map_generator/sub_level/proc/initialize_all_turfs()
-	if(turfs_initialized)
-		return TRUE
-
-	if(!length(pending_init))
-		return FALSE
-
-	Master.StartLoadingMap()
-	SSatoms.InitializeAtoms(pending_init)
-	Master.StopLoadingMap()
-
-	SSmapping.reg_in_areas_in_z(list(rimworld_area))
-	turfs_initialized = TRUE
-	return TRUE
-
-
-/**
- *
- * Population is intentionally done AFTER InitializeAtoms().
- *
- * This proc expects the biome to expose populate_turf().
- */
 /datum/map_generator/sub_level/proc/populate_turf(
 	turf/target_turf,
 	flora_allowed,

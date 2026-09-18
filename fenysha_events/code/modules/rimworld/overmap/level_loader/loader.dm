@@ -1,16 +1,3 @@
-#define RW_CELL_LOAD_CONTINUE 0
-#define RW_CELL_LOAD_COMPLETE 1
-#define RW_CELL_LOAD_FAILED 2
-
-#define RW_CELL_JOB_PREPARE 1
-#define RW_CELL_JOB_PLACE 2
-#define RW_CELL_JOB_INITIALIZE 3
-#define RW_CELL_JOB_POPULATE 4
-#define RW_CELL_JOB_LIGHTING 5
-#define RW_CELL_JOB_DAYLIGHT 6
-#define RW_CELL_JOB_FINISH 7
-
-
 SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	name = "\[rw\] Sub-Level Loader"
 	wait = 1
@@ -32,49 +19,24 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	return ..()
 
 
-/**
- * Adds a planet cell to the asynchronous generation queue.
- *
- * post_load_callback is invoked as:
- *
- *     callback.Invoke(cell, TRUE)
- *
- * when generation finishes successfully.
- */
 /datum/controller/subsystem/rimworld_sublevel_loader/proc/queue_cell(
 	datum/planet_cell/cell,
 	poi_name = null,
 	datum/callback/post_load_callback = null
 )
-	if(!cell || QDELETED(cell))
+	if(!cell || QDELETED(cell) || !cell.is_valid())
 		return FALSE
 
-	if(!cell.is_valid())
-		return FALSE
-
-	/**
-	 * Already loaded.
-	 */
 	if(cell.is_loaded())
 		if(post_load_callback)
 			post_load_callback.Invoke(cell, TRUE)
 		return TRUE
 
-	/**
-	 * Already generating.
-	 *
-	 * Attach this callback to the existing job instead of creating a duplicate
-	 * generation task.
-	 */
 	if(cell.loading_job)
 		if(post_load_callback)
 			cell.loading_job.add_callback(post_load_callback)
-
 		return TRUE
 
-	/**
-	 * Check the subsystem queue as a safety fallback.
-	 */
 	if(cell.id && jobs_by_cell[cell.id])
 		var/datum/rimworld_sublevel_load_job/existing_job = jobs_by_cell[cell.id]
 
@@ -86,12 +48,11 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 		return TRUE
 
-	var/datum/rimworld_sublevel_load_job/job = \
-		new /datum/rimworld_sublevel_load_job(
-			cell,
-			poi_name,
-			post_load_callback
-		)
+	var/datum/rimworld_sublevel_load_job/job = new /datum/rimworld_sublevel_load_job(
+		cell,
+		poi_name,
+		post_load_callback
+	)
 
 	load_queue += job
 
@@ -104,12 +65,6 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	return TRUE
 
 
-/**
- * Cancels a queued generation.
- *
- * If generation is already running, its reservation and temporary generator
- * will be cleaned by the job's Destroy().
- */
 /datum/controller/subsystem/rimworld_sublevel_loader/proc/cancel_cell(
 	datum/planet_cell/cell
 )
@@ -118,9 +73,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	var/datum/rimworld_sublevel_load_job/job = cell.loading_job
 
-	if(!job)
-		if(cell.id)
-			job = jobs_by_cell[cell.id]
+	if(!job && cell.id)
+		job = jobs_by_cell[cell.id]
 
 	if(!job)
 		return FALSE
@@ -148,9 +102,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	load_queue -= job
 
-	if(job.cell && job.cell.id)
-		if(jobs_by_cell[job.cell.id] == job)
-			jobs_by_cell -= job.cell.id
+	if(job.cell && job.cell.id && jobs_by_cell[job.cell.id] == job)
+		jobs_by_cell -= job.cell.id
 
 
 /datum/controller/subsystem/rimworld_sublevel_loader/fire(resumed)
@@ -166,7 +119,6 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/result = job.process()
 
 	switch(result)
-
 		if(RW_CELL_LOAD_COMPLETE)
 			job.notify_callbacks(TRUE)
 			remove_job(job)
@@ -178,12 +130,6 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			qdel(job)
 
 		if(RW_CELL_LOAD_CONTINUE)
-			/**
-			 * Round-robin between multiple loading cells.
-			 *
-			 * This prevents one large cell from starving other cells queued
-			 * for generation.
-			 */
 			if(length(load_queue) > 1)
 				load_queue.Cut(1, 2)
 				load_queue += job
@@ -197,30 +143,16 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/datum/turf_reservation/sub_level/reservation
 	var/datum/map_generator/sub_level/generator
 
-	/**
-	 * Current generation phase.
-	 */
 	var/phase = RW_CELL_JOB_PREPARE
 
-	/**
-	 * Placement cursor.
-	 *
-	 * local_y is the current map layer.
-	 * local_x is the current turf inside that layer.
-	 */
 	var/local_x = 1
 	var/local_y = 1
 
-	/**
-	 * Post-processing cursors.
-	 */
+	var/initialization_index = 1
 	var/populate_index = 1
 	var/lighting_index = 1
 	var/daylight_index = 1
 
-	/**
-	 * Completion callbacks.
-	 */
 	var/list/datum/callback/completion_callbacks = list()
 
 
@@ -241,58 +173,45 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 /datum/rimworld_sublevel_load_job/proc/add_callback(
 	datum/callback/post_load_callback
 )
-	if(!post_load_callback)
-		return
-
-	completion_callbacks += post_load_callback
+	if(post_load_callback)
+		completion_callbacks += post_load_callback
 
 
 /datum/rimworld_sublevel_load_job/process()
-	if(!cell || QDELETED(cell))
-		return RW_CELL_LOAD_FAILED
-
-	if(!cell.is_valid())
+	if(!cell || QDELETED(cell) || !cell.is_valid())
 		return RW_CELL_LOAD_FAILED
 
 	switch(phase)
-
 		if(RW_CELL_JOB_PREPARE)
 			if(!prepare())
 				return RW_CELL_LOAD_FAILED
 
-			phase = RW_CELL_JOB_PLACE
+			phase = RW_CELL_JOB_RESERVE
 			return RW_CELL_LOAD_CONTINUE
 
+		if(RW_CELL_JOB_RESERVE)
+			if(!reservation || QDELETED(reservation))
+				return RW_CELL_LOAD_FAILED
+
+			if(reservation.materialize_step(RW_SUBLEVEL_RESERVE_BUDGET))
+				phase = RW_CELL_JOB_PLACE
+
+			return RW_CELL_LOAD_CONTINUE
 
 		if(RW_CELL_JOB_PLACE)
 			return process_placement()
 
-
 		if(RW_CELL_JOB_INITIALIZE)
-			if(!initialize())
-				return RW_CELL_LOAD_FAILED
-
-			phase = RW_CELL_JOB_POPULATE
-			populate_index = 1
-
-			/**
-			 * Initialization is intentionally one large synchronous operation.
-			 * Give the MC a chance to continue before starting post-processing.
-			 */
-			return RW_CELL_LOAD_CONTINUE
-
+			return process_initialization()
 
 		if(RW_CELL_JOB_POPULATE)
 			return process_population()
 
-
 		if(RW_CELL_JOB_LIGHTING)
 			return process_lighting()
 
-
 		if(RW_CELL_JOB_DAYLIGHT)
 			return process_daylight()
-
 
 		if(RW_CELL_JOB_FINISH)
 			if(!finish())
@@ -303,32 +222,29 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	return RW_CELL_LOAD_FAILED
 
 
-
 /datum/rimworld_sublevel_load_job/proc/prepare()
 	if(!cell || !cell.is_valid())
 		return FALSE
 
 	reservation = SSsub_levels.create_sub_level(
-		cell.local_width,
-		cell.local_height,
+		RW_SUBLEVEL_INNER_WIDTH,
+		RW_SUBLEVEL_INNER_HEIGHT,
 		0,
 		poi_name || "Cell ([cell.x],[cell.y])"
 	)
 
 	if(!reservation)
 		log_world(
-			"RimWorld loader: failed to allocate sub-level \
-			for cell [cell.x],[cell.y]."
+			"RimWorld loader: failed to allocate sub-level for cell [cell.x],[cell.y]."
 		)
 		return FALSE
 
-	var/turf/BL = reservation.get_bottom_left_turf()
-	var/turf/TR = reservation.get_top_right_turf()
+	var/turf/BL = reservation.get_inner_bottom_left_turf()
+	var/turf/TR = reservation.get_inner_top_right_turf()
 
 	if(!BL || !TR)
 		log_world(
-			"RimWorld loader: reservation for cell [cell.x],[cell.y] \
-			contains invalid bounds."
+			"RimWorld loader: reservation for cell [cell.x],[cell.y] contains invalid bounds."
 		)
 		return FALSE
 
@@ -336,8 +252,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	if(!generator)
 		log_world(
-			"RimWorld loader: failed to create generator \
-			for cell [cell.x],[cell.y]."
+			"RimWorld loader: failed to create generator for cell [cell.x],[cell.y]."
 		)
 		return FALSE
 
@@ -350,13 +265,16 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	if(!generator.prepare_sub_level_terrain(reservation))
 		log_world(
-			"RimWorld loader: terrain preparation failed \
-			for cell [cell.x],[cell.y]."
+			"RimWorld loader: terrain preparation failed for cell [cell.x],[cell.y]."
 		)
 		return FALSE
 
 	local_x = 1
 	local_y = 1
+	initialization_index = 1
+	populate_index = 1
+	lighting_index = 1
+	daylight_index = 1
 
 	return TRUE
 
@@ -368,8 +286,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!generator || QDELETED(generator))
 		return RW_CELL_LOAD_FAILED
 
-	while(local_y <= generator.height)
+	var/processed = 0
 
+	while(local_y <= generator.height)
 		while(local_x <= generator.width)
 			var/turf/new_turf = generator.place_sub_level_turf(
 				reservation,
@@ -379,64 +298,79 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 			if(!new_turf)
 				log_world(
-					"RimWorld loader: failed to place turf \
-					at local [local_x],[local_y] \
-					for cell [cell.x],[cell.y]."
+					"RimWorld loader: failed to place turf at local [local_x],[local_y] for cell [cell.x],[cell.y]."
 				)
 				return RW_CELL_LOAD_FAILED
 
 			local_x++
+			processed++
 
-			/**
-			 * Yield only after a completed turf operation.
-			 */
-			if(TICK_CHECK)
+			if(processed >= RW_SUBLEVEL_PLACE_BUDGET || TICK_CHECK)
 				return RW_CELL_LOAD_CONTINUE
 
-		/**
-		 * Finished one complete horizontal layer.
-		 */
 		local_x = 1
 		local_y++
 
-		if(TICK_CHECK)
+		if(processed >= RW_SUBLEVEL_PLACE_BUDGET || TICK_CHECK)
 			return RW_CELL_LOAD_CONTINUE
 
-
-	/**
-	 * Entire map is now physically placed.
-	 */
 	phase = RW_CELL_JOB_INITIALIZE
+	initialization_index = 1
 
 	return RW_CELL_LOAD_CONTINUE
 
 
-/datum/rimworld_sublevel_load_job/proc/initialize()
-	if(!reservation || QDELETED(reservation))
-		return FALSE
-
+/datum/rimworld_sublevel_load_job/proc/process_initialization()
 	if(!generator || QDELETED(generator))
-		return FALSE
+		return RW_CELL_LOAD_FAILED
 
-	if(!generator.initialize_all_turfs())
-		return FALSE
+	var/list/pending = generator.pending_init
 
-	return TRUE
+	if(!length(pending))
+		return RW_CELL_LOAD_FAILED
+
+	var/list/batch = list()
+
+	while(
+		initialization_index <= length(pending) \
+		&& length(batch) < RW_SUBLEVEL_INITIALIZE_BUDGET
+	)
+		var/atom/A = pending[initialization_index]
+		initialization_index++
+
+		if(A && !QDELETED(A))
+			batch += A
+
+	if(length(batch))
+		Master.StartLoadingMap()
+		SSatoms.InitializeAtoms(batch)
+		Master.StopLoadingMap()
+
+	if(initialization_index <= length(pending))
+		return RW_CELL_LOAD_CONTINUE
+
+	SSmapping.reg_in_areas_in_z(list(generator.rimworld_area))
+
+	generator.turfs_initialized = TRUE
+
+	phase = RW_CELL_JOB_POPULATE
+	populate_index = 1
+
+	return RW_CELL_LOAD_CONTINUE
+
 
 /datum/rimworld_sublevel_load_job/proc/process_population()
 	if(!generator || QDELETED(generator))
 		return RW_CELL_LOAD_FAILED
 
 	var/open_count = generator.get_generated_open_turf_count()
+	var/processed = 0
+	var/area/rimworld/A = generator.rimworld_area
 
 	while(populate_index <= open_count)
-		var/turf/T = generator.get_generated_open_turf(
-			populate_index
-		)
+		var/turf/T = generator.get_generated_open_turf(populate_index)
 
 		if(T)
-			var/area/rimworld/A = generator.rimworld_area
-
 			if(!generator.populate_turf(
 				T,
 				(A.area_flags_mapping & FLORA_ALLOWED),
@@ -446,8 +380,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 				return RW_CELL_LOAD_FAILED
 
 		populate_index++
+		processed++
 
-		if(TICK_CHECK)
+		if(processed >= RW_SUBLEVEL_POPULATE_BUDGET || TICK_CHECK)
 			return RW_CELL_LOAD_CONTINUE
 
 	phase = RW_CELL_JOB_LIGHTING
@@ -461,21 +396,23 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		return RW_CELL_LOAD_FAILED
 
 	var/turf_count = generator.get_generated_turf_count()
+	var/list/batch = list()
 
-	while(lighting_index <= turf_count)
-		var/turf/T = generator.get_generated_turf(
-			lighting_index
-		)
-
-		if(T)
-			SSlighting.setup_static_lighting_if_needed(
-				list(T)
-			)
-
+	while(
+		lighting_index <= turf_count \
+		&& length(batch) < RW_SUBLEVEL_LIGHTING_BUDGET
+	)
+		var/turf/T = generator.get_generated_turf(lighting_index)
 		lighting_index++
 
-		if(TICK_CHECK)
-			return RW_CELL_LOAD_CONTINUE
+		if(T)
+			batch += T
+
+	if(length(batch))
+		SSlighting.setup_static_lighting_if_needed(batch)
+
+	if(lighting_index <= turf_count)
+		return RW_CELL_LOAD_CONTINUE
 
 	phase = RW_CELL_JOB_DAYLIGHT
 	daylight_index = 1
@@ -488,21 +425,23 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		return RW_CELL_LOAD_FAILED
 
 	var/turf_count = generator.get_generated_turf_count()
+	var/list/batch = list()
 
-	while(daylight_index <= turf_count)
-		var/turf/T = generator.get_generated_turf(
-			daylight_index
-		)
-
-		if(T && SSdaylight.setup_complete)
-			SSdaylight.handle_loaded_turfs(
-				list(T)
-			)
-
+	while(
+		daylight_index <= turf_count \
+		&& length(batch) < RW_SUBLEVEL_DAYLIGHT_BUDGET
+	)
+		var/turf/T = generator.get_generated_turf(daylight_index)
 		daylight_index++
 
-		if(TICK_CHECK)
-			return RW_CELL_LOAD_CONTINUE
+		if(T)
+			batch += T
+
+	if(length(batch) && SSdaylight.setup_complete)
+		SSdaylight.handle_loaded_turfs(batch, FALSE)
+
+	if(daylight_index <= turf_count)
+		return RW_CELL_LOAD_CONTINUE
 
 	phase = RW_CELL_JOB_FINISH
 
@@ -510,26 +449,25 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 
 /datum/rimworld_sublevel_load_job/proc/finish()
-	if(!cell || QDELETED(cell))
-		return FALSE
-
-	if(!reservation || QDELETED(reservation))
-		return FALSE
-
-	if(!generator || QDELETED(generator))
+	if(
+		!cell \
+		|| QDELETED(cell) \
+		|| !reservation \
+		|| QDELETED(reservation) \
+		|| !generator \
+		|| QDELETED(generator)
+	)
 		return FALSE
 
 	cell.reservation = reservation
 	cell.sub_level_id = reservation.id
 
-	// The cell now owns the reservation.
 	reservation = null
 
 	cell.is_generated = TRUE
 	cell.is_generating = FALSE
 	cell.loading_job = null
 
-	// Refresh planetary metadata.
 	cell.refresh_from_planet()
 
 	qdel(generator)
@@ -537,27 +475,19 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	return TRUE
 
+
 /datum/rimworld_sublevel_load_job/proc/notify_callbacks(success)
 	if(!length(completion_callbacks))
 		return
 
 	for(var/datum/callback/callback in completion_callbacks)
-		if(!callback)
-			continue
-
-		callback.Invoke(
-			cell,
-			success
-		)
+		if(callback)
+			callback.Invoke(cell, success)
 
 	completion_callbacks.Cut()
 
 
 /datum/rimworld_sublevel_load_job/Destroy()
-	/**
-	 * If generation failed or was cancelled before ownership was transferred,
-	 * the job still owns the reservation.
-	 */
 	if(reservation)
 		qdel(reservation)
 		reservation = null

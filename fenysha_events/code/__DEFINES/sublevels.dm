@@ -20,3 +20,55 @@
 #define SUB_LEVEL_ALL_TURFS(res)    (res?.get_all_turfs())
 #define SUB_LEVEL_INNER_TURFS(res)  (res?.get_inner_turfs())
 #define SUB_LEVEL_CORDON_TURFS(res) (res?.get_cordon_turfs())
+
+
+/**
+ * ============================================================================
+ * RimWorld sub-level geometry
+ * ============================================================================
+ */
+
+#define RW_SUBLEVEL_ROOT_WIDTH 255
+#define RW_SUBLEVEL_ROOT_HEIGHT 255
+
+#define RW_SUBLEVEL_BORDER_SIZE 1
+
+#define RW_SUBLEVEL_INNER_WIDTH 125
+#define RW_SUBLEVEL_INNER_HEIGHT 125
+
+#define RW_SUBLEVEL_SLOT_WIDTH 127
+#define RW_SUBLEVEL_SLOT_HEIGHT 127
+
+
+/**
+ * ============================================================================
+ * RimWorld sub-level loader budgets
+ * ============================================================================
+ */
+
+#define RW_SUBLEVEL_RESERVE_BUDGET 128
+#define RW_SUBLEVEL_PLACE_BUDGET 96
+#define RW_SUBLEVEL_INITIALIZE_BUDGET 64
+#define RW_SUBLEVEL_POPULATE_BUDGET 64
+#define RW_SUBLEVEL_LIGHTING_BUDGET 256
+#define RW_SUBLEVEL_DAYLIGHT_BUDGET 256
+
+
+/**
+ * ============================================================================
+ * Loader phases
+ * ============================================================================
+ */
+
+#define RW_CELL_LOAD_CONTINUE 0
+#define RW_CELL_LOAD_COMPLETE 1
+#define RW_CELL_LOAD_FAILED 2
+
+#define RW_CELL_JOB_PREPARE 1
+#define RW_CELL_JOB_RESERVE 2
+#define RW_CELL_JOB_PLACE 3
+#define RW_CELL_JOB_INITIALIZE 4
+#define RW_CELL_JOB_POPULATE 5
+#define RW_CELL_JOB_LIGHTING 6
+#define RW_CELL_JOB_DAYLIGHT 7
+#define RW_CELL_JOB_FINISH 8
