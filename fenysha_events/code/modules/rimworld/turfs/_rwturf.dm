@@ -478,7 +478,7 @@ GLOBAL_LIST_EMPTY(roof_datums)
 	return TRUE
 
 /turf/open/rimworld/proc/can_grow_plants()
-	return fertility > 0.1
+	return fertility > 0.0
 
 /turf/open/rimworld/proc/get_growth_multiplier()
 	return fertility * (0.5 + moisture * 0.5)

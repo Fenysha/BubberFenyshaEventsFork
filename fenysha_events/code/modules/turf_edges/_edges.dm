@@ -26,7 +26,6 @@
 
 	. = ..()
 
-	// Обновляем соседей уже после того, как мы уничтожены
 	for(var/turf/open/neighbor as anything in neighbors)
 		neighbor.update_edges()
 
