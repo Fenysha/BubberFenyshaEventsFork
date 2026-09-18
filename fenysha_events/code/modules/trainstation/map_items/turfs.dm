@@ -28,4 +28,3 @@
 	name = "asphalt"
 	desc = "Melted down oil can, in some cases, be used to pave road surfaces."
 	icon_state = "asphalt"
-

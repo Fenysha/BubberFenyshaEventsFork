@@ -48,6 +48,9 @@
 	var/other_damage_multiplier = 1
 	/// Minimum amount of damage required to create a dent.
 	var/dent_damage_threshold = 5
+
+	var/supports_roof = TRUE
+
 	/// Prevents the wall from taking damage after destruction has started.
 	var/destroying = FALSE
 
@@ -103,6 +106,9 @@
 		dent_decals = list(decal)
 	add_overlay(dent_decals)
 
+
+/turf/closed/rw_wall/proc/is_roof_support_provider()
+	return supports_roof
 /**
  * Main wall damage proc.
  *
@@ -240,11 +246,143 @@
 /turf/closed/rw_wall/rock
 
 
+/datum/turf_roof
+	var/name = "Roof"
+	var/desc = "A simple roof."
+
+	/// Blocks sunlight
+	var/blocks_light = TRUE
+	/// Blocks weather effects
+	var/blocks_weather = TRUE
+	/// Maximum distance to the nearest wall/support
+	var/max_support_distance = 6
+	/// Can this roof be removed by hand?
+	var/can_be_removed = TRUE
+	/// Damage dealt to objects and mobs on collapse
+	var/collapse_damage = 60
+	/// Debris type spawned on collapse
+	var/collapse_debris_type = null
+
+/datum/turf_roof/rock_thick
+	name = "Thick Rock Roof"
+	desc = "Meters of solid rock. Cannot be dismantled by hand."
+	can_be_removed = FALSE
+	max_support_distance = 6
+	collapse_damage = 150
+
+/datum/turf_roof/constructed
+	name = "Constructed Roof"
+	desc = "A simple roof made of planks and sheet metal."
+	max_support_distance = 6
+	collapse_damage = 40
+
+
+// Global cache of roof datums
+GLOBAL_LIST_EMPTY(roof_datums)
+
+/proc/get_roof_datum(path)
+	if(!ispath(path, /datum/turf_roof))
+		return null
+	if(!GLOB.roof_datums[path])
+		GLOB.roof_datums[path] = new path()
+	return GLOB.roof_datums[path]
+
+/datum/element/roof
+	element_flags = ELEMENT_BESPOKE | ELEMENT_DETACH_ON_HOST_DESTROY
+	argument_hash_start_idx = 2
+
+	/// The roof data this element is using
+	var/datum/turf_roof/roof_data
+
+/datum/element/roof/Attach(datum/target, datum/turf_roof/roof)
+	. = ..()
+	if(. == ELEMENT_INCOMPATIBLE)
+		return
+
+	if(!istype(target, /turf/open/rimworld) || !istype(roof))
+		return ELEMENT_INCOMPATIBLE
+
+	roof_data = roof
+
+	var/turf/open/rimworld/T = target
+
+	// Apply immediate effects
+	T.apply_roof_effects(roof_data)
+
+	// Register signals
+	RegisterSignal(T, COMSIG_ATOM_EXAMINE, PROC_REF(on_examine))
+	RegisterSignal(T, COMSIG_TURF_ROOF_SUPPORT_CHECK, PROC_REF(on_support_check))
+	RegisterSignal(T, COMSIG_TURF_ROOF_COLLAPSE, PROC_REF(on_collapse))
+	RegisterSignal(T, COMSIG_ATOM_ROOF_SUPPORT_LOST, PROC_REF(on_support_lost))
+
+	// Immediate support check
+	if(!check_support(T))
+		on_collapse(T)
+
+	SEND_SIGNAL(T, COMSIG_TURF_ROOF_ADDED, roof_data)
+	return .
+
+/datum/element/roof/Detach(datum/source, force)
+	var/turf/open/rimworld/T = source
+	if(istype(T))
+		T.remove_roof_effects(roof_data)
+		SEND_SIGNAL(T, COMSIG_TURF_ROOF_REMOVED, roof_data)
+
+	UnregisterSignal(source, list(COMSIG_ATOM_EXAMINE, COMSIG_TURF_ROOF_SUPPORT_CHECK, COMSIG_TURF_ROOF_COLLAPSE, COMSIG_ATOM_ROOF_SUPPORT_LOST))
+	roof_data = null
+	return ..()
+
+/datum/element/roof/proc/on_examine(datum/source, mob/user, list/examine_list)
+	SIGNAL_HANDLER
+	examine_list += span_notice("There is a roof above: <b>[roof_data.name]</b>.")
+	examine_list += span_notice("[roof_data.desc]")
+
+/datum/element/roof/proc/check_support(turf/open/rimworld/T)
+	if(!T || !roof_data)
+		return FALSE
+
+	for(var/turf/closed/rw_wall/neighbor in RANGE_TURFS(roof_data.max_support_distance, T))
+		if(neighbor.is_roof_support_provider())
+			return TRUE
+	return FALSE
+
+/datum/element/roof/proc/on_support_check(datum/source)
+	SIGNAL_HANDLER
+	return check_support(source)
+
+/datum/element/roof/proc/on_support_lost(datum/source)
+	SIGNAL_HANDLER
+	var/turf/open/rimworld/T = source
+	if(!check_support(T))
+		on_collapse(T)
+
+/datum/element/roof/proc/on_collapse(datum/source)
+	SIGNAL_HANDLER
+	var/turf/open/rimworld/T = source
+	if(!T || !roof_data)
+		return
+
+	T.visible_message(span_userdanger("The roof above [T] collapses!"))
+	// playsound(T, 'sound/effects/collapse.ogg', 80, TRUE)
+
+	for(var/mob/living/L in T)
+		L.take_bodypart_damage(brute = roof_data.collapse_damage)
+		L.Paralyze(4 SECONDS)
+		to_chat(L, span_userdanger("The roof collapses on top of you!"))
+
+	for(var/obj/structure/S in T)
+		S.take_damage(roof_data.collapse_damage, BRUTE)
+
+	if(roof_data.collapse_debris_type)
+		new roof_data.collapse_debris_type(T)
+
+	// Detach ourselves (this also fires COMSIG_TURF_ROOF_REMOVED)
+	T.RemoveElement(/datum/element/roof, roof_data)
+
 /turf/open/rimworld
 	name = "ground"
 	desc = "The ground."
 	baseturfs = /turf/open/bottom_or_region
-
 
 	flags_1 = NO_SCREENTIPS_1 | CAN_BE_DIRTY_1
 	turf_flags = IS_SOLID | NO_RUST
@@ -258,25 +396,17 @@
 	smoothing_groups = SMOOTH_GROUP_TURF_OPEN
 	canSmoothWith = SMOOTH_GROUP_TURF_OPEN + SMOOTH_GROUP_OPEN_FLOOR
 
-
 	/// Fertility of the soil (0.0 - 2.0+). Affects plant growth speed and quality.
-	var/fertility = 1.0
-	/// Higher = can support heavier buildings/furniture.
-	var/structure_weight_capacity = 100
-	/// Current total weight of all structures/objects currently on this turf.
-	var/current_structure_weight = 0
+	var/fertility = 0.0
 
-	/// Whether this terrain is considered "fertile" for automatic farm designation etc.
-	var/is_fertile = TRUE
 	/// Whether heavy machinery / multi-tile structures can be placed here.
 	var/can_support_heavy = TRUE
 	/// Whether the turf can be tilled / turned into farmland.
-	var/can_be_tilled = TRUE
+	var/can_be_tilled = FALSE
 
 	var/tiled_type
 	/// Softness of the ground (affects sinking, footprints, some constructions).
 	var/softness = 0.5		// 0.0 = hard rock, 1.0 = deep mud
-
 
 	/// Temperature modifier (added to ambient temperature).
 	var/temperature_mod = 0
@@ -285,46 +415,73 @@
 	/// Whether water can pool / flood here easily.
 	var/floodable = TRUE
 
+	/// Should this turf be created with a roof on map load?
+	var/init_with_roof = FALSE
+	/// Roof type used when init_with_roof is TRUE
+	var/roof_type
 
 
 /turf/open/rimworld/Initialize(mapload)
 	. = ..()
-	update_appearance()
+	if(init_with_roof && roof_type)
+		var/datum/turf_roof/R = get_roof_datum(roof_type)
+		if(R)
+			AddElement(/datum/element/roof, R)
 
+/turf/open/rimworld/examine(mob/user)
+	. = ..()
+	if(can_support_heavy)
+		. += span_notice("Can support heavy structures.")
+	else
+		. += span_notice("Cannot support heavy structures.")
+	if(fertility > 0)
+		. += span_notice("Can grow plants with <b>[fertility * 100]%</b> efficiency.")
+	else
+		. += span_notice("Cannot grow plants.")
+
+/turf/open/rimworld/proc/set_roof(datum/turf_roof/roof_path)
+	var/datum/turf_roof/R = get_roof_datum(roof_path)
+	if(!R)
+		return FALSE
+
+	// Remove any existing roof first
+	RemoveElement(/datum/element/roof)
+
+	AddElement(/datum/element/roof, R)
+	return TRUE
+
+/turf/open/rimworld/proc/remove_roof(silent = FALSE)
+	if(!HAS_TRAIT(src, TRAIT_HAS_ROOF))
+		return FALSE
+	if(!silent)
+		visible_message(span_notice("The roof above [src] has been dismantled."))
+
+	RemoveElement(/datum/element/roof)
+	return TRUE
+
+/turf/open/rimworld/proc/has_roof()
+	return HAS_TRAIT(src, TRAIT_HAS_ROOF)
+
+/turf/open/rimworld/proc/apply_roof_effects(datum/turf_roof/roof)
+	INVOKE_ASYNC(SSdaylight, TYPE_PROC_REF(/datum/controller/subsystem/daylight, refresh_turf_daylight), src)
+	// You can expand this later (weather blocking, temperature, etc.)
+	return TRUE
+
+/turf/open/rimworld/proc/remove_roof_effects(datum/turf_roof/roof)
+	INVOKE_ASYNC(SSdaylight, TYPE_PROC_REF(/datum/controller/subsystem/daylight, refresh_turf_daylight), src)
+	return TRUE
 
 /turf/open/rimworld/proc/get_fertility()
 	return fertility
 
-
-/turf/open/rimworld/proc/get_structure_weight_capacity()
-	return structure_weight_capacity
-
-
 /turf/open/rimworld/proc/can_support_structure(obj/structure/S)
 	return TRUE
 
-
-/turf/open/rimworld/proc/add_structure_weight(amount)
-	current_structure_weight = max(0, current_structure_weight + amount)
-	return current_structure_weight
-
-
-/turf/open/rimworld/proc/remove_structure_weight(amount)
-	current_structure_weight = max(0, current_structure_weight - amount)
-	return current_structure_weight
-
-
-/turf/open/rimworld/proc/is_overloaded()
-	return current_structure_weight > structure_weight_capacity
-
-
 /turf/open/rimworld/proc/can_grow_plants()
-	return is_fertile && fertility > 0.1
-
+	return fertility > 0.1
 
 /turf/open/rimworld/proc/get_growth_multiplier()
 	return fertility * (0.5 + moisture * 0.5)
-
 
 /turf/open/rimworld/attackby(obj/item/I, mob/user, params)
 	if(can_be_tilled && I.tool_behaviour == TOOL_HOE && tiled_type)
@@ -333,18 +490,3 @@
 			ChangeTurf(tiled_type)
 			return TRUE
 	return ..()
-
-
-/turf/open/rimworld/grass
-	name = "Grass"
-	icon = 'fenysha_events/icons/turf/floors/nature/grass.dmi'
-	icon_state = "0"
-
-	edge_priority = 7
-	fertility = 1.0
-	structure_weight_capacity = 100
-	can_be_tilled = TRUE
-
-/turf/open/rimworld/grass/Initialize(mapload)
-	icon_state = "[rand(0, 5)]"
-	. = ..()

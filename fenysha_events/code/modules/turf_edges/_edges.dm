@@ -1,5 +1,4 @@
 /turf/open
-
 	/// Higher-priority open turfs draw their edge over lower-priority turfs.
 	/// 0 means this turf participates without overriding lower-priority tiles.
 	var/edge_priority = 0
@@ -12,21 +11,22 @@
 
 
 /turf/open/Initialize(mapload)
-	. = ..()
-
 	update_edges()
 	refresh_blend_neighbors()
 
+	. = ..()
 
 /turf/open/Destroy()
 	var/list/turf/open/neighbors = list()
-
 	for(var/turf/open/neighbor in RANGE_TURFS(1, src))
 		if(neighbor != src && !isnull(neighbor.get_blend_priority()))
 			neighbors += neighbor
 
+	clear_edge_overlays()
+
 	. = ..()
 
+	// Обновляем соседей уже после того, как мы уничтожены
 	for(var/turf/open/neighbor as anything in neighbors)
 		neighbor.update_edges()
 
@@ -41,20 +41,15 @@
 	return cardinal_edges_only
 
 
-/// Returns TRUE if this turf has a valid icon that can provide
-/// the requested edge state.
+/// Returns TRUE if this turf has a valid icon that can provide the requested edge state.
 /turf/open/proc/has_edge_state(direction)
-	if(!icon)
-		return FALSE
-
-	if(!direction)
+	if(!icon || !direction)
 		return FALSE
 
 	if(cardinal_edges_only && (direction & (direction - 1)))
 		return FALSE
 
 	var/edge_state = TURF_EDGE_STATE_FOR_DIR(direction)
-
 	if(!edge_state)
 		return FALSE
 
@@ -63,10 +58,7 @@
 
 /// Returns TRUE if this turf can actually contribute an edge overlay.
 /turf/open/proc/can_provide_edge(direction)
-	if(!icon)
-		return FALSE
-
-	if(isnull(edge_priority))
+	if(!icon || isnull(edge_priority))
 		return FALSE
 
 	if(cardinal_edges_only && (direction & (direction - 1)))
@@ -94,8 +86,8 @@
 
 
 /// Rebuilds all edge overlays for this turf.
-/turf/open/proc/update_edges()
-	rebuild_edges()
+/turf/open/proc/update_edges(turf/from)
+	rebuild_edges(from)
 
 
 /// Refreshes nearby open turfs after this turf changes.
@@ -103,23 +95,18 @@
 	for(var/turf/open/neighbor in RANGE_TURFS(1, src))
 		if(neighbor == src)
 			continue
-
 		if(isnull(neighbor.get_blend_priority()))
 			continue
-
-		neighbor.update_edges()
+		neighbor.update_edges(src)
 
 
 /// Rebuilds the overlays contributed by higher-priority neighboring turfs.
-/turf/open/proc/rebuild_edges()
-	set waitfor = FALSE
-	// This turf cannot participate in edge rendering.
+/turf/open/proc/rebuild_edges(turf/from)
 	if(!icon)
 		clear_edge_overlays()
 		return
 
 	var/src_priority = get_blend_priority()
-
 	if(isnull(src_priority))
 		clear_edge_overlays()
 		return
@@ -129,73 +116,39 @@
 	var/list/new_overlays = list()
 
 	for(var/direction in GLOB.alldirs)
-
-		// Make sure the direction itself is valid.
 		if(!direction)
 			continue
 
 		var/turf/open/neighbor = turf_wrap_step(src, direction)
-
-		// Missing neighbor.
-		if(!neighbor)
-			continue
-
-		// Never blend with ourselves.
-		if(neighbor == src)
-			continue
-
-		// The wrapped step should still result in an open turf.
-		if(!istype(neighbor, /turf/open))
+		if(!neighbor || neighbor == src || !istype(neighbor, /turf/open))
 			continue
 
 		var/neighbor_priority = neighbor.get_blend_priority()
-
-		// Neighbor does not participate in edge blending.
-		if(isnull(neighbor_priority))
-			continue
-
-		// Only higher-priority turfs can bleed onto this turf.
-		if(neighbor_priority <= src_priority)
+		if(isnull(neighbor_priority) || neighbor_priority <= src_priority)
 			continue
 
 		var/bleed_dir = REVERSE_DIR(direction)
 
-		// Neighbor explicitly does not provide diagonal edges.
 		if(neighbor.uses_cardinal_edges_only() && (bleed_dir & (bleed_dir - 1)))
 			continue
 
-		// Neighbor has no icon or does not contain
-		// the required edge state.
 		if(!neighbor.can_provide_edge(bleed_dir))
 			continue
 
 		var/edge_state = TURF_EDGE_STATE_FOR_DIR(bleed_dir)
-
-		// Defensive check in case the direction mapping changes.
-		if(!edge_state)
-			continue
-
-		// Final validation before creating appearance.
-		if(!neighbor.icon)
-			continue
-
-		if(!icon_exists(neighbor.icon, edge_state))
+		if(!edge_state || !icon_exists(neighbor.icon, edge_state))
 			continue
 
 		var/mutable_appearance/edge = mutable_appearance(
 			neighbor.icon,
 			edge_state,
-			layer + 0.01 + (neighbor_priority * 0.0001)
+			layer + 0.01 + (neighbor_priority * 0.0001),
+			appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 		)
 
-		if(!edge)
-			continue
-
+		edge.color = neighbor.color
 		new_overlays += edge
 
-	// Nothing valid was generated.
-	if(!length(new_overlays))
-		return
-
-	add_overlay(new_overlays)
-	store_edge_overlays(new_overlays)
+	if(length(new_overlays))
+		add_overlay(new_overlays)
+		store_edge_overlays(new_overlays)
