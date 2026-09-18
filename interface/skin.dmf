@@ -432,13 +432,6 @@ window "output_browser"
 		anchor2 = -1,-1
 		saved-params = "pos;size;is-minimized;is-maximized"
 		is-pane = true
-	elem "browseroutput"
-		type = BROWSER
-		pos = 0,0
-		size = 640x475
-		anchor1 = 0,0
-		anchor2 = 100,100
-		saved-params = ""
 
 window "popupwindow"
 	elem "popupwindow"

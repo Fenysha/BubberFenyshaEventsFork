@@ -8,6 +8,11 @@ const viewSchema = z.object({
 
 export const settingsSchema = z.object({
   adminMusicVolume: z.number(),
+  chatCorner: z.string(),
+  chatFrameless: z.boolean(),
+  chatMessageBg: z.boolean(),
+  chatOpacity: z.number(),
+  chatPadding: z.number(),
   fontFamily: z.string(),
   fontSize: z.number(),
   initialized: z.boolean(),

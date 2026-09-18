@@ -21,6 +21,8 @@
 
 // Components specific to tgui-panel
 @include meta.load-css('./components/Chat.scss');
+// FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
+@include meta.load-css('./components/ChatOnMap.scss');
 @include meta.load-css('./components/Ping.scss');
 @include meta.load-css('./components/Notifications.scss');
 @include meta.load-css('./components/UnreadCount.scss');

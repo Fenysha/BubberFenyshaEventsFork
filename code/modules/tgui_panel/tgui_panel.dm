@@ -88,6 +88,12 @@
 		))
 		send_player_info()
 		send_hotkey_mode()
+		// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+		// Every load ends here, so this is the one reliable moment to tell tgchat its layout.
+		// Sending it from create_browser races the reload that follows and gets discarded.
+		if(!isnull(current_layout))
+			send_layout()
+		// FENYSHA EDIT ADDITION END
 		return TRUE
 
 	if(type == "audio/setAdminMusicVolume")
@@ -178,6 +184,17 @@
 		var/list/resolved_args = resolve_invoke_args(payload["args"], meta.arguments)
 		call(target, meta.body_path)(resolved_args)
 		return TRUE
+
+	// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+	if(type == "panel/bounds")
+		return on_chat_bounds(payload)
+
+	if(type == "panel/toggle_layout")
+		return on_toggle_layout()
+
+	if(type == "panel/request_layout")
+		return on_request_layout()
+	// FENYSHA EDIT ADDITION END
 
 	if(type == "requestMetadata")
 		send_metadata()

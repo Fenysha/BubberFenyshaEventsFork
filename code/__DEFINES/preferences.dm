@@ -86,6 +86,15 @@
 
 #define DEFAULT_CYBORG_NAME "Default Cyborg Name"
 
+// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+/// Chat browser floats over the map
+#define TGPANEL_ONMAP "onmap"
+/// Chat browser docked in the classic side panel
+#define TGPANEL_PANEL "panel"
+/// Chat browser in its own detached window
+#define TGPANEL_WINDOW "window"
+// FENYSHA EDIT ADDITION END
+
 // Choose grid or list TGUI layouts for UI's, when possible.
 /// Force grid layout, even if default is a list.
 #define TGUI_LAYOUT_GRID "grid"

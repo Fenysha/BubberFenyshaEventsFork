@@ -1,0 +1,306 @@
+/**
+ * Styles for the chat browser when it floats over the map.
+ * `onmap` is set by use-chat-placement, `frameless` / `chat-top` / `chat-message-bg`
+ * by Panel.tsx, and `frameless-visible` while the mouse is over the chat.
+ */
+
+body.onmap {
+  --chat-opacity: 0.45;
+  --onmap-base: hsla(225, 10%, 10%, var(--chat-opacity));
+  --onmap-window-border: hsla(225, 20%, 40%, 0.2);
+  --onmap-window-shadow: hsla(225, 30%, 5%, 0.5);
+  --frameless-stroke-color: black;
+  --frameless-shadow-color: rgba(0, 0, 0, 0.8);
+  --frameless-shadow-color-soft: rgba(0, 0, 0, 0.5);
+  --frameless-backdrop: hsla(225, 10%, 10%, var(--chat-opacity));
+
+  --color-base: var(--onmap-base);
+  --section-background: var(--onmap-base);
+  // hsl(from ...) drops the source alpha unless it is asked for, so carry it through or
+  // these come out opaque and the gradient paints right over the translucent base
+  --color-base-start: hsl(
+    from var(--color-base) h s calc(l + var(--base-gradient-spread)) / alpha
+  );
+  --color-base-end: hsl(
+    from var(--color-base) h s calc(l - var(--base-gradient-spread)) / alpha
+  );
+
+  overflow: hidden;
+
+  .Window {
+    inset: 4px;
+    // Window.scss lays a gradient over the background colour. Nothing to shade against the
+    // map, and it would hide whatever translucency the base colour has.
+    background-image: none;
+    border-radius: var(--border-radius-large);
+    border: var(--border-thickness-tiny) solid var(--onmap-window-border);
+    box-shadow: 0 0 4px var(--onmap-window-shadow);
+    overflow: hidden;
+  }
+
+  .Panel__stack {
+    gap: 0;
+  }
+
+  // Float the messages down onto the input bar. Without this a short backlog sits at the top
+  // of the box and the empty remainder reads as a gap, since the box itself is invisible.
+  // margin-top:auto only takes effect while the content is shorter than the pane, so
+  // scrolling a full backlog still behaves normally. The scroll button is position:fixed.
+  #chat-pane {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .Chat {
+    margin-top: auto;
+  }
+
+  // Frameless: nothing is drawn until you mouse over, messages fade in and out on their own
+  &.frameless {
+    .Window {
+      background-color: transparent;
+      background-image: none;
+      border-color: transparent;
+      box-shadow: none;
+      transition:
+        background-color 300ms ease,
+        border-color 300ms ease,
+        box-shadow 300ms ease;
+    }
+
+    .Section {
+      background-color: transparent;
+    }
+
+    .Panel__header,
+    .ResizeHandle,
+    .Chat__scrollButton {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+
+    #chat-pane {
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .Chat__reconnected {
+      display: none;
+    }
+
+    .ChatMessage {
+      opacity: 0;
+      transition: opacity 300ms ease;
+      -webkit-text-stroke: 1.5px var(--frameless-stroke-color);
+      paint-order: stroke fill;
+      text-shadow:
+        0 0 10px var(--frameless-shadow-color),
+        0 0 20px var(--frameless-shadow-color-soft);
+    }
+
+    .ChatMessage--recent {
+      opacity: 1;
+      transition: opacity 200ms ease;
+    }
+
+    .ChatMessage--fading {
+      opacity: 0;
+      transition: opacity 600ms ease;
+    }
+
+    // Anchored to a top corner, messages grow downwards from nothing
+    &.chat-top .Panel__header {
+      display: none;
+    }
+
+    &.chat-top:not(.frameless-visible)
+      .ChatMessage:not(.ChatMessage--recent):not(.ChatMessage--fading) {
+      display: none;
+    }
+
+    &.chat-message-bg .ChatMessage {
+      padding: 2px 6px;
+      -webkit-text-stroke: unset;
+      paint-order: normal;
+      text-shadow: none;
+    }
+
+    &.chat-message-bg .ChatMessage--recent {
+      background: var(--frameless-backdrop);
+      border-radius: 0;
+      transition:
+        opacity 600ms ease,
+        border-radius 300ms ease;
+
+      // Round only the outer corners of a run of lit messages
+      &:not(.ChatMessage--recent + .ChatMessage--recent) {
+        border-radius: 6px 6px 0 0;
+      }
+
+      &:not(:has(+ .ChatMessage--recent)) {
+        border-radius: 0 0 6px 6px;
+      }
+
+      &:not(.ChatMessage--recent + .ChatMessage--recent):not(
+          :has(+ .ChatMessage--recent)
+        ) {
+        border-radius: 6px;
+      }
+    }
+
+    &.frameless-visible {
+      .Window {
+        background-color: var(--color-base);
+        background-image: none;
+        border-color: var(--onmap-window-border);
+        box-shadow: 0 0 4px var(--onmap-window-shadow);
+        transition:
+          background-color 200ms ease,
+          border-color 200ms ease,
+          box-shadow 200ms ease;
+      }
+
+      .Section {
+        background-color: var(--section-background);
+      }
+
+      .Panel__header,
+      .ResizeHandle,
+      .Chat__scrollButton {
+        display: block;
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 200ms ease;
+      }
+
+      #chat-pane {
+        pointer-events: auto;
+        overflow-y: auto;
+      }
+
+      .Chat__reconnected {
+        display: block;
+      }
+
+      .ChatMessage {
+        opacity: 1;
+        -webkit-text-stroke: unset;
+        paint-order: normal;
+        text-shadow: none;
+        transition: opacity 200ms ease;
+      }
+
+      &.chat-message-bg .ChatMessage {
+        background: transparent;
+        border-radius: 0;
+      }
+    }
+  }
+}
+
+html:has(body.onmap) {
+  background: transparent !important;
+}
+
+.theme-light body.onmap {
+  background: transparent !important;
+  --onmap-base: hsla(0, 0%, 95%, var(--chat-opacity));
+  --onmap-window-border: hsla(0, 0%, 60%, 0.3);
+  --onmap-window-shadow: hsla(0, 0%, 80%, 0.5);
+  --frameless-stroke-color: white;
+  --frameless-shadow-color: rgba(255, 255, 255, 0.8);
+  --frameless-shadow-color-soft: rgba(255, 255, 255, 0.5);
+  --frameless-backdrop: hsla(0, 0%, 95%, var(--chat-opacity));
+}
+
+.ResizeHandle {
+  position: fixed;
+  z-index: 100;
+
+  &--left {
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+  }
+
+  &--right {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+  }
+
+  &--top {
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+  }
+
+  &--bottom {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 6px;
+    cursor: ns-resize;
+  }
+
+  &--bottom-left,
+  &--bottom-right,
+  &--top-left,
+  &--top-right {
+    width: 12px;
+    height: 12px;
+  }
+
+  &--bottom-left {
+    left: 0;
+    bottom: 0;
+  }
+
+  &--bottom-right {
+    right: 0;
+    bottom: 0;
+  }
+
+  &--top-left {
+    left: 0;
+    top: 0;
+  }
+
+  &--top-right {
+    right: 0;
+    top: 0;
+  }
+}
+
+// Titlebar stand-in for the detached chat window
+.PanelDragBar {
+  height: 22px;
+  cursor: grab;
+  background-color: var(--color-section);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::after {
+    content: '';
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--color-border);
+  }
+
+  &:hover::after {
+    background-color: var(--color-label);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}

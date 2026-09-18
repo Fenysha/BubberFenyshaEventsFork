@@ -1202,7 +1202,30 @@
 	if(index > 5)
 		return ""
 
-	return "EAST-1:28,CENTER+[6 - index]:[29 - (index * 2)]"
+	// FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - walk the stack downwards if the chat covers it
+	// return "EAST-1:28,CENTER+[6 - index]:[29 - (index * 2)]" - FENYSHA EDIT ORIGINAL
+	var/base_loc = "EAST-1:28,CENTER+[6 - index]:[29 - (index * 2)]"
+	if(!chat_rect_viewport)
+		return base_loc
+	var/our_view = mymob?.canon_client?.view
+	if(!our_view)
+		return base_loc
+	var/list/offsets = screen_loc_to_offset(base_loc, our_view)
+	var/chat_left = chat_rect_viewport[1]
+	var/chat_bottom = chat_rect_viewport[2]
+	var/chat_w = chat_rect_viewport[3]
+	var/chat_h = chat_rect_viewport[4]
+	if(!rects_overlap(offsets[1], offsets[2], ICON_SIZE_X, ICON_SIZE_Y, chat_left, chat_bottom, chat_w, chat_h))
+		return base_loc
+	var/new_y = offsets[2]
+	for(var/attempt in 1 to 20)
+		new_y -= ICON_SIZE_Y
+		if(new_y < ICON_SIZE_Y)
+			break
+		if(!rects_overlap(offsets[1], new_y, ICON_SIZE_X, ICON_SIZE_Y, chat_left, chat_bottom, chat_w, chat_h))
+			return offset_to_screen_loc(offsets[1], new_y, our_view)
+	return base_loc
+	// FENYSHA EDIT CHANGE END
 
 // Re-render all alerts - also called in /datum/hud/show_hud() because it's needed there
 /datum/hud/proc/reorganize_alerts(mob/viewmob)

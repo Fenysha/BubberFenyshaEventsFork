@@ -68,6 +68,17 @@ GLOBAL_LIST_INIT(available_erp_ui_styles, list(
 	/// Goes from 0 to the max (z level stack size - 1)
 	var/current_plane_offset = 0
 
+	// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+	/// Chat browser rect as list(x, y, w, h) in map-element pixels, null when the chat isn't over the map
+	var/list/chat_rect
+	/// chat_rect converted to viewport pixels (bottom-up) as list(left, bottom, w, h)
+	var/list/chat_rect_viewport
+	/// Map element's view-size in pixels as list(w, h), reported alongside chat_rect
+	var/list/cached_map_view_size
+	/// Assoc hud_key -> screen_loc the element had before we moved it out of the chat's way
+	var/list/displaced_elements = list()
+	// FENYSHA EDIT ADDITION END
+
 	/// UI for screentips that appear when you mouse over things
 	/// Stored directly as it is used in very hot MouseEntered code
 	var/atom/movable/screen/screentip/screentip_text = null
@@ -203,6 +214,11 @@ GLOBAL_LIST_INIT(available_erp_ui_styles, list(
 		LAZYADD(screen_groups[group_key], new_object)
 		new_object.hud_group_key = group_key
 
+	// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+	if (chat_rect && new_object.screen_loc)
+		displace_single_element(hud_key, new_object)
+	// FENYSHA EDIT ADDITION END
+
 	if (update_screen)
 		show_hud(hud_version)
 	return new_object
@@ -236,6 +252,10 @@ GLOBAL_LIST_INIT(available_erp_ui_styles, list(
 	SIGNAL_HANDLER
 
 	view_audit_buttons()
+	// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+	if(chat_rect)
+		displace_hud_for_chat(chat_rect)
+	// FENYSHA EDIT ADDITION END
 
 /datum/hud/proc/on_eye_change(datum/source, atom/old_eye, atom/new_eye)
 	SIGNAL_HANDLER
@@ -440,6 +460,11 @@ GLOBAL_LIST_INIT(available_erp_ui_styles, list(
 		viewmob.hide_other_mob_action_buttons(mymob)
 		viewmob.hud_used.plane_masters_update()
 		viewmob.show_other_mob_action_buttons(mymob)
+
+	// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT - the rebuild reset screen_locs, re-apply
+	if(chat_rect)
+		displace_hud_for_chat(chat_rect)
+	// FENYSHA EDIT ADDITION END
 
 	SEND_SIGNAL(screenmob, COMSIG_MOB_HUD_REFRESHED, src)
 	return TRUE

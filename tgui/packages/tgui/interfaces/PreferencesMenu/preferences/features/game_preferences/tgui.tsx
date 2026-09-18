@@ -1,4 +1,9 @@
-import { CheckboxInput, type FeatureToggle } from '../base';
+import {
+  CheckboxInput,
+  type FeatureChoiced,
+  type FeatureToggle,
+} from '../base';
+import { FeatureDropdownInput } from '../dropdowns';
 
 export const tgui_input: FeatureToggle = {
   name: 'Input: Enable TGUI',
@@ -48,4 +53,12 @@ export const tgui_say_light_mode: FeatureToggle = {
   category: 'UI',
   description: 'Sets TGUI Say to use a light mode.',
   component: CheckboxInput,
+};
+
+export const tgpanel_layout: FeatureChoiced = {
+  name: 'Chat layout',
+  category: 'UI',
+  description:
+    'Where the chat lives: floating over the map, docked beside it, or in its own window.',
+  component: FeatureDropdownInput,
 };

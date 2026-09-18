@@ -13,7 +13,7 @@ import { SettingsWebsocket } from './SettingsWebsocket';
 import { TextHighlightSettings } from './TextHighlight';
 import { useSettings } from './use-settings';
 
-export function SettingsPanel(props) {
+export function SettingsPanel(props: { isOnMap?: boolean }) {
   const {
     settings: { view },
     updateSettings,
@@ -45,7 +45,7 @@ export function SettingsPanel(props) {
         </Section>
       </Stack.Item>
       <Stack.Item grow basis={0}>
-        {activeTab === 'general' && <SettingsGeneral />}
+        {activeTab === 'general' && <SettingsGeneral isOnMap={props.isOnMap} />}
         {activeTab === 'chatPage' && <ChatPageSettings />}
         {activeTab === 'textHighlight' && <TextHighlightSettings />}
         {activeTab === 'statPanel' && <SettingsStatPanel />}

@@ -5,6 +5,8 @@
 	var/list/atom/movable/screen/movable/action_button/actions
 	/// The initial vertical offset of our action buttons
 	var/north_offset = 0
+	/// Extra rows down we've been pushed by the chat browser sitting over the top-left of the map
+	var/chat_north_offset = 0 // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
 	/// The pixel vertical offset of our action buttons
 	var/pixel_north_offset = 0
 	/// Max amount of buttons we can have per row
@@ -100,18 +102,41 @@
 	// Convert our viewer's view var into a workable offset
 	var/list/view_size = view_to_pixels(owner_view)
 
+	// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT - drop below the chat when it covers our corner
+	chat_north_offset = 0
+	north_offset = initial(north_offset)
+	var/list/chat_view_rect = owner.chat_rect_viewport
+	var/chat_left = chat_view_rect?[1]
+	var/chat_bottom = chat_view_rect?[2]
+	var/chat_w = chat_view_rect?[3]
+	var/chat_h = chat_view_rect?[4]
+	if(chat_view_rect && chat_left < view_size[1] / 2 && (chat_bottom + chat_h) > view_size[2] / 2)
+		chat_north_offset = round((view_size[2] - chat_bottom) / ICON_SIZE_Y)
+		north_offset = initial(north_offset) + chat_north_offset
+	// FENYSHA EDIT ADDITION END
+
 	// We're primarially concerned about width here, if someone makes us 1x2000 I wish them a swift and watery death
 	var/furthest_screen_loc = ButtonNumberToScreenCoords(column_max - 1)
+	// FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - also fail down when we'd land under the chat
+	if(!furthest_screen_loc)
+		refresh_actions()
+		return
 	var/list/offsets = screen_loc_to_offset(furthest_screen_loc, owner_view)
-	if(offsets[1] > ICON_SIZE_X && offsets[1] < view_size[1] && offsets[2] > ICON_SIZE_Y && offsets[2] < view_size[2]) // We're all good
+	var/fits_view = offsets[1] > ICON_SIZE_X && offsets[1] < view_size[1] && offsets[2] > ICON_SIZE_Y && offsets[2] < view_size[2]
+	var/hits_chat = chat_view_rect && rects_overlap(offsets[1], offsets[2], ICON_SIZE_X, ICON_SIZE_Y, chat_left, chat_bottom, chat_w, chat_h)
+	if(fits_view && !hits_chat) // We're all good
+		refresh_actions()
 		return
 
 	for(column_max in column_max - 1 to 1 step -1) // Yes I could do this by unwrapping ButtonNumberToScreenCoords, but I don't feel like it
 		var/tested_screen_loc = ButtonNumberToScreenCoords(column_max)
 		offsets = screen_loc_to_offset(tested_screen_loc, owner_view)
+		fits_view = offsets[1] > ICON_SIZE_X && offsets[1] < view_size[1] && offsets[2] > ICON_SIZE_Y && offsets[2] < view_size[2]
+		hits_chat = chat_view_rect && rects_overlap(offsets[1], offsets[2], ICON_SIZE_X, ICON_SIZE_Y, chat_left, chat_bottom, chat_w, chat_h)
 		// We've found a valid max length, pack it in
-		if(offsets[1] > ICON_SIZE_X && offsets[1] < view_size[1] && offsets[2] > ICON_SIZE_Y && offsets[2] < view_size[2])
+		if(fits_view && !hits_chat)
 			break
+	// FENYSHA EDIT CHANGE END
 	// Use our newly resized column max
 	refresh_actions()
 
@@ -170,7 +195,10 @@
 	var/atom/movable/screen/palette_scroll/scroll_up = owner.screen_objects[HUD_MOB_PALETTE_UP]
 
 	var/actions_above = round((owner.listed_actions.size() - 1) / owner.listed_actions.column_max)
-	north_offset = initial(north_offset) + actions_above
+	// FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - stay above the listed row after it drops below the chat
+	// north_offset = initial(north_offset) + actions_above - FENYSHA EDIT ORIGINAL
+	north_offset = initial(north_offset) + actions_above + owner.listed_actions.chat_north_offset
+	// FENYSHA EDIT CHANGE END
 
 	palette.screen_loc = ui_action_palette_offset(actions_above)
 	var/action_count = length(owner?.mymob?.actions)

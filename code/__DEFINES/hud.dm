@@ -19,8 +19,18 @@
 #define VIEWPORT_USE_PREF "use_pref"
 #define WIDESCREEN_VIEWPORT_SIZE "19x15"
 #define SQUARE_VIEWPORT_SIZE "15x15"
+// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+/// Tiles of width the viewport reclaims when the chat and statpanel float over the map
+/// instead of sitting in the docked pane. Must be even - every viewport width is odd so the
+/// player sits on the centre tile, and an even total puts them off to one side.
+#define ONMAP_VIEWPORT_EXTRA_WIDTH 6
+// FENYSHA EDIT ADDITION END
 /// Largest viewport possible, required for checking if someone can see an object
-#define LARGEST_VIEWPORT_SIZE WIDESCREEN_VIEWPORT_SIZE
+// FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - ultrawide (21x15) plus the reclaimed pane width.
+// Kept as a literal because EXTRAWIDESCREEN_VIEWPORT_SIZE is defined after this file.
+// #define LARGEST_VIEWPORT_SIZE WIDESCREEN_VIEWPORT_SIZE - FENYSHA EDIT ORIGINAL
+#define LARGEST_VIEWPORT_SIZE "27x15"
+// FENYSHA EDIT CHANGE END
 
 // Hud group keys
 /// Static elements that are always present in standard hud

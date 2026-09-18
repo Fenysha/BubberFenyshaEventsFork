@@ -12,12 +12,12 @@ import {
 import { toFixed } from 'tgui-core/math';
 import { capitalize } from 'tgui-core/string';
 import { chatRenderer } from '../chat/renderer';
-import { FONTS, THEMES } from './constants';
+import { CHAT_CORNERS, FONTS, THEMES } from './constants';
 import { resetPaneSplitters, setEditPaneSplitters } from './scaling';
 import { exportChatSettings, importChatSettings } from './settingsImExport';
 import { useSettings } from './use-settings';
 
-export function SettingsGeneral(props) {
+export function SettingsGeneral(props: { isOnMap?: boolean }) {
   const { settings, updateSettings } = useSettings();
   const [freeFont, setFreeFont] = useState(false);
 
@@ -42,6 +42,60 @@ export function SettingsGeneral(props) {
             </Button>
           ))}
         </LabeledList.Item>
+        {props.isOnMap && (
+          <>
+            <LabeledList.Item label="Chat position">
+              {CHAT_CORNERS.map((corner) => (
+                <Button
+                  key={corner}
+                  selected={settings.chatCorner === corner}
+                  color="transparent"
+                  onClick={() => updateSettings({ chatCorner: corner })}
+                >
+                  {corner.split('-').map(capitalize).join(' ')}
+                </Button>
+              ))}
+            </LabeledList.Item>
+            <LabeledList.Item label="Chat opacity">
+              <Slider
+                minValue={0.1}
+                maxValue={1}
+                step={0.05}
+                value={settings.chatOpacity}
+                format={(value) => `${Math.round(value * 100)}%`}
+                onChange={(event, value) =>
+                  updateSettings({ chatOpacity: value })
+                }
+              />
+            </LabeledList.Item>
+            <LabeledList.Item label="Chat padding">
+              <Slider
+                minValue={0}
+                maxValue={50}
+                step={1}
+                value={settings.chatPadding}
+                unit="px"
+                onChange={(event, value) =>
+                  updateSettings({ chatPadding: value })
+                }
+              />
+            </LabeledList.Item>
+            {settings.chatFrameless && (
+              <LabeledList.Item label="Message backdrop">
+                <Button
+                  selected={settings.chatMessageBg}
+                  color="transparent"
+                  icon={settings.chatMessageBg ? 'square' : 'square-xmark'}
+                  onClick={() =>
+                    updateSettings({ chatMessageBg: !settings.chatMessageBg })
+                  }
+                >
+                  {settings.chatMessageBg ? 'Enabled' : 'Disabled'}
+                </Button>
+              </LabeledList.Item>
+            )}
+          </>
+        )}
         <LabeledList.Item label="UI sizes">
           <Stack>
             <Stack.Item>

@@ -51,16 +51,21 @@ function setupApp() {
     wsSend({ type, payload });
   });
 
-  // Unhide the panel
-  Byond.winset('output_selector.legacy_output_selector', {
-    left: 'output_browser',
-  });
+  // FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - moved into use-chat-placement, which runs
+  // once the layout is known. Doing it here steals the pane back from the floating host.
+  // Byond.winset('output_selector.legacy_output_selector', { left: 'output_browser' }); - FENYSHA EDIT ORIGINAL
+  // FENYSHA EDIT CHANGE END
 
-  Byond.winget('output_browser').then((output: { size: string }) => {
-    Byond.winset('browseroutput', {
-      size: output.size,
+  // FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - skip while the chat floats over the map,
+  // where use-chat-placement owns the geometry and this would race it and win
+  if (!document.body.classList.contains('onmap')) {
+    Byond.winget('output_browser').then((output: { size: string }) => {
+      Byond.winset('browseroutput', {
+        size: output.size,
+      });
     });
-  });
+  }
+  // FENYSHA EDIT CHANGE END
 
   // Enable hot module reloading
   if (import.meta.webpackHot) {

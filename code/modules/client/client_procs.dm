@@ -285,8 +285,9 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 	stat_panel = new(src, "statbrowser")
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
-	// Instantiate tgui panel
-	tgui_panel = new(src, "browseroutput")
+	// FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - moved down to sit with create_browser
+	// tgui_panel = new(src, "browseroutput") - FENYSHA EDIT ORIGINAL
+	// FENYSHA EDIT CHANGE END
 
 	tgui_say = new(src, "tgui_say")
 
@@ -308,6 +309,16 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 		GLOB.preferences_datums[ckey] = prefs
 	prefs.last_ip = address //these are gonna be used for banning
 	prefs.last_id = computer_id //these are gonna be used for banning
+
+	// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT - the panel and its control are built
+	// together, after prefs, exactly as hry-gh's branch does. The transparency params only
+	// stick when the control is created here; both must precede tgui_panel.initialize().
+	// Instantiate tgui panel
+	tgui_panel = new(src, "browseroutput")
+	// The control can only be built once per connection - winset only honours `parent` while
+	// creating one - so the layout is decided here and changes apply on the next connection.
+	tgui_panel.create_browser(prefs.read_preference(/datum/preference/choiced/tgpanel_layout))
+	// FENYSHA EDIT ADDITION END
 
 	if(fexists(roundend_report_file()))
 		ASSIGN_GAME_VERB(src, /client, show_previous_roundend_report)
