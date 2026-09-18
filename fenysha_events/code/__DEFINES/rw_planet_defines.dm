@@ -102,6 +102,15 @@
 #define RW_MATERIAL_OBSIDIAN "obsidian"
 #define RW_MATERIAL_JADE "jade"
 
+#define RW_MATERIAL_NAME_TO_TYPE list(\
+	RW_MATERIAL_GRANITE = /datum/material/rimworld_material/granite, \
+	RW_MATERIAL_LIMESTONE = /datum/material/rimworld_material/limestone, \
+	RW_MATERIAL_SANDSTONE = /datum/material/rimworld_material/sandstone, \
+	RW_MATERIAL_SLATE = /datum/material/rimworld_material/slate, \
+	RW_MATERIAL_MARBLE = /datum/material/rimworld_material/marble, \
+	RW_MATERIAL_OBSIDIAN = /datum/material/rimworld_material/obsidian, \
+	RW_MATERIAL_JADE = /datum/material/rimworld_material/jade, \
+)
 
 /**
  * ----------------------------------------------------------------------------

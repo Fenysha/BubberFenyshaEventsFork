@@ -1,5 +1,20 @@
+GLOBAL_LIST_INIT(rimworld_areas, list())
+
 /area/rimworld
 	name = "Rim"
+	icon_state = "green"
+
+	/// Planet cell we are in
+	var/datum/planet_cell/cell
+
+/area/rimworld/Initialize(mapload)
+	. = ..()
+	GLOB.rimworld_areas |= src
+
+/area/rimworld/Destroy()
+	. = ..()
+	GLOB.rimworld_areas -= src
+
 /**
  * /datum/planet_cell
  *
@@ -23,7 +38,7 @@
 	var/y = 1
 
 	// Should cell map be loaded on Intitialize
-	var/generate_on_init = TRUE
+	var/generate_on_init = FALSE
 
 	/// Unique cell identifier (generated on creation)
 	var/id
@@ -95,48 +110,53 @@
 	/// Whether the cell is marked for deletion
 	var/qdel_pending = FALSE
 
+	/// Asynchronous sub-level loading job, if one is currently running.
+	var/datum/rimworld_sublevel_load_job/loading_job
 
 // TODO: move to SS code
-/datum/planet_cell/New(datum/rimworld_planet/parent_planet, cell_x, cell_y)
+/datum/planet_cell/New(
+	datum/rimworld_planet/parent_planet,
+	cell_x,
+	cell_y,
+	should_generate = FALSE
+)
 	. = ..()
+
 	unic_id++
+
+	generate_on_init = should_generate
+
 	return Initialize(parent_planet, cell_x, cell_y)
 
 
-
-
-/datum/planet_cell/proc/Initialize(datum/rimworld_planet/parent_planet, cell_x, cell_y, ...)
+/datum/planet_cell/proc/Initialize(
+	datum/rimworld_planet/parent_planet,
+	cell_x,
+	cell_y,
+	...
+)
 	if(!parent_planet)
 		stack_trace("planet_cell created without parent planet")
-		return
+		return FALSE
 
 	if(!parent_planet.is_valid_coordinate(cell_x, cell_y))
 		stack_trace("planet_cell created with invalid coordinates ([cell_x],[cell_y])")
-		return
+		return FALSE
 
 	planet = parent_planet
 	x = cell_x
 	y = cell_y
+
 	id = "cell_[planet.seed]_[x]_[y]_[unic_id]"
+
+	// Planetary data must be available before local generation.
+	if(!refresh_from_planet())
+		return FALSE
 
 	if(generate_on_init)
 		generate_local_content()
 
-	refresh_from_planet()
-
-/datum/planet_cell/Destroy(force)
-	qdel_pending = TRUE
-
-	// Unload local generation
-	unload_local_content()
-
-	// Break references
-	planet = null
-	reservation = null
-	objects = null
-	zones = null
-
-	return ..()
+	return TRUE
 
 
 /**
@@ -224,7 +244,10 @@
  * Returns TRUE when local terrain is currently loaded.
  */
 /datum/planet_cell/proc/is_loaded()
-	return is_generated && reservation && !qdel_pending
+	return is_generated \
+		&& reservation \
+		&& !QDELETED(reservation) \
+		&& !qdel_pending
 
 
 /**
@@ -232,121 +255,52 @@
  *
  * Returns TRUE if the cell is already loaded or was successfully loaded.
  */
-/datum/planet_cell/proc/ensure_loaded(poi_name = null)
+/datum/planet_cell/proc/ensure_loaded(poi_name = null, datum/callback/post_load_callback = null)
 	if(!is_valid())
 		return FALSE
 
 	if(is_loaded())
+		if(post_load_callback)
+			post_load_callback.Invoke(src, TRUE)
+
 		return TRUE
 
 	if(is_generating)
-		return FALSE
+		if(loading_job && post_load_callback)
+			loading_job.add_callback(post_load_callback)
 
-	return generate_local_content(poi_name)
+		return TRUE
 
-
-/**
- * Local generation / unloading
- */
+	return generate_local_content(poi_name, post_load_callback)
 
 
 /**
- * Generation order:
+ * Queues local terrain generation.
  *
- * 1. Allocate a sub-level reservation.
- * 2. Assign /area/rimworld to the entire reservation.
- * 3. Create the sub-level terrain generator.
- * 4. Pass planet context into the generator.
- * 5. Generate the terrain from the Rust heightmap.
- * 6. Store the reservation and generation state.
+ * The actual generation is performed asynchronously by
+ * SSrimworld_sublevel_loader.
  *
- * The planet_cell owns the reservation after successful generation.
+ * post_load_callback, when provided, is invoked as:
+ *
+ *     callback.Invoke(cell, success)
+ *
+ * after the complete local map has finished loading.
  */
-/datum/planet_cell/proc/generate_local_content(poi_name = null)
+/datum/planet_cell/proc/generate_local_content(poi_name = null, datum/callback/post_load_callback = null)
 	if(!is_valid())
 		return FALSE
 
-	if(is_generated || is_generating)
-		return FALSE
+	if(is_loaded())
+		if(post_load_callback)
+			post_load_callback.Invoke(src, TRUE)
 
-	is_generating = TRUE
-	Master.StartLoadingMap()
-	// 1. Allocate local map space.
-	var/datum/turf_reservation/sub_level/new_reservation = \
-		SSsub_levels.create_sub_level(
-			local_width,
-			local_height,
-			0,
-			poi_name || "Cell ([x],[y])"
-		)
+		return TRUE
 
-	if(!new_reservation)
-		is_generating = FALSE
-		log_world("Failed to allocate sub-level for planet cell [x],[y].")
-		Master.StopLoadingMap()
-		return FALSE
-
-	// 2. Create a dedicated area for the generated terrain.
-	var/area/rimworld/rimworld_area = new /area/rimworld
-
-	if(!rimworld_area)
-		qdel(new_reservation)
-		is_generating = FALSE
-		log_world("Failed to create /area/rimworld for planet cell [x],[y].")
-		Master.StopLoadingMap()
-		return FALSE
-
-	var/list/turf/turfs = new_reservation.get_all_turfs()
-
-	if(!length(turfs))
-		qdel(rimworld_area)
-		qdel(new_reservation)
-		is_generating = FALSE
-		log_world("Sub-level reservation for planet cell [x],[y] contains no turfs.")
-		Master.StopLoadingMap()
-		Master.StopLoadingMap()
-		return FALSE
-
-	for(var/turf/T as anything in turfs)
-		T.change_area(get_area(T), rimworld_area)
-		CHECK_TICK
-
-
-	// 3. Create and configure the actual terrain generator.
-	var/datum/map_generator/sub_level/generator = new()
-
-	if(!generator)
-		qdel(rimworld_area)
-		qdel(new_reservation)
-		is_generating = FALSE
-		log_world("Failed to create sub-level generator for planet cell [x],[y].")
-		Master.StopLoadingMap()
-		return FALSE
-
-	generator.setup_planet_context(planet, x, y)
-
-	// 4. Generate terrain.
-	var/generated = generator.generate_sub_level_terrain(new_reservation)
-	if(!generated)
-		qdel(generator)
-		qdel(rimworld_area)
-		qdel(new_reservation)
-
-		is_generating = FALSE
-
-		log_world("Sub-level terrain generation failed for planet cell [x],[y].")
-		Master.StopLoadingMap()
-		return FALSE
-
-	Master.StopLoadingMap()
-	// 5. Store generated state.
-	reservation = new_reservation
-	sub_level_id = new_reservation.id
-	is_generated = TRUE
-	is_generating = FALSE
-	qdel(generator)
-	refresh_from_planet()
-	return TRUE
+	return SSrimworld_sublevel_loader.queue_cell(
+		src,
+		poi_name,
+		post_load_callback
+	)
 
 
 /**
@@ -354,14 +308,18 @@
  * Does not delete the cell itself.
  */
 /datum/planet_cell/proc/unload_local_content()
+	if(loading_job)
+		SSrimworld_sublevel_loader.cancel_cell(src)
+
 	if(reservation)
-		// Assumes the reservation has a proper Destroy / free
 		qdel(reservation)
 		reservation = null
 
 	sub_level_id = null
 	is_generated = FALSE
 	is_generating = FALSE
+	loading_job = null
+
 	return TRUE
 
 /**
@@ -376,14 +334,11 @@
 
 	return unload_local_content()
 
-/**
- * Loads local terrain for this cell.
- *
- * This is the preferred public entry point for runtime loading.
- */
-/datum/planet_cell/proc/load(poi_name = null)
-	return ensure_loaded(poi_name)
-
+/datum/planet_cell/proc/load(poi_name = null, datum/callback/post_load_callback = null)
+	return ensure_loaded(
+		poi_name,
+		post_load_callback
+	)
 
 /**
  * Reloads local terrain from scratch.

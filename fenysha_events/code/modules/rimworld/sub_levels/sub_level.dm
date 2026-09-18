@@ -77,21 +77,44 @@
 	if(reserved)
 		return null
 
-	if(bounds.width < req_w * 2 || bounds.height < req_h * 2)
-		if(bounds.width >= req_w && bounds.height >= req_h && !split)
-			reserved = TRUE
-			reservation = new /datum/turf_reservation/sub_level(src, res_id, res_name)
-			return reservation
+	// This node is already the exact size we need.
+	if(bounds.width == req_w && bounds.height == req_h)
+		reserved = TRUE
+		reservation = new /datum/turf_reservation/sub_level(src, res_id, res_name)
+		return reservation
+
+	// A node smaller than requested can never satisfy the request.
+	if(bounds.width < req_w || bounds.height < req_h)
 		return null
 
-	if(!split)
+	// If this node is already split, try its children first.
+	if(split)
+		for(var/datum/map_spatial_node/child in children)
+			var/datum/turf_reservation/sub_level/res = child.allocate_sub_level(
+				req_w,
+				req_h,
+				res_id,
+				res_name
+			)
+			if(res)
+				return res
+
+		return null
+
+	// If the node is large enough, split it and search the children.
+	if(bounds.width > req_w || bounds.height > req_h)
 		if(!subdivide())
 			return null
 
-	for(var/datum/map_spatial_node/child in children)
-		var/datum/turf_reservation/sub_level/res = child.allocate_sub_level(req_w, req_h, res_id, res_name)
-		if(res)
-			return res
+		for(var/datum/map_spatial_node/child in children)
+			var/datum/turf_reservation/sub_level/res = child.allocate_sub_level(
+				req_w,
+				req_h,
+				res_id,
+				res_name
+			)
+			if(res)
+				return res
 
 	return null
 

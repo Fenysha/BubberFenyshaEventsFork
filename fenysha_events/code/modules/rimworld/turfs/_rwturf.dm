@@ -243,7 +243,15 @@
 	return ITEM_INTERACT_SUCCESS
 
 
-/turf/closed/rw_wall/rock
+/turf/closed/rw_wall/add_large_wall_overlay(wall_icon, wall_state)
+	var/static/list/mutable_appearance/wall_overlays = list()
+	var/mutable_appearance/wall_overlay = wall_overlays["[wall_icon]-[wall_state]"]
+	if (!wall_overlay)
+		wall_overlay = mutable_appearance('icons/turf/mining.dmi', wall_state, appearance_flags = RESET_TRANSFORM|RESET_COLOR)
+		wall_overlays["[wall_icon]-[wall_state]"] = wall_overlay
+	wall_overlay.plane = MUTATE_PLANE(WALL_PLANE, src)
+	wall_overlay.color = color
+	overlays += wall_overlay
 
 
 /datum/turf_roof

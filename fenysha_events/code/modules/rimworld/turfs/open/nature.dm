@@ -102,7 +102,7 @@
 	. = ..()
 
 
-/turf/open/rimworld/grass/grass_light
+/turf/open/rimworld/grass/light
 	name = "Light grass"
 	icon = 'fenysha_events/icons/turf/floors/nature/grayscale/grasslight_grayscale.dmi'
 	icon_state = "0"
@@ -113,7 +113,7 @@
 	fertility = 1.1
 	edge_priority = 8
 
-/turf/open/rimworld/grass/grass_tall
+/turf/open/rimworld/grass/tall
 	name = "Tall grass"
 
 	icon = 'fenysha_events/icons/turf/floors/nature/grayscale/grasstall_grayscale.dmi'
@@ -326,3 +326,61 @@
 	base_color = SAND_COLOR_ASH
 	baseturfs = /turf/open/rimworld/sand/ash
 	slowdown = 0.3
+
+/turf/open/rimworld/rock
+	name = "rock"
+	desc = "solid rock"
+
+	icon = 'fenysha_events/icons/turf/floors/nature/grayscale/cobblestone_grayscale.dmi'
+	icon_state = "0"
+
+	baseturfs = /turf/open/rimworld/rock
+	fertility = 0.0
+	can_be_tilled = FALSE
+	edge_priority = 200
+
+	footstep = FOOTSTEP_CONCRETE
+	barefootstep = FOOTSTEP_CONCRETE
+	clawfootstep = FOOTSTEP_CONCRETE
+	leave_footprints = FALSE
+
+	var/datum/material/rimworld_material/material
+	var/material_type
+	var/varian_amount = 4
+
+	slowdown = 0.1
+
+/turf/open/rimworld/rock/Initialize(mapload)
+	icon_state = "[rand(0, varian_amount)]"
+	if(material_type && ispath(material_type, /datum/material/rimworld_material))
+		apply_material(SSmaterials.get_material(material_type))
+	. = ..()
+
+/turf/open/rimworld/rock/examine(mob/user)
+	. = ..()
+	if(material)
+		. += span_notice("It seems like this rock is made of [material.name]")
+
+/turf/open/rimworld/rock/proc/apply_material(datum/material/rimworld_material/mat)
+	if(!mat)
+		return FALSE
+	set_base_color(mat.color)
+	name = "[mat.name] [name]"
+	return TRUE
+
+/turf/open/rimworld/rock/auto
+	baseturfs = /turf/open/rimworld/rock/auto
+
+/turf/open/rimworld/rock/auto/Initialize(mapload)
+	. = ..()
+	set_regional_effects()
+
+/turf/open/rimworld/rock/auto/proc/set_regional_effects()
+	var/datum/planet_cell/my_cell = get_planet_cell(src)
+	if(!my_cell)
+		return FALSE
+	var/datum/material/rimworld_material/my_mat = \
+		SSmaterials.get_material(RW_MATERIAL_NAME_TO_TYPE[my_cell.material])
+	if(!my_mat)
+		return FALSE
+	return apply_material(my_mat)
