@@ -147,6 +147,7 @@ void main() {
 export const ATMOSPHERE_FRAGMENT_SHADER = `
 uniform vec3 atmosphereColor;
 uniform vec3 sunDirection;
+uniform float opacityFactor;
 
 varying vec3 vWorldNormal;
 varying vec3 vViewDirection;
@@ -155,14 +156,14 @@ void main() {
   vec3 n = normalize(vWorldNormal);
   vec3 v = normalize(vViewDirection);
 
-  float rim = pow(1.0 - abs(dot(n, v)), 3.0);
+  float rim = pow(1.0 - abs(dot(n, v)), 2.2);
   float sun = max(dot(n, normalize(sunDirection)), 0.0);
-  float intensity = rim * (0.20 + sun * 0.80);
+  float intensity = rim * (0.35 + sun * 0.90);
 
-  gl_FragColor = vec4(
-    atmosphereColor * intensity * 1.25,
-    intensity * 0.72
-  );
+  vec3 color = atmosphereColor * intensity * 1.5;
+  float alpha = intensity * 0.88 * opacityFactor;
+
+  gl_FragColor = vec4(color, alpha);
 }
 `;
 
@@ -205,6 +206,7 @@ void main() {
 
 export const CLOUD_FRAGMENT_SHADER = `
 uniform float time;
+uniform float opacityFactor;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
@@ -251,17 +253,18 @@ void main() {
   );
 
   float value =
-    noise(p * 5.0) * 0.55 +
-    noise(p * 10.0) * 0.30 +
-    noise(p * 20.0) * 0.15;
+    noise(p * 4.5) * 0.50 +
+    noise(p * 9.0) * 0.32 +
+    noise(p * 18.0) * 0.18;
 
-  float cloud = smoothstep(0.52, 0.68, value);
+  // Richer cloud layer
+  float cloud = smoothstep(0.46, 0.64, value);
 
   vec3 viewDir = normalize(cameraPosition - vPosition);
   float view = max(dot(n, viewDir), 0.0);
 
-  float alpha = cloud * mix(0.30, 0.75, view);
-  gl_FragColor = vec4(0.95, 0.98, 1.0, alpha * 0.22);
+  float alpha = cloud * mix(0.40, 0.88, view) * opacityFactor;
+  gl_FragColor = vec4(0.96, 0.98, 1.0, alpha * 0.45);
 }
 `;
 

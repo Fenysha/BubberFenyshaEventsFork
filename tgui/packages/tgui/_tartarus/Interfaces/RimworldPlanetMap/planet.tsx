@@ -46,6 +46,8 @@ type PlanetProps = {
   data: PlanetMapData;
   selectedX?: number;
   selectedY?: number;
+  showAtmosphere?: boolean;
+  showClouds?: boolean;
   onTileClick?: (x: number, y: number, tile: PlanetTile) => void;
   onObjectClick?: (object: PlanetObject) => void;
 };
@@ -58,6 +60,8 @@ type PlanetRuntime = {
   planetGroup: THREE.Group;
   planetTexture: THREE.CanvasTexture | THREE.DataTexture;
   surfaceMaterial: THREE.ShaderMaterial;
+  atmosphereMesh: THREE.Mesh;
+  cloudsMesh: THREE.Mesh;
   currentLod: LodLevel;
 };
 
@@ -194,18 +198,23 @@ const buildHexOutlineGeometry = (
     Math.abs(center.y) > 0.99
       ? new THREE.Vector3(0, 0, 1)
       : new THREE.Vector3(0, 1, 0);
+
   const east = new THREE.Vector3().crossVectors(up, center).normalize();
   const north = new THREE.Vector3().crossVectors(center, east).normalize();
 
-  const hexSize = ((Math.PI * 2) / maxWidth) * 0.52;
+  const latitude = Math.asin(THREE.MathUtils.clamp(center.y, -0.999, 0.999));
+  const cosLatitude = Math.max(Math.cos(latitude), 0.15);
+
+  const hexSizeX = ((Math.PI * 2) / maxWidth) * cosLatitude * 0.5;
+  const hexSizeY = (Math.PI / height) * 0.5;
 
   const positions = new Float32Array(18);
 
   for (let i = 0; i < 6; i++) {
     const angle = Math.PI / 6 + (i * Math.PI) / 3;
 
-    const dx = Math.cos(angle) * hexSize;
-    const dy = Math.sin(angle) * hexSize;
+    const dx = Math.cos(angle) * hexSizeX;
+    const dy = Math.sin(angle) * hexSizeY;
 
     const point = center
       .clone()
@@ -295,6 +304,8 @@ export const Planet = ({
   data,
   selectedX,
   selectedY,
+  showAtmosphere = true,
+  showClouds = true,
   onTileClick,
   onObjectClick,
 }: PlanetProps) => {
@@ -303,6 +314,8 @@ export const Planet = ({
 
   const dataRef = useRef(data);
   dataRef.current = data;
+
+  const keysPressed = useRef<{ [key: string]: boolean }>({});
 
   const mapIdentity = getPlanetMapIdentity(data);
 
@@ -319,6 +332,30 @@ export const Planet = ({
     onTileClick,
     onObjectClick,
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (['w', 'a', 's', 'd'].includes(key)) {
+        keysPressed.current[key] = true;
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (['w', 'a', 's', 'd'].includes(key)) {
+        keysPressed.current[key] = false;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -376,29 +413,45 @@ export const Planet = ({
     fill.position.set(-4, -1, -3);
     scene.add(fill);
 
+    // Visual Sun Setup
     const sunGroup = new THREE.Group();
-    const sunDistance = 50;
+    const sunDistance = 55;
     const sunPos = PLANET_SUN_DIRECTION.clone()
       .normalize()
       .multiplyScalar(sunDistance);
 
-    const sunMeshGeometry = new THREE.SphereGeometry(3.5, 32, 32);
-    const sunMeshMaterial = new THREE.MeshBasicMaterial({ color: 0xfff3d1 });
-    const sunMesh = new THREE.Mesh(sunMeshGeometry, sunMeshMaterial);
-    sunMesh.position.copy(sunPos);
-    sunGroup.add(sunMesh);
+    const sunCoreMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(3.2, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    );
+    sunCoreMesh.position.copy(sunPos);
+    sunGroup.add(sunCoreMesh);
 
-    const sunGlowGeometry = new THREE.SphereGeometry(5.2, 32, 32);
-    const sunGlowMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffaa22,
-      transparent: true,
-      opacity: 0.35,
-      side: THREE.BackSide,
-      blending: THREE.AdditiveBlending,
-    });
-    const sunGlow = new THREE.Mesh(sunGlowGeometry, sunGlowMaterial);
-    sunGlow.position.copy(sunPos);
-    sunGroup.add(sunGlow);
+    const sunInnerGlowMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(5.0, 32, 32),
+      new THREE.MeshBasicMaterial({
+        color: 0xffea9f,
+        transparent: true,
+        opacity: 0.65,
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    sunInnerGlowMesh.position.copy(sunPos);
+    sunGroup.add(sunInnerGlowMesh);
+
+    const sunOuterGlowMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(8.5, 32, 32),
+      new THREE.MeshBasicMaterial({
+        color: 0xff7700,
+        transparent: true,
+        opacity: 0.25,
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    sunOuterGlowMesh.position.copy(sunPos);
+    sunGroup.add(sunOuterGlowMesh);
 
     scene.add(sunGroup);
 
@@ -427,18 +480,10 @@ export const Planet = ({
 
     const surfaceMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        planetMap: {
-          value: initialTexture,
-        },
-        mapSize: {
-          value: new THREE.Vector2(data.width, data.height),
-        },
-        sunDirection: {
-          value: PLANET_SUN_DIRECTION.clone().normalize(),
-        },
-        nightColor: {
-          value: PLANET_NIGHT_COLOR.clone(),
-        },
+        planetMap: { value: initialTexture },
+        mapSize: { value: new THREE.Vector2(data.width, data.height) },
+        sunDirection: { value: PLANET_SUN_DIRECTION.clone().normalize() },
+        nightColor: { value: PLANET_NIGHT_COLOR.clone() },
       },
       vertexShader: PLANET_SURFACE_VERTEX_SHADER,
       fragmentShader: PLANET_SURFACE_FRAGMENT_SHADER,
@@ -505,24 +550,23 @@ export const Planet = ({
       animFrameId = requestAnimationFrame(buildTextureWhenReady);
     }
 
+    const atmosphereMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        atmosphereColor: { value: PLANET_ATMOSPHERE_COLOR.clone() },
+        sunDirection: { value: PLANET_SUN_DIRECTION.clone().normalize() },
+        opacityFactor: { value: 1.0 },
+      },
+      vertexShader: ATMOSPHERE_VERTEX_SHADER,
+      fragmentShader: ATMOSPHERE_FRAGMENT_SHADER,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      depthWrite: false,
+    });
+
     const atmosphere = new THREE.Mesh(
-      new THREE.SphereGeometry(PLANET_RADIUS * 1.075, 96, 96),
-      new THREE.ShaderMaterial({
-        uniforms: {
-          atmosphereColor: {
-            value: PLANET_ATMOSPHERE_COLOR.clone(),
-          },
-          sunDirection: {
-            value: PLANET_SUN_DIRECTION.clone().normalize(),
-          },
-        },
-        vertexShader: ATMOSPHERE_VERTEX_SHADER,
-        fragmentShader: ATMOSPHERE_FRAGMENT_SHADER,
-        side: THREE.BackSide,
-        blending: THREE.AdditiveBlending,
-        transparent: true,
-        depthWrite: false,
-      }),
+      new THREE.SphereGeometry(PLANET_RADIUS * 1.08, 96, 96),
+      atmosphereMaterial,
     );
     planetGroup.add(atmosphere);
 
@@ -530,12 +574,8 @@ export const Planet = ({
       new THREE.SphereGeometry(PLANET_RADIUS * 1.002, 96, 96),
       new THREE.ShaderMaterial({
         uniforms: {
-          sunDirection: {
-            value: PLANET_SUN_DIRECTION.clone().normalize(),
-          },
-          nightColor: {
-            value: PLANET_NIGHT_COLOR.clone(),
-          },
+          sunDirection: { value: PLANET_SUN_DIRECTION.clone().normalize() },
+          nightColor: { value: PLANET_NIGHT_COLOR.clone() },
         },
         vertexShader: NIGHT_VERTEX_SHADER,
         fragmentShader: NIGHT_FRAGMENT_SHADER,
@@ -548,9 +588,8 @@ export const Planet = ({
 
     const cloudMaterial = new THREE.ShaderMaterial({
       uniforms: {
-        time: {
-          value: 0,
-        },
+        time: { value: 0 },
+        opacityFactor: { value: 1.0 },
       },
       vertexShader: CLOUD_VERTEX_SHADER,
       fragmentShader: CLOUD_FRAGMENT_SHADER,
@@ -579,6 +618,8 @@ export const Planet = ({
       planetGroup,
       planetTexture: initialTexture,
       surfaceMaterial,
+      atmosphereMesh: atmosphere,
+      cloudsMesh: clouds,
       currentLod,
     };
 
@@ -674,22 +715,88 @@ export const Planet = ({
       const delta = clock.getDelta();
       const time = clock.getElapsedTime();
 
+      const distance = controls.getDistance();
+
+      // Proximity factors
+      const nearDistanceMin = PLANET_RADIUS * 1.1;
+      const nearDistanceMax = PLANET_RADIUS * 1.45;
+      const nearProgress = THREE.MathUtils.clamp(
+        (distance - nearDistanceMin) / (nearDistanceMax - nearDistanceMin),
+        0.0,
+        1.0,
+      );
+
+      // Camera slowdown
+      controls.rotateSpeed = THREE.MathUtils.lerp(0.12, 0.55, nearProgress);
+
+      // Atmospheric fade-out on close distance
+      const fadeOpacity = THREE.MathUtils.clamp(
+        (distance - PLANET_RADIUS * 1.05) / (PLANET_RADIUS * 0.45),
+        0.0,
+        1.0,
+      );
+
+      if (atmosphereMaterial.uniforms.opacityFactor) {
+        atmosphereMaterial.uniforms.opacityFactor.value = fadeOpacity;
+      }
+      if (cloudMaterial.uniforms.opacityFactor) {
+        cloudMaterial.uniforms.opacityFactor.value = fadeOpacity;
+      }
+
       if (cloudMaterial?.uniforms?.time) {
         cloudMaterial.uniforms.time.value = time;
       }
       clouds.rotation.y = time * 0.012;
 
+      // WASD Camera Control
+      const wasdSpeed = THREE.MathUtils.lerp(0.012, 0.038, nearProgress);
+      const keys = keysPressed.current;
+
+      if (keys.w || keys.s || keys.a || keys.d) {
+        const forward = new THREE.Vector3();
+        camera.getWorldDirection(forward);
+        forward.y = 0;
+        forward.normalize();
+
+        // Правильный правый вектор: forward × up
+        const right = new THREE.Vector3()
+          .crossVectors(forward, new THREE.Vector3(0, 1, 0))
+          .normalize();
+
+        const moveVector = new THREE.Vector3();
+        if (keys.w) moveVector.add(forward);
+        if (keys.s) moveVector.sub(forward);
+        if (keys.a) moveVector.sub(right);
+        if (keys.d) moveVector.add(right);
+
+        if (moveVector.lengthSq() > 0) {
+          moveVector.normalize().multiplyScalar(wasdSpeed);
+          const camLen = camera.position.length();
+          camera.position.add(moveVector);
+          camera.position.normalize().multiplyScalar(camLen);
+        }
+      }
+      // Planet rotation & close-proximity camera attachment
       const currentData = dataRef.current;
       if (currentData.autoRotate !== false) {
         const speed = currentData.rotationSpeed ?? 1.0;
-        planetGroup.rotation.y += delta * 0.08 * speed;
+        const rotDelta = delta * 0.08 * speed;
+        planetGroup.rotation.y += rotDelta;
+
+        // Sync camera position with planetary rotation when close to terrain
+        if (nearProgress < 0.85) {
+          const bindRatio = 1.0 - nearProgress / 0.85;
+          camera.position.applyAxisAngle(
+            new THREE.Vector3(0, 1, 0),
+            rotDelta * bindRatio,
+          );
+        }
       }
 
-      sunGlow.scale.setScalar(1 + Math.sin(time * 1.5) * 0.03);
+      sunInnerGlowMesh.scale.setScalar(1 + Math.sin(time * 1.5) * 0.025);
+      sunOuterGlowMesh.scale.setScalar(1 + Math.cos(time * 1.2) * 0.035);
 
-      const distance = controls.getDistance();
       const nextLod = getPlanetLod(distance);
-
       if (nextLod !== lastLod) {
         switchLod(nextLod);
         lastLod = nextLod;
@@ -775,7 +882,7 @@ export const Planet = ({
       surfaceMaterial.dispose();
 
       atmosphere.geometry.dispose();
-      (atmosphere.material as THREE.Material).dispose();
+      atmosphereMaterial.dispose();
 
       night.geometry.dispose();
       (night.material as THREE.Material).dispose();
@@ -783,10 +890,12 @@ export const Planet = ({
       clouds.geometry.dispose();
       cloudMaterial.dispose();
 
-      sunMeshGeometry.dispose();
-      sunMeshMaterial.dispose();
-      sunGlowGeometry.dispose();
-      sunGlowMaterial.dispose();
+      sunCoreMesh.geometry.dispose();
+      (sunCoreMesh.material as THREE.Material).dispose();
+      sunInnerGlowMesh.geometry.dispose();
+      (sunInnerGlowMesh.material as THREE.Material).dispose();
+      sunOuterGlowMesh.geometry.dispose();
+      (sunOuterGlowMesh.material as THREE.Material).dispose();
 
       selection.traverse((child) => {
         if (child instanceof THREE.LineLoop) {
@@ -801,6 +910,21 @@ export const Planet = ({
       renderer.domElement.remove();
     };
   }, [mapIdentity]);
+
+  // Handle visibility toggles for atmosphere and clouds
+  useEffect(() => {
+    const runtime = runtimeRef.current;
+    if (!runtime) {
+      return;
+    }
+
+    if (runtime.atmosphereMesh) {
+      runtime.atmosphereMesh.visible = showAtmosphere;
+    }
+    if (runtime.cloudsMesh) {
+      runtime.cloudsMesh.visible = showClouds;
+    }
+  }, [showAtmosphere, showClouds]);
 
   useEffect(() => {
     const runtime = runtimeRef.current;

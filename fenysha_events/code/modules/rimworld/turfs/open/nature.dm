@@ -72,11 +72,19 @@
 	name = "Dirt"
 	desc = "Ordinary dirt - not particularly well-suited for growing plants."
 
-	icon_state = "fenysha_events/icons/turf/floors/nature/dirt.dmi"
+	icon = 'fenysha_events/icons/turf/floors/nature/dirt.dmi'
 	icon_state = "0"
 
+
+	edge_priority = 5
 	baseturfs = /turf/open/rimworld/dirt
 	slowdown = 0.35
+
+	var/variant_amount = 15
+
+/turf/open/rimworld/dirt/Initialize(mapload)
+	icon_state = "[rand(0, variant_amount)]"
+	. = ..()
 
 
 /turf/open/rimworld/grass

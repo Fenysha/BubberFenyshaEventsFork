@@ -62,6 +62,7 @@
 	var/height = 0
 
 	var/datum/biome/rimworld/target_biome
+	var/sub_biome = RW_SUBBIOME_PLAINS
 	var/area/rimworld/rimworld_area
 
 	var/list/generated_turfs = list()
@@ -120,34 +121,39 @@
 	return TRUE
 
 
-/datum/map_generator/sub_level/proc/get_target_biome()
+/datum/map_generator/sub_level/proc/get_target_biome(
+	elevation = null,
+	heat = null,
+	humidity = null,
+	biome = null
+)
 	if(!planet)
 		return null
 
-	var/macro_elevation = planet.get_elevation_level(
-		planet_x,
-		planet_y
-	)
+	var/macro_elevation = isnull(elevation) \
+		? planet.get_elevation_level(planet_x, planet_y) \
+		: elevation
 
-	var/macro_heat = planet.get_heat_level(
-		planet_x,
-		planet_y
-	)
+	var/macro_heat = isnull(heat) \
+		? planet.get_heat_level(planet_x, planet_y) \
+		: heat
 
-	var/macro_humidity = planet.get_humidity_level(
-		planet_x,
-		planet_y
-	)
+	var/macro_humidity = isnull(humidity) \
+		? planet.get_humidity_level(planet_x, planet_y) \
+		: humidity
 
-	var/macro_biome = planet.get_biome(
-		planet_x,
-		planet_y,
-		macro_elevation,
-		macro_heat,
-		macro_humidity
-	)
+	var/macro_biome = isnull(biome) \
+		? planet.get_biome(
+			planet_x,
+			planet_y,
+			macro_elevation,
+			macro_heat,
+			macro_humidity
+		) \
+		: biome
 
 	var/biome_type = planet.get_possible_biomes()[macro_biome]
+
 	var/datum/biome/rimworld/resolved_biome
 
 	if(biome_type)
@@ -215,7 +221,38 @@
 	)
 		return FALSE
 
-	target_biome = get_target_biome()
+	/*
+	 * Resolve the macro planetary context once.
+	 */
+	var/macro_elevation = planet.get_elevation_level(
+		planet_x,
+		planet_y
+	)
+
+	var/macro_heat = planet.get_heat_level(
+		planet_x,
+		planet_y
+	)
+
+	var/macro_humidity = planet.get_humidity_level(
+		planet_x,
+		planet_y
+	)
+
+	var/macro_biome = planet.get_biome(
+		planet_x,
+		planet_y,
+		macro_elevation,
+		macro_heat,
+		macro_humidity
+	)
+
+	target_biome = get_target_biome(
+		macro_elevation,
+		macro_heat,
+		macro_humidity,
+		macro_biome
+	)
 
 	if(!target_biome)
 		log_world(
@@ -223,23 +260,54 @@
 		)
 		return FALSE
 
+	/*
+	 * Resolve the current planetary sub-biome.
+	 *
+	 * This is deliberately the sub-biome of the current macro tile,
+	 * not one of the neighbouring tiles.
+	 */
+	sub_biome = planet.get_sub_biome(
+		planet_x,
+		planet_y,
+		macro_biome,
+		macro_elevation
+	)
+
+	if(!sub_biome)
+		sub_biome = RW_SUBBIOME_PLAINS
+
 	if(!length(elevation_matrix))
 		cache_planetary_neighborhood()
 
 	if(!length(elevation_matrix))
 		return FALSE
 
-	var/list/neigh = list(
-		text2num("[elevation_matrix["-1"]["-1"]]"),
-		text2num("[elevation_matrix["0"]["-1"]]"),
-		text2num("[elevation_matrix["1"]["-1"]]"),
-		text2num("[elevation_matrix["-1"]["0"]]"),
-		text2num("[elevation_matrix["0"]["0"]]"),
-		text2num("[elevation_matrix["1"]["0"]]"),
-		text2num("[elevation_matrix["-1"]["1"]]"),
-		text2num("[elevation_matrix["0"]["1"]]"),
-		text2num("[elevation_matrix["1"]["1"]]")
-	)
+	var/list/neigh = list()
+
+	// JSON order is NORTH/TOP -> SOUTH/BOTTOM:
+	//
+	// [0] [1] [2] = y + 1
+	// [3] [4] [5] = y
+	// [6] [7] [8] = y - 1
+	//
+	// X remains left -> right.
+	for(var/dy in list(1, 0, -1))
+		for(var/dx in list(-1, 0, 1))
+			var/value = elevation_matrix["[dx]"]["[dy]"]
+
+			if(!isnum(value))
+				value = text2num("[value]")
+
+			if(isnull(value))
+				value = 0
+
+			neigh += clamp(round(value), 0, 5)
+
+	if(length(neigh) != 9)
+		log_world(
+			"RimWorld sub-level: invalid neighbourhood size [length(neigh)]."
+		)
+		return FALSE
 
 	var/list/config = list(
 		"planet_seed" = planet.seed,
@@ -247,18 +315,26 @@
 		"planet_y" = planet_y,
 		"width" = width,
 		"height" = height,
+
 		"neighbourhood" = neigh,
+		"sub_biome" = sub_biome,
+
 		"local_seed" = 0,
 		"density_bias" = 0.0,
 		"smooth_passes" = 1,
-		"caves" = generate_caves ? RW_CAVEGUN_TRUE : RW_CAVEGUN_FALSE
+
+		"caves" = generate_caves \
+			? RW_CAVEGUN_TRUE \
+			: RW_CAVEGUN_FALSE
 	)
 
-	var/result = rustg_tp_sublevel_generate(json_encode(config))
+	var/result = rustg_tp_sublevel_generate(
+		json_encode(config)
+	)
 
 	if(!result || findtext(result, "ERROR:") == 1)
 		log_world(
-			"Sub-level heightmap generation failed: [result]"
+			"Sub-level heightmap generation failed for [planet_x],[planet_y]: [result]"
 		)
 		return FALSE
 
@@ -266,7 +342,7 @@
 
 	if(!islist(export) || export["status"] != "ok")
 		log_world(
-			"Sub-level generation returned bad payload."
+			"Sub-level generation returned bad payload for [planet_x],[planet_y]."
 		)
 		return FALSE
 
@@ -299,6 +375,7 @@
 
 	if(!islist(cave_mask))
 		cave_mask = list()
+
 	else if(length(cave_mask) != width * height)
 		log_world(
 			"Sub-level cave mask size mismatch."
@@ -388,6 +465,10 @@
 		is_cave,
 		is_transition
 	)
+
+	if(!is_cave && terrain_height <= RW_HEIGHT_WATER_MAX)
+		if(!istype(target_biome, /datum/biome/rimworld/water))
+			turf_type = /turf/open/water
 
 	if(!turf_type)
 		turf_type = /turf/open/genturf

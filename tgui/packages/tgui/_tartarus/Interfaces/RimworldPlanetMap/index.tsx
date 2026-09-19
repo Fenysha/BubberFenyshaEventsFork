@@ -15,8 +15,11 @@ export const RimworldPlanetMap = () => {
   const { data, act } = useBackend<PlanetMapData>();
 
   const [localTile, setLocalTile] = useState<PlanetTile | null>(null);
-
   const [showRightPanel, setShowRightPanel] = useState(true);
+
+  // State toggles for visual effects
+  const [showAtmosphere, setShowAtmosphere] = useState(true);
+  const [showClouds, setShowClouds] = useState(true);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -89,7 +92,6 @@ export const RimworldPlanetMap = () => {
   })();
 
   const selectedX = localTile?.x ?? data.selectedTile?.x;
-
   const selectedY = localTile?.y ?? data.selectedTile?.y;
 
   return (
@@ -113,6 +115,8 @@ export const RimworldPlanetMap = () => {
           data={data}
           selectedX={selectedX}
           selectedY={selectedY}
+          showAtmosphere={showAtmosphere}
+          showClouds={showClouds}
           onTileClick={handleTileClick}
           onObjectClick={handleObjectClick}
         />
@@ -135,6 +139,28 @@ export const RimworldPlanetMap = () => {
                 onClick={() => act('close')}
               >
                 Close
+              </Button>
+            </Stack.Item>
+
+            <Stack.Item>
+              <Button
+                icon={showAtmosphere ? 'globe' : 'globe-americas'}
+                selected={showAtmosphere}
+                tooltip={showAtmosphere ? 'Hide Atmosphere' : 'Show Atmosphere'}
+                onClick={() => setShowAtmosphere((prev) => !prev)}
+              >
+                Atmosphere
+              </Button>
+            </Stack.Item>
+
+            <Stack.Item>
+              <Button
+                icon={showClouds ? 'cloud' : 'cloud-sun'}
+                selected={showClouds}
+                tooltip={showClouds ? 'Hide Clouds' : 'Show Clouds'}
+                onClick={() => setShowClouds((prev) => !prev)}
+              >
+                Clouds
               </Button>
             </Stack.Item>
 

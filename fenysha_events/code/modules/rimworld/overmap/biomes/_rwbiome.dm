@@ -15,22 +15,24 @@
 
 	/// ======== GENERATION =========
 
+
+	var/base_height = 1.0
 	/**
 	 * Primary open turfs by height band (RW_HEIGHT_BAND_* as string keys).
 	 * Value: type path or weighted list.
 	 */
 	var/list/open_turf_by_height = list(
-		RW_HEIGHT_BAND_0  = /turf/open/genturf,
-		RW_HEIGHT_BAND_1  = /turf/open/genturf,
-		RW_HEIGHT_BAND_2  = /turf/open/genturf,
-		RW_HEIGHT_BAND_3  = /turf/open/genturf,
-		RW_HEIGHT_BAND_4  = /turf/open/genturf,
-		RW_HEIGHT_BAND_5  = /turf/open/genturf,
-		RW_HEIGHT_BAND_6  = /turf/open/genturf,
-		RW_HEIGHT_BAND_7  = /turf/open/genturf,
-		RW_HEIGHT_BAND_8  = /turf/open/genturf,
-		RW_HEIGHT_BAND_9  = /turf/open/genturf,
-		RW_HEIGHT_BAND_10 = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_0  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_1  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_2  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_3  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_4  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_5  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_6  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_7  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_8  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_9  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_10 = /turf/open/genturf,
 	)
 
 	/**
@@ -39,17 +41,17 @@
 	 * Same keys as open_turf_by_height.
 	 */
 	var/list/open_turf_by_height_transition = list(
-		RW_HEIGHT_BAND_0  = /turf/open/genturf, // edge toward band 1
-		RW_HEIGHT_BAND_1  = /turf/open/genturf, // blend 0 ↔ 2
-		RW_HEIGHT_BAND_2  = /turf/open/genturf,
-		RW_HEIGHT_BAND_3  = /turf/open/genturf,
-		RW_HEIGHT_BAND_4  = /turf/open/genturf,
-		RW_HEIGHT_BAND_5  = /turf/open/genturf,
-		RW_HEIGHT_BAND_6  = /turf/open/genturf,
-		RW_HEIGHT_BAND_7  = /turf/open/genturf,
-		RW_HEIGHT_BAND_8  = /turf/open/genturf,
-		RW_HEIGHT_BAND_9  = /turf/open/genturf,
-		RW_HEIGHT_BAND_10 = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_0  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_1  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_2  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_3  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_4  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_5  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_6  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_7  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_8  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_9  = /turf/open/genturf,
+		RW_HEIGHT_BAND_KEY_10 = /turf/open/genturf,
 	)
 
 	/**
@@ -135,6 +137,14 @@
 	return best_entry
 
 
+/datum/biome/rimworld/proc/get_subbiome_height_modifier(subiome_key)
+	switch(subiome_key)
+		if(RW_SUBBIOME_SHORE)
+			return 0.9
+		if(RW_SUBBIOME_PLAINS)
+			return 1.25
+		else
+			return 1
 /**
  * Populates cell generated turfs with biome content.
  * WARNING: It calls before all objects are loaded
