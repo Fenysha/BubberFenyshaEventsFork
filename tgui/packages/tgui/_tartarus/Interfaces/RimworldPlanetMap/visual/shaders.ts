@@ -6,9 +6,12 @@
 export const PLANET_SURFACE_VERTEX_SHADER = `
 varying vec3 vLocalPosition;
 varying vec3 vWorldNormal;
+varying vec3 vLocalCamera;
 
 void main() {
   vLocalPosition = position;
+  // The camera in the planet's own (rotating) frame, for the fragment's ray-sphere hit
+  vLocalCamera = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
 
   vWorldNormal = normalize(
     mat3(modelMatrix) * normal
@@ -23,101 +26,266 @@ void main() {
 
 export const PLANET_SURFACE_FRAGMENT_SHADER = `
 precision highp float;
+precision highp int;
 
+// Geodesic hex grid, see generation/hexGrid.ts - this is its fromDirection() on the GPU
 uniform sampler2D planetMap;
 uniform vec2 mapSize;
+uniform float gridN;
+uniform float tileSpacing;
+uniform vec3 diamondCorners[40];
+uniform vec3 faceOrigin[20];
+uniform vec3 faceE1[20];
+uniform vec3 faceE2[20];
+uniform vec3 faceNormal[20];
+uniform float faceDiamond[20];
+uniform float faceUpper[20];
 uniform vec3 sunDirection;
 uniform vec3 nightColor;
+uniform float planetRadius;
+// Decor icons: per-tile atlas frame (+1) in decorMap.r, frames packed in decorAtlas
+uniform sampler2D decorMap;
+uniform sampler2D decorAtlas;
+uniform vec2 atlasGrid;
+uniform float decorOpacity;
+uniform float decorLod;
+// River half-width, in tile spacings
+uniform float riverWidth;
+
+// Lattice steps to a tile's neighbours, in its own diamond's frame: river mask bit b follows
+// step b (see HexGrid.neighborsWithBits, rust-g NEIGHBOUR_OFFSETS)
+const vec2 NEIGHBOUR_OFFSETS[6] = vec2[6](
+  vec2(1.0, 0.0), vec2(-1.0, 0.0), vec2(0.0, 1.0),
+  vec2(0.0, -1.0), vec2(1.0, -1.0), vec2(-1.0, 1.0)
+);
 
 varying vec3 vLocalPosition;
 varying vec3 vWorldNormal;
+varying vec3 vLocalCamera;
 
-const float PI = 3.14159265359;
-const float TWO_PI = 6.28318530718;
-
-float wrapX(float value, float width) {
-  return mod(mod(value, width) + width, width);
+vec3 flatPoint(int d, float i, float j) {
+  float n = gridN;
+  vec3 a = diamondCorners[d * 4];
+  vec3 b = diamondCorners[d * 4 + 1];
+  vec3 c = diamondCorners[d * 4 + 2];
+  vec3 dd = diamondCorners[d * 4 + 3];
+  if (i + j <= n) {
+    return a * (1.0 - (i + j) / n) + b * (i / n) + dd * (j / n);
+  }
+  return c * ((i + j) / n - 1.0) + b * (1.0 - j / n) + dd * (1.0 - i / n);
 }
 
-float getRowWidth(float row) {
-  float v = (row + 0.5) / mapSize.y;
-  float latitude = v * PI - PI * 0.5;
-  float count = floor(mapSize.x * cos(latitude) + 0.5);
-  return max(6.0, count);
+// Owner of a lattice point in diamond d's frame; edges a diamond doesn't own go to its neighbour
+vec2 canonicalTile(int d, int i, int j) {
+  int n = int(gridN + 0.5);
+  for (int guard = 0; guard < 4; guard++) {
+    if (j >= 1 && i <= n - 1) {
+      return vec2(float(d * n + i + 1), float(j));
+    }
+    bool north = d < 5;
+    int k = d % 5;
+    if (j == 0) {
+      if (i == 0) {
+        if (north) {
+          return vec2(1.0, float(n + 1));
+        }
+        return vec2(float(k * n + 1), float(n));
+      }
+      if (north) {
+        d = (k + 4) % 5;
+        j = i;
+        i = 0;
+      } else {
+        d = k;
+        j = n;
+      }
+      continue;
+    }
+    if (north) {
+      d = 5 + (k + 4) % 5;
+      i = 0;
+    } else {
+      if (j == n) {
+        return vec2(2.0, float(n + 1));
+      }
+      d = 5 + (k + 4) % 5;
+      i = j;
+      j = n;
+    }
+  }
+  return vec2(1.0, float(n + 1));
 }
 
-vec3 tileCenterDirection(float column, float row) {
-  float rowWidth = getRowWidth(row);
-  float stagger = mod(row, 2.0) > 0.5 ? 0.5 : 0.0;
+// xy: the tile under dir; z: how far inside its cell (0 on an edge), for the cell border.
+// center: that tile's centre direction.
+vec3 findTile(vec3 dir, out vec3 center) {
+  float n = gridN;
+  if (dir.y > 0.999999999) {
+    center = vec3(0.0, 1.0, 0.0);
+    return vec3(1.0, n + 1.0, 1.0);
+  }
+  if (dir.y < -0.999999999) {
+    center = vec3(0.0, -1.0, 0.0);
+    return vec3(2.0, n + 1.0, 1.0);
+  }
 
-  float u = (column + 0.5 + stagger) / rowWidth;
-  float v = (row + 0.5) / mapSize.y;
+  int face = 0;
+  float best = -2.0;
+  for (int f = 0; f < 20; f++) {
+    float alignment = dot(dir, faceNormal[f]);
+    if (alignment > best) {
+      best = alignment;
+      face = f;
+    }
+  }
 
-  float longitude = u * TWO_PI - PI;
-  float latitude = v * PI - PI * 0.5;
+  vec3 origin = faceOrigin[face];
+  vec3 e1 = faceE1[face];
+  vec3 e2 = faceE2[face];
+  vec3 normal = faceNormal[face];
+  vec3 q = dir * (dot(origin, normal) / dot(dir, normal)) - origin;
+  float a11 = dot(e1, e1);
+  float a12 = dot(e1, e2);
+  float a22 = dot(e2, e2);
+  float b1 = dot(q, e1);
+  float b2 = dot(q, e2);
+  float det = a11 * a22 - a12 * a12;
+  float u = (b1 * a22 - b2 * a12) / det;
+  float v = (b2 * a11 - b1 * a12) / det;
 
-  float cosLat = cos(latitude);
-  return vec3(
-    cosLat * cos(longitude),
-    sin(latitude),
-    cosLat * sin(longitude)
-  );
-}
+  bool upper = faceUpper[face] > 0.5;
+  // Upper face: u weighs D (1 - i/n) and v weighs B (1 - j/n)
+  float fi = upper ? n * (1.0 - u) : n * u;
+  float fj = upper ? n * (1.0 - v) : n * v;
+  int d = int(faceDiamond[face] + 0.5);
 
-vec2 findNearestTile(vec3 surfaceDirection) {
-  float sinLat = clamp(surfaceDirection.y, -0.9999, 0.9999);
-  float latitude = asin(sinLat);
-  float longitude = atan(surfaceDirection.z, surfaceDirection.x);
-
-  float v = (latitude + PI * 0.5) / PI;
-  float baseRow = clamp(floor(v * mapSize.y), 0.0, mapSize.y - 1.0);
-  float u = (longitude + PI) / TWO_PI;
-
+  float baseI = floor(fi);
+  float baseJ = floor(fj);
   float bestDot = -2.0;
-  float bestColumn = 0.0;
-  float bestRow = baseRow;
-
-  for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
-    float row = clamp(baseRow + float(rowOffset), 0.0, mapSize.y - 1.0);
-    float rowWidth = getRowWidth(row);
-    float stagger = mod(row, 2.0) > 0.5 ? 0.5 : 0.0;
-
-    float centerCol = u * rowWidth - 0.5 - stagger;
-    float baseColumn = floor(centerCol);
-
-    for (int columnOffset = -1; columnOffset <= 2; columnOffset++) {
-      float column = baseColumn + float(columnOffset);
-
-      vec3 center = tileCenterDirection(column, row);
-      float currentDot = dot(surfaceDirection, center);
-
-      if (currentDot > bestDot) {
-        bestDot = currentDot;
-        bestColumn = column;
-        bestRow = row;
+  float secondDot = -2.0;
+  float bestI = 0.0;
+  float bestJ = 0.0;
+  center = dir;
+  for (int di = -1; di <= 2; di++) {
+    for (int dj = -1; dj <= 2; dj++) {
+      float i = baseI + float(di);
+      float j = baseJ + float(dj);
+      vec3 candidate = normalize(flatPoint(d, i, j));
+      float alignment = dot(dir, candidate);
+      bool inside = i >= 0.0 && j >= 0.0 && i <= n && j <= n;
+      // Only lattice points on this diamond can own the fragment (as in the TS picker), but
+      // the extrapolated ones across a seam still bound the cell for the border
+      if (inside && alignment > bestDot) {
+        secondDot = max(secondDot, bestDot);
+        bestDot = alignment;
+        bestI = i;
+        bestJ = j;
+        center = candidate;
+      } else {
+        secondDot = max(secondDot, alignment);
       }
     }
   }
 
-  float rowWidth = getRowWidth(bestRow);
-  float wrappedColumn = wrapX(bestColumn, rowWidth);
-
-  return vec2(wrappedColumn, bestRow);
+  vec2 tile = canonicalTile(d, int(bestI + 0.5), int(bestJ + 0.5));
+  // Dot products of neighbouring centres differ by about spacing * distance from the edge
+  float inset = (bestDot - secondDot) / (tileSpacing * tileSpacing);
+  return vec3(tile, inset);
 }
 
 void main() {
-  vec3 surfaceDirection = normalize(vLocalPosition);
-  vec2 tile = findNearestTile(surfaceDirection);
-
-  float rowWidth = getRowWidth(tile.y);
-  float stagger = mod(tile.y, 2.0) > 0.5 ? 0.5 : 0.0;
+  // The mesh is flat triangles that sag inside the sphere, so the fragment's own direction is
+  // off by up to a good fraction of a cell. Where this ray meets the true sphere is where the
+  // selection outline and click picking put the tile.
+  vec3 rayDirection = normalize(vLocalPosition - vLocalCamera);
+  float b = dot(vLocalCamera, rayDirection);
+  float c = dot(vLocalCamera, vLocalCamera) - planetRadius * planetRadius;
+  float disc = b * b - c;
+  vec3 surfaceDirection = disc >= 0.0
+    ? normalize(vLocalCamera + rayDirection * (-b - sqrt(disc)))
+    : normalize(vLocalPosition);
+  vec3 tileCenter;
+  vec3 found = findTile(surfaceDirection, tileCenter);
 
   vec2 planetUv = vec2(
-    (tile.x + 0.5 + stagger) / rowWidth,
-    (tile.y + 0.5) / mapSize.y
+    (found.x - 0.5) / mapSize.x,
+    (found.y - 0.5) / mapSize.y
   );
 
   vec3 baseColor = texture2D(planetMap, planetUv).rgb;
+  // A thin, faint line where cells meet; CELL_BORDER_DARKEN is how much it darkens at the edge
+  const float CELL_BORDER_DARKEN = 0.08;
+  baseColor *= mix(1.0 - CELL_BORDER_DARKEN, 1.0, smoothstep(0.0, 0.06, found.z));
+
+  // Decor icon, drawn north-up in a square about a cell wide around the tile centre. The
+  // neighbouring cells own the fragments past each edge, so it's clipped to the hex.
+  float frame = floor(texture2D(decorMap, planetUv).r * 255.0 + 0.5) - 1.0;
+  if (frame >= 0.0 && decorOpacity > 0.0) {
+    const float DECOR_SPAN = 1.15;
+    vec3 east = cross(tileCenter, vec3(0.0, 1.0, 0.0));
+    east = dot(east, east) < 1e-10 ? vec3(0.0, 0.0, 1.0) : normalize(east);
+    vec3 north = cross(east, tileCenter);
+    vec3 offset = surfaceDirection - tileCenter;
+    vec2 local =
+      vec2(dot(offset, east), dot(offset, north)) / (tileSpacing * DECOR_SPAN) + 0.5;
+    if (local.x >= 0.0 && local.x <= 1.0 && local.y >= 0.0 && local.y <= 1.0) {
+      float column = mod(frame, atlasGrid.x);
+      float row = floor(frame / atlasGrid.x);
+      // Canvas row 0 is the top of the atlas, which flipY puts at v = 1
+      vec2 atlasUv = vec2(
+        (column + local.x) / atlasGrid.x,
+        1.0 - (row + 1.0 - local.y) / atlasGrid.y
+      );
+      // An explicit LOD: the implicit one jumps to the blurriest level at cell edges
+      vec4 icon = textureLod(decorAtlas, atlasUv, decorLod);
+      baseColor = mix(baseColor, icon.rgb, icon.a * decorOpacity);
+    }
+  }
+
+  // Rivers: from the tile centre to the midpoint towards each connected neighbour. The
+  // neighbour draws the other half to the same midpoint, so the line runs on across the edge.
+  int riverMask = int(texture2D(decorMap, planetUv).g * 255.0 + 0.5);
+  if (riverMask > 0) {
+    vec3 east = cross(tileCenter, vec3(0.0, 1.0, 0.0));
+    east = dot(east, east) < 1e-10 ? vec3(0.0, 0.0, 1.0) : normalize(east);
+    vec3 north = cross(east, tileCenter);
+    vec3 fromCenter = surfaceDirection - tileCenter;
+    vec2 p = vec2(dot(fromCenter, east), dot(fromCenter, north));
+
+    int n = int(gridN + 0.5);
+    int tx = int(found.x + 0.5);
+    int ty = int(found.y + 0.5);
+    int diamond = (tx - 1) / n;
+    float i = float(tx - 1 - diamond * n);
+    float distanceToRiver = 1e9;
+    for (int bit = 0; bit < 6; bit++) {
+      if (((riverMask >> bit) & 1) == 0) {
+        continue;
+      }
+      vec3 neighbour;
+      if (ty == n + 1) {
+        // A pole's bits are its five spokes
+        if (bit > 4) {
+          continue;
+        }
+        neighbour = tx == 1
+          ? normalize(flatPoint(bit, 1.0, 0.0))
+          : normalize(flatPoint(5 + bit, float(n) - 1.0, float(n)));
+      } else {
+        vec2 step = NEIGHBOUR_OFFSETS[bit];
+        neighbour = normalize(flatPoint(diamond, i + step.x, float(ty) + step.y));
+      }
+      vec3 toMid = normalize(tileCenter + neighbour) - tileCenter;
+      vec2 m = vec2(dot(toMid, east), dot(toMid, north));
+      float t = clamp(dot(p, m) / dot(m, m), 0.0, 1.0);
+      distanceToRiver = min(distanceToRiver, length(p - m * t));
+    }
+    float halfWidth = tileSpacing * riverWidth;
+    float river = 1.0 - smoothstep(halfWidth * 0.75, halfWidth, distanceToRiver);
+    const vec3 RIVER_COLOR = vec3(0.07, 0.2, 0.42);
+    baseColor = mix(baseColor, RIVER_COLOR, river);
+  }
+
   vec3 normal = normalize(vWorldNormal);
   vec3 sun = normalize(sunDirection);
 

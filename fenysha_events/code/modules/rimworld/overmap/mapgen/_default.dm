@@ -51,7 +51,8 @@
 	var/planet_x = 1
 	var/planet_y = 1
 
-	var/list/elevation_matrix
+	/// The planet tile's hex ring: list(list("elevation", "bearing"), ...), bearing clockwise from north
+	var/list/hex_neighbourhood
 
 	var/generate_caves = TRUE
 
@@ -89,34 +90,22 @@
 	if(!planet)
 		return FALSE
 
-	elevation_matrix = list()
-
-	for(var/dx in -1 to 1)
-		var/dx_key = "[dx]"
-		elevation_matrix[dx_key] = list()
-
-		for(var/dy in -1 to 1)
-			var/dy_key = "[dy]"
-			var/target_x = planet_x + dx
-			var/target_y = planet_y + dy
-			var/value
-
-			if(planet.is_valid_coordinate(target_x, target_y))
-				value = planet.get_elevation_level(target_x, target_y)
-			else
-				value = planet.get_elevation_level(planet_x, planet_y)
-
-			if(!isnum(value))
-				value = text2num("[value]")
-
-			if(isnull(value))
-				log_world(
-					"RimWorld sub-level: invalid elevation value for planetary coordinate [target_x],[target_y]."
-				)
-				return FALSE
-
-			value = clamp(round(value), 0, 255)
-			elevation_matrix[dx_key][dy_key] = value
+	hex_neighbourhood = list()
+	for(var/list/neighbour as anything in planet.get_neighbor_ring(planet_x, planet_y))
+		// Locals, not neighbour["x"] inline: quotes nested in an embedded expression break DM's parser
+		var/neighbour_x = neighbour["x"]
+		var/neighbour_y = neighbour["y"]
+		var/elevation_text = planet.get_elevation_level(neighbour_x, neighbour_y)
+		var/value = text2num("[elevation_text]")
+		if(isnull(value))
+			log_world(
+				"RimWorld sub-level: invalid elevation value for planetary coordinate [neighbour_x],[neighbour_y]."
+			)
+			return FALSE
+		hex_neighbourhood += list(list(
+			"elevation" = clamp(round(value), 0, 5),
+			"bearing" = neighbour["bearing"],
+		))
 
 	return TRUE
 
@@ -276,38 +265,13 @@
 	if(!sub_biome)
 		sub_biome = RW_SUBBIOME_PLAINS
 
-	if(!length(elevation_matrix))
+	if(!length(hex_neighbourhood))
 		cache_planetary_neighborhood()
 
-	if(!length(elevation_matrix))
+	if(!length(hex_neighbourhood))
 		return FALSE
 
-	var/list/neigh = list()
-
-	// JSON order is NORTH/TOP -> SOUTH/BOTTOM:
-	//
-	// [0] [1] [2] = y + 1
-	// [3] [4] [5] = y
-	// [6] [7] [8] = y - 1
-	//
-	// X remains left -> right.
-	for(var/dy in list(1, 0, -1))
-		for(var/dx in list(-1, 0, 1))
-			var/value = elevation_matrix["[dx]"]["[dy]"]
-
-			if(!isnum(value))
-				value = text2num("[value]")
-
-			if(isnull(value))
-				value = 0
-
-			neigh += clamp(round(value), 0, 5)
-
-	if(length(neigh) != 9)
-		log_world(
-			"RimWorld sub-level: invalid neighbourhood size [length(neigh)]."
-		)
-		return FALSE
+	var/centre_elevation = clamp(round(text2num("[planet.get_elevation_level(planet_x, planet_y)]")), 0, 5)
 
 	var/list/config = list(
 		"planet_seed" = planet.seed,
@@ -316,7 +280,8 @@
 		"width" = width,
 		"height" = height,
 
-		"neighbourhood" = neigh,
+		"centre_elevation" = centre_elevation,
+		"neighbourhood_hex" = hex_neighbourhood,
 		"sub_biome" = sub_biome,
 
 		"local_seed" = 0,

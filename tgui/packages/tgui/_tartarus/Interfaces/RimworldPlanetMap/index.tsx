@@ -4,7 +4,7 @@ import { Window } from 'tgui/layouts';
 import { Button, Stack } from 'tgui-core/components';
 
 import { FullscreenWindow } from '../../layouts/FullscreenWindow';
-import { Planet } from './planet';
+import { type CellInteraction, Planet } from './planet';
 import type { PlanetMapData, PlanetTile } from './types';
 
 import { AdminPanel } from './views/AdminPanel';
@@ -50,6 +50,22 @@ export const RimworldPlanetMap = () => {
     });
   };
 
+  // Not handled DM-side yet; the payload is what a cell action is likely to need
+  const actOnCell = (action: string, cell: CellInteraction) => {
+    act(action, {
+      x: cell.x,
+      y: cell.y,
+      biome: cell.tile.biome,
+      subBiome: cell.tile.subBiome,
+      elevation: cell.tile.elevation,
+      material: cell.tile.material,
+      objectId: cell.object?.id ?? null,
+      shift: cell.shift,
+      ctrl: cell.ctrl,
+      alt: cell.alt,
+    });
+  };
+
   const handleObjectClick = (object: PlanetMapData['objects'][number]) => {
     act('select_object', {
       id: object.id,
@@ -62,6 +78,7 @@ export const RimworldPlanetMap = () => {
       return {
         ...localTile,
         ...data.selectedTile,
+        river: Boolean(data.selectedTile.river ?? localTile.river),
       };
     }
 
@@ -85,6 +102,7 @@ export const RimworldPlanetMap = () => {
         snowfall: data.selectedTile.snowfall ?? 0,
         waterAvailability: data.selectedTile.waterAvailability ?? 0,
         elevation: data.selectedTile.elevation ?? '0',
+        river: Boolean(data.selectedTile.river),
         objects: data.selectedTile.objects ?? [],
       };
     }
@@ -115,6 +133,8 @@ export const RimworldPlanetMap = () => {
           showClouds={showClouds}
           onTileClick={handleTileClick}
           onObjectClick={handleObjectClick}
+          onTileDoubleClick={(cell) => actOnCell('tile_double_click', cell)}
+          onTileRightClick={(cell) => actOnCell('tile_right_click', cell)}
         />
 
         <div

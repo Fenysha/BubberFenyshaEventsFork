@@ -43,6 +43,8 @@
 		winset(client, "browseroutput", list("parent" = "none"))
 
 	current_layout = layout
+	// Before the chat, so the chat overlay draws over full-map interfaces
+	ensure_map_ui_host()
 
 	switch(layout)
 		if(TGPANEL_ONMAP)

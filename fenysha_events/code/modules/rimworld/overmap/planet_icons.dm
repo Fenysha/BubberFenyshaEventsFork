@@ -14,14 +14,20 @@
 
 	var/ok = TRUE
 
-	/*
 	// 64x64 tile decor sheets. Each PNG is a 1x4 strip of variants
-	// (256x64 px total) — see planetIcons.ts for the frame layout.
+	// (256x64 px total) — see PlanetIcons.ts for which tiles use which sheet.
 	ok = register_icon_sheets("fenysha_events/icons/planet_map/default", list(
 		"mountains",
 		"mountains_i",
 		"hills",
 		"hills_big",
+		// Temporary placeholder art, same format; replace the PNGs in place
+		"grass",
+		"marsh",
+		"tundra",
+		"dunes",
+		"snow",
+		"ice",
 	)) && ok
 
 	// 128x128 tile decor sheets (1x4 strip, 512x128 px total).
@@ -29,7 +35,6 @@
 		"forest",
 		"forest_d",
 	)) && ok
-	*/
 	// 128x128 object markers, one per planet object type.
 	ok = register_icon_sheets("fenysha_events/icons/planet_map/markers", list(
 		RW_PLANET_CELL_TOWN,

@@ -5,7 +5,9 @@
  * ============================================================================
  */
 
-#define RW_PLANET_GENERATOR_VERSION 6
+#define RW_PLANET_GENERATOR_VERSION 7
+/// Hex grid frequency n: 10n^2 + 2 tiles, about 2050 around the equator
+#define RW_PLANET_GRID_FREQUENCY 366
 
 #define RW_PLANET_CELL_TOWN "map_town"
 #define RW_PLANET_CELL_TOWN_OTHER "map_town_other"

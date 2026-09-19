@@ -27,7 +27,7 @@ GLOBAL_VAR(rimworld_planet_noise_revision)
 
 
 /**
- * Registers the five layer files for the given planet.
+ * Registers the planet's layer files (terrain, climate, geology and rivers) as assets.
  * Returns TRUE on success.
  */
 /datum/asset/simple/rimworld_planet_layers/proc/register_for_planet(datum/rimworld_planet/planet)
@@ -48,7 +48,8 @@ GLOBAL_VAR(rimworld_planet_noise_revision)
 		"heat",
 		"humidity",
 		"precipitation",
-		"geology"
+		"geology",
+		"rivers"
 	)
 
 	for(var/layer_name in layer_names)

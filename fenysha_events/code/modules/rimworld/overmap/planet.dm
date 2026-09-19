@@ -94,8 +94,9 @@
 	var/name = "Unnamed Planet"
 	var/seed
 	var/planet_type = RW_PLANET_PRESET_TERRAN
-	var/map_width = 2048
-	var/map_height = 1024
+	/// Layer grid size, set from grid_frequency: see planet_hexgrid.dm
+	var/map_width
+	var/map_height
 	var/rotation_angle = 0
 	var/rotation_speed = 0.001
 	var/auto_rotate = TRUE
@@ -157,6 +158,8 @@
 
 /datum/rimworld_planet/New(new_seed = null, new_planet_type = RW_PLANET_PRESET_TERRAN, list/custom_params)
 	. = ..()
+	map_width = 10 * grid_frequency
+	map_height = grid_frequency + 1
 	if(isnull(new_seed))
 		seed = rand(1, 100000)
 	else
@@ -371,40 +374,12 @@
 	return precipitation_seed
 
 /**
- * Returns the effective row width at the given latitude (for spherical projection).
- */
-/datum/rimworld_planet/proc/get_row_width(y)
-	if(y < 1 || y > map_height)
-		return map_width
-	var/v = (y - 0.5) / map_height
-	var/latitude_deg = v * 180 - 90
-	// round(x, 1) is round-to-nearest like tgui's Math.round; one-argument round() floors
-	var/count = round(map_width * cos(latitude_deg), 1)
-	return max(6, count)
-
-/**
- * Converts a local row X into a sample X on the full-width grid.
- */
-/datum/rimworld_planet/proc/get_sample_x(x, y)
-	var/row_width = get_row_width(y)
-	var/normalized_x = (x - 0.5) / row_width
-	return clamp(floor(normalized_x * map_width) + 1, 1, map_width)
-
-/**
- * Returns whether the given coordinates are valid on this planet.
+ * Returns whether the given coordinates are a tile on this planet's hex grid.
  */
 /datum/rimworld_planet/proc/is_valid_coordinate(x, y)
-	if(y < 1 || y > map_height)
-		return FALSE
-	var/row_width = get_row_width(y)
-	return x >= 1 && x <= row_width
-
-/**
- * Wraps X coordinate around the current row width.
- */
-/datum/rimworld_planet/proc/wrap_x(x, y)
-	var/row_width = get_row_width(y)
-	return (((x - 1) % row_width + row_width) % row_width) + 1
+	if(y == grid_frequency + 1)
+		return x == 1 || x == 2
+	return x >= 1 && x <= map_width && y >= 1 && y <= grid_frequency
 
 /**
  * Converts 2D coordinates into a linear index (1-based).
@@ -446,8 +421,7 @@
 
 	var/list/config = list(
 		"seed" = seed,
-		"width" = map_width,
-		"height" = map_height,
+		"frequency" = grid_frequency,
 		"output_dir" = "data/rimworld_planets/[seed]",
 		"scales" = list(
 			"terrain" = terrain_scale,
@@ -550,8 +524,7 @@
 	if(!generated_layers[layer_name])
 		return null
 
-	var/sample_x = get_sample_x(x, y)
-	var/cache_key = "[layer_name]:[sample_x]:[y]"
+	var/cache_key = "[layer_name]:[x]:[y]"
 	if(!isnull(cell_cache[cache_key]))
 		return cell_cache[cache_key]
 
@@ -559,12 +532,35 @@
 	if(!path)
 		return null
 
-	var/value = rustg_tp_planet_get_cell(path, sample_x, y)
+	var/value = rustg_tp_planet_get_cell(path, x, y)
 	if(isnull(value))
 		return null
 
 	cell_cache[cache_key] = value
 	return value
+
+/**
+ * Bitmask of the neighbours a river connects this tile to (0 for no river); bits follow
+ * get_neighbors_with_bits().
+ */
+/datum/rimworld_planet/proc/get_river_mask(x, y)
+	if(!is_valid_coordinate(x, y))
+		return 0
+	return get_layer_value("rivers", x, y) || 0
+
+/datum/rimworld_planet/proc/has_river(x, y)
+	return get_river_mask(x, y) != 0
+
+/// The tiles this tile's river flows to or from, as list(list(x, y), ...).
+/datum/rimworld_planet/proc/get_river_connections(x, y)
+	var/mask = get_river_mask(x, y)
+	var/list/result = list()
+	if(!mask)
+		return result
+	for(var/list/tile as anything in get_neighbors_with_bits(x, y))
+		if(mask & (1 << tile[3]))
+			result += list(list(tile[1], tile[2]))
+	return result
 
 /**
  * Returns the elevation level at the given coordinates.
@@ -640,7 +636,8 @@
 	var/hm = isnull(humidity) ? get_humidity_level(x, y) : humidity
 	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
 
-	var/base_lat = (y - 1) / max(1, map_height - 1)
+	var/list/lat_lon = get_tile_lat_lon(x, y)
+	var/base_lat = (lat_lon[1] + 90) / 180
 	var/polar_fade = sin(base_lat * 180)
 	var/climate_offset = 0.0
 
@@ -660,10 +657,13 @@
 		climate_offset -= 0.12
 
 	var/s = seed % 10000
+	// Longitude/latitude on a 2048 x 1024 scale, so the wave stays continuous across diamonds
+	var/wave_x = (lat_lon[2] + 180) * (2048 / 360)
+	var/wave_y = (lat_lon[1] + 90) * (1024 / 180)
 	// %% keeps the fraction; % truncates to integers and drifts from tgui's generator
-	var/angle1 = ((x * 0.35 + y * 0.15 + s) %% 360)
-	var/angle2 = ((x * 0.85 - y * 0.45 + s * 1.3) %% 360)
-	var/angle3 = ((x * 1.7 + y * 1.1 + s * 2.1) %% 360)
+	var/angle1 = ((wave_x * 0.35 + wave_y * 0.15 + s) %% 360)
+	var/angle2 = ((wave_x * 0.85 - wave_y * 0.45 + s * 1.3) %% 360)
+	var/angle3 = ((wave_x * 1.7 + wave_y * 1.1 + s * 2.1) %% 360)
 	var/wave = ((sin(angle1) * 0.06) + (cos(angle2) * 0.04) + (sin(angle3) * 0.02)) * polar_fade
 
 	return climate_offset + wave
@@ -674,8 +674,7 @@
 /datum/rimworld_planet/proc/get_latitude(x, y)
 	if(!is_valid_coordinate(x, y))
 		return 0
-	var/normalized = (y - 0.5) / map_height
-	return normalized * 180 - 90
+	return get_tile_lat_lon(x, y)[1]
 
 /**
  * Returns the surface material at the given coordinates.
@@ -756,7 +755,7 @@
 		m = get_material(x, y, e)
 
 	var/latitude_offset = get_latitude_offset(x, y, heat)
-	var/base_lat = (y - 1) / max(1, map_height - 1)
+	var/base_lat = (get_latitude(x, y) + 90) / 180
 	var/normalized_latitude = clamp(base_lat + latitude_offset, 0, 1)
 	var/latitude_distance = abs(normalized_latitude - 0.5) * 2.0
 	var/latitude_temperature = (max(0, 1.0 - latitude_distance) ** 1.8)
@@ -922,7 +921,7 @@
 	var/material = get_material(x, y, e)
 	var/temperature = get_temperature(x, y, h, e, material)
 	var/latitude_offset = get_latitude_offset(x, y, h, hm, e)
-	var/base_lat = (y - 1) / max(1, map_height - 1)
+	var/base_lat = (get_latitude(x, y) + 90) / 180
 	var/normalized_latitude = clamp(base_lat + latitude_offset, 0, 1)
 	var/polar_distance = abs((normalized_latitude - 0.5) * 2.0)
 
@@ -1014,6 +1013,7 @@
 		tile["waterAvailability"] = get_water_availability(x, y, precipitation, elevation)
 		tile["biome"] = biome
 		tile["subBiome"] = sub_biome
+		tile["river"] = has_river(x, y)
 
 	return tile
 
@@ -1035,6 +1035,7 @@
 		"precipitationSeed" = precipitation_seed,
 		"width" = map_width,
 		"height" = map_height,
+		"gridFrequency" = grid_frequency,
 		"terrainScale" = terrain_scale,
 		"heatScale" = heat_scale,
 		"humidityScale" = humidity_scale,

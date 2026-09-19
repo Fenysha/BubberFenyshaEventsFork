@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { BIOME_COLORS } from '../generation/constants';
 import type { PlanetGenerator } from '../generation/generator';
 import type { PlanetMapData } from '../types';
-import { getRowWidth } from './coordinates';
+import { gridFor } from './coordinates';
+import { iconFrame, resolveTileIcon } from './PlanetIcons';
 
 const stableVariation = (x: number, y: number, seed: number): number => {
   const value =
@@ -12,41 +13,19 @@ const stableVariation = (x: number, y: number, seed: number): number => {
   return 0.94 + normalized * 0.08;
 };
 
-export const buildPlanetTexture = (
-  data: PlanetMapData,
-  generator: PlanetGenerator,
+export type PlanetTextures = {
+  /** Biome colour, one texel per tile: texel (x - 1, y - 1) is tile (x, y) */
+  color: THREE.DataTexture;
+  /** Same layout. R: decor atlas frame + 1 (0 for none). G: river mask. B, A: free. */
+  decor: THREE.DataTexture;
+};
+
+const tileTexture = (
+  pixels: Uint8Array,
+  width: number,
+  height: number,
+  srgb: boolean,
 ): THREE.DataTexture => {
-  const width = data.width;
-  const height = data.height;
-
-  const pixels = new Uint8Array(width * height * 4);
-
-  for (let y = 0; y < height; y++) {
-    const rowWidth = getRowWidth(y, height, width);
-
-    for (let px = 0; px < width; px++) {
-      const x = Math.floor((px / width) * rowWidth);
-      const tile = generator.getTile(x + 1, y + 1);
-
-      const color = new THREE.Color(BIOME_COLORS[tile.biome] ?? 0xff00ff);
-      color.convertLinearToSRGB();
-
-      const variation = stableVariation(x, y, data.terrainSeed);
-      color.multiplyScalar(variation);
-
-      const index = (y * width + px) * 4;
-
-      pixels[index] = Math.round(THREE.MathUtils.clamp(color.r, 0, 1) * 255);
-      pixels[index + 1] = Math.round(
-        THREE.MathUtils.clamp(color.g, 0, 1) * 255,
-      );
-      pixels[index + 2] = Math.round(
-        THREE.MathUtils.clamp(color.b, 0, 1) * 255,
-      );
-      pixels[index + 3] = 255;
-    }
-  }
-
   const texture = new THREE.DataTexture(
     pixels,
     width,
@@ -54,15 +33,58 @@ export const buildPlanetTexture = (
     THREE.RGBAFormat,
     THREE.UnsignedByteType,
   );
-
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
+  if (srgb) {
+    texture.colorSpace = THREE.SRGBColorSpace;
+  }
+  texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.magFilter = THREE.NearestFilter;
   texture.minFilter = THREE.NearestFilter;
   texture.generateMipmaps = false;
   texture.flipY = false;
   texture.needsUpdate = true;
-
   return texture;
+};
+
+/**
+ * Evaluates every tile once and bakes both per-tile textures. The surface shader finds the
+ * tile under each fragment and reads its texels directly.
+ */
+export const buildPlanetTextures = (
+  data: PlanetMapData,
+  generator: PlanetGenerator,
+): PlanetTextures => {
+  const grid = gridFor(data);
+  const width = grid.width;
+  const height = grid.height;
+  const color = new Uint8Array(width * height * 4);
+  const decor = new Uint8Array(width * height * 4);
+  const tint = new THREE.Color();
+
+  for (let y = 1; y <= height; y++) {
+    for (let x = 1; x <= width; x++) {
+      if (!grid.isValid(x, y)) {
+        continue;
+      }
+      const tile = generator.getTile(x, y);
+      tint.set(BIOME_COLORS[tile.biome] ?? 0xff00ff);
+      tint.convertLinearToSRGB();
+      tint.multiplyScalar(stableVariation(x, y, data.terrainSeed));
+
+      const index = ((y - 1) * width + (x - 1)) * 4;
+      color[index] = Math.round(THREE.MathUtils.clamp(tint.r, 0, 1) * 255);
+      color[index + 1] = Math.round(THREE.MathUtils.clamp(tint.g, 0, 1) * 255);
+      color[index + 2] = Math.round(THREE.MathUtils.clamp(tint.b, 0, 1) * 255);
+      color[index + 3] = 255;
+
+      decor[index] =
+        iconFrame(resolveTileIcon(tile, x, y, data.terrainSeed ?? 0)) + 1;
+      decor[index + 1] = generator.getRiverMask(x, y);
+    }
+  }
+
+  return {
+    color: tileTexture(color, width, height, true),
+    decor: tileTexture(decor, width, height, false),
+  };
 };

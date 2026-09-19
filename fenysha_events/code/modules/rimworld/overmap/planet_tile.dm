@@ -471,7 +471,7 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
  * Returns distance to another cell (or coordinates).
  */
 /datum/planet_cell/proc/get_distance_to(target_x, target_y)
-	return get_dist_2d(x, y, target_x, target_y)
+	return planet.get_tile_distance(x, y, target_x, target_y)
 
 
 /**

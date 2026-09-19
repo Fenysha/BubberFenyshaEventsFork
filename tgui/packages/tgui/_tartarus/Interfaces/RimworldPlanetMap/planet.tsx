@@ -11,9 +11,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { loadCameraState, saveCameraState } from './camera';
 import { PLANET_RADIUS } from './generation/constants';
 import { PlanetGenerator } from './generation/generator';
+import { HEX_SHADER_DATA, type HexGrid } from './generation/hexGrid';
 import type { PlanetMapData, PlanetObject, PlanetTile } from './types';
 import { getPlanetMapIdentity } from './types';
-
 import {
   PLANET_ATMOSPHERE_COLOR,
   PLANET_BACKGROUND,
@@ -22,14 +22,23 @@ import {
   PLANET_SUN_COLOR,
   PLANET_SUN_DIRECTION,
 } from './visual/constants';
-
 import {
-  planetCoordinateToVector,
-  vectorToPlanetCoordinate,
+  gridFor,
+  tileOutline,
+  tileToVector,
+  vectorToTile,
 } from './visual/coordinates';
-
+import {
+  ATLAS_COLUMNS,
+  ATLAS_FRAME_SIZE,
+  ATLAS_ROWS,
+  getDecorAtlas,
+} from './visual/decorAtlas';
 import { buildPlanetGeometry, type LodLevel } from './visual/geometry';
-import { buildPlanetTexture } from './visual/planetTexture';
+import {
+  buildPlanetTextures,
+  type PlanetTextures,
+} from './visual/planetTexture';
 
 import {
   ATMOSPHERE_FRAGMENT_SHADER,
@@ -42,6 +51,17 @@ import {
   PLANET_SURFACE_VERTEX_SHADER,
 } from './visual/shaders';
 
+/** A cell picked by a click, with 1-based coordinates as DM uses them. */
+export type CellInteraction = {
+  x: number;
+  y: number;
+  tile: PlanetTile;
+  object?: PlanetObject;
+  shift: boolean;
+  ctrl: boolean;
+  alt: boolean;
+};
+
 type PlanetProps = {
   data: PlanetMapData;
   selectedX?: number;
@@ -50,6 +70,8 @@ type PlanetProps = {
   showClouds?: boolean;
   onTileClick?: (x: number, y: number, tile: PlanetTile) => void;
   onObjectClick?: (object: PlanetObject) => void;
+  onTileDoubleClick?: (cell: CellInteraction) => void;
+  onTileRightClick?: (cell: CellInteraction) => void;
 };
 
 type PlanetRuntime = {
@@ -77,7 +99,7 @@ const getPlanetLod = (distance: number): LodLevel =>
       ? 'medium'
       : 'far';
 
-const textureCache = new Map<string, THREE.CanvasTexture>();
+const textureCache = new Map<string, PlanetTextures>();
 const MAX_TEXTURE_CACHE_SIZE = 8;
 
 const createPlaceholderTexture = (): THREE.DataTexture => {
@@ -94,6 +116,24 @@ const createPlaceholderTexture = (): THREE.DataTexture => {
 };
 
 const placeholderTexture = createPlaceholderTexture();
+
+/** No decor anywhere, until the real per-tile data is built */
+const emptyDecorTexture = new THREE.DataTexture(
+  new Uint8Array(4),
+  1,
+  1,
+  THREE.RGBAFormat,
+  THREE.UnsignedByteType,
+);
+emptyDecorTexture.needsUpdate = true;
+
+/** Decor icons fade in once a cell is this many pixels across on screen */
+const DECOR_FADE_START_PX = 5;
+const DECOR_FADE_FULL_PX = 12;
+
+/** River half-width in tile spacings, and never less than this many pixels across */
+const RIVER_HALF_WIDTH = 0.14;
+const RIVER_MIN_PX = 1.5;
 
 const objectTextureCache = new Map<string, THREE.Texture>();
 const sharedTextureLoader = new THREE.TextureLoader();
@@ -175,74 +215,31 @@ const sharedMarkerMaterials = {
   default: new THREE.MeshBasicMaterial({ color: 0xf0f4ff }),
 };
 
-const HEIGHT_SELECTION_OUTLINE = PLANET_RADIUS + 0.003;
-const HEIGHT_SELECTION_GLOW = PLANET_RADIUS + 0.005;
+/** Radians per second per unit of camera height above the surface */
+const WASD_ANGULAR_SPEED = 0.12;
+/** How much faster WASD moves while Shift is held */
+const WASD_SHIFT_MULTIPLIER = 3;
+
+// A cell is only ~0.006 across, so any real lift reads as the outline sitting on the next hex.
+// The surface mesh's faces dip inside the sphere, so a hair above it always stays visible.
+const HEIGHT_SELECTION_OUTLINE = PLANET_RADIUS + 0.0003;
+const HEIGHT_SELECTION_GLOW = PLANET_RADIUS + 0.0004;
 const HEIGHT_OBJECT_MARKER = PLANET_RADIUS + 0.004;
 
-const buildHexOutlineGeometry = (
+/** The selected tile's real outline: a hexagon, or a pentagon at the 12 icosahedron corners. */
+const buildTileOutlineGeometry = (
+  grid: HexGrid,
   x: number,
   y: number,
-  maxWidth: number,
-  height: number,
   radius: number,
-) => {
-  const center = planetCoordinateToVector(
-    x,
-    y,
-    maxWidth,
-    height,
-    radius,
-  ).normalize();
+) => new THREE.BufferGeometry().setFromPoints(tileOutline(grid, x, y, radius));
 
-  const up =
-    Math.abs(center.y) > 0.99
-      ? new THREE.Vector3(0, 0, 1)
-      : new THREE.Vector3(0, 1, 0);
-
-  const east = new THREE.Vector3().crossVectors(up, center).normalize();
-  const north = new THREE.Vector3().crossVectors(center, east).normalize();
-
-  const latitude = Math.asin(THREE.MathUtils.clamp(center.y, -0.999, 0.999));
-  const cosLatitude = Math.max(Math.cos(latitude), 0.15);
-
-  const hexSizeX = ((Math.PI * 2) / maxWidth) * cosLatitude * 0.5;
-  const hexSizeY = (Math.PI / height) * 0.5;
-
-  const positions = new Float32Array(18);
-
-  for (let i = 0; i < 6; i++) {
-    const angle = Math.PI / 6 + (i * Math.PI) / 3;
-
-    const dx = Math.cos(angle) * hexSizeX;
-    const dy = Math.sin(angle) * hexSizeY;
-
-    const point = center
-      .clone()
-      .addScaledVector(east, dx)
-      .addScaledVector(north, dy)
-      .normalize()
-      .multiplyScalar(radius);
-
-    positions[i * 3] = point.x;
-    positions[i * 3 + 1] = point.y;
-    positions[i * 3 + 2] = point.z;
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(positions, 3),
-  );
-
-  return geometry;
-};
-
-const createSelection = (width: number, height: number) => {
+const createSelection = (grid: HexGrid) => {
   const group = new THREE.Group();
   group.visible = false;
 
   const glow = new THREE.LineLoop(
-    buildHexOutlineGeometry(1, 1, width, height, HEIGHT_SELECTION_GLOW),
+    buildTileOutlineGeometry(grid, 1, 1, HEIGHT_SELECTION_GLOW),
     new THREE.LineBasicMaterial({
       color: 0x6bbdff,
       transparent: true,
@@ -252,7 +249,7 @@ const createSelection = (width: number, height: number) => {
   );
 
   const outline = new THREE.LineLoop(
-    buildHexOutlineGeometry(1, 1, width, height, HEIGHT_SELECTION_OUTLINE),
+    buildTileOutlineGeometry(grid, 1, 1, HEIGHT_SELECTION_OUTLINE),
     new THREE.LineBasicMaterial({
       color: 0x9edcff,
       transparent: true,
@@ -271,29 +268,25 @@ const createSelection = (width: number, height: number) => {
 
 const updateSelection = (
   group: THREE.Group,
+  grid: HexGrid,
   x: number,
   y: number,
-  width: number,
-  height: number,
 ) => {
+  if (!grid.isValid(x, y)) {
+    group.visible = false;
+    return;
+  }
   const glow = group.children[0] as THREE.LineLoop;
   const outline = group.children[1] as THREE.LineLoop;
 
   glow.geometry.dispose();
-  glow.geometry = buildHexOutlineGeometry(
-    x,
-    y,
-    width,
-    height,
-    HEIGHT_SELECTION_GLOW,
-  );
+  glow.geometry = buildTileOutlineGeometry(grid, x, y, HEIGHT_SELECTION_GLOW);
 
   outline.geometry.dispose();
-  outline.geometry = buildHexOutlineGeometry(
+  outline.geometry = buildTileOutlineGeometry(
+    grid,
     x,
     y,
-    width,
-    height,
     HEIGHT_SELECTION_OUTLINE,
   );
 
@@ -308,6 +301,8 @@ export const Planet = ({
   showClouds = true,
   onTileClick,
   onObjectClick,
+  onTileDoubleClick,
+  onTileRightClick,
 }: PlanetProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<PlanetRuntime | null>(null);
@@ -326,24 +321,28 @@ export const Planet = ({
   const callbacksRef = useRef({
     onTileClick,
     onObjectClick,
+    onTileDoubleClick,
+    onTileRightClick,
   });
 
   callbacksRef.current = {
     onTileClick,
     onObjectClick,
+    onTileDoubleClick,
+    onTileRightClick,
   };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if (['w', 'a', 's', 'd'].includes(key)) {
+      if (['w', 'a', 's', 'd', 'shift'].includes(key)) {
         keysPressed.current[key] = true;
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if (['w', 'a', 's', 'd'].includes(key)) {
+      if (['w', 'a', 's', 'd', 'shift'].includes(key)) {
         keysPressed.current[key] = false;
       }
     };
@@ -365,6 +364,7 @@ export const Planet = ({
     }
 
     const generator = new PlanetGenerator(data);
+    const grid = gridFor(data);
 
     const scene = new THREE.Scene();
     scene.background = PLANET_BACKGROUND.clone();
@@ -475,15 +475,43 @@ export const Planet = ({
       planetGroup.rotation.y = (data.rotationAngle * Math.PI) / 180;
     }
 
-    const cachedTexture = textureCache.get(mapIdentity);
-    const initialTexture = cachedTexture ?? placeholderTexture;
+    const cachedTextures = textureCache.get(mapIdentity);
+    const initialTexture = cachedTextures?.color ?? placeholderTexture;
 
     const surfaceMaterial = new THREE.ShaderMaterial({
       uniforms: {
         planetMap: { value: initialTexture },
-        mapSize: { value: new THREE.Vector2(data.width, data.height) },
+        mapSize: { value: new THREE.Vector2(grid.width, grid.height) },
+        gridN: { value: grid.n },
+        planetRadius: { value: PLANET_RADIUS },
+        tileSpacing: { value: grid.spacing },
+        diamondCorners: {
+          value: HEX_SHADER_DATA.diamondCorners.map(
+            (v) => new THREE.Vector3(...v),
+          ),
+        },
+        faceOrigin: {
+          value: HEX_SHADER_DATA.faceOrigin.map((v) => new THREE.Vector3(...v)),
+        },
+        faceE1: {
+          value: HEX_SHADER_DATA.faceE1.map((v) => new THREE.Vector3(...v)),
+        },
+        faceE2: {
+          value: HEX_SHADER_DATA.faceE2.map((v) => new THREE.Vector3(...v)),
+        },
+        faceNormal: {
+          value: HEX_SHADER_DATA.faceNormal.map((v) => new THREE.Vector3(...v)),
+        },
+        faceDiamond: { value: HEX_SHADER_DATA.faceDiamond },
+        faceUpper: { value: HEX_SHADER_DATA.faceUpper },
         sunDirection: { value: PLANET_SUN_DIRECTION.clone().normalize() },
         nightColor: { value: PLANET_NIGHT_COLOR.clone() },
+        decorMap: { value: cachedTextures?.decor ?? emptyDecorTexture },
+        decorAtlas: { value: emptyDecorTexture as THREE.Texture },
+        atlasGrid: { value: new THREE.Vector2(ATLAS_COLUMNS, ATLAS_ROWS) },
+        decorOpacity: { value: 0 },
+        decorLod: { value: 0 },
+        riverWidth: { value: RIVER_HALF_WIDTH },
       },
       vertexShader: PLANET_SURFACE_VERTEX_SHADER,
       fragmentShader: PLANET_SURFACE_FRAGMENT_SHADER,
@@ -503,7 +531,15 @@ export const Planet = ({
 
     let animFrameId: number | null = null;
 
-    if (cachedTexture) {
+    getDecorAtlas()
+      .then((atlas) => {
+        if (isMounted && surfaceMaterial.uniforms.decorAtlas) {
+          surfaceMaterial.uniforms.decorAtlas.value = atlas;
+        }
+      })
+      .catch((error) => console.warn('[Planet] Decor atlas failed:', error));
+
+    if (cachedTextures) {
       setIsLoading(false);
     } else {
       setIsLoading(true);
@@ -511,20 +547,24 @@ export const Planet = ({
       const buildTextureWhenReady = () => {
         if (generator.isReady()) {
           try {
-            const texture = buildPlanetTexture(data, generator);
+            const textures = buildPlanetTextures(data, generator);
 
             if (textureCache.size >= MAX_TEXTURE_CACHE_SIZE) {
               const firstKey = textureCache.keys().next().value;
               if (firstKey) {
-                textureCache.get(firstKey)?.dispose();
+                const evicted = textureCache.get(firstKey);
+                evicted?.color.dispose();
+                evicted?.decor.dispose();
                 textureCache.delete(firstKey);
               }
             }
-            textureCache.set(mapIdentity, texture);
+            textureCache.set(mapIdentity, textures);
 
             if (surfaceMaterial.uniforms.planetMap) {
-              surfaceMaterial.uniforms.planetMap.value = texture;
-              surfaceMaterial.needsUpdate = true;
+              surfaceMaterial.uniforms.planetMap.value = textures.color;
+            }
+            if (surfaceMaterial.uniforms.decorMap) {
+              surfaceMaterial.uniforms.decorMap.value = textures.decor;
             }
           } catch (error) {
             console.error('[Planet] Texture generation error:', error);
@@ -607,7 +647,7 @@ export const Planet = ({
     objectGroup.name = 'PlanetObjects';
     planetGroup.add(objectGroup);
 
-    const selection = createSelection(data.width, data.height);
+    const selection = createSelection(grid);
     planetGroup.add(selection);
 
     runtimeRef.current = {
@@ -658,52 +698,87 @@ export const Planet = ({
       }
     };
 
+    /** The object or surface cell under the cursor, 1-based. */
+    const pickAt = (event: MouseEvent): CellInteraction | null => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+      raycaster.setFromCamera(mouse, camera);
+
+      const modifiers = {
+        shift: event.shiftKey,
+        ctrl: event.ctrlKey,
+        alt: event.altKey,
+      };
+
+      const objectHits = raycaster.intersectObjects(objectGroup.children, true);
+      if (objectHits.length > 0) {
+        const object = objectHits[0].object.userData.object as
+          | PlanetObject
+          | undefined;
+        if (object) {
+          return {
+            x: object.x,
+            y: object.y,
+            tile: generator.getTile(object.x, object.y),
+            object,
+            ...modifiers,
+          };
+        }
+      }
+
+      const surfaceHits = raycaster.intersectObject(surface, false);
+      if (surfaceHits.length === 0) {
+        return null;
+      }
+      const point = surfaceHits[0].point.clone();
+      planetGroup.worldToLocal(point);
+
+      const { x, y } = vectorToTile(grid, point);
+      return { x, y, tile: generator.getTile(x, y), ...modifiers };
+    };
+
     const handleClick = (event: MouseEvent) => {
       if (pointerDragged) {
         pointerDragged = false;
         return;
       }
-
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
-
-      raycaster.setFromCamera(mouse, camera);
-
-      const objectHits = raycaster.intersectObjects(objectGroup.children, true);
-
-      if (objectHits.length > 0) {
-        const hit = objectHits[0].object.userData.object as
-          | PlanetObject
-          | undefined;
-
-        if (hit) {
-          callbacksRef.current.onObjectClick?.(hit);
-
-          const tile = generator.getTile(hit.x, hit.y);
-          callbacksRef.current.onTileClick?.(hit.x, hit.y, tile);
-        }
+      const cell = pickAt(event);
+      if (!cell) {
         return;
       }
+      if (cell.object) {
+        callbacksRef.current.onObjectClick?.(cell.object);
+      }
+      callbacksRef.current.onTileClick?.(cell.x, cell.y, cell.tile);
+    };
 
-      const surfaceHits = raycaster.intersectObject(surface, false);
-
-      if (surfaceHits.length === 0) {
+    const handleDoubleClick = (event: MouseEvent) => {
+      if (pointerDragged) {
         return;
       }
+      const cell = pickAt(event);
+      if (cell) {
+        callbacksRef.current.onTileDoubleClick?.(cell);
+      }
+    };
 
-      const point = surfaceHits[0].point.clone();
-      planetGroup.worldToLocal(point);
-
-      const { x, y } = vectorToPlanetCoordinate(point, data.width, data.height);
-      const tile = generator.getTile(x, y);
-
-      callbacksRef.current.onTileClick?.(x, y, tile);
+    const handleContextMenu = (event: MouseEvent) => {
+      event.preventDefault();
+      if (pointerDragged) {
+        return;
+      }
+      const cell = pickAt(event);
+      if (cell) {
+        callbacksRef.current.onTileRightClick?.(cell);
+      }
     };
 
     renderer.domElement.addEventListener('pointerdown', handlePointerDown);
     renderer.domElement.addEventListener('pointermove', handlePointerMove);
     renderer.domElement.addEventListener('click', handleClick);
+    renderer.domElement.addEventListener('dblclick', handleDoubleClick);
+    renderer.domElement.addEventListener('contextmenu', handleContextMenu);
 
     let frame = 0;
     const clock = new THREE.Clock();
@@ -716,6 +791,36 @@ export const Planet = ({
       const time = clock.getElapsedTime();
 
       const distance = controls.getDistance();
+
+      // How many pixels a cell spans at the point nearest the camera: fade icons in once
+      // they're big enough to read, and pick the atlas mip that matches their size
+      const cellWorld = grid.spacing * PLANET_RADIUS;
+      const pixelsPerUnit =
+        renderer.domElement.height /
+        (2 *
+          Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) *
+          Math.max(distance - PLANET_RADIUS, 1e-4));
+      const cellPixels = cellWorld * pixelsPerUnit;
+      if (surfaceMaterial.uniforms.decorOpacity) {
+        surfaceMaterial.uniforms.decorOpacity.value =
+          THREE.MathUtils.smoothstep(
+            cellPixels,
+            DECOR_FADE_START_PX,
+            DECOR_FADE_FULL_PX,
+          );
+      }
+      if (surfaceMaterial.uniforms.riverWidth) {
+        surfaceMaterial.uniforms.riverWidth.value = Math.max(
+          RIVER_HALF_WIDTH,
+          RIVER_MIN_PX / 2 / Math.max(cellPixels, 1e-3),
+        );
+      }
+      if (surfaceMaterial.uniforms.decorLod) {
+        surfaceMaterial.uniforms.decorLod.value = Math.max(
+          0,
+          Math.log2(ATLAS_FRAME_SIZE / Math.max(cellPixels, 1)),
+        );
+      }
 
       // Proximity factors
       const nearDistanceMin = PLANET_RADIUS * 1.1;
@@ -748,33 +853,29 @@ export const Planet = ({
       }
       clouds.rotation.y = time * 0.012;
 
-      // WASD Camera Control
-      const wasdSpeed = THREE.MathUtils.lerp(0.012, 0.038, nearProgress);
+      // WASD orbits in latitude/longitude. The rate scales with height above the surface, so
+      // the ground scrolls past at the same on-screen speed at any zoom.
       const keys = keysPressed.current;
+      const vertical = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
+      const horizontal = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
 
-      if (keys.w || keys.s || keys.a || keys.d) {
-        const forward = new THREE.Vector3();
-        camera.getWorldDirection(forward);
-        forward.y = 0;
-        forward.normalize();
+      if (vertical || horizontal) {
+        const altitude = Math.max(distance - PLANET_RADIUS, 0.02);
+        const boost = keys.shift ? WASD_SHIFT_MULTIPLIER : 1;
+        const step =
+          WASD_ANGULAR_SPEED * boost * altitude * Math.min(delta, 0.1);
+        const orbit = new THREE.Spherical().setFromVector3(
+          camera.position.clone().sub(controls.target),
+        );
 
-        // Правильный правый вектор: forward × up
-        const right = new THREE.Vector3()
-          .crossVectors(forward, new THREE.Vector3(0, 1, 0))
-          .normalize();
+        orbit.phi -= vertical * step;
+        // A degree of longitude is shorter away from the equator; divide it back out so
+        // sideways matches up/down
+        orbit.theta +=
+          (horizontal * step) / Math.max(Math.sin(orbit.phi), 0.15);
+        orbit.phi = THREE.MathUtils.clamp(orbit.phi, 0.05, Math.PI - 0.05);
 
-        const moveVector = new THREE.Vector3();
-        if (keys.w) moveVector.add(forward);
-        if (keys.s) moveVector.sub(forward);
-        if (keys.a) moveVector.sub(right);
-        if (keys.d) moveVector.add(right);
-
-        if (moveVector.lengthSq() > 0) {
-          moveVector.normalize().multiplyScalar(wasdSpeed);
-          const camLen = camera.position.length();
-          camera.position.add(moveVector);
-          camera.position.normalize().multiplyScalar(camLen);
-        }
+        camera.position.setFromSpherical(orbit).add(controls.target);
       }
       // Planet rotation & close-proximity camera attachment
       const currentData = dataRef.current;
@@ -875,6 +976,8 @@ export const Planet = ({
       renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
       renderer.domElement.removeEventListener('pointermove', handlePointerMove);
       renderer.domElement.removeEventListener('click', handleClick);
+      renderer.domElement.removeEventListener('dblclick', handleDoubleClick);
+      renderer.domElement.removeEventListener('contextmenu', handleContextMenu);
       controls.removeEventListener('change', saveView);
 
       controls.dispose();
@@ -971,13 +1074,7 @@ export const Planet = ({
       }
 
       objectMesh.position.copy(
-        planetCoordinateToVector(
-          object.x,
-          object.y,
-          data.width,
-          data.height,
-          HEIGHT_OBJECT_MARKER,
-        ),
+        tileToVector(gridFor(data), object.x, object.y, HEIGHT_OBJECT_MARKER),
       );
 
       objectMesh.userData.object = object;
@@ -996,13 +1093,7 @@ export const Planet = ({
       return;
     }
 
-    updateSelection(
-      runtime.selection,
-      selectedX,
-      selectedY,
-      data.width,
-      data.height,
-    );
+    updateSelection(runtime.selection, gridFor(data), selectedX, selectedY);
   }, [mapIdentity, selectedX, selectedY, data.width, data.height]);
 
   return (

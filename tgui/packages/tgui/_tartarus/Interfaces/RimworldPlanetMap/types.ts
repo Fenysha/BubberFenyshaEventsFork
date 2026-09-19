@@ -25,6 +25,7 @@ export const selectedPlanetTileToPlanetTile = (
     snowfall: tile.snowfall ?? 0,
     waterAvailability: tile.waterAvailability ?? 0,
     elevation: tile.elevation ?? '0',
+    river: Boolean(tile.river),
     objects: 'objects' in tile ? tile.objects : [],
   };
 };
@@ -40,8 +41,11 @@ export type PlanetMapData = {
   geologySeed: number;
   precipitationSeed: number;
 
+  /** Layer grid size: 10n x (n + 1) for hex grid frequency n */
   width: number;
   height: number;
+  /** Hex grid frequency n, see generation/hexGrid.ts */
+  gridFrequency?: number;
 
   terrainScale: number;
   heatScale: number;
@@ -159,6 +163,8 @@ export type PlanetTile = {
   waterAvailability: number;
 
   elevation: string;
+  /** A river runs through this tile */
+  river?: boolean;
   objects?: PlanetObject[];
 };
 
@@ -181,6 +187,7 @@ export type SelectedPlanetTile = {
   rainfall?: number;
   snowfall?: number;
   waterAvailability?: number;
+  river?: BooleanLike;
 };
 
 export type PlanetTileImage = {

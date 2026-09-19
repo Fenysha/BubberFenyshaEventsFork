@@ -32,7 +32,7 @@
 	ui = SStgui.try_update_ui(user, src, ui)
 
 	if(!ui)
-		ui = new(user, src, "RimworldPlanetMap")
+		ui = new /datum/tgui/map_embedded(user, src, "RimworldPlanetMap")
 		ui.open()
 
 

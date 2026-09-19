@@ -19,6 +19,8 @@ export interface PlanetLayers {
   humidity: PlanetLayer;
   precipitation: PlanetLayer;
   geology: PlanetLayer;
+  /** Per tile, a bit per neighbour its river connects to; see HexGrid.neighborsWithBits */
+  rivers: PlanetLayer;
 }
 
 type CacheEntry = {
@@ -35,6 +37,7 @@ const LAYER_NAMES = [
   'humidity',
   'precipitation',
   'geology',
+  'rivers',
 ] as const;
 
 type LayerName = (typeof LAYER_NAMES)[number];
@@ -219,6 +222,7 @@ function startLayersLoad(
         humidity: byName.humidity,
         precipitation: byName.precipitation,
         geology: byName.geology,
+        rivers: byName.rivers,
       };
       entry.loading = false;
     })

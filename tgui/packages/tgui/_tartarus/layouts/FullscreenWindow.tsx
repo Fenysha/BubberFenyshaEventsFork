@@ -8,34 +8,80 @@ type Props = PropsWithChildren<{
   theme?: string;
 }>;
 
+const FOLLOW_INTERVAL_MS = 500;
+/** DM's host control inside the map pane (MAP_UI_BROWSER), which it sizes and shows itself */
+const MAP_UI_BROWSER = 'map_ui_browser';
+
+type Point = { x: number; y: number };
+
+/** DreamSeeker's interior on screen: outer-pos is the frame, inner-pos the interior's offset in it. */
+async function getGameWindowRect(): Promise<string | null> {
+  const main = await Byond.winget('mainwindow', [
+    'outer-pos',
+    'inner-pos',
+    'inner-size',
+  ]);
+  const outer: Point | undefined = main?.['outer-pos'];
+  const inner: Point | undefined = main?.['inner-pos'];
+  const size: Point | undefined = main?.['inner-size'];
+  if (!outer || !inner || !size?.x || !size?.y) {
+    return null;
+  }
+  return `${outer.x + inner.x},${outer.y + inner.y};${size.x}x${size.y}`;
+}
+
 /**
- * A tgui window with no titlebar or resize handles that fills the screen. Use Window.Content
- * inside it as usual; the interface supplies its own close control.
+ * A tgui window with no titlebar or resize handles. Inside the map pane's host control it just
+ * fills it; as a pop-up it covers the DreamSeeker window and follows it if it moves or resizes. Use Window.Content inside it as usual; the interface
+ * supplies its own close control.
  */
 export function FullscreenWindow(props: Props) {
   const { theme, children } = props;
   const { config, suspended } = useBackend();
 
-  // Hidden until maximised, or it flashes at its old size first
+  const embedded = Byond.windowId === MAP_UI_BROWSER;
+
+  // A pop-up stays hidden until placed, or it flashes at its old size first
   useLayoutEffect(() => {
-    Byond.winset(Byond.windowId, { 'is-visible': false });
+    if (!embedded) {
+      Byond.winset(Byond.windowId, { 'is-visible': false });
+    }
   }, []);
 
   useEffect(() => {
     if (suspended) {
       return;
     }
-    Byond.winset(Byond.windowId, {
-      'can-close': true,
-      'is-maximized': true,
-      'is-visible': true,
-    });
-    Byond.sendMessage('visible');
-    globalEvents.emit('window-geometry-finished');
+    if (embedded) {
+      Byond.sendMessage('visible');
+      globalEvents.emit('window-geometry-finished');
+      return;
+    }
+    let lastRect: string | null = null;
+    let shown = false;
+    let cancelled = false;
 
-    // tgui recycles windows, and a maximised one would stay that way for the next interface
+    const fit = async () => {
+      const rect = await getGameWindowRect();
+      if (cancelled || !rect || rect === lastRect) {
+        return;
+      }
+      lastRect = rect;
+      const [pos, size] = rect.split(';');
+      Byond.winset(Byond.windowId, { pos, size });
+      if (!shown) {
+        shown = true;
+        Byond.winset(Byond.windowId, { 'can-close': true, 'is-visible': true });
+        Byond.sendMessage('visible');
+        globalEvents.emit('window-geometry-finished');
+      }
+    };
+
+    fit();
+    const timer = setInterval(fit, FOLLOW_INTERVAL_MS);
     return () => {
-      Byond.winset(Byond.windowId, { 'is-maximized': false });
+      cancelled = true;
+      clearInterval(timer);
     };
   }, [suspended]);
 

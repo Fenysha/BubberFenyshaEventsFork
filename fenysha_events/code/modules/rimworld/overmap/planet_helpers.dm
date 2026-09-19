@@ -161,7 +161,7 @@
 	var/list/result = list()
 	for(var/object_id in objects)
 		var/datum/rimworld_planet_object/object = objects[object_id]
-		if(get_dist_2d(x, y, object.x, object.y) <= radius)
+		if(get_tile_distance(x, y, object.x, object.y) <= radius)
 			result += list(object.get_data())
 	return result
 

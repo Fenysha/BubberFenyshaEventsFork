@@ -50,6 +50,7 @@ import {
   SUBBIOME_TUNDRA_PLAINS,
 } from './constants';
 
+import { getHexGrid, type HexGrid } from './hexGrid';
 import {
   getLayerCell,
   getPlanetLayers,
@@ -62,10 +63,12 @@ export type PlanetGeneratorState = 'loading' | 'ready' | 'error';
 
 export class PlanetGenerator {
   public readonly data: PlanetMapData;
+  public readonly grid: HexGrid;
   private readonly layersHandle: PlanetLayersHandle;
 
   public constructor(data: PlanetMapData) {
     this.data = data;
+    this.grid = getHexGrid(data.gridFrequency ?? data.height - 1);
     this.layersHandle = getPlanetLayers(
       data.seed,
       data.generationRevision,
@@ -108,33 +111,8 @@ export class PlanetGenerator {
   // Coordinates
   // ==========================================================================
 
-  public getRowWidth(y: number): number {
-    if (y < 1 || y > this.data.height) {
-      return this.data.width;
-    }
-    const v = (y - 0.5) / this.data.height;
-    const latitudeDeg = v * 180 - 90;
-    const latitudeRad = (latitudeDeg * Math.PI) / 180;
-    const count = Math.round(this.data.width * Math.cos(latitudeRad));
-    return Math.max(6, count);
-  }
-
   private valid(x: number, y: number): boolean {
-    if (y < 1 || y > this.data.height) {
-      return false;
-    }
-    return x >= 1 && x <= this.getRowWidth(y);
-  }
-
-  /** Sample X on the full rectangular grid (1-based). */
-  private getSampleX(x: number, y: number): number {
-    const rowWidth = this.getRowWidth(y);
-    const normalizedX = (x - 0.5) / rowWidth;
-    return this.clamp(
-      Math.floor(normalizedX * this.data.width) + 1,
-      1,
-      this.data.width,
-    );
+    return this.grid.isValid(x, y);
   }
 
   private readLayer(
@@ -145,8 +123,8 @@ export class PlanetGenerator {
     if (!layer || !this.valid(x, y)) {
       return 0;
     }
-    const sampleX = this.getSampleX(x, y);
-    return getLayerCell(layer, sampleX, y);
+    // Layer cells are tiles, one to one
+    return getLayerCell(layer, x, y);
   }
 
   // ==========================================================================
@@ -226,6 +204,15 @@ export class PlanetGenerator {
     }
   }
 
+  /** Bit per neighbour this tile's river connects to (neighborsWithBits), 0 for none. */
+  public getRiverMask(x: number, y: number): number {
+    const layers = this.getLayers();
+    if (!layers?.rivers) {
+      return 0;
+    }
+    return this.readLayer(layers.rivers, x, y);
+  }
+
   // ==========================================================================
   // Latitude
   // ==========================================================================
@@ -241,7 +228,8 @@ export class PlanetGenerator {
     const hm = humidity ?? this.getHumidity(x, y);
     const e = elevation ?? this.getElevation(x, y);
 
-    const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
+    const { lat, lon } = this.grid.latLon(x, y);
+    const baseLat = (lat + 90) / 180;
     const polarFade = Math.sin(baseLat * Math.PI);
 
     let climateOffset = 0;
@@ -256,9 +244,12 @@ export class PlanetGenerator {
     else if (e === ELEVATION_SNOW) climateOffset -= 0.12;
 
     const s = (this.data.seed ?? 0) % 10000;
-    const angle1 = (x * 0.35 + y * 0.15 + s) % 360;
-    const angle2 = (x * 0.85 - y * 0.45 + s * 1.3) % 360;
-    const angle3 = (x * 1.7 + y * 1.1 + s * 2.1) % 360;
+    // Longitude/latitude on a 2048 x 1024 scale, so the wave stays continuous across diamonds
+    const waveX = (lon + 180) * (2048 / 360);
+    const waveY = (lat + 90) * (1024 / 180);
+    const angle1 = (waveX * 0.35 + waveY * 0.15 + s) % 360;
+    const angle2 = (waveX * 0.85 - waveY * 0.45 + s * 1.3) % 360;
+    const angle3 = (waveX * 1.7 + waveY * 1.1 + s * 2.1) % 360;
     const toRad = Math.PI / 180;
 
     const wave =
@@ -274,8 +265,7 @@ export class PlanetGenerator {
     if (!this.valid(x, y)) {
       return 0;
     }
-    const normalized = (y - 0.5) / this.data.height;
-    return normalized * 180 - 90;
+    return this.grid.latLon(x, y).lat;
   }
 
   // ==========================================================================
@@ -358,7 +348,7 @@ export class PlanetGenerator {
     const m = material ?? this.getMaterial(x, y, e);
 
     const latitudeOffset = this.getLatitudeOffset(x, y, heatLevel);
-    const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
+    const baseLat = (this.getLatitude(x, y) + 90) / 180;
     const normalizedLatitude = this.clamp(baseLat + latitudeOffset, 0, 1);
     const latitudeDistance = Math.abs(normalizedLatitude - 0.5) * 2;
     const latitudeTemperature = Math.max(0, 1 - latitudeDistance) ** 1.8;
@@ -565,7 +555,7 @@ export class PlanetGenerator {
     const m = material ?? this.getMaterial(x, y, e);
     const temperature = this.getTemperature(x, y, h, e, m);
     const latitudeOffset = this.getLatitudeOffset(x, y, h, hm, e);
-    const baseLat = (y - 1) / Math.max(1, this.data.height - 1);
+    const baseLat = (this.getLatitude(x, y) + 90) / 180;
     const normalizedLatitude = this.clamp(baseLat + latitudeOffset, 0, 1);
     const polarDistance = Math.abs((normalizedLatitude - 0.5) * 2);
 
@@ -665,6 +655,7 @@ export class PlanetGenerator {
       snowfall,
       waterAvailability,
       elevation,
+      river: this.getRiverMask(x, y) !== 0,
     };
   }
 }
