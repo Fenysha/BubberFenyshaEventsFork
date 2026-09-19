@@ -196,6 +196,16 @@
 		return on_request_layout()
 	// FENYSHA EDIT ADDITION END
 
+	// FENYSHA EDIT ADDITION BEGIN - VERB_SEARCH
+	if(findtext(type, "verbsearch/") == 1)
+		return on_verb_search_message(type)
+	// FENYSHA EDIT ADDITION END
+
+	// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+	if(findtext(type, "say/") == 1)
+		return client.tgui_say?.on_panel_message(copytext(type, 5), payload)
+	// FENYSHA EDIT ADDITION END
+
 	if(type == "requestMetadata")
 		send_metadata()
 		return TRUE

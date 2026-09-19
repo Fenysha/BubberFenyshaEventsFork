@@ -1,0 +1,8 @@
+@use '../../../tgui-say/styles/colors';
+
+// tgui-say's channel colours, on the channel button
+@each $channel, $color in colors.$channel-map {
+  .SayBar--#{$channel} {
+    color: $color;
+  }
+}

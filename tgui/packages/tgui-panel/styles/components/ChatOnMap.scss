@@ -74,7 +74,8 @@ body.onmap {
 
     .Panel__header,
     .ResizeHandle,
-    .Chat__scrollButton {
+    .Chat__scrollButton,
+    .PinnedChips {
       opacity: 0;
       pointer-events: none;
       transition: opacity 300ms ease;
@@ -169,6 +170,12 @@ body.onmap {
       .ResizeHandle,
       .Chat__scrollButton {
         display: block;
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 200ms ease;
+      }
+
+      .PinnedChips {
         opacity: 1;
         pointer-events: auto;
         transition: opacity 200ms ease;

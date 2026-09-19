@@ -209,6 +209,7 @@
 			</script>
 		"}
 
+	dat += lobby_key_forwarding_script()
 	dat += "</body></html>"
 
 	return dat
@@ -317,6 +318,7 @@
 			</script>
 		"}
 
+	dat += lobby_key_forwarding_script()
 	dat += "</body></html>"
 
 	return dat

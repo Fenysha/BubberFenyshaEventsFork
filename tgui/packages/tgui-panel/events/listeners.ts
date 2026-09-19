@@ -4,6 +4,13 @@ import { playMusic, stopMusic } from '../audio/handlers';
 import { chatMessage } from '../chat/handlers';
 import { pingReply, pingSoft } from '../ping/handlers';
 import {
+  handleSayClose,
+  handleSayForce,
+  handleSayOpen,
+  handleSayProps,
+  handleSaySave,
+} from '../say/atoms';
+import {
   handleTelemetryData,
   telemetryRequest,
   testTelemetryCommand,
@@ -18,6 +25,11 @@ import {
   handleTypepaths,
   handleVerbsInit,
 } from '../verbs/handlers';
+import {
+  handleVerbSearchOpen,
+  handleVerbSearchStatus,
+  handleVerbSearchVerbs,
+} from '../verbs/verb-search';
 import { handleLoadAssets } from './handlers/assets';
 import { playerSet } from './handlers/player';
 import { roundrestart } from './handlers/roundrestart';
@@ -31,6 +43,14 @@ const listeners = {
   'verbs/targets': handleTargets,
   'verbs/typepaths': handleTypepaths,
   'verbs/hotkey_mode': handleHotkeyMode,
+  'say/close': handleSayClose,
+  'say/force': handleSayForce,
+  'say/open': handleSayOpen,
+  'say/props': handleSayProps,
+  'say/save': handleSaySave,
+  'verbsearch/open': handleVerbSearchOpen,
+  'verbsearch/status': handleVerbSearchStatus,
+  'verbsearch/verbs': handleVerbSearchVerbs,
   'asset/stylesheet': loadStyleSheet,
   'asset/mappings': handleLoadAssets,
   'audio/playMusic': playMusic,

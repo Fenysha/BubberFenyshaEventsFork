@@ -29,6 +29,10 @@
 // FENYSHA EDIT ADDITION - AUTOTRANSLATE
 @include meta.load-css('./components/Translation.scss');
 @include meta.load-css('./components/CommandBar.scss');
+// FENYSHA EDIT ADDITION - VERB_SEARCH
+@include meta.load-css('./components/VerbSearch.scss');
+// FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
+@include meta.load-css('./components/SayBar.scss');
 
 // Layouts
 @include meta.load-css('~tgui/styles/layouts/Layout.scss');

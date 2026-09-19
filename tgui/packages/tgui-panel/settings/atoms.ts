@@ -13,6 +13,7 @@ export const defaultSettings: SettingsState = {
   fontSize: 13,
   initialized: false,
   lineHeight: 1.2,
+  pinnedVerbs: [],
   statFontSize: 12,
   statLinked: true,
   statTabsStyle: 'default',

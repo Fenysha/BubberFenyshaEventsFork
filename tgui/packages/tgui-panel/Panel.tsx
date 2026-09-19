@@ -25,21 +25,36 @@ import { useKeepAlive } from './game/use-keep-alive';
 import { Notifications } from './Notifications';
 import { PingIndicator } from './ping/PingIndicator';
 import { ReconnectButton } from './reconnect';
+import { saySessionAtom } from './say/atoms'; // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
+import { SayBar } from './say/SayBar'; // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
 import { settingsVisibleAtom } from './settings/atoms';
 import { SettingsPanel } from './settings/SettingsPanel';
 import { useSettings } from './settings/use-settings';
 import { CommandBar } from './verbs/CommandBar';
+import { PinnedChips } from './verbs/PinnedChips'; // FENYSHA EDIT ADDITION - VERB_SEARCH
+import { VerbSearch } from './verbs/VerbSearch'; // FENYSHA EDIT ADDITION - VERB_SEARCH
+import { verbSearchOpenAtom } from './verbs/verb-search'; // FENYSHA EDIT ADDITION - VERB_SEARCH
 
 export function Panel(props) {
   const [audioVisible, setAudioVisible] = useAtom(visibleAtom);
   const game = useAtomValue(gameAtom);
   const { settings, updateSettings } = useSettings();
   const [settingsVisible, setSettingsVisible] = useAtom(settingsVisibleAtom);
+  const [searchOpen, setSearchOpen] = useAtom(verbSearchOpenAtom); // FENYSHA EDIT ADDITION - VERB_SEARCH
+  const sayOpen = !!useAtomValue(saySessionAtom); // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
   useChatPersistence();
   const { isOnMap, isPopup, chatCorner } = useChatPlacement();
   useKeepAlive();
 
   const frameless = isOnMap && settings.chatFrameless;
+
+  // FENYSHA EDIT ADDITION BEGIN - VERB_SEARCH - Don't reopen on the next switch back to overlay
+  useEffect(() => {
+    if (!isOnMap) {
+      setSearchOpen(false);
+    }
+  }, [isOnMap]);
+  // FENYSHA EDIT ADDITION END
   const chatTop = frameless && chatCorner.startsWith('top');
   const messageBg = frameless && settings.chatMessageBg;
 
@@ -63,7 +78,10 @@ export function Panel(props) {
     body.classList.add('frameless');
     body.classList.toggle('chat-message-bg', !!messageBg);
     body.classList.toggle('chat-top', chatTop);
-    body.classList.toggle('frameless-visible', settingsVisible);
+    body.classList.toggle(
+      'frameless-visible',
+      settingsVisible || searchOpen || sayOpen,
+    );
     chatRenderer.setFrameless(true);
 
     const show = () => {
@@ -71,7 +89,7 @@ export function Panel(props) {
       chatRenderer.scrollToBottom();
     };
     const hide = () => {
-      if (!settingsVisible) {
+      if (!settingsVisible && !searchOpen && !sayOpen) {
         body.classList.remove('frameless-visible');
       }
     };
@@ -85,7 +103,7 @@ export function Panel(props) {
       clearClasses();
       chatRenderer.setFrameless(false);
     };
-  }, [frameless, messageBg, chatTop, settingsVisible]);
+  }, [frameless, messageBg, chatTop, settingsVisible, searchOpen, sayOpen]);
 
   // The on-map chat has no titlebar either, so its header doubles as one.
   // tgui's Button and Tabs render as divs, so match their classes rather than <button>.
@@ -130,6 +148,20 @@ export function Panel(props) {
                 <Stack.Item>
                   <PingIndicator />
                 </Stack.Item>
+                {/* FENYSHA EDIT ADDITION BEGIN - VERB_SEARCH - The docked layouts still have the statpanel */}
+                {isOnMap && (
+                  <Stack.Item>
+                    <Button
+                      color="transparent"
+                      icon="search"
+                      selected={searchOpen}
+                      tooltip="Search verbs (Ctrl+K)"
+                      tooltipPosition="bottom-start"
+                      onClick={() => setSearchOpen((o) => !o)}
+                    />
+                  </Stack.Item>
+                )}
+                {/* FENYSHA EDIT ADDITION END */}
                 <Stack.Item>
                   <Button
                     color="transparent"
@@ -214,10 +246,26 @@ export function Panel(props) {
                 </Notifications.Item>
               )}
             </Notifications>
+            {/* FENYSHA EDIT ADDITION - VERB_SEARCH */}
+            {isOnMap && <VerbSearch />}
           </Section>
         </Stack.Item>
+        {/* FENYSHA EDIT ADDITION BEGIN - VERB_SEARCH */}
+        {isOnMap && (
+          <Stack.Item>
+            <PinnedChips />
+          </Stack.Item>
+        )}
+        {/* FENYSHA EDIT ADDITION END */}
         <Stack.Item>
-          <CommandBar />
+          {/* FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - Speech hotkeys take over the input bar */}
+          {/* <CommandBar /> - FENYSHA EDIT ORIGINAL */}
+          <SayBar />
+          {/* Hidden, not unmounted: mounting it asks DM to rebuild the verb list */}
+          <div style={sayOpen ? { display: 'none' } : undefined}>
+            <CommandBar />
+          </div>
+          {/* FENYSHA EDIT CHANGE END */}
         </Stack.Item>
       </Stack>
     </Pane>

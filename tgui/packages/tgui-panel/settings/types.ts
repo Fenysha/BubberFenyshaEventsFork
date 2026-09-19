@@ -17,6 +17,7 @@ export const settingsSchema = z.object({
   fontSize: z.number(),
   initialized: z.boolean(),
   lineHeight: z.number(),
+  pinnedVerbs: z.array(z.string()),
   statFontSize: z.number(),
   statLinked: z.boolean(),
   statTabsStyle: z.string(),

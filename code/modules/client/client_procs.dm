@@ -1183,6 +1183,7 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 			continue
 		panel_verbs += list(SSverbs.serialize_verb(verb_to_init))
 	tgui_panel?.window?.send_message("verbs/init", list("verbs" = panel_verbs))
+	tgui_panel?.queue_verb_search_refresh() // FENYSHA EDIT ADDITION - VERB_SEARCH
 
 /client/proc/check_panel_loaded()
 	if(stat_panel.is_ready())

@@ -6,6 +6,8 @@ import {
 } from 'common/verb-constants';
 import { useAtomValue } from 'jotai';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { commandBarSeedAtom } from '../say/atoms'; // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
+import { settingsAtom } from '../settings/atoms'; // FENYSHA EDIT ADDITION - VERB_SEARCH
 
 import {
   adminTargetsAtom,
@@ -105,6 +107,7 @@ function useSuggestions(
   const verbs = useAtomValue(adminVerbsAtom);
   const targets = useAtomValue(adminTargetsAtom);
   const typepaths = useAtomValue(typepathsAtom);
+  const pinned = useAtomValue(settingsAtom).pinnedVerbs; // FENYSHA EDIT ADDITION - VERB_SEARCH
 
   const isCurrentTypepath = currentArg ? isTypepathArg(currentArg) : false;
   const isCurrentEntity = currentArg ? isEntityArg(currentArg) : false;
@@ -124,8 +127,15 @@ function useSuggestions(
         substring.push(v);
       }
     }
-    prefix.sort((a, b) => a.name.length - b.name.length);
-    substring.sort((a, b) => a.name.length - b.name.length);
+    // FENYSHA EDIT CHANGE BEGIN - VERB_SEARCH - Pinned verbs lead their group
+    // prefix.sort((a, b) => a.name.length - b.name.length); - FENYSHA EDIT ORIGINAL
+    // substring.sort((a, b) => a.name.length - b.name.length); - FENYSHA EDIT ORIGINAL
+    const byPinnedThenLength = (a: Verb, b: Verb) =>
+      Number(pinned.includes(b.name)) - Number(pinned.includes(a.name)) ||
+      a.name.length - b.name.length;
+    prefix.sort(byPinnedThenLength);
+    substring.sort(byPinnedThenLength);
+    // FENYSHA EDIT CHANGE END
     return [...prefix, ...substring].slice(0, 8);
   })();
 
@@ -217,6 +227,19 @@ export function CommandBar() {
   useEffect(() => {
     Byond.sendMessage('verbs/request_verbs');
   }, []);
+
+  // FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT - Deleting the say bar's label lands here
+  const seed = useAtomValue(commandBarSeedAtom);
+  useEffect(() => {
+    if (!seed) return;
+    setMode('Command');
+    setSelectedVerb(null);
+    setFilledArgs([]);
+    setSelectedIndex(0);
+    setInput(seed.text.replaceAll(' ', ''));
+    inputRef.current?.focus();
+  }, [seed]);
+  // FENYSHA EDIT ADDITION END
 
   useEffect(() => {
     if (focusSignal > 0) {

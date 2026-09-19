@@ -94,6 +94,8 @@
 		client.mob?.hud_used?.displace_hud_for_chat(null)
 
 	client.view_size?.setDefault(VIEWPORT_USE_PREF)
+	// The admin say macro bakes in the open command, which depends on the layout
+	client.update_special_keybinds()
 
 	// A rebuilt control is an empty webview, so reload tgchat into it. It asks for the layout
 	// again once it's ready, which covers the message below arriving before it can listen.

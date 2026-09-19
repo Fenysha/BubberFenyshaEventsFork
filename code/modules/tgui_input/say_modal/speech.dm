@@ -79,9 +79,13 @@
 				saved_channel = SAY_CHANNEL
 
 		handle_entry("force", list("type" = "force", "entry" = saved_text, "channel" = saved_channel))
-		window.send_message("close")
+		// FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - The overlay chat can be the say input
+		// window.send_message("close") - FENYSHA EDIT ORIGINAL
+		message_input("close")
 	else
-		window.send_message("force")
+		// window.send_message("force") - FENYSHA EDIT ORIGINAL
+		message_input("force")
+		// FENYSHA EDIT CHANGE END
 
 	stop_typing()
 
@@ -90,7 +94,8 @@
  */
 /datum/tgui_say/proc/save_text()
 	saved_text = null
-	window.send_message("save")
+	// window.send_message("save") - FENYSHA EDIT ORIGINAL
+	message_input("save") // FENYSHA EDIT CHANGE - TRANSPARENT_CHAT
 
 /**
  * Makes the player force say what's in their current input box.
