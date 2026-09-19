@@ -1126,15 +1126,15 @@ export const Planet = ({
             alignItems: 'center',
             gap: '10px',
             padding: '8px 14px 8px 10px',
-            backgroundColor: 'rgba(10, 14, 22, 0.85)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '6px',
-            color: '#c8d6ee',
-            fontSize: '12px',
+            backgroundColor: 'hsla(0, 0%, 4%, 0.9)',
+            border: '1px solid var(--tartarus-border)',
+            color: 'var(--tartarus-white)',
+            fontSize: '11px',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
             pointerEvents: 'none',
             zIndex: 5,
             backdropFilter: 'blur(4px)',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
           }}
         >
           <div
@@ -1143,8 +1143,8 @@ export const Planet = ({
               height: '14px',
               flexShrink: 0,
               borderRadius: '50%',
-              border: '2px solid rgba(138, 180, 248, 0.25)',
-              borderTopColor: '#8ab4f8',
+              border: '2px solid var(--tartarus-gray-4)',
+              borderTopColor: 'var(--tartarus-white)',
               animation: 'planetLoadSpin 0.8s linear infinite',
             }}
           />

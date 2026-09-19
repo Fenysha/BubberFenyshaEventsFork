@@ -707,7 +707,9 @@ function set_theme(which) {
   if (which == 'light') {
     document.body.className = '';
     document.documentElement.className = 'light';
-  } else if (which == 'dark') {
+  // FENYSHA EDIT CHANGE - TARTARUS_THEME - the stat panel has no Tartarus look, it goes dark
+  // } else if (which == 'dark') { - FENYSHA EDIT ORIGINAL
+  } else if (which == 'dark' || which == 'tartarus') {
     document.body.className = 'dark';
     document.documentElement.className = 'dark';
   }

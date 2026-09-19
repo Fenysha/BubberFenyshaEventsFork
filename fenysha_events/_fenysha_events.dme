@@ -245,6 +245,7 @@
 #include "code\modules\transparent_chat\hud_displacement.dm"
 #include "code\modules\transparent_chat\map_ui.dm"
 #include "code\modules\transparent_chat\preference.dm"
+#include "code\modules\transparent_chat\reconnect.dm"
 #include "code\modules\transparent_chat\say_input.dm"
 #include "code\modules\transparent_chat\screen_loc_math.dm"
 #include "code\modules\transparent_chat\tgui_panel.dm"

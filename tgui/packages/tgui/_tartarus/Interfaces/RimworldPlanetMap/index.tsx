@@ -114,7 +114,7 @@ export const RimworldPlanetMap = () => {
   const selectedY = localTile?.y ?? data.selectedTile?.y;
 
   return (
-    <FullscreenWindow theme="generic">
+    <FullscreenWindow theme="tartarus">
       <Window.Content
         className="rimworld-planet-map"
         style={{
@@ -202,12 +202,10 @@ export const RimworldPlanetMap = () => {
               left: '16px',
               width: '340px',
               maxHeight: 'calc(100% - 32px)',
-              backgroundColor: 'rgba(18, 22, 30, 0.94)',
+              backgroundColor: 'hsla(0, 0%, 4%, 0.92)',
               backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '6px',
+              border: '1px solid var(--tartarus-border)',
               padding: '12px',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.65)',
               overflowY: 'auto',
               zIndex: 30,
             }}
@@ -225,12 +223,10 @@ export const RimworldPlanetMap = () => {
               right: '16px',
               width: '350px',
               maxHeight: 'calc(100% - 32px)',
-              backgroundColor: 'rgba(18, 22, 30, 0.92)',
+              backgroundColor: 'hsla(0, 0%, 4%, 0.92)',
               backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '6px',
+              border: '1px solid var(--tartarus-border)',
               padding: '12px',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.65)',
               overflowY: 'auto',
               zIndex: 10,
               pointerEvents: 'auto',

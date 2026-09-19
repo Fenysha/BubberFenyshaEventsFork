@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-export const THEMES = ['light', 'dark'] as const;
+export const THEMES = ['light', 'dark', 'tartarus'] as const; // FENYSHA EDIT CHANGE - TARTARUS_THEME - ORIGINAL: ['light', 'dark']
 
 export const CHAT_CORNERS = [
   'top-right',
@@ -31,6 +31,16 @@ export const COLORS = {
     TEXT_IMPORTANT: '#A6A6A6',
     BG_IMPORTANT: '#910707',
   },
+  // FENYSHA EDIT ADDITION BEGIN - TARTARUS_THEME
+  TARTARUS: {
+    BG_BASE: '#0A0A0A',
+    BG_SECOND: '#080808',
+    BUTTON: '#1D1D1B',
+    TEXT: '#C9C9C4',
+    TEXT_IMPORTANT: '#F3F3F0',
+    BG_IMPORTANT: '#3A1414',
+  },
+  // FENYSHA EDIT ADDITION END
 } as const;
 
 export const SETTINGS_TABS = [

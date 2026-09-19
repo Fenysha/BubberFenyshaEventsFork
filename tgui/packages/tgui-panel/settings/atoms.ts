@@ -17,7 +17,9 @@ export const defaultSettings: SettingsState = {
   statFontSize: 12,
   statLinked: true,
   statTabsStyle: 'default',
-  theme: 'light',
+  // FENYSHA EDIT ADDITION - TARTARUS_THEME - false so stored settings from before it pick up the switch
+  tartarusThemeApplied: false,
+  theme: 'tartarus', // FENYSHA EDIT CHANGE - TARTARUS_THEME - ORIGINAL: 'light'
   version: 1,
   view: {
     visible: false,

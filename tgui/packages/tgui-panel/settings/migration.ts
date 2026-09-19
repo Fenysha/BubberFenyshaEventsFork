@@ -94,6 +94,7 @@ export function startSettingsMigration(next: MergedSettings): void {
     const initialized: SettingsState = {
       ...defaultSettings,
       initialized: true,
+      tartarusThemeApplied: true, // FENYSHA EDIT ADDITION - TARTARUS_THEME
     };
     storage.set('panel-settings', initialized);
     store.set(settingsAtom, initialized);
@@ -113,6 +114,15 @@ export function startSettingsMigration(next: MergedSettings): void {
   draftSettings.initialized = true;
   draftSettings.view = defaultSettings.view; // Preserve view state
 
+  // FENYSHA EDIT ADDITION BEGIN - TARTARUS_THEME
+  // Switches everyone to the Tartarus theme once; picking another theme afterwards sticks
+  const forceTartarusTheme = !draftSettings.tartarusThemeApplied;
+  if (forceTartarusTheme) {
+    draftSettings.theme = 'tartarus';
+    draftSettings.tartarusThemeApplied = true;
+  }
+  // FENYSHA EDIT ADDITION END
+
   generalSettingsHandler(draftSettings);
   setMusicVolume(draftSettings.adminMusicVolume);
   store.set(settingsAtom, draftSettings);
@@ -124,6 +134,12 @@ export function startSettingsMigration(next: MergedSettings): void {
   }
 
   const migratedHighlights = migrateHighlights(highlightPart);
+
+  // FENYSHA EDIT ADDITION BEGIN - TARTARUS_THEME
+  if (forceTartarusTheme) {
+    storage.set('panel-settings', { ...draftSettings, ...migratedHighlights });
+  }
+  // FENYSHA EDIT ADDITION END
 
   // Just exit if no valid version was found
   if (!next.version) {

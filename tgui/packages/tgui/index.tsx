@@ -8,6 +8,7 @@
 import './styles/main.scss';
 import './styles/themes/clockwork.scss'; // SKYRAT EDIT ADDITION
 import './styles/themes/ammoworkbench.scss'; // BUBBER EDIT: ammo workbench theme
+import './_tartarus/Styles/themes/tartarus.scss'; // FENYSHA EDIT ADDITION - TARTARUS_THEME
 
 import { setupGlobalEvents } from 'tgui-core/events';
 import { setupHotKeys } from 'tgui-core/hotkeys';

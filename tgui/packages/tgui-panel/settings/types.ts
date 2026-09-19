@@ -21,6 +21,7 @@ export const settingsSchema = z.object({
   statFontSize: z.number(),
   statLinked: z.boolean(),
   statTabsStyle: z.string(),
+  tartarusThemeApplied: z.boolean(), // FENYSHA EDIT ADDITION - TARTARUS_THEME
   theme: z.string(),
   version: z.number(),
   view: viewSchema,

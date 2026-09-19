@@ -78,10 +78,13 @@ export function Panel(props) {
     body.classList.add('frameless');
     body.classList.toggle('chat-message-bg', !!messageBg);
     body.classList.toggle('chat-top', chatTop);
+    // FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - closing a panel or turning frameless on
+    // with the mouse over the chat hid it, and no mouseenter comes to show it again
     body.classList.toggle(
       'frameless-visible',
-      settingsVisible || searchOpen || sayOpen,
+      body.matches(':hover') || settingsVisible || searchOpen || sayOpen,
     );
+    // FENYSHA EDIT CHANGE END
     chatRenderer.setFrameless(true);
 
     const show = () => {

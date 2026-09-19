@@ -18,7 +18,10 @@ type Props = Partial<{
   BoxProps;
 
 export function Layout(props: Props) {
-  const { className, theme = 'nanotrasen', children, ...rest } = props;
+  // FENYSHA EDIT CHANGE BEGIN - TARTARUS_THEME - the default for windows that don't pick a theme
+  // const { className, theme = 'nanotrasen', children, ...rest } = props; - FENYSHA EDIT ORIGINAL
+  const { className, theme = 'tartarus', children, ...rest } = props;
+  // FENYSHA EDIT CHANGE END
 
   const themeClass = `theme-${theme}`;
 

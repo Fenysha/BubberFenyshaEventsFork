@@ -6,6 +6,7 @@
 
 import './styles/main.scss';
 import './styles/themes/light.scss';
+import './styles/themes/tartarus.scss'; // FENYSHA EDIT ADDITION - TARTARUS_THEME
 
 import { createRoot } from 'react-dom/client';
 import { setupGlobalEvents } from 'tgui-core/events';

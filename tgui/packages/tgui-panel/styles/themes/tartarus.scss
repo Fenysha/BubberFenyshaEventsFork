@@ -1,0 +1,54 @@
+/**
+ * FENYSHA ADDITION - TARTARUS_THEME
+ * The chat side of tgui's Tartarus theme (tgui/_tartarus/Styles/themes/tartarus.scss),
+ * which this loads as-is. Chat messages keep the dark tgchat colours.
+ */
+
+@use 'sass:meta';
+
+@include meta.load-css('~tgui/_tartarus/Styles/themes/tartarus.scss');
+
+.theme-tartarus:root {
+  --chat-text-color: var(--tartarus-text);
+}
+
+// The default derives these from --color-primary, which is near-black here
+.theme-tartarus {
+  .CommandBar__suggestion--selected {
+    box-shadow: inset 2px 0 0 var(--tartarus-white);
+    color: var(--tartarus-white);
+  }
+
+  .CommandBar__verb-name {
+    color: var(--tartarus-white);
+    font-weight: 700;
+  }
+
+  .CommandBar__verb-args {
+    color: var(--tartarus-gray-2);
+  }
+}
+
+.theme-tartarus body.onmap {
+  --onmap-base: hsla(0, 0%, 4%, var(--chat-opacity));
+  --onmap-window-border: hsla(60, 3%, 16%, 0.9);
+  --onmap-window-shadow: transparent;
+  --frameless-backdrop: hsla(0, 0%, 4%, var(--chat-opacity));
+
+  // Over the map the chat must stay see-through: no grid, no scanlines, no section frames
+  .Layout__content {
+    background: none;
+  }
+
+  .Layout::after {
+    display: none;
+  }
+
+  .Section {
+    border: 0;
+  }
+
+  .ChatMessage {
+    border-radius: 0 !important;
+  }
+}

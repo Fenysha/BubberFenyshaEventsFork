@@ -1,0 +1,205 @@
+/**
+ * Tartarus theme, after the Tartarus wiki (fenysha.github.io/tartarus-wiki):
+ * monochrome terminal, IBM Plex Mono, square corners, uppercase letter-spaced labels.
+ * The default theme for windows that don't pick their own (see Layout.tsx).
+ */
+
+.theme-tartarus:root {
+  // Wiki palette
+  --tartarus-white: #f3f3f0;
+  --tartarus-gray-1: #cecec9;
+  --tartarus-gray-2: #9b9b96;
+  --tartarus-gray-3: #6d6d69;
+  --tartarus-gray-4: #454542;
+  --tartarus-text: #c9c9c4;
+  --tartarus-bg: #0a0a0a;
+  --tartarus-bg-deep: #080808;
+  --tartarus-panel: #0d0d0d;
+  --tartarus-raised: #111111;
+  --tartarus-hover: #171717;
+  --tartarus-active: #1d1d1b;
+  --tartarus-border: #2a2a28;
+
+  --font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono',
+    monospace;
+  --font-family-mono: var(--font-family);
+
+  --border-radius-tiny: 0;
+  --border-radius-small: 0;
+  --border-radius-medium: 0;
+  --border-radius-large: 0;
+  --border-radius-larger: 0;
+  --border-radius-huge: 0;
+  --border-radius-giant: 0;
+
+  // Base
+  --color-base: var(--tartarus-bg);
+  --color-primary: var(--tartarus-active);
+  --color-secondary: var(--tartarus-bg-deep);
+  --color-section: hsla(0, 0%, 5%, 0.9);
+  --base-gradient-spread: 0;
+  --color-action: var(--tartarus-white);
+  --color-text: var(--tartarus-text);
+  --color-label: var(--tartarus-gray-2);
+  --color-border: var(--tartarus-border);
+  --color-border-primary: var(--tartarus-gray-4);
+  --color-border-secondary: var(--tartarus-white);
+  --color-scrollbar-thumb: var(--tartarus-gray-4);
+  --color-hyperlink: var(--tartarus-white);
+  --color-hyperlink-visited: var(--tartarus-gray-1);
+  --candystripe-odd: hsla(0, 0%, 100%, 0.025);
+
+  // Components
+  --titlebar-background: var(--tartarus-bg-deep);
+  --titlebar-text: var(--tartarus-white);
+  --titlebar-shadow-core: var(--tartarus-border);
+  --titlebar-shadow-color: transparent;
+
+  --button-background-default: var(--tartarus-active);
+  --button-background-selected: var(--tartarus-white);
+
+  --section-title-color: var(--tartarus-white);
+  --section-separator-color: var(--tartarus-border);
+  --section-separator-thickness: 1px;
+
+  --tab-background-hover: var(--tartarus-hover);
+  --tab-background-selected: var(--tartarus-active);
+  --tab-color: var(--tartarus-gray-2);
+  --tab-color-selected: var(--tartarus-white);
+  --tabs-container-background: var(--tartarus-panel);
+
+  --input-background: #101010;
+  --input-color: var(--tartarus-white);
+  --input-border-color: var(--tartarus-gray-4);
+  --input-border-color-focus: var(--tartarus-white);
+
+  --progress-bar-fill: var(--tartarus-gray-2);
+  --progress-bar-background: var(--tartarus-panel);
+
+  // Like the wiki's blockquotes; the typed (info/warning/...) boxes keep their colours
+  --notice-box-background: var(--tartarus-raised);
+  --notice-box-color: var(--tartarus-white);
+  --notice-box-stripes: hsla(0, 0%, 100%, 0.015);
+
+  --tooltip-background: hsla(0, 0%, 6%, 0.95);
+  --dropdown-menu-background: hsla(0, 0%, 5%, 0.97);
+  --dropdown-menu-color: var(--tartarus-text);
+  // The defaults tint these from --color-action, which is near-white here
+  --dropdown-entry-background-hover: var(--tartarus-hover);
+  --dropdown-entry-background-active: var(--tartarus-active);
+  --dropdown-entry-background-selected: var(--tartarus-border);
+  --dimmer-background: hsla(0, 0%, 2%, 0.85);
+  --blockquote-color: var(--tartarus-gray-1);
+  --divider-color: var(--tartarus-border);
+}
+
+.theme-tartarus {
+  // Faint 32px grid instead of the Nanotrasen watermark
+  .Layout__content {
+    background-color: var(--tartarus-bg-deep);
+    background-image:
+      linear-gradient(hsla(0, 0%, 100%, 0.024) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(0, 0%, 100%, 0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: 0 0;
+    background-repeat: repeat;
+  }
+
+  // Scanlines over the whole window
+  .Layout::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0.06;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0 3px,
+      #000 4px
+    );
+  }
+
+  .TitleBar__title {
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+
+    &::before {
+      content: '[T] ';
+    }
+  }
+
+  .Section {
+    border: 1px solid var(--tartarus-border);
+  }
+
+  .Section__title {
+    background-color: var(--tartarus-raised);
+  }
+
+  .Section__titleText {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+
+    &::before {
+      content: '## ';
+      color: var(--tartarus-gray-2);
+    }
+  }
+
+  .Button {
+    letter-spacing: 0.035em;
+  }
+
+  // Plain buttons: dark with a hairline, like the wiki's secondary actions
+  .Button--color--default:not(.Button--selected) {
+    --button-color: var(--tartarus-text);
+    box-shadow: inset 0 0 0 1px var(--tartarus-border);
+
+    &:hover {
+      --button-color: var(--tartarus-white);
+      box-shadow: inset 0 0 0 1px var(--tartarus-gray-3);
+    }
+  }
+
+  // Selected: inverted, like the wiki's primary action
+  .Button--selected:not(.Button--color--transparent) {
+    --button-color: var(--tartarus-bg);
+    font-weight: 700;
+  }
+
+  .Tab {
+    letter-spacing: 0.035em;
+  }
+
+  .NoticeBox {
+    border-left: 2px solid var(--tartarus-gray-2);
+    font-style: normal;
+  }
+
+  .LabeledList__label {
+    color: var(--tartarus-gray-2);
+    letter-spacing: 0.035em;
+  }
+
+  .Table__cell--header {
+    color: var(--tartarus-white);
+    font-size: 0.85em;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .Table__row:not(.Table__row--header):hover {
+    background-color: hsla(0, 0%, 100%, 0.035);
+  }
+
+  a {
+    color: var(--tartarus-white);
+    text-decoration: underline #555;
+    text-underline-offset: 0.18em;
+  }
+}
