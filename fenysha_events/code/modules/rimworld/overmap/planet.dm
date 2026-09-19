@@ -378,7 +378,8 @@
 		return map_width
 	var/v = (y - 0.5) / map_height
 	var/latitude_deg = v * 180 - 90
-	var/count = round(map_width * cos(latitude_deg))
+	// round(x, 1) is round-to-nearest like tgui's Math.round; one-argument round() floors
+	var/count = round(map_width * cos(latitude_deg), 1)
 	return max(6, count)
 
 /**
@@ -659,9 +660,10 @@
 		climate_offset -= 0.12
 
 	var/s = seed % 10000
-	var/angle1 = ((x * 0.35 + y * 0.15 + s) % 360)
-	var/angle2 = ((x * 0.85 - y * 0.45 + s * 1.3) % 360)
-	var/angle3 = ((x * 1.7 + y * 1.1 + s * 2.1) % 360)
+	// %% keeps the fraction; % truncates to integers and drifts from tgui's generator
+	var/angle1 = ((x * 0.35 + y * 0.15 + s) %% 360)
+	var/angle2 = ((x * 0.85 - y * 0.45 + s * 1.3) %% 360)
+	var/angle3 = ((x * 1.7 + y * 1.1 + s * 2.1) %% 360)
 	var/wave = ((sin(angle1) * 0.06) + (cos(angle2) * 0.04) + (sin(angle3) * 0.02)) * polar_fade
 
 	return climate_offset + wave
