@@ -3,6 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import { Button, Stack } from 'tgui-core/components';
 
+import { FullscreenWindow } from '../../layouts/FullscreenWindow';
 import { Planet } from './planet';
 import type { PlanetMapData, PlanetTile } from './types';
 
@@ -95,12 +96,7 @@ export const RimworldPlanetMap = () => {
   const selectedY = localTile?.y ?? data.selectedTile?.y;
 
   return (
-    <Window
-      width={1280}
-      height={800}
-      title={data.windowTitle || 'Planet Map'}
-      theme="generic"
-    >
+    <FullscreenWindow theme="generic">
       <Window.Content
         className="rimworld-planet-map"
         style={{
@@ -228,6 +224,6 @@ export const RimworldPlanetMap = () => {
           </div>
         )}
       </Window.Content>
-    </Window>
+    </FullscreenWindow>
   );
 };
