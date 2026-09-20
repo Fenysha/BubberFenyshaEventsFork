@@ -1,5 +1,5 @@
 /// MOD_INCLUDE_BEGIN
-#include "code\__DEFINES\__rustg.dm"
+#include "code\__DEFINES\__rust_utils.dm"
 #include "code\__DEFINES\traits.dm"
 #include "code\__DEFINES\hypothermia.dm"
 #include "code\__DEFINES\mapping.dm"
