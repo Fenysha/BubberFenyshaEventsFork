@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import { Window } from 'tgui/layouts';
 import { Button, Stack } from 'tgui-core/components';
 
 import { FullscreenWindow } from '../../layouts/FullscreenWindow';
@@ -115,7 +114,7 @@ export const RimworldPlanetMap = () => {
 
   return (
     <FullscreenWindow theme="tartarus">
-      <Window.Content
+      <FullscreenWindow.Content
         className="rimworld-planet-map"
         style={{
           padding: 0,
@@ -239,7 +238,7 @@ export const RimworldPlanetMap = () => {
             {viewType === 'overview' && <OverviewPanel />}
           </div>
         )}
-      </Window.Content>
+      </FullscreenWindow.Content>
     </FullscreenWindow>
   );
 };

@@ -1,4 +1,9 @@
-import { type PropsWithChildren, useEffect, useLayoutEffect } from 'react';
+import {
+  type ComponentProps,
+  type PropsWithChildren,
+  useEffect,
+  useLayoutEffect,
+} from 'react';
 import { UI_DISABLED, UI_INTERACTIVE } from 'tgui-core/constants';
 import { globalEvents } from 'tgui-core/events';
 import { useBackend } from '../../backend';
@@ -104,3 +109,13 @@ export function FullscreenWindow(props: Props) {
     </Layout>
   );
 }
+
+/**
+ * Window.Content's stand-in. That one drags the window on Alt+mouse down, which here drags the
+ * host control around the map pane, and it insets its children - a fullscreen view wants neither.
+ */
+function FullscreenWindowContent(props: ComponentProps<typeof Layout.Content>) {
+  return <Layout.Content {...props} />;
+}
+
+FullscreenWindow.Content = FullscreenWindowContent;
