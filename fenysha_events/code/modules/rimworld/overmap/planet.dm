@@ -103,31 +103,18 @@
 
 	var/list/possible_biomes
 
-	var/terrain_scale = RW_ELEVATION_STAMP_SIZE
-	var/heat_scale = RW_HEAT_STAMP_SIZE
-	var/humidity_scale = RW_HUMIDITY_STAMP_SIZE
-	var/geology_scale = 96
-	var/precipitation_scale = 110
-
-	var/heat_threshold_low = RW_TERRAN_HEAT_LOW
-	var/heat_threshold_high = RW_TERRAN_HEAT_HIGH
-	var/humidity_threshold_low = RW_TERRAN_HUMIDITY_LOW
-	var/humidity_threshold_high = RW_TERRAN_HUMIDITY_HIGH
-
-	var/elevation_ocean_low = RW_TERRAN_OCEAN_LOW
-	var/elevation_ocean_high = RW_TERRAN_OCEAN_HIGH
-	var/elevation_coast_low = RW_TERRAN_COAST_LOW
-	var/elevation_coast_high = RW_TERRAN_COAST_HIGH
-	var/elevation_lowland_low = RW_TERRAN_LOWLAND_LOW
-	var/elevation_lowland_high = RW_TERRAN_LOWLAND_HIGH
-	var/elevation_highland_low = RW_TERRAN_HIGHLAND_LOW
-	var/elevation_highland_high = RW_TERRAN_HIGHLAND_HIGH
-	var/elevation_mountain_low = RW_TERRAN_MOUNTAIN_LOW
-	var/elevation_mountain_high = RW_TERRAN_MOUNTAIN_HIGH
-	var/elevation_snow_low = RW_TERRAN_SNOW_LOW
-	var/elevation_snow_high = RW_TERRAN_SNOW_HIGH
-
-	var/noise_scale = RW_TERRAIN_NOISE_SCALE
+	/**
+	 * The entire generator surface, from the player/admin's point of view:
+	 * five simple sliders, each -5..5. Rust derives every noise scale,
+	 * elevation band and climate threshold from these; DM never touches
+	 * those internals directly anymore.
+	 */
+	var/slider_mountains = RW_SLIDER_DEFAULT
+	var/slider_ocean = RW_SLIDER_DEFAULT
+	var/slider_humidity = RW_SLIDER_DEFAULT
+	var/slider_temperature = RW_SLIDER_DEFAULT
+	/// Used for settlement generation, not by the terrain generator itself.
+	var/slider_population = RW_SLIDER_DEFAULT
 
 	// Derived seeds (currently unused by Rust; kept for future / compatibility)
 	var/terrain_seed
@@ -185,50 +172,23 @@
 		geology_seed = params["geologySeed"]
 	if(!isnull(params["precipitationSeed"]))
 		precipitation_seed = params["precipitationSeed"]
-	if(!isnull(params["noiseScale"]))
-		noise_scale = params["noiseScale"]
-	if(!isnull(params["terrainScale"]))
-		terrain_scale = params["terrainScale"]
-	if(!isnull(params["heatScale"]))
-		heat_scale = params["heatScale"]
-	if(!isnull(params["humidityScale"]))
-		humidity_scale = params["humidityScale"]
-	if(!isnull(params["geologyScale"]))
-		geology_scale = params["geologyScale"]
-	if(!isnull(params["precipitationScale"]))
-		precipitation_scale = params["precipitationScale"]
-	if(!isnull(params["elevationOceanLow"]))
-		elevation_ocean_low = params["elevationOceanLow"]
-	if(!isnull(params["elevationOceanHigh"]))
-		elevation_ocean_high = params["elevationOceanHigh"]
-	if(!isnull(params["elevationCoastLow"]))
-		elevation_coast_low = params["elevationCoastLow"]
-	if(!isnull(params["elevationCoastHigh"]))
-		elevation_coast_high = params["elevationCoastHigh"]
-	if(!isnull(params["elevationLowlandLow"]))
-		elevation_lowland_low = params["elevationLowlandLow"]
-	if(!isnull(params["elevationLowlandHigh"]))
-		elevation_lowland_high = params["elevationLowlandHigh"]
-	if(!isnull(params["elevationHighlandLow"]))
-		elevation_highland_low = params["elevationHighlandLow"]
-	if(!isnull(params["elevationHighlandHigh"]))
-		elevation_highland_high = params["elevationHighlandHigh"]
-	if(!isnull(params["elevationMountainLow"]))
-		elevation_mountain_low = params["elevationMountainLow"]
-	if(!isnull(params["elevationMountainHigh"]))
-		elevation_mountain_high = params["elevationMountainHigh"]
-	if(!isnull(params["elevationSnowLow"]))
-		elevation_snow_low = params["elevationSnowLow"]
-	if(!isnull(params["elevationSnowHigh"]))
-		elevation_snow_high = params["elevationSnowHigh"]
-	if(!isnull(params["heatThresholdLow"]))
-		heat_threshold_low = params["heatThresholdLow"]
-	if(!isnull(params["heatThresholdHigh"]))
-		heat_threshold_high = params["heatThresholdHigh"]
-	if(!isnull(params["humidityThresholdLow"]))
-		humidity_threshold_low = params["humidityThresholdLow"]
-	if(!isnull(params["humidityThresholdHigh"]))
-		humidity_threshold_high = params["humidityThresholdHigh"]
+
+	if(!isnull(params["mountains"]))
+		slider_mountains = clamp_generator_slider(params["mountains"])
+	if(!isnull(params["ocean"]))
+		slider_ocean = clamp_generator_slider(params["ocean"])
+	if(!isnull(params["humidity"]))
+		slider_humidity = clamp_generator_slider(params["humidity"])
+	if(!isnull(params["temperature"]))
+		slider_temperature = clamp_generator_slider(params["temperature"])
+	if(!isnull(params["population"]))
+		slider_population = clamp_generator_slider(params["population"])
+
+/**
+ * Clamps a generator slider to the supported -5..5 range.
+ */
+/datum/rimworld_planet/proc/clamp_generator_slider(value)
+	return clamp(value, RW_SLIDER_MIN, RW_SLIDER_MAX)
 
 /**
  * Applies a named planet preset (Terran, Ice, Desert, Ocean).
@@ -238,99 +198,35 @@
 		if(RW_PLANET_PRESET_TERRAN)
 			planet_type = RW_PLANET_PRESET_TERRAN
 			name = "Terran Planet"
-			terrain_scale = RW_ELEVATION_STAMP_SIZE
-			heat_scale = RW_HEAT_STAMP_SIZE
-			humidity_scale = RW_HUMIDITY_STAMP_SIZE
-			geology_scale = 96
-			precipitation_scale = 110
-			heat_threshold_low = RW_TERRAN_HEAT_LOW
-			heat_threshold_high = RW_TERRAN_HEAT_HIGH
-			humidity_threshold_low = RW_TERRAN_HUMIDITY_LOW
-			humidity_threshold_high = RW_TERRAN_HUMIDITY_HIGH
-			elevation_ocean_low = RW_TERRAN_OCEAN_LOW
-			elevation_ocean_high = RW_TERRAN_OCEAN_HIGH
-			elevation_coast_low = RW_TERRAN_COAST_LOW
-			elevation_coast_high = RW_TERRAN_COAST_HIGH
-			elevation_lowland_low = RW_TERRAN_LOWLAND_LOW
-			elevation_lowland_high = RW_TERRAN_LOWLAND_HIGH
-			elevation_highland_low = RW_TERRAN_HIGHLAND_LOW
-			elevation_highland_high = RW_TERRAN_HIGHLAND_HIGH
-			elevation_mountain_low = RW_TERRAN_MOUNTAIN_LOW
-			elevation_mountain_high = RW_TERRAN_MOUNTAIN_HIGH
-			elevation_snow_low = RW_TERRAN_SNOW_LOW
-			elevation_snow_high = RW_TERRAN_SNOW_HIGH
+			slider_mountains = RW_TERRAN_SLIDER_MOUNTAINS
+			slider_ocean = RW_TERRAN_SLIDER_OCEAN
+			slider_humidity = RW_TERRAN_SLIDER_HUMIDITY
+			slider_temperature = RW_TERRAN_SLIDER_TEMPERATURE
+			slider_population = RW_TERRAN_SLIDER_POPULATION
 		if(RW_PLANET_PRESET_ICE)
 			planet_type = RW_PLANET_PRESET_ICE
 			name = "Ice Planet"
-			terrain_scale = 72
-			heat_scale = 120
-			humidity_scale = 100
-			geology_scale = 80
-			precipitation_scale = 100
-			heat_threshold_low = RW_ICE_HEAT_LOW
-			heat_threshold_high = RW_ICE_HEAT_HIGH
-			humidity_threshold_low = RW_ICE_HUMIDITY_LOW
-			humidity_threshold_high = RW_ICE_HUMIDITY_HIGH
-			elevation_ocean_low = RW_ICE_OCEAN_LOW
-			elevation_ocean_high = RW_ICE_OCEAN_HIGH
-			elevation_coast_low = RW_ICE_COAST_LOW
-			elevation_coast_high = RW_ICE_COAST_HIGH
-			elevation_lowland_low = RW_ICE_LOWLAND_LOW
-			elevation_lowland_high = RW_ICE_LOWLAND_HIGH
-			elevation_highland_low = RW_ICE_HIGHLAND_LOW
-			elevation_highland_high = RW_ICE_HIGHLAND_HIGH
-			elevation_mountain_low = RW_ICE_MOUNTAIN_LOW
-			elevation_mountain_high = RW_ICE_MOUNTAIN_HIGH
-			elevation_snow_low = RW_ICE_SNOW_LOW
-			elevation_snow_high = RW_ICE_SNOW_HIGH
+			slider_mountains = RW_ICE_SLIDER_MOUNTAINS
+			slider_ocean = RW_ICE_SLIDER_OCEAN
+			slider_humidity = RW_ICE_SLIDER_HUMIDITY
+			slider_temperature = RW_ICE_SLIDER_TEMPERATURE
+			slider_population = RW_ICE_SLIDER_POPULATION
 		if(RW_PLANET_PRESET_DESERT)
 			planet_type = RW_PLANET_PRESET_DESERT
 			name = "Desert Planet"
-			terrain_scale = 68
-			heat_scale = 100
-			humidity_scale = 120
-			geology_scale = 88
-			precipitation_scale = 130
-			heat_threshold_low = RW_DESERT_HEAT_LOW
-			heat_threshold_high = RW_DESERT_HEAT_HIGH
-			humidity_threshold_low = RW_DESERT_HUMIDITY_LOW
-			humidity_threshold_high = RW_DESERT_HUMIDITY_HIGH
-			elevation_ocean_low = RW_DESERT_OCEAN_LOW
-			elevation_ocean_high = RW_DESERT_OCEAN_HIGH
-			elevation_coast_low = RW_DESERT_COAST_LOW
-			elevation_coast_high = RW_DESERT_COAST_HIGH
-			elevation_lowland_low = RW_DESERT_LOWLAND_LOW
-			elevation_lowland_high = RW_DESERT_LOWLAND_HIGH
-			elevation_highland_low = RW_DESERT_HIGHLAND_LOW
-			elevation_highland_high = RW_DESERT_HIGHLAND_HIGH
-			elevation_mountain_low = RW_DESERT_MOUNTAIN_LOW
-			elevation_mountain_high = RW_DESERT_MOUNTAIN_HIGH
-			elevation_snow_low = RW_DESERT_SNOW_LOW
-			elevation_snow_high = RW_DESERT_SNOW_HIGH
+			slider_mountains = RW_DESERT_SLIDER_MOUNTAINS
+			slider_ocean = RW_DESERT_SLIDER_OCEAN
+			slider_humidity = RW_DESERT_SLIDER_HUMIDITY
+			slider_temperature = RW_DESERT_SLIDER_TEMPERATURE
+			slider_population = RW_DESERT_SLIDER_POPULATION
 		if(RW_PLANET_PRESET_OCEAN)
 			planet_type = RW_PLANET_PRESET_OCEAN
 			name = "Ocean Planet"
-			terrain_scale = 100
-			heat_scale = 110
-			humidity_scale = 110
-			geology_scale = 110
-			precipitation_scale = 105
-			heat_threshold_low = RW_OCEAN_HEAT_LOW
-			heat_threshold_high = RW_OCEAN_HEAT_HIGH
-			humidity_threshold_low = RW_OCEAN_HUMIDITY_LOW
-			humidity_threshold_high = RW_OCEAN_HUMIDITY_HIGH
-			elevation_ocean_low = RW_OCEAN_OCEAN_LOW
-			elevation_ocean_high = RW_OCEAN_OCEAN_HIGH
-			elevation_coast_low = RW_OCEAN_COAST_LOW
-			elevation_coast_high = RW_OCEAN_COAST_HIGH
-			elevation_lowland_low = RW_OCEAN_LOWLAND_LOW
-			elevation_lowland_high = RW_OCEAN_LOWLAND_HIGH
-			elevation_highland_low = RW_OCEAN_HIGHLAND_LOW
-			elevation_highland_high = RW_OCEAN_HIGHLAND_HIGH
-			elevation_mountain_low = RW_OCEAN_MOUNTAIN_LOW
-			elevation_mountain_high = RW_OCEAN_MOUNTAIN_HIGH
-			elevation_snow_low = RW_OCEAN_SNOW_LOW
-			elevation_snow_high = RW_OCEAN_SNOW_HIGH
+			slider_mountains = RW_OCEAN_SLIDER_MOUNTAINS
+			slider_ocean = RW_OCEAN_SLIDER_OCEAN
+			slider_humidity = RW_OCEAN_SLIDER_HUMIDITY
+			slider_temperature = RW_OCEAN_SLIDER_TEMPERATURE
+			slider_population = RW_OCEAN_SLIDER_POPULATION
 		else
 			apply_preset(RW_PLANET_PRESET_TERRAN)
 
@@ -419,38 +315,17 @@
 	derive_seeds()
 	clear_noise_maps()
 
+	// Rust derives every noise scale, elevation band and climate threshold
+	// from these 5 sliders — see derive_generation_params() in tp_planet.rs.
 	var/list/config = list(
 		"seed" = seed,
 		"frequency" = grid_frequency,
 		"output_dir" = "data/rimworld_planets/[seed]",
-		"scales" = list(
-			"terrain" = terrain_scale,
-			"heat" = heat_scale,
-			"humidity" = humidity_scale,
-			"geology" = geology_scale,
-			"precipitation" = precipitation_scale,
-			"noise" = noise_scale
-		),
-		"elevation" = list(
-			"ocean_low" = elevation_ocean_low,
-			"ocean_high" = elevation_ocean_high,
-			"coast_low" = elevation_coast_low,
-			"coast_high" = elevation_coast_high,
-			"lowland_low" = elevation_lowland_low,
-			"lowland_high" = elevation_lowland_high,
-			"highland_low" = elevation_highland_low,
-			"highland_high" = elevation_highland_high,
-			"mountain_low" = elevation_mountain_low,
-			"mountain_high" = elevation_mountain_high,
-			"snow_low" = elevation_snow_low,
-			"snow_high" = elevation_snow_high
-		),
-		"climate" = list(
-			"heat_low" = heat_threshold_low,
-			"heat_high" = heat_threshold_high,
-			"humidity_low" = humidity_threshold_low,
-			"humidity_high" = humidity_threshold_high
-		)
+		"mountains" = slider_mountains,
+		"ocean" = slider_ocean,
+		"humidity" = slider_humidity,
+		"temperature" = slider_temperature,
+		"population" = slider_population
 	)
 
 	var/json_config = json_encode(config)
@@ -1025,8 +900,6 @@
 		"name" = name,
 		"seed" = seed,
 		"planetType" = planet_type,
-		"rotationAngle" = rotation_angle,
-		"rotationSpeed" = rotation_speed,
 		"autoRotate" = auto_rotate,
 		"terrainSeed" = terrain_seed,
 		"heatSeed" = heat_seed,
@@ -1036,28 +909,13 @@
 		"width" = map_width,
 		"height" = map_height,
 		"gridFrequency" = grid_frequency,
-		"terrainScale" = terrain_scale,
-		"heatScale" = heat_scale,
-		"humidityScale" = humidity_scale,
-		"geologyScale" = geology_scale,
-		"precipitationScale" = precipitation_scale,
-		"noiseScale" = noise_scale,
-		"elevationOceanLow" = elevation_ocean_low,
-		"elevationOceanHigh" = elevation_ocean_high,
-		"elevationCoastLow" = elevation_coast_low,
-		"elevationCoastHigh" = elevation_coast_high,
-		"elevationLowlandLow" = elevation_lowland_low,
-		"elevationLowlandHigh" = elevation_lowland_high,
-		"elevationHighlandLow" = elevation_highland_low,
-		"elevationHighlandHigh" = elevation_highland_high,
-		"elevationMountainLow" = elevation_mountain_low,
-		"elevationMountainHigh" = elevation_mountain_high,
-		"elevationSnowLow" = elevation_snow_low,
-		"elevationSnowHigh" = elevation_snow_high,
-		"heatThresholdLow" = heat_threshold_low,
-		"heatThresholdHigh" = heat_threshold_high,
-		"humidityThresholdLow" = humidity_threshold_low,
-		"humidityThresholdHigh" = humidity_threshold_high,
+		"mountains" = slider_mountains,
+		"ocean" = slider_ocean,
+		"humidity" = slider_humidity,
+		"temperature" = slider_temperature,
+		"population" = slider_population,
+		"sliderMin" = RW_SLIDER_MIN,
+		"sliderMax" = RW_SLIDER_MAX,
 		"generatedLayers" = generated_layers.Copy(),
 		"layerFiles" = layer_files.Copy(),
 		"generatorVersion" = RW_PLANET_GENERATOR_VERSION,

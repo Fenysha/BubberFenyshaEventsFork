@@ -148,6 +148,14 @@
 		log_world("map_config has invalid version [json["version"]]!")
 		return
 
+	// FENYSHA EVENT ADD: Rimrworld map
+	var/is_rimworld_map = json["planetary_map"]
+	if(is_rimworld_map)
+		rimworld_map = TRUE
+		defaulted = FALSE
+		add_startup_message("Mao loading is supressed by rimworld generation!")
+		return json
+
 	CHECK_EXISTS("map_name")
 	map_name = json["map_name"]
 	CHECK_EXISTS("map_path")

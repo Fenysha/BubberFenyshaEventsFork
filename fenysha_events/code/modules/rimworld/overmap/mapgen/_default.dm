@@ -273,6 +273,9 @@
 
 	var/centre_elevation = clamp(round(text2num("[planet.get_elevation_level(planet_x, planet_y)]")), 0, 5)
 
+	// Планетарная река на этом тайле (слой rivers из tp_planet.rs)
+	var/has_river = planet.has_river(planet_x, planet_y)
+
 	var/list/config = list(
 		"planet_seed" = planet.seed,
 		"planet_x" = planet_x,
@@ -282,11 +285,21 @@
 
 		"centre_elevation" = centre_elevation,
 		"neighbourhood_hex" = hex_neighbourhood,
+		"biome" = macro_biome,
 		"sub_biome" = sub_biome,
+		"has_river" = has_river,
 
 		"local_seed" = 0,
 		"density_bias" = 0.0,
-		"smooth_passes" = 1,
+		"smooth_passes" = 1,          // 0..=5 — how many times we smooth height
+
+
+		"relief_scale" = 1.0,
+		"detail_scale" = 1.0,
+		"river_strength" = 1.0,
+		"lake_strength" = 1.0,
+		"cave_strength" = 1.0,
+		"water_bias" = 0.0,
 
 		"caves" = generate_caves \
 			? RW_CAVEGUN_TRUE \
@@ -427,6 +440,7 @@
 
 	var/turf_type = target_biome.get_turf_for_height(
 		terrain_height,
+		sub_biome,
 		is_cave,
 		is_transition
 	)

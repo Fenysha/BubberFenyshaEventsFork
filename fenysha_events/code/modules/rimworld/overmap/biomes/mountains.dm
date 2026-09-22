@@ -4,6 +4,7 @@
 	biome_key = RW_BIOME_MOUNTAINS
 
 	speed_modifier = 2.0
+	height_modifier = 0.7
 
 	open_turf_by_height = list(
 		RW_HEIGHT_BAND_KEY_0  = /turf/open/rimworld/rock/auto,

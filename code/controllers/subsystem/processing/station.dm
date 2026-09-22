@@ -19,6 +19,22 @@ PROCESSING_SUBSYSTEM_DEF(station)
 	var/list/datum/station_goal/goals_by_type = list()
 
 /datum/controller/subsystem/processing/station/Initialize()
+	// FENYSHA EVENTS ADD rimworld map
+	if(SSmapping.current_map.rimworld_map)
+		station_traits = list()
+		selectable_traits_by_types = alist(
+			STATION_TRAIT_POSITIVE = list(),
+			STATION_TRAIT_NEUTRAL = list(),
+			STATION_TRAIT_NEGATIVE = list()
+		)
+		antag_protected_roles = list()
+		antag_restricted_roles = list()
+		goals_by_type = list()
+
+		announcer = new /datum/centcom_announcer/default()
+		// parallax post-setup is harmless / expected by the rest of the engine
+		SSparallax.post_station_setup()
+		return SS_INIT_SUCCESS
 	//If doing unit tests we don't do none of that trait shit ya know?
 	// Autowiki also wants consistent outputs, for example making sure the vending machine page always reports the normal products
 	#if !defined(UNIT_TESTS) && !defined(AUTOWIKI)
@@ -43,6 +59,7 @@ PROCESSING_SUBSYSTEM_DEF(station)
 /// This gets called by SSdynamic during initial gamemode setup.
 /// This is done because for a greenshift we want all goals to be generated
 /datum/controller/subsystem/processing/station/proc/generate_station_goals(goal_budget)
+	if(SSmapping.current_map.rimworld_map) return // FENYSHA EVENT ADD rimworld map
 	var/list/possible = subtypesof(/datum/station_goal)
 
 	var/goal_weights = 0

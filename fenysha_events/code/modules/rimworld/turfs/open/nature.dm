@@ -79,6 +79,9 @@
 	edge_priority = 5
 	baseturfs = /turf/open/rimworld/dirt
 	slowdown = 0.35
+	footstep = FOOTSTEP_SAND
+	barefootstep = FOOTSTEP_SAND
+	clawfootstep = FOOTSTEP_SAND
 
 	var/variant_amount = 15
 
@@ -97,6 +100,9 @@
 	color = GRASS_COLOR_FOREST
 	base_color = GRASS_COLOR_FOREST
 
+	footstep = FOOTSTEP_SAND
+	barefootstep = FOOTSTEP_SAND
+	clawfootstep = FOOTSTEP_SAND
 	baseturfs = /turf/open/rimworld/dirt
 	edge_priority = 7
 	fertility = 1.0
@@ -339,13 +345,12 @@
 	name = "rock"
 	desc = "solid rock"
 
-	icon = 'fenysha_events/icons/turf/floors/nature/grayscale/cobblestone_grayscale.dmi'
+	icon = 'fenysha_events/icons/turf/floors/nature/grayscale/cave_grayscale.dmi'
 	icon_state = "0"
 
 	baseturfs = /turf/open/rimworld/rock
 	fertility = 0.0
 	can_be_tilled = FALSE
-	edge_priority = 200
 
 	footstep = FOOTSTEP_CONCRETE
 	barefootstep = FOOTSTEP_CONCRETE
@@ -354,7 +359,7 @@
 
 	var/datum/material/rimworld_material/material
 	var/material_type
-	var/varian_amount = 4
+	var/varian_amount = 13
 
 	slowdown = 0.1
 

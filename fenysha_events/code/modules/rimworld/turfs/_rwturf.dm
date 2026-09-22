@@ -1,3 +1,6 @@
+/turf
+	var/rw_turf_flags
+
 /turf/open/bottom_or_region
 
 /turf/closed/rw_wall
@@ -8,6 +11,8 @@
 	base_icon_state = "material_wall"
 	explosive_resistance = 1
 	rust_resistance = RUST_RESISTANCE_BASIC
+	rw_turf_flags = NONE
+
 
 	thermal_conductivity = WALL_HEAT_TRANSFER_COEFFICIENT
 	heat_capacity = 62500
@@ -403,6 +408,8 @@ GLOBAL_LIST_EMPTY(roof_datums)
 	underfloor_accessibility = UNDERFLOOR_INTERACTABLE
 	smoothing_groups = SMOOTH_GROUP_TURF_OPEN
 	canSmoothWith = SMOOTH_GROUP_TURF_OPEN + SMOOTH_GROUP_OPEN_FLOOR
+
+	rw_turf_flags = SUPPORTS_NATURE|SUPPORTS_MOBS
 
 	/// Fertility of the soil (0.0 - 2.0+). Affects plant growth speed and quality.
 	var/fertility = 0.0

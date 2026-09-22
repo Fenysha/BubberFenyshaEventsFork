@@ -127,6 +127,10 @@ SUBSYSTEM_DEF(mapping)
 	create_plane_offsets(0, 0)
 	initialize_biomes()
 	load_map_handler(current_map) // FENYSHA EVENETS ADD MAP HANDLERS
+	if(current_map.rimworld_map)
+		initialize_rimworld_empty_world()
+		preloadTemplates()
+		return SS_INIT_SUCCESS
 	loadWorld()
 	determine_fake_sale()
 	require_area_resort()

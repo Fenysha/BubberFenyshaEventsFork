@@ -6,12 +6,12 @@ import { useBackend } from 'tgui/backend';
 import {
   Box,
   Button,
-  Collapsible,
   Dropdown,
   Input,
   LabeledList,
   NumberInput,
   Section,
+  Slider,
   Stack,
 } from 'tgui-core/components';
 
@@ -33,43 +33,22 @@ export const AdminPanel = () => {
 
   const [loadImmediately, setLoadImmediately] = useState(true);
 
+  // The whole generator surface: seed/preset plus 5 simple -5..5 sliders.
+  // Everything else (noise scales, elevation bands, climate thresholds) is
+  // derived on the Rust side from these, see derive_generation_params() in
+  // tp_planet.rs.
+  const sliderMin = data.sliderMin ?? -5;
+  const sliderMax = data.sliderMax ?? 5;
+
   const [params, setParams] = useState({
     planetType: data.planetType,
     seed: data.seed,
 
-    terrainSeed: data.terrainSeed ?? data.seed,
-    heatSeed: data.heatSeed ?? data.seed + 1,
-    humiditySeed: data.humiditySeed ?? data.seed + 2,
-    geologySeed: data.geologySeed ?? data.seed + 3,
-    precipitationSeed: data.precipitationSeed ?? data.seed + 4,
-
-    noiseScale: data.noiseScale ?? 60,
-    terrainScale: data.terrainScale ?? 340,
-    heatScale: data.heatScale ?? 150,
-    humidityScale: data.humidityScale ?? 140,
-    geologyScale: data.geologyScale ?? 96,
-    precipitationScale: data.precipitationScale ?? 110,
-
-    elevationCoastLow: data.elevationCoastLow ?? -0.02,
-    elevationCoastHigh: data.elevationCoastHigh ?? 0.04,
-
-    elevationLowlandLow: data.elevationLowlandLow ?? 0.04,
-    elevationLowlandHigh: data.elevationLowlandHigh ?? 0.18,
-
-    elevationHighlandLow: data.elevationHighlandLow ?? 0.18,
-    elevationHighlandHigh: data.elevationHighlandHigh ?? 0.3,
-
-    elevationMountainLow: data.elevationMountainLow ?? 0.3,
-    elevationMountainHigh: data.elevationMountainHigh ?? 0.42,
-
-    elevationSnowLow: data.elevationSnowLow ?? 0.42,
-    elevationSnowHigh: data.elevationSnowHigh ?? 0.5,
-
-    heatThresholdLow: data.heatThresholdLow ?? -0.2,
-    heatThresholdHigh: data.heatThresholdHigh ?? 0.25,
-
-    humidityThresholdLow: data.humidityThresholdLow ?? -0.18,
-    humidityThresholdHigh: data.humidityThresholdHigh ?? 0.25,
+    mountains: data.mountains ?? 0,
+    ocean: data.ocean ?? 0,
+    humidity: data.humidity ?? 0,
+    temperature: data.temperature ?? 0,
+    population: data.population ?? 0,
   });
 
   const updateParam = (key: string, value: number | string) => {
@@ -445,313 +424,67 @@ export const AdminPanel = () => {
             </LabeledList.Item>
           </LabeledList>
 
-          <Collapsible title="Noise & Stamp Scales">
-            <LabeledList>
-              <LabeledList.Item label="Noise Scale">
-                <NumberInput
-                  width="100%"
-                  minValue={1}
-                  maxValue={500}
-                  value={params.noiseScale}
-                  onChange={(value) => updateParam('noiseScale', value)}
-                />
-              </LabeledList.Item>
+          <LabeledList>
+            <LabeledList.Item label="Mountains">
+              <Slider
+                width="100%"
+                minValue={sliderMin}
+                maxValue={sliderMax}
+                step={1}
+                stepPixelSize={20}
+                value={params.mountains}
+                onChange={(e, value) => updateParam('mountains', value)}
+              />
+            </LabeledList.Item>
 
-              <LabeledList.Item label="Terrain Stamp">
-                <NumberInput
-                  width="100%"
-                  minValue={1}
-                  maxValue={500}
-                  value={params.terrainScale}
-                  onChange={(value) => updateParam('terrainScale', value)}
-                />
-              </LabeledList.Item>
+            <LabeledList.Item label="Ocean">
+              <Slider
+                width="100%"
+                minValue={sliderMin}
+                maxValue={sliderMax}
+                step={1}
+                stepPixelSize={20}
+                value={params.ocean}
+                onChange={(e, value) => updateParam('ocean', value)}
+              />
+            </LabeledList.Item>
 
-              <LabeledList.Item label="Heat Stamp">
-                <NumberInput
-                  width="100%"
-                  minValue={1}
-                  maxValue={500}
-                  value={params.heatScale}
-                  onChange={(value) => updateParam('heatScale', value)}
-                />
-              </LabeledList.Item>
+            <LabeledList.Item label="Humidity">
+              <Slider
+                width="100%"
+                minValue={sliderMin}
+                maxValue={sliderMax}
+                step={1}
+                stepPixelSize={20}
+                value={params.humidity}
+                onChange={(e, value) => updateParam('humidity', value)}
+              />
+            </LabeledList.Item>
 
-              <LabeledList.Item label="Humidity Stamp">
-                <NumberInput
-                  width="100%"
-                  minValue={1}
-                  maxValue={500}
-                  value={params.humidityScale}
-                  onChange={(value) => updateParam('humidityScale', value)}
-                />
-              </LabeledList.Item>
+            <LabeledList.Item label="Temperature">
+              <Slider
+                width="100%"
+                minValue={sliderMin}
+                maxValue={sliderMax}
+                step={1}
+                stepPixelSize={20}
+                value={params.temperature}
+                onChange={(e, value) => updateParam('temperature', value)}
+              />
+            </LabeledList.Item>
 
-              <LabeledList.Item label="Geology Stamp">
-                <NumberInput
-                  width="100%"
-                  minValue={1}
-                  maxValue={500}
-                  value={params.geologyScale}
-                  onChange={(value) => updateParam('geologyScale', value)}
-                />
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Precipitation Stamp">
-                <NumberInput
-                  width="100%"
-                  minValue={1}
-                  maxValue={500}
-                  value={params.precipitationScale}
-                  onChange={(value) => updateParam('precipitationScale', value)}
-                />
-              </LabeledList.Item>
-            </LabeledList>
-          </Collapsible>
-
-          <Collapsible title="Sub-Noise Seeds">
-            <LabeledList>
-              <LabeledList.Item label="Terrain Seed">
-                <NumberInput
-                  width="100%"
-                  minValue={0}
-                  maxValue={2000000000}
-                  value={params.terrainSeed}
-                  onChange={(value) => updateParam('terrainSeed', value)}
-                />
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Heat Seed">
-                <NumberInput
-                  width="100%"
-                  minValue={0}
-                  maxValue={2000000000}
-                  value={params.heatSeed}
-                  onChange={(value) => updateParam('heatSeed', value)}
-                />
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Humidity Seed">
-                <NumberInput
-                  width="100%"
-                  minValue={0}
-                  maxValue={2000000000}
-                  value={params.humiditySeed}
-                  onChange={(value) => updateParam('humiditySeed', value)}
-                />
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Geology Seed">
-                <NumberInput
-                  width="100%"
-                  minValue={0}
-                  maxValue={2000000000}
-                  value={params.geologySeed}
-                  onChange={(value) => updateParam('geologySeed', value)}
-                />
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Precipitation Seed">
-                <NumberInput
-                  width="100%"
-                  minValue={0}
-                  maxValue={2000000000}
-                  value={params.precipitationSeed}
-                  onChange={(value) => updateParam('precipitationSeed', value)}
-                />
-              </LabeledList.Item>
-            </LabeledList>
-          </Collapsible>
-
-          <Collapsible title="Elevation Thresholds">
-            <LabeledList>
-              <LabeledList.Item label="Coast Low / High">
-                <Stack>
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationCoastLow}
-                      onChange={(value) =>
-                        updateParam('elevationCoastLow', value)
-                      }
-                    />
-                  </Stack.Item>
-
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationCoastHigh}
-                      onChange={(value) =>
-                        updateParam('elevationCoastHigh', value)
-                      }
-                    />
-                  </Stack.Item>
-                </Stack>
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Lowland Low / High">
-                <Stack>
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationLowlandLow}
-                      onChange={(value) =>
-                        updateParam('elevationLowlandLow', value)
-                      }
-                    />
-                  </Stack.Item>
-
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationLowlandHigh}
-                      onChange={(value) =>
-                        updateParam('elevationLowlandHigh', value)
-                      }
-                    />
-                  </Stack.Item>
-                </Stack>
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Highland Low / High">
-                <Stack>
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationHighlandLow}
-                      onChange={(value) =>
-                        updateParam('elevationHighlandLow', value)
-                      }
-                    />
-                  </Stack.Item>
-
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationHighlandHigh}
-                      onChange={(value) =>
-                        updateParam('elevationHighlandHigh', value)
-                      }
-                    />
-                  </Stack.Item>
-                </Stack>
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Mountain Low / High">
-                <Stack>
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationMountainLow}
-                      onChange={(value) =>
-                        updateParam('elevationMountainLow', value)
-                      }
-                    />
-                  </Stack.Item>
-
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationMountainHigh}
-                      onChange={(value) =>
-                        updateParam('elevationMountainHigh', value)
-                      }
-                    />
-                  </Stack.Item>
-                </Stack>
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Snow Low / High">
-                <Stack>
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationSnowLow}
-                      onChange={(value) =>
-                        updateParam('elevationSnowLow', value)
-                      }
-                    />
-                  </Stack.Item>
-
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.elevationSnowHigh}
-                      onChange={(value) =>
-                        updateParam('elevationSnowHigh', value)
-                      }
-                    />
-                  </Stack.Item>
-                </Stack>
-              </LabeledList.Item>
-            </LabeledList>
-          </Collapsible>
-
-          <Collapsible title="Climate Thresholds">
-            <LabeledList>
-              <LabeledList.Item label="Heat Low / High">
-                <Stack>
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.heatThresholdLow}
-                      onChange={(value) =>
-                        updateParam('heatThresholdLow', value)
-                      }
-                    />
-                  </Stack.Item>
-
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.heatThresholdHigh}
-                      onChange={(value) =>
-                        updateParam('heatThresholdHigh', value)
-                      }
-                    />
-                  </Stack.Item>
-                </Stack>
-              </LabeledList.Item>
-
-              <LabeledList.Item label="Humidity Low / High">
-                <Stack>
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.humidityThresholdLow}
-                      onChange={(value) =>
-                        updateParam('humidityThresholdLow', value)
-                      }
-                    />
-                  </Stack.Item>
-
-                  <Stack.Item grow>
-                    <NumberInput
-                      width="100%"
-                      step={0.01}
-                      value={params.humidityThresholdHigh}
-                      onChange={(value) =>
-                        updateParam('humidityThresholdHigh', value)
-                      }
-                    />
-                  </Stack.Item>
-                </Stack>
-              </LabeledList.Item>
-            </LabeledList>
-          </Collapsible>
+            <LabeledList.Item label="Population">
+              <Slider
+                width="100%"
+                minValue={sliderMin}
+                maxValue={sliderMax}
+                step={1}
+                stepPixelSize={20}
+                value={params.population}
+                onChange={(e, value) => updateParam('population', value)}
+              />
+            </LabeledList.Item>
+          </LabeledList>
 
           <Box mt={2}>
             <Button.Confirm

@@ -143,6 +143,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/datum/turf_reservation/sub_level/reservation
 	var/datum/map_generator/sub_level/generator
 
+	var/ignore_lag = TRUE
 	var/phase = RW_CELL_JOB_PREPARE
 
 	var/local_x = 1
@@ -152,6 +153,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/populate_index = 1
 	var/lighting_index = 1
 	var/daylight_index = 1
+	var/smooth_index = 1
 
 	var/list/datum/callback/completion_callbacks = list()
 
@@ -206,6 +208,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 		if(RW_CELL_JOB_POPULATE)
 			return process_population()
+
+		if(RW_CELL_JOB_SMOOTH)
+			return process_smoothing()
 
 		if(RW_CELL_JOB_LIGHTING)
 			return process_lighting()
@@ -275,6 +280,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	populate_index = 1
 	lighting_index = 1
 	daylight_index = 1
+	smooth_index = 1
 
 	return TRUE
 
@@ -305,13 +311,13 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			local_x++
 			processed++
 
-			if(processed >= RW_SUBLEVEL_PLACE_BUDGET || TICK_CHECK)
+			if(processed >= RW_SUBLEVEL_PLACE_BUDGET || (!ignore_lag && TICK_CHECK))
 				return RW_CELL_LOAD_CONTINUE
 
 		local_x = 1
 		local_y++
 
-		if(processed >= RW_SUBLEVEL_PLACE_BUDGET || TICK_CHECK)
+		if(processed >= RW_SUBLEVEL_PLACE_BUDGET || (!ignore_lag && TICK_CHECK))
 			return RW_CELL_LOAD_CONTINUE
 
 	phase = RW_CELL_JOB_INITIALIZE
@@ -382,14 +388,37 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		populate_index++
 		processed++
 
-		if(processed >= RW_SUBLEVEL_POPULATE_BUDGET || TICK_CHECK)
+		if(processed >= RW_SUBLEVEL_POPULATE_BUDGET || (!ignore_lag && TICK_CHECK))
 			return RW_CELL_LOAD_CONTINUE
 
-	phase = RW_CELL_JOB_LIGHTING
+	phase = RW_CELL_JOB_SMOOTH
 	lighting_index = 1
 
 	return RW_CELL_LOAD_CONTINUE
 
+/datum/rimworld_sublevel_load_job/proc/process_smoothing()
+	if(!generator || QDELETED(generator))
+		return RW_CELL_LOAD_FAILED
+
+	var/turf_count = generator.get_generated_turf_count()
+	var/processed = 0
+
+	while(smooth_index <= turf_count)
+		var/turf/T = generator.get_generated_turf(smooth_index)
+		smooth_index++
+
+		if(T)
+			QUEUE_SMOOTH(T)
+			for(var/atom/movable/A as anything in T)
+				QUEUE_SMOOTH(A)
+
+		processed++
+
+		if(processed >= RW_SUBLEVEL_SMOOTH_BUDGET || (!ignore_lag && TICK_CHECK))
+			return RW_CELL_LOAD_CONTINUE
+
+	phase = RW_CELL_JOB_LIGHTING
+	return RW_CELL_LOAD_CONTINUE
 
 /datum/rimworld_sublevel_load_job/proc/process_lighting()
 	if(!generator || QDELETED(generator))

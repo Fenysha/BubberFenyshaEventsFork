@@ -204,19 +204,103 @@ img.bg {
 <body>
 "}
 
+/datum/lobby/trainstation
+	name = "Trainstation Lobby"
+	title_screens = list(
+		'fenysha_events/icons/lobby/trainstation_v3.png'
+	)
+
+
+/datum/lobby/trainstation/get_html(mob/dead/new_player/user)
+	var/dat = TRAINSTATION_TITLE_HTML
+
+	if(SSticker.current_state == GAME_STATE_STARTUP)
+		dat += get_loading_screen_html(user)
+	else
+		dat += {"<img src="loading_screen.gif" class="bg" alt="">"}
+
+		if(SStitle.current_notice)
+			dat += {"
+			<div class="container_notice">
+				<p class="menu_notice">[SStitle.current_notice]</p>
+			</div>
+			"}
+
+		dat += {"<div class="container_nav">"}
+
+		if(!SSticker || SSticker.current_state <= GAME_STATE_PREGAME)
+			dat += {"<a id="ready" class="menu_button" href='byond://?src=[text_ref(user)];toggle_ready=1'>[user.ready == PLAYER_READY_TO_PLAY ? "<span class='checked'>☑</span> READY" : "<span class='unchecked'>☒</span> READY"]</a>"}
+		else
+			dat += {"
+				<a class="menu_button" href='byond://?src=[text_ref(user)];late_join=1'>JOIN GAME</a>
+				<a class="menu_button" href='byond://?src=[text_ref(user)];view_manifest=1'>CREW MANIFEST</a>
+			"}
+
+		dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];observe=1'>OBSERVE</a>"}
+		dat += {"
+			<a class="menu_button" href='byond://?src=[text_ref(user)];character_setup=1'>SETUP CHARACTER</a>
+			<a class="menu_button" href='byond://?src=[text_ref(user)];game_options=1'>GAME OPTIONS</a>
+			<a id="be_antag" class="menu_button" href='byond://?src=[text_ref(user)];toggle_antag=1'>[user.client.prefs.read_preference(/datum/preference/toggle/be_antag) ? "<span class='checked'>☑</span> BE ANTAGONIST" : "<span class='unchecked'>☒</span> BE ANTAGONIST"]</a>
+		"}
+
+		if(length(GLOB.lobby_station_traits))
+			dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];job_traits=1'>JOB TRAITS</a>"}
+
+		if(!is_guest_key(user.key))
+			dat += user.playerpolls()
+
+		dat += "</div>"
+
+		dat += {"
+		<script language="JavaScript">
+			const PLAYER_READY_TO_PLAY = "[PLAYER_READY_TO_PLAY]"
+			const PLAYER_NOT_READY = "[PLAYER_NOT_READY]"
+			var ready_mark = document.getElementById("ready");
+			function toggle_ready(setReady) {
+				if(setReady === PLAYER_READY_TO_PLAY) {
+					ready_mark.innerHTML = "<span class='checked'>☑</span> READY"
+				} else {
+					ready_mark.innerHTML = "<span class='unchecked'>☒</span> READY"
+				}
+			}
+			var antag_int = 0;
+			var antag_mark = document.getElementById("be_antag");
+			var antag_marks = \[ "<span class='unchecked'>☒</span> BE ANTAGONIST", "<span class='checked'>☑</span> BE ANTAGONIST" \];
+			function toggle_antag(setAntag) {
+				if(setAntag) {
+					antag_int = setAntag;
+					antag_mark.innerHTML = antag_marks\[antag_int\];
+				} else {
+					antag_int++;
+					if (antag_int === antag_marks.length)
+						antag_int = 0;
+					antag_mark.innerHTML = antag_marks\[antag_int\];
+				}
+			}
+			function update_current_character() {}
+			function append_terminal_text() {}
+			function update_loading_progress() {}
+		</script>
+		"}
+
+	if(!user.title_screen_is_ready)
+		dat += {"
+			<script>
+				location.href = "byond://?src=[text_ref(user)];title_is_ready=1";
+			</script>
+		"}
+
+	dat += lobby_key_forwarding_script()
+	dat += "</body></html>"
+	return dat
+
+
 /datum/controller/subsystem/train_controller/proc/update_tittle_screen()
-	SStitle.title_html = TRAINSTATION_TITLE_HTML
+	SStitle.set_lobby_type(/datum/lobby/trainstation)
 	SStitle.show_title_screen()
-	/*
-	var/custom_css = file('fenysha_events/html/trainstation_tittle.css')
-	if(custom_css)
-		SStitle.current_title_screen = new(styles = custom_css)
-		SStitle.current_title_screen.title_css = custom_css
-	SStitle.set_title_image_silent('fenysha_events/icons/lobby/trainstation_v2.png')
-	*/
+
 	SSticker.set_lobby_music('fenysha_events/sounds/trainstation_lobbymusic.ogg', override = TRUE)
 	for(var/client/C in GLOB.clients)
-//		SStitle.show_title_screen_to(C)
 		C?.playtitlemusic(volume_multiplier = 1)
 
 #undef TRAINSTATION_TITLE_HTML
@@ -244,20 +328,3 @@ img.bg {
 /datum/controller/subsystem/train_controller/proc/set_lobby_screen()
 	SStitle.change_title_screen('fenysha_events/icons/lobby/trainstation_v3.png')
 	return
-
-/*
-/datum/controller/subsystem/title/proc/set_title_image_silent(desired_image_file)
-	if(desired_image_file)
-		if(!isfile(desired_image_file))
-			CRASH("Not a file passed to `/datum/controller/subsystem/title/proc/set_title_image`")
-	else
-		desired_image_file = pick_title_image()
-
-	if(!current_title_screen)
-		current_title_screen = new(screen_image_file = desired_image_file)
-	else
-		current_title_screen.set_screen_image(desired_image_file)
-
-	for(var/mob/dead/new_player/viewer as anything in GLOB.new_player_list)
-		INVOKE_ASYNC(src, PROC_REF(update_title_image_for_client), viewer.client)
-*/

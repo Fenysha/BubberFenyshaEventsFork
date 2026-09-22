@@ -16,7 +16,7 @@
 	/// ======== GENERATION =========
 
 
-	var/base_height = 1.0
+	var/height_modifier = 1.0
 	/**
 	 * Primary open turfs by height band (RW_HEIGHT_BAND_* as string keys).
 	 * Value: type path or weighted list.
@@ -73,8 +73,8 @@
 	closed_turf_type = /turf/closed/rw_wall/rock/auto
 
 
-/datum/biome/rimworld/proc/get_turf_for_height(height, is_cave = FALSE, is_transition = FALSE)
-	height = clamp(height, 0, 1)
+/datum/biome/rimworld/proc/get_turf_for_height(height, sub_biome, is_cave = FALSE, is_transition = FALSE)
+	height = clamp(height * height_modifier * get_subbiome_height_modifier(sub_biome), 0, 1)
 
 	if(is_cave)
 		if(open_turf_type_cave)
@@ -140,9 +140,15 @@
 /datum/biome/rimworld/proc/get_subbiome_height_modifier(subiome_key)
 	switch(subiome_key)
 		if(RW_SUBBIOME_SHORE)
-			return 0.9
+			return 2.33
 		if(RW_SUBBIOME_PLAINS)
-			return 1.25
+			return 2.11
+		if(RW_SUBBIOME_MARSH)
+			return 1.93
+		if(RW_SUBBIOME_ROCKY_HILLS)
+			return 0.93
+		if(RW_SUBBIOME_FOREST_HILLS)
+			return 0.93
 		else
 			return 1
 /**

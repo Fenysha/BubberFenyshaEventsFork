@@ -173,218 +173,53 @@
  * Generator configuration
  * ============================================================================
  *
- * Values are feature sizes in map cells.
+ * The whole generator surface is 5 simple sliders, each on a uniform -5..5
+ * scale. Rust (tp_planet.rs, see derive_generation_params()) turns these into
+ * every noise scale, elevation band and climate threshold the old, much more
+ * granular system used to expose to DM; none of that lives here anymore.
  *
- * Larger scale = larger geographic structures.
- * Smaller scale = more fragmented structures.
- *
- * Planet size:
- *   2048 x 1024
- *
- * These values are intentionally large because the generator operates on a
- * spherical surface and uses multiple FBM octaves.
+ *   mountains   -5 flat plains        .. 5 extreme mountain ranges
+ *   ocean       -5 arid / mostly land .. 5 water world
+ *   humidity    -5 arid               .. 5 humid/rainy
+ *   temperature -5 frozen             .. 5 scorching
+ *   population  -5 empty              .. 5 densely settled (settlements only,
+ *                                        the terrain generator ignores it)
  * ============================================================================
  */
 
-#define RW_TERRAIN_NOISE_SCALE 180
-
-#define RW_ELEVATION_STAMP_SIZE 520
-#define RW_HEAT_STAMP_SIZE 300
-#define RW_HUMIDITY_STAMP_SIZE 340
-
-#define RW_RELIEF_NOISE_SCALE 32
-#define RW_RELIEF_SHIFT_STEP 0.035
-
-#define RW_RIVER_NOISE_SCALE 22
-#define RW_RIVER_THRESHOLD 0.018
-
-#define RW_LAKE_NOISE_SCALE 60
-#define RW_LAKE_THRESHOLD 0.44
-
-#define RW_WARP_HARMONIC_OCTAVES 3
-#define RW_WARP_STRENGTH 0.12
-
-
-/**
- * ============================================================================
- * Terran planet
- * ============================================================================
- *
- * Target:
- *
- *   - several very large continents
- *   - large oceans separating continents
- *   - relatively small coastlines
- *   - broad lowland regions
- *   - meaningful highlands
- *   - mountain ranges instead of uniformly distributed mountains
- *   - snow primarily at high elevation / polar regions
- *
- * Elevation domain:
- *   [-0.5, 0.5]
- *
- * The ocean occupies roughly the lower 40% of the normalized elevation range.
- * This gives the continental noise enough room to form large connected
- * landmasses while retaining substantial oceans.
- * ============================================================================
- */
-
+#define RW_SLIDER_MIN -5
+#define RW_SLIDER_MAX 5
+#define RW_SLIDER_DEFAULT 0
 
 /**
  * ----------------------------------------------------------------------------
- * Climate
+ * Preset slider values
  * ----------------------------------------------------------------------------
  */
 
-#define RW_TERRAN_HEAT_LOW -0.18
-#define RW_TERRAN_HEAT_HIGH 0.20
+#define RW_TERRAN_SLIDER_MOUNTAINS 2
+#define RW_TERRAN_SLIDER_OCEAN 2
+#define RW_TERRAN_SLIDER_HUMIDITY 1
+#define RW_TERRAN_SLIDER_TEMPERATURE 1
+#define RW_TERRAN_SLIDER_POPULATION 3
 
-#define RW_TERRAN_HUMIDITY_LOW -0.18
-#define RW_TERRAN_HUMIDITY_HIGH 0.20
+#define RW_ICE_SLIDER_MOUNTAINS 1
+#define RW_ICE_SLIDER_OCEAN 0
+#define RW_ICE_SLIDER_HUMIDITY -1
+#define RW_ICE_SLIDER_TEMPERATURE -5
+#define RW_ICE_SLIDER_POPULATION -2
 
+#define RW_DESERT_SLIDER_MOUNTAINS 2
+#define RW_DESERT_SLIDER_OCEAN -3
+#define RW_DESERT_SLIDER_HUMIDITY -4
+#define RW_DESERT_SLIDER_TEMPERATURE 3
+#define RW_DESERT_SLIDER_POPULATION -1
 
-/**
- * ----------------------------------------------------------------------------
- * Elevation
- * ----------------------------------------------------------------------------
- */
-
-#define RW_TERRAN_OCEAN_LOW -0.50
-#define RW_TERRAN_OCEAN_HIGH -0.10
-
-#define RW_TERRAN_COAST_LOW -0.10
-#define RW_TERRAN_COAST_HIGH -0.025
-
-#define RW_TERRAN_LOWLAND_LOW -0.025
-#define RW_TERRAN_LOWLAND_HIGH 0.12
-
-#define RW_TERRAN_HIGHLAND_LOW 0.12
-#define RW_TERRAN_HIGHLAND_HIGH 0.25
-
-#define RW_TERRAN_MOUNTAIN_LOW 0.25
-#define RW_TERRAN_MOUNTAIN_HIGH 0.39
-
-#define RW_TERRAN_SNOW_LOW 0.39
-#define RW_TERRAN_SNOW_HIGH 0.50
-
-
-/**
- * ============================================================================
- * Ice planet
- * ============================================================================
- *
- * Target:
- *
- *   - large frozen continents
- *   - large frozen oceans
- *   - extensive snowfields
- *   - fewer warm lowlands
- *   - strong polar character
- * ============================================================================
- */
-
-#define RW_ICE_HEAT_LOW -0.28
-#define RW_ICE_HEAT_HIGH 0.08
-
-#define RW_ICE_HUMIDITY_LOW -0.20
-#define RW_ICE_HUMIDITY_HIGH 0.18
-
-#define RW_ICE_OCEAN_LOW -0.50
-#define RW_ICE_OCEAN_HIGH -0.13
-
-#define RW_ICE_COAST_LOW -0.13
-#define RW_ICE_COAST_HIGH -0.055
-
-#define RW_ICE_LOWLAND_LOW -0.055
-#define RW_ICE_LOWLAND_HIGH 0.08
-
-#define RW_ICE_HIGHLAND_LOW 0.08
-#define RW_ICE_HIGHLAND_HIGH 0.19
-
-#define RW_ICE_MOUNTAIN_LOW 0.19
-#define RW_ICE_MOUNTAIN_HIGH 0.32
-
-#define RW_ICE_SNOW_LOW 0.32
-#define RW_ICE_SNOW_HIGH 0.50
-
-
-/**
- * ============================================================================
- * Desert planet
- * ============================================================================
- *
- * Target:
- *
- *   - large continental masses
- *   - relatively dry interiors
- *   - broad desert regions
- *   - substantial mountain systems
- *   - limited permanent snow
- * ============================================================================
- */
-
-#define RW_DESERT_HEAT_LOW -0.05
-#define RW_DESERT_HEAT_HIGH 0.30
-
-#define RW_DESERT_HUMIDITY_LOW -0.30
-#define RW_DESERT_HUMIDITY_HIGH 0.08
-
-#define RW_DESERT_OCEAN_LOW -0.50
-#define RW_DESERT_OCEAN_HIGH -0.12
-
-#define RW_DESERT_COAST_LOW -0.12
-#define RW_DESERT_COAST_HIGH -0.045
-
-#define RW_DESERT_LOWLAND_LOW -0.045
-#define RW_DESERT_LOWLAND_HIGH 0.12
-
-#define RW_DESERT_HIGHLAND_LOW 0.12
-#define RW_DESERT_HIGHLAND_HIGH 0.25
-
-#define RW_DESERT_MOUNTAIN_LOW 0.25
-#define RW_DESERT_MOUNTAIN_HIGH 0.40
-
-#define RW_DESERT_SNOW_LOW 0.40
-#define RW_DESERT_SNOW_HIGH 0.50
-
-
-/**
- * ============================================================================
- * Ocean planet
- * ============================================================================
- *
- * Target:
- *
- *   - one or several large continental regions
- *   - enormous oceans
- *   - relatively small land percentage
- *   - broad shallow coastal regions
- * ============================================================================
- */
-
-#define RW_OCEAN_HEAT_LOW -0.18
-#define RW_OCEAN_HEAT_HIGH 0.22
-
-#define RW_OCEAN_HUMIDITY_LOW -0.10
-#define RW_OCEAN_HUMIDITY_HIGH 0.28
-
-#define RW_OCEAN_OCEAN_LOW -0.50
-#define RW_OCEAN_OCEAN_HIGH 0.02
-
-#define RW_OCEAN_COAST_LOW 0.02
-#define RW_OCEAN_COAST_HIGH 0.09
-
-#define RW_OCEAN_LOWLAND_LOW 0.09
-#define RW_OCEAN_LOWLAND_HIGH 0.20
-
-#define RW_OCEAN_HIGHLAND_LOW 0.20
-#define RW_OCEAN_HIGHLAND_HIGH 0.30
-
-#define RW_OCEAN_MOUNTAIN_LOW 0.30
-#define RW_OCEAN_MOUNTAIN_HIGH 0.40
-
-#define RW_OCEAN_SNOW_LOW 0.40
-#define RW_OCEAN_SNOW_HIGH 0.50
+#define RW_OCEAN_SLIDER_MOUNTAINS -1
+#define RW_OCEAN_SLIDER_OCEAN 4
+#define RW_OCEAN_SLIDER_HUMIDITY 2
+#define RW_OCEAN_SLIDER_TEMPERATURE 1
+#define RW_OCEAN_SLIDER_POPULATION 0
 
 
 /**

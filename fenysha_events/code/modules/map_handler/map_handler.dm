@@ -3,6 +3,7 @@
 	/// Assoc list(/datum/job/captain = -1)
 	var/list/custom_manifest
 
+	var/rimworld_map = FALSE
 	var/override_titlescreen = FALSE
 
 /datum/map_config/LoadConfig(filename, error_if_missing)
