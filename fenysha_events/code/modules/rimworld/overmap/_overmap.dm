@@ -60,7 +60,9 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 		var/old_angle = rotation_angle
 		rotation_angle = rotation_angle + delta
 		if(rotation_angle >= 360)
-			rotation_angle = 0
+			rotation_angle -= 360
+		else if(rotation_angle < 0)
+			rotation_angle += 360
 		planet.rotation_angle = rotation_angle
 
 		time_of_day = (rotation_angle / 360) * RW_HOURS_PER_DAY

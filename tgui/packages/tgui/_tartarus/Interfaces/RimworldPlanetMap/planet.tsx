@@ -72,6 +72,7 @@ type PlanetProps = {
   onObjectClick?: (object: PlanetObject) => void;
   onTileDoubleClick?: (cell: CellInteraction) => void;
   onTileRightClick?: (cell: CellInteraction) => void;
+  onLoadingChange?: (isLoading: boolean) => void;
 };
 
 type PlanetRuntime = {
@@ -91,6 +92,17 @@ const LOD_DISTANCES = {
   near: 3.6,
   medium: 5.2,
 } as const;
+
+const wrapAngle = (angle: number): number => {
+  const twoPi = Math.PI * 2;
+  let wrapped = angle % twoPi;
+  if (wrapped > Math.PI) {
+    wrapped -= twoPi;
+  } else if (wrapped <= -Math.PI) {
+    wrapped += twoPi;
+  }
+  return wrapped;
+};
 
 const getPlanetLod = (distance: number): LodLevel =>
   distance < LOD_DISTANCES.near
@@ -303,6 +315,7 @@ export const Planet = ({
   onObjectClick,
   onTileDoubleClick,
   onTileRightClick,
+  onLoadingChange,
 }: PlanetProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<PlanetRuntime | null>(null);
@@ -326,6 +339,7 @@ export const Planet = ({
     onObjectClick,
     onTileDoubleClick,
     onTileRightClick,
+    onLoadingChange,
   });
 
   callbacksRef.current = {
@@ -333,15 +347,19 @@ export const Planet = ({
     onObjectClick,
     onTileDoubleClick,
     onTileRightClick,
+    onLoadingChange,
   };
+
+  useEffect(() => {
+    callbacksRef.current.onLoadingChange?.(isLoading);
+  }, [isLoading]);
 
   useEffect(() => {
     if (data.rotationAngle == null) return;
 
     const serverRad = (data.rotationAngle * Math.PI) / 180;
 
-    let diff = serverRad - currentRotationRef.current;
-    diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+    const diff = wrapAngle(serverRad - currentRotationRef.current);
 
     if (Math.abs(diff) > Math.PI * 0.5) {
       currentRotationRef.current = serverRad;
@@ -902,15 +920,19 @@ export const Planet = ({
 
       const currentData = dataRef.current;
 
-      if (currentData.autoRotate !== false) {
+      const autoRotateEnabled =
+        currentData.autoRotate == null || Boolean(currentData.autoRotate);
+
+      if (autoRotateEnabled) {
         const speedDeg = currentData.rotationSpeed ?? 0.25;
         const radPerSecond = (speedDeg * Math.PI) / 180;
 
         let rotDelta = delta * radPerSecond;
 
         if (targetRotationRef.current != null) {
-          let diff = targetRotationRef.current - currentRotationRef.current;
-          diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+          const diff = wrapAngle(
+            targetRotationRef.current - currentRotationRef.current,
+          );
 
           const correction = diff * Math.min(1, delta * 3.0);
           rotDelta += correction;

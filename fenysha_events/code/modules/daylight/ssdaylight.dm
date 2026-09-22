@@ -25,6 +25,11 @@
 /// Alpha per leak ring (nearest outdoor first).
 GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 
+/atom
+	/// The exact daylight wash mutable_appearance currently applied to this atom
+	/// (turf or its lighting_object), so it can be cut precisely instead of guessed.
+	var/mutable_appearance/daylight_wash_applied
+
 /area
 	var/daylight = FALSE
 	/// TRUE after full-strength wash was applied to this area's turfs.
@@ -65,8 +70,7 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 	var/list/own_turfs = list()
 	// Do NOT use `as anything` — it skips the turf type filter and can yield mobs/objs.
 	for(var/turf/area_turf in src)
-		var/atom/holder = daylight_overlay_holder(area_turf)
-		holder?.add_overlay(get_daylight_overlay_appearance(255, area_turf))
+		apply_daylight_wash(area_turf, 255)
 		own_turfs += area_turf
 		CHECK_TICK
 	leak_daylight(own_turfs)
@@ -100,10 +104,7 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 				var/area/neighbor_area = neighbor.loc
 				if(neighbor_area?.daylight)
 					continue
-				var/mutable_appearance/leak = get_daylight_overlay_appearance(leak_falloff[ring], neighbor)
-				var/atom/holder = daylight_overlay_holder(neighbor)
-				clear_daylight_wash(neighbor)
-				holder?.add_overlay(leak)
+				var/mutable_appearance/leak = apply_daylight_wash(neighbor, leak_falloff[ring])
 				daylight_leaked[neighbor] = leak
 				next_frontier += neighbor
 		frontier = next_frontier
@@ -170,15 +171,27 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 	return target.lighting_object || target
 
 
-/// Strip every known wash strength from both possible holders.
 /proc/clear_daylight_wash(turf/target)
 	if(!isturf(target))
 		return
 	var/atom/movable/lighting_object/lighting = target.lighting_object
-	for(var/strength in (list(255) + GLOB.daylight_leak_falloff))
-		var/mutable_appearance/wash = get_daylight_overlay_appearance(strength, target)
-		target.cut_overlay(wash)
-		lighting?.cut_overlay(wash)
+	if(target.daylight_wash_applied)
+		target.cut_overlay(target.daylight_wash_applied)
+		target.daylight_wash_applied = null
+	if(lighting?.daylight_wash_applied)
+		lighting.cut_overlay(lighting.daylight_wash_applied)
+		lighting.daylight_wash_applied = null
+
+
+/proc/apply_daylight_wash(turf/target, strength)
+	var/atom/holder = daylight_overlay_holder(target)
+	if(isnull(holder))
+		return
+	clear_daylight_wash(target)
+	var/mutable_appearance/wash = get_daylight_overlay_appearance(strength, target)
+	holder.add_overlay(wash)
+	holder.daylight_wash_applied = wash
+	return wash
 
 
 
@@ -615,10 +628,7 @@ SUBSYSTEM_DEF(daylight)
 		if(!loaded_area.daylight_lit)
 			loaded_area.apply_daylight_overlay()
 			continue
-		var/mutable_appearance/light = get_daylight_overlay_appearance(255, loaded_turf)
-		var/atom/holder = daylight_overlay_holder(loaded_turf)
-		holder?.cut_overlay(light)
-		holder?.add_overlay(light)
+		apply_daylight_wash(loaded_turf, 255)
 		CHECK_TICK
 
 	if(rebuild_leaks)
@@ -637,14 +647,15 @@ SUBSYSTEM_DEF(daylight)
 		var/area/rimworld/RA = turf_area
 		var/strength = round(clamp(RA.rimworld_sun_intensity >= 0 ? RA.rimworld_sun_intensity : 1, 0, 1) * 255, 1)
 		if(strength > 0)
-			holder.add_overlay(get_daylight_overlay_appearance(strength, changed))
+			apply_daylight_wash(changed, strength)
 		return
 	if(turf_area?.daylight)
-		holder.add_overlay(get_daylight_overlay_appearance(255, changed))
+		apply_daylight_wash(changed, 255)
 		return
 	var/mutable_appearance/leaked = get_leaked_daylight(changed)
 	if(leaked)
 		holder.add_overlay(leaked)
+		holder.daylight_wash_applied = leaked
 
 
 /datum/controller/subsystem/daylight/proc/rebuild_daylight_leaks()

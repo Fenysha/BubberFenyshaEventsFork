@@ -39,11 +39,11 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 
 /area/rimworld/proc/get_local_solar_hour()
 	if(isnull(rimworld_forced_intensity) && cell?.planet)
-		var/angle = cell.get_solar_angle() // 0 noon … 180 midnight
-		var/hour = 12 - (angle / 180) * 12
-		if(hour < 0)
-			hour += 24
-		return hour
+		// BUG FIX: get_solar_angle() is unsigned (0..180), so the old code here
+		// could never tell dawn from dusk — every tile past noon collapsed back
+		// onto the 0-12h morning range and got dawn/sunrise colours in the
+		// afternoon/evening. get_solar_hour() keeps the sign, giving a real 0-24h.
+		return cell.get_solar_hour()
 	return SSrimworld_planetmap?.time_of_day || 12
 
 
@@ -72,7 +72,9 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	if(!isnull(phase_i))
 		intensity = clamp(intensity * phase_i, 0, 1)
 
-	if(!force && abs(intensity - rimworld_sun_intensity) < 0.02 && color == rimworld_sun_color)
+	var/new_strength = round(clamp(intensity, 0, 1) * 255, 1)
+	var/old_strength = round(clamp(rimworld_sun_intensity >= 0 ? rimworld_sun_intensity : -1, 0, 1) * 255, 1)
+	if(!force && rimworld_sun_intensity >= 0 && new_strength == old_strength && color == rimworld_sun_color)
 		return
 
 	rimworld_sun_intensity = intensity
@@ -94,9 +96,7 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	daylight_lit = TRUE
 	var/list/own_turfs = list()
 	for(var/turf/area_turf in src)
-		clear_daylight_wash(area_turf)
-		var/atom/holder = daylight_overlay_holder(area_turf)
-		holder?.add_overlay(get_daylight_overlay_appearance(strength, area_turf))
+		apply_daylight_wash(area_turf, strength)
 		own_turfs += area_turf
 		CHECK_TICK
 	relight_daylight_leaks_scaled(own_turfs, intensity)
@@ -140,10 +140,7 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 				var/area/neighbor_area = neighbor.loc
 				if(neighbor_area?.daylight)
 					continue
-				var/mutable_appearance/leak = get_daylight_overlay_appearance(scaled[ring], neighbor)
-				var/atom/holder = daylight_overlay_holder(neighbor)
-				clear_daylight_wash(neighbor)
-				holder?.add_overlay(leak)
+				var/mutable_appearance/leak = apply_daylight_wash(neighbor, scaled[ring])
 				daylight_leaked[neighbor] = leak
 				next_frontier += neighbor
 		frontier = next_frontier
@@ -577,6 +574,13 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	if(!planet)
 		return 180
 	return planet.get_solar_angle(x, y)
+
+
+/// Local solar clock hour (0-24), correctly distinguishing morning from afternoon.
+/datum/planet_cell/proc/get_solar_hour()
+	if(!planet)
+		return 12
+	return planet.get_solar_hour(x, y)
 
 /**
  * ------------------------------------------------------------------

@@ -12,12 +12,9 @@ export const ATLAS_ROWS = Math.ceil(
 const FRAME_PADDING = 4;
 
 let atlas: Promise<THREE.CanvasTexture> | null = null;
+/** True once every sheet made it into the currently-cached atlas. */
+let atlasComplete = false;
 
-/**
- * All decor sheets packed into one texture, frame f at column f % ATLAS_COLUMNS, row
- * f / ATLAS_COLUMNS (row 0 at the top). Built once and shared; a sheet that fails to load
- * just leaves its frames empty.
- */
 export const getDecorAtlas = (): Promise<THREE.CanvasTexture> => {
   if (!atlas) {
     atlas = buildAtlas();
@@ -34,8 +31,11 @@ const buildAtlas = async (): Promise<THREE.CanvasTexture> => {
   const sheets = await Promise.all(
     ICON_SHEETS.map((name) => loadIconSheet(name)),
   );
+
+  let allLoaded = true;
   sheets.forEach((sheet, sheetIndex) => {
     if (!sheet || !context) {
+      allLoaded = false;
       return;
     }
     for (let variant = 0; variant < ICON_FRAME_COUNT; variant++) {
@@ -64,5 +64,13 @@ const buildAtlas = async (): Promise<THREE.CanvasTexture> => {
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = true;
   texture.needsUpdate = true;
+
+  atlasComplete = allLoaded;
+  if (!allLoaded) {
+    atlas = null;
+  }
   return texture;
 };
+
+/** True once every decor sheet has successfully made it into the cached atlas. */
+export const isDecorAtlasComplete = (): boolean => atlasComplete;

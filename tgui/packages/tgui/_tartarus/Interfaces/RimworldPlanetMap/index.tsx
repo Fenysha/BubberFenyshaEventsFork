@@ -16,6 +16,7 @@ export const RimworldPlanetMap = () => {
 
   const [localTile, setLocalTile] = useState<PlanetTile | null>(null);
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [isPlanetLoading, setIsPlanetLoading] = useState(true);
 
   // State toggles for visual effects
   const [showAtmosphere, setShowAtmosphere] = useState(true);
@@ -134,18 +135,20 @@ export const RimworldPlanetMap = () => {
           onObjectClick={handleObjectClick}
           onTileDoubleClick={(cell) => actOnCell('tile_double_click', cell)}
           onTileRightClick={(cell) => actOnCell('tile_right_click', cell)}
+          onLoadingChange={setIsPlanetLoading}
         />
 
-        <div
-          style={{
-            position: 'absolute',
-            top: '16px',
-            left: '16px',
-            zIndex: 20,
-            pointerEvents: 'none',
-          }}
-        >
-          <Stack style={{ pointerEvents: 'auto' }}>
+        {!isPlanetLoading && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '16px',
+              left: '16px',
+              zIndex: 20,
+              pointerEvents: 'none',
+            }}
+          >
+            <Stack style={{ pointerEvents: 'auto' }}>
             <Stack.Item>
               <Button
                 color="danger"
@@ -189,10 +192,11 @@ export const RimworldPlanetMap = () => {
                 {showRightPanel ? 'Hide Panel' : 'Show Panel'}
               </Button>
             </Stack.Item>
-          </Stack>
-        </div>
+            </Stack>
+          </div>
+        )}
 
-        {activeTile && (
+        {!isPlanetLoading && activeTile && (
           <div
             className="rimworld-planet-map__tile-overlay"
             style={{
@@ -213,7 +217,7 @@ export const RimworldPlanetMap = () => {
           </div>
         )}
 
-        {showRightPanel && (
+        {!isPlanetLoading && showRightPanel && (
           <div
             className="rimworld-planet-map__overlay"
             style={{

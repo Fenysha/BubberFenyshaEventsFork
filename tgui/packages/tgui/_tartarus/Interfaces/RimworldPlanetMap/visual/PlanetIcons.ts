@@ -166,6 +166,8 @@ export const resolveTileIcon = (
 
 const iconSheetCache = new Map<string, Promise<LoadedIconSheet | null>>();
 
+const ICON_LOAD_TIMEOUT_MS = 8000;
+
 export const loadIconSheet = (
   name: string,
 ): Promise<LoadedIconSheet | null> => {
@@ -175,10 +177,23 @@ export const loadIconSheet = (
   }
 
   const promise = new Promise<LoadedIconSheet | null>((resolve) => {
-    const timer: NodeJS.Timeout | null = setTimeout(() => {
+    let settled = false;
+    const finish = (result: LoadedIconSheet | null, isFailure: boolean) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (isFailure) {
+        // Don't leave a failed attempt cached — let the next caller retry from scratch.
+        iconSheetCache.delete(name);
+      }
+      resolve(result);
+    };
+
+    const timer: NodeJS.Timeout = setTimeout(() => {
       console.warn(`[planetIcons] Timeout loading asset "${name}".`);
-      resolve(null);
-    }, 2500);
+      finish(null, true);
+    }, ICON_LOAD_TIMEOUT_MS);
 
     let src: string | null = null;
     try {
@@ -188,8 +203,8 @@ export const loadIconSheet = (
     }
 
     if (!src) {
-      if (timer) clearTimeout(timer);
-      resolve(null);
+      clearTimeout(timer);
+      finish(null, true);
       return;
     }
 
@@ -197,17 +212,17 @@ export const loadIconSheet = (
     image.crossOrigin = 'anonymous';
     image.decoding = 'async';
     image.onload = () => {
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer);
       const frameSize = image.naturalHeight || 64;
       const frameCount = Math.floor(image.naturalWidth / frameSize) || 4;
-      resolve({ image, frameSize, frameCount });
+      finish({ image, frameSize, frameCount }, false);
     };
     image.onerror = () => {
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer);
       console.warn(
         `[planetIcons] Failed to load icon sheet "${name}" (${src}).`,
       );
-      resolve(null);
+      finish(null, true);
     };
     image.src = src;
   });

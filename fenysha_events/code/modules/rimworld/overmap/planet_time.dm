@@ -22,14 +22,39 @@
 
 /**
  * Angular distance from the tile to the subsolar point (0 = noon, 180 = midnight).
+ * Unsigned — fine for intensity falloff, which is symmetric around noon.
  */
 /datum/rimworld_planet/proc/get_solar_angle(x, y)
+	return abs(get_solar_hour_angle(x, y))
+
+
+/**
+ * Signed angular offset of the tile from the subsolar point, in -180..180.
+ * Positive = tile hasn't reached the sun yet (morning side), negative = tile is
+ * past the sun (afternoon/evening side). Needed to recover a real 0-24h local
+ * time — get_solar_angle() alone can't, since it discards this sign.
+ */
+/datum/rimworld_planet/proc/get_solar_hour_angle(x, y)
 	var/lon = get_longitude(x, y)
 	var/sun = get_sun_longitude()
-	var/delta = abs(lon - sun)
-	if(delta > 180)
-		delta = 360 - delta
+	var/delta = lon - sun
+	// Normalize to -180..180
+	delta = ((delta + 180) % 360 + 360) % 360 - 180
 	return delta
+
+
+/**
+ * Local solar clock hour (0-24) at the tile. Unlike get_solar_angle(), this keeps
+ * the morning/afternoon sign, so sunrise- and sunset-side tiles resolve to their
+ * own correct phase (and colour) instead of both collapsing onto the morning half.
+ */
+/datum/rimworld_planet/proc/get_solar_hour(x, y)
+	var/delta = get_solar_hour_angle(x, y) // >0 morning, <0 afternoon
+	var/hour = 12 - (delta / 180) * 12
+	hour = hour % 24
+	if(hour < 0)
+		hour += 24
+	return hour
 
 
 /**
