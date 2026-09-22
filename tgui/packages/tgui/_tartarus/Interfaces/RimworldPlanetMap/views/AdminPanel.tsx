@@ -132,6 +132,153 @@ export const AdminPanel = () => {
       </Stack.Item>
 
       <Stack.Item>
+        <Section title="Calendar & Time">
+          <LabeledList>
+            <LabeledList.Item label="Date">
+              {data.quadrumName} {data.dayOfQuadrum}, {data.currentYear}
+            </LabeledList.Item>
+            <LabeledList.Item label="Day of year">
+              {data.dayOfYear} / {data.daysPerYear ?? 60}
+            </LabeledList.Item>
+            <LabeledList.Item label="Season N / S">
+              {data.seasonNorth} / {data.seasonSouth}
+            </LabeledList.Item>
+
+            <LabeledList.Item label="Time of day (h)">
+              <NumberInput
+                width="100%"
+                step={0.25}
+                minValue={0}
+                maxValue={24}
+                value={Number(data.timeOfDay?.toFixed?.(2) ?? 0)}
+                onChange={(value) => act('set_time_of_day', { hour: value })}
+              />
+            </LabeledList.Item>
+
+            <LabeledList.Item label="Time scale">
+              <NumberInput
+                width="100%"
+                step={0.5}
+                minValue={0}
+                maxValue={100}
+                value={data.timeScale ?? 1}
+                onChange={(value) => act('set_time_scale', { scale: value })}
+              />
+            </LabeledList.Item>
+
+            <LabeledList.Item label="Year">
+              <NumberInput
+                width="100%"
+                step={1}
+                minValue={data.startingYear ?? 5500}
+                maxValue={9999}
+                value={data.currentYear ?? 5500}
+                onChange={(value) =>
+                  act('set_calendar', {
+                    year: value,
+                    dayOfYear: data.dayOfYear ?? 1,
+                  })
+                }
+              />
+            </LabeledList.Item>
+
+            <LabeledList.Item label="Day of year">
+              <NumberInput
+                width="100%"
+                step={1}
+                minValue={1}
+                maxValue={data.daysPerYear ?? 60}
+                value={data.dayOfYear ?? 1}
+                onChange={(value) =>
+                  act('set_calendar', {
+                    year: data.currentYear ?? 5500,
+                    dayOfYear: value,
+                  })
+                }
+              />
+            </LabeledList.Item>
+
+            <LabeledList.Item label="Quadrum">
+              <Dropdown
+                width="100%"
+                selected={data.quadrumName}
+                options={data.quadrumNames ?? []}
+                onSelected={(name) => {
+                  const idx = (data.quadrumNames ?? []).indexOf(name);
+                  if (idx >= 0) {
+                    act('set_quadrum', { quadrum: String(idx) });
+                  }
+                }}
+              />
+            </LabeledList.Item>
+
+            <LabeledList.Item label="Season (North)">
+              <Dropdown
+                width="100%"
+                selected={data.seasonNorth}
+                options={data.seasons ?? ['spring', 'summer', 'fall', 'winter']}
+                onSelected={(season) => act('set_season_north', { season })}
+              />
+            </LabeledList.Item>
+          </LabeledList>
+
+          <Box mt={1}>
+            <Stack>
+              <Stack.Item grow>
+                <Button
+                  fluid
+                  icon="forward"
+                  onClick={() => act('timeskip_days', { days: 1 })}
+                >
+                  +1 day
+                </Button>
+              </Stack.Item>
+              <Stack.Item grow>
+                <Button
+                  fluid
+                  icon="forward"
+                  onClick={() => act('timeskip_days', { days: 15 })}
+                >
+                  +1 quadrum
+                </Button>
+              </Stack.Item>
+              <Stack.Item grow>
+                <Button
+                  fluid
+                  icon="forward"
+                  onClick={() => act('timeskip_days', { days: 60 })}
+                >
+                  +1 year
+                </Button>
+              </Stack.Item>
+            </Stack>
+          </Box>
+          <Box mt={1}>
+            <Stack>
+              <Stack.Item grow>
+                <Button
+                  fluid
+                  icon="backward"
+                  onClick={() => act('timeskip_days', { days: -1 })}
+                >
+                  −1 day
+                </Button>
+              </Stack.Item>
+              <Stack.Item grow>
+                <Button
+                  fluid
+                  icon="backward"
+                  onClick={() => act('timeskip_days', { days: -15 })}
+                >
+                  −1 quadrum
+                </Button>
+              </Stack.Item>
+            </Stack>
+          </Box>
+        </Section>
+      </Stack.Item>
+
+      <Stack.Item>
         <Section title="Selected Cell">
           {!hasSelection ? (
             <Box color="label">Select a tile on the planet.</Box>
@@ -149,6 +296,20 @@ export const AdminPanel = () => {
 
                   <LabeledList.Item label="Sub-biome">
                     {selected.subBiome}
+                  </LabeledList.Item>
+
+                  <LabeledList.Item label="Season">
+                    {selected.season ?? '—'}
+                  </LabeledList.Item>
+
+                  <LabeledList.Item label="Daylight">
+                    {selected.isDaylight ? 'Day' : 'Night'}
+                  </LabeledList.Item>
+
+                  <LabeledList.Item label="Sun intensity">
+                    {selected.sunIntensity != null
+                      ? `${(selected.sunIntensity * 100).toFixed(0)}%`
+                      : '—'}
                   </LabeledList.Item>
 
                   <LabeledList.Item label="Elevation">

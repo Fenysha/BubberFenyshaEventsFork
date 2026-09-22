@@ -168,3 +168,11 @@
 	return output
 
 #undef DEADLINE_TIMESTAMP
+
+
+/datum/asset/simple/lobby
+	assets = list(
+		"OCRAExtended.ttf" = 'fenysha_events/html/OCRAEXT.TTF',
+	)
+
+

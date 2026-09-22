@@ -310,6 +310,9 @@ export const Planet = ({
   const dataRef = useRef(data);
   dataRef.current = data;
 
+  const currentRotationRef = useRef(0);
+  const targetRotationRef = useRef<number | null>(null);
+
   const keysPressed = useRef<{ [key: string]: boolean }>({});
 
   const mapIdentity = getPlanetMapIdentity(data);
@@ -331,6 +334,27 @@ export const Planet = ({
     onTileDoubleClick,
     onTileRightClick,
   };
+
+  useEffect(() => {
+    if (data.rotationAngle == null) return;
+
+    const serverRad = (data.rotationAngle * Math.PI) / 180;
+
+    let diff = serverRad - currentRotationRef.current;
+    diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+
+    if (Math.abs(diff) > Math.PI * 0.5) {
+      currentRotationRef.current = serverRad;
+      targetRotationRef.current = serverRad;
+
+      if (runtimeRef.current) {
+        runtimeRef.current.planetGroup.rotation.y = serverRad;
+      }
+      return;
+    }
+
+    targetRotationRef.current = currentRotationRef.current + diff;
+  }, [data.rotationAngle]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -472,7 +496,10 @@ export const Planet = ({
     scene.add(planetGroup);
 
     if (data.rotationAngle != null) {
-      planetGroup.rotation.y = (data.rotationAngle * Math.PI) / 180;
+      const initialRad = (data.rotationAngle * Math.PI) / 180;
+      planetGroup.rotation.y = initialRad;
+      currentRotationRef.current = initialRad;
+      targetRotationRef.current = initialRad;
     }
 
     const cachedTextures = textureCache.get(mapIdentity);
@@ -792,8 +819,7 @@ export const Planet = ({
 
       const distance = controls.getDistance();
 
-      // How many pixels a cell spans at the point nearest the camera: fade icons in once
-      // they're big enough to read, and pick the atlas mip that matches their size
+      // How many pixels a cell spans at the point nearest the camera
       const cellWorld = grid.spacing * PLANET_RADIUS;
       const pixelsPerUnit =
         renderer.domElement.height /
@@ -853,8 +879,6 @@ export const Planet = ({
       }
       clouds.rotation.y = time * 0.012;
 
-      // WASD orbits in latitude/longitude. The rate scales with height above the surface, so
-      // the ground scrolls past at the same on-screen speed at any zoom.
       const keys = keysPressed.current;
       const vertical = (keys.w ? 1 : 0) - (keys.s ? 1 : 0);
       const horizontal = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
@@ -869,22 +893,32 @@ export const Planet = ({
         );
 
         orbit.phi -= vertical * step;
-        // A degree of longitude is shorter away from the equator; divide it back out so
-        // sideways matches up/down
         orbit.theta +=
           (horizontal * step) / Math.max(Math.sin(orbit.phi), 0.15);
         orbit.phi = THREE.MathUtils.clamp(orbit.phi, 0.05, Math.PI - 0.05);
 
         camera.position.setFromSpherical(orbit).add(controls.target);
       }
-      // Planet rotation & close-proximity camera attachment
-      const currentData = dataRef.current;
-      if (currentData.autoRotate !== false) {
-        const speed = currentData.rotationSpeed ?? 1.0;
-        const rotDelta = delta * 0.08 * speed;
-        planetGroup.rotation.y += rotDelta;
 
-        // Sync camera position with planetary rotation when close to terrain
+      const currentData = dataRef.current;
+
+      if (currentData.autoRotate !== false) {
+        const speedDeg = currentData.rotationSpeed ?? 0.25;
+        const radPerSecond = (speedDeg * Math.PI) / 180;
+
+        let rotDelta = delta * radPerSecond;
+
+        if (targetRotationRef.current != null) {
+          let diff = targetRotationRef.current - currentRotationRef.current;
+          diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+
+          const correction = diff * Math.min(1, delta * 3.0);
+          rotDelta += correction;
+        }
+
+        currentRotationRef.current += rotDelta;
+        planetGroup.rotation.y = currentRotationRef.current;
+
         if (nearProgress < 0.85) {
           const bindRatio = 1.0 - nearProgress / 0.85;
           camera.position.applyAxisAngle(

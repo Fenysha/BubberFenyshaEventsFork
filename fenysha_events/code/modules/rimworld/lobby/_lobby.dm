@@ -5,8 +5,8 @@
 	<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
 	<style type='text/css'>
 		@font-face {
-			font-family: \"Fixedsys\";
-			src: url(\"FixedsysExcelsior3.01Regular.ttf\");
+			font-family: 'OCR-A';
+			src: url('OCRAExtended.ttf');
 		}
 
 		body, html {

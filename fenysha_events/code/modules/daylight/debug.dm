@@ -7,16 +7,22 @@ ADMIN_VERB(set_daylight_time, R_ADMIN, "Set Daylight Time (0-1)", "Force dayligh
 		return
 
 	value = clamp(value, -1, 1)
-	SSdaylight.manual_time = (value < 0 ? -1 : value)
-	SSdaylight.time_locked = (value >= 0)
-	SSdaylight.cycle_locked = (value >= 0)
-
-	if(value >= 0)
+	if(value < 0)
+		SSdaylight.manual_time = -1
+		SSdaylight.time_locked = FALSE
+		SSdaylight.cycle_locked = FALSE
+	else
+		SSdaylight.manual_time = value
+		SSdaylight.time_locked = TRUE
+		SSdaylight.cycle_locked = TRUE
 		var/color = SSdaylight.get_manual_light_color(value)
-		SSdaylight.set_intensity_and_color(value, color, FALSE)
+		SSdaylight.set_intensity_and_color(value, color, force = TRUE)
+		if(SSdaylight.use_planet_time)
+			SSdaylight.set_all_rimworld_daylight(value, color)
 
-	log_admin("[key_name(usr)] set daylight time to [value == -1 ? "AUTO" : value]")
-	message_admins(span_adminnotice("[key_name_admin(usr)] set daytime: [value == -1 ? "auto" : value]"))
+	log_admin("[key_name(usr)] set daylight time to [value < 0 ? "AUTO" : value]")
+	message_admins(span_adminnotice("[key_name_admin(usr)] set daytime: [value < 0 ? "auto" : value]"))
+
 
 ADMIN_VERB(toggle_daylight_cycle_lock, R_ADMIN, "Toggle Daylight Cycle Lock", "Lock/unlock automatic day-night cycle", ADMIN_CATEGORY_EVENTS)
 	if(!check_rights(R_ADMIN))
@@ -26,9 +32,12 @@ ADMIN_VERB(toggle_daylight_cycle_lock, R_ADMIN, "Toggle Daylight Cycle Lock", "L
 	if(!SSdaylight.cycle_locked)
 		SSdaylight.time_locked = FALSE
 		SSdaylight.manual_time = -1
+		if(SSdaylight.use_planet_time)
+			SSdaylight.set_all_rimworld_daylight(null, null)
 
 	log_admin("[key_name(usr)] [SSdaylight.cycle_locked ? "locked" : "unlocked"] daylight cycle")
 	message_admins(span_adminnotice("[key_name_admin(usr)] [SSdaylight.cycle_locked ? "locked" : "unlocked"] daylight cycle"))
+
 
 ADMIN_VERB(flash_daylight, R_ADMIN, "Flash Daylight", "Temporarily flash areas with a color", ADMIN_CATEGORY_EVENTS)
 	if(!check_rights(R_ADMIN))
@@ -51,36 +60,34 @@ ADMIN_VERB(flash_daylight, R_ADMIN, "Flash Daylight", "Temporarily flash areas w
 	log_admin("[key_name(usr)] triggered daylight flash with color [color] for [duration] seconds")
 	message_admins(span_adminnotice("[key_name_admin(usr)] triggered daylight flash with color [color] for [duration] seconds"))
 
+
 ADMIN_VERB(open_daylight_control_panel, R_ADMIN, "Open Daylight Control Panel", "Open UI panel for day/night and weather control", ADMIN_CATEGORY_EVENTS)
 	if(!check_rights(R_ADMIN))
 		return
 	var/datum/daylight_control_panel/panel = new
 	panel.ui_interact(usr)
 
-/// Repaints the daylight wash on every daylight area. Map templates loaded at
-/// runtime call this through load_station(); the verb is the manual equivalent
-/// for when an area is edited in-round.
-/datum/controller/subsystem/daylight/proc/reapply_lighting()
-	var/count = 0
-	for(var/area/daylit_area as anything in SSdaylight.daylight_areas)
-		daylit_area.clear_daylight_overlay()
-		daylit_area.apply_daylight_overlay()
-		daylit_area.update_base_lighting()
-		count++
-	return count
 
 ADMIN_VERB(daylight_reapply_lighting, R_ADMIN, "Daylight Reapply Area Lighting", "Re-add the daylight light overlay to all daylight areas", ADMIN_CATEGORY_EVENTS)
+	if(!check_rights(R_ADMIN))
+		return
 	var/count = SSdaylight.reapply_lighting()
 	to_chat(usr, span_notice("Reapplied the daylight light overlay to [count] daylight area(s)."))
 
+
+/datum/daylight_control_panel
+
+
 /datum/daylight_control_panel/ui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
+
 
 /datum/daylight_control_panel/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		ui = new(user, src, "DaylightControl", "Daylight Control")
 		ui.open()
+
 
 /datum/daylight_control_panel/ui_data(mob/user)
 	var/list/data = list()
@@ -93,7 +100,15 @@ ADMIN_VERB(daylight_reapply_lighting, R_ADMIN, "Daylight Reapply Area Lighting",
 	data["current_phase"] = SSdaylight.current_phase ? SSdaylight.current_phase.name : "Unknown"
 	data["active_weather_count"] = (SSdaylight.visual_weather_override == "none") ? 0 : 1
 	data["visual_weather_mode"] = SSdaylight.visual_weather_override
+	data["use_planet_time"] = SSdaylight.use_planet_time
+	if(SSdaylight.use_planet_time && SSrimworld_planetmap)
+		data["planet_time_of_day"] = SSrimworld_planetmap.time_of_day
+		data["planet_rotation"] = SSrimworld_planetmap.rotation_angle
+		data["planet_year"] = SSrimworld_planetmap.current_year
+		data["planet_quadrum"] = SSrimworld_planetmap.get_quadrum_name()
+		data["planet_day"] = SSrimworld_planetmap.day_of_quadrum
 	return data
+
 
 /datum/daylight_control_panel/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
@@ -106,12 +121,20 @@ ADMIN_VERB(daylight_reapply_lighting, R_ADMIN, "Daylight Reapply Area Lighting",
 		if("set_manual")
 			var/value = text2num(params["value"])
 			value = clamp(value, -1, 1)
-			SSdaylight.manual_time = (value < 0 ? -1 : value)
-			SSdaylight.time_locked = (value >= 0)
-			SSdaylight.cycle_locked = (value >= 0)
-			if(value >= 0)
+			if(value < 0)
+				SSdaylight.manual_time = -1
+				SSdaylight.time_locked = FALSE
+				SSdaylight.cycle_locked = FALSE
+				if(SSdaylight.use_planet_time)
+					SSdaylight.set_all_rimworld_daylight(null, null)
+			else
+				SSdaylight.manual_time = value
+				SSdaylight.time_locked = TRUE
+				SSdaylight.cycle_locked = TRUE
 				var/color = SSdaylight.get_manual_light_color(value)
-				SSdaylight.set_intensity_and_color(value, color, FALSE)
+				SSdaylight.set_intensity_and_color(value, color, force = TRUE)
+				if(SSdaylight.use_planet_time)
+					SSdaylight.set_all_rimworld_daylight(value, color)
 			return TRUE
 
 		if("set_cycle_minutes")
@@ -124,12 +147,25 @@ ADMIN_VERB(daylight_reapply_lighting, R_ADMIN, "Daylight Reapply Area Lighting",
 			if(!SSdaylight.cycle_locked)
 				SSdaylight.time_locked = FALSE
 				SSdaylight.manual_time = -1
+				if(SSdaylight.use_planet_time)
+					SSdaylight.set_all_rimworld_daylight(null, null)
 			return TRUE
 
 		if("set_auto")
 			SSdaylight.manual_time = -1
 			SSdaylight.time_locked = FALSE
 			SSdaylight.cycle_locked = FALSE
+			if(SSdaylight.use_planet_time)
+				SSdaylight.set_all_rimworld_daylight(null, null)
+			return TRUE
+
+		if("set_planet_hour")
+			if(!SSdaylight.use_planet_time || !SSrimworld_planetmap)
+				return FALSE
+			var/hour = text2num(params["value"])
+			if(isnull(hour))
+				return FALSE
+			SSrimworld_planetmap.set_time_of_day(hour)
 			return TRUE
 
 		if("start_weather")
@@ -156,19 +192,3 @@ ADMIN_VERB(daylight_reapply_lighting, R_ADMIN, "Daylight Reapply Area Lighting",
 			return TRUE
 
 	return FALSE
-
-// /datum/preference/toggle/daylight_tint_fx
-// 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-// 	savefile_key = "daylight_tint_fx"
-// 	savefile_identifier = PREFERENCE_PLAYER
-
-// /datum/preference/toggle/daylight_tint_fx/create_default_value()
-// 	return TRUE
-
-// /datum/preference/toggle/daylight_particle_fx
-// 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-// 	savefile_key = "daylight_particle_fx"
-// 	savefile_identifier = PREFERENCE_PLAYER
-
-// /datum/preference/toggle/daylight_particle_fx/create_default_value()
-// 	return TRUE

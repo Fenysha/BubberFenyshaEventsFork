@@ -97,9 +97,17 @@
 	/// Layer grid size, set from grid_frequency: see planet_hexgrid.dm
 	var/map_width
 	var/map_height
-	var/rotation_angle = 0
+	var/rotation_angle = 0.0
 	var/rotation_speed = 0.001
 	var/auto_rotate = TRUE
+
+	var/time_of_day = 0
+	var/total_days = 0
+	var/current_year = RW_STARTING_YEAR
+	var/day_of_year = RW_STARTING_DAY_OF_YEAR
+	var/current_quadrum = RW_QUADRUM_APRIMAY
+	var/day_of_quadrum = 1
+	var/daylight_fraction = RW_DEFAULT_DAYLIGHT_FRACTION
 
 	var/list/possible_biomes
 
@@ -882,6 +890,10 @@
 		tile["material"] = material
 		tile["latitude"] = get_latitude(x, y)
 		tile["temperature"] = temperature
+		tile["isDaylight"] = is_daylight(x, y)
+		tile["sunIntensity"] = get_sun_intensity(x, y)
+		tile["season"] = get_season(x, y)
+		tile["solarAngle"] = get_solar_angle(x, y)
 		tile["precipitation"] = precipitation
 		tile["rainfall"] = get_rainfall(x, y, temperature, precipitation)
 		tile["snowfall"] = get_snowfall(x, y, temperature, precipitation)
@@ -938,6 +950,9 @@
 		"generationRevision" = generation_revision,
 		"tileImages" = get_tile_images_payload(),
 		"mapsLoaded" = maps_generated(),
+		"calendar" = get_calendar_data(),
+		"timeOfDay" = time_of_day,
+		"rotationAngle" = rotation_angle,
 		"generatedLayers" = generated_layers.Copy()
 	)
 

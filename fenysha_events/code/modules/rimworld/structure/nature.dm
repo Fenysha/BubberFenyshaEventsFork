@@ -154,13 +154,6 @@
 
 	start_harvest(user)
 
-
-/*
- * ---------------------------------------------------------------------------
- * Harvesting
- * ---------------------------------------------------------------------------
- */
-
 /obj/structure/rimworld/flora/proc/can_harvest(mob/user, obj/item/harvesting_item)
 	if(flags_1 & HOLOGRAM_1)
 		return FALSE
@@ -334,12 +327,6 @@
 	harvested = FALSE
 
 
-/*
- * ---------------------------------------------------------------------------
- * Uprooting / replanting
- * ---------------------------------------------------------------------------
- */
-
 /obj/structure/rimworld/flora/proc/start_uproot(mob/living/user, obj/item/tool)
 	if(action_in_progress || uprooted || !can_uproot)
 		return FALSE
@@ -448,12 +435,6 @@
 	return TRUE
 
 
-/*
- * ---------------------------------------------------------------------------
- * Generic destruction
- * ---------------------------------------------------------------------------
- */
-
 /obj/structure/rimworld/flora/proc/can_destroy(mob/user, obj/item/tool)
 	if(!can_destroy || !tool)
 		return FALSE
@@ -513,16 +494,6 @@
 	return destroy_products
 
 
-/*
- * ---------------------------------------------------------------------------
- * Optional manual damage integration
- *
- * This is intentionally separate from the normal integrity system.
- * It lets individual flora decide when brute damage should trigger a
- * special destruction routine without forcing every plant to use it.
- * ---------------------------------------------------------------------------
- */
-
 /obj/structure/rimworld/flora/proc/special_destroy(mob/living/user)
 	if(!can_destroy || action_in_progress)
 		return FALSE
@@ -530,12 +501,16 @@
 	destroy(user, null)
 	return TRUE
 
+/obj/structure/rimworld/flora/grayscale
 
-/*
- * ---------------------------------------------------------------------------
- * RimWorld tree
- * ---------------------------------------------------------------------------
- */
+	var/icon_grayscale
+
+	var/icon_state_grayscale
+
+	var/mutable_appearance/grayscale_overlay
+
+
+
 
 /obj/structure/rimworld/flora/tree
 	name = "tree"
@@ -671,13 +646,6 @@
 
 /obj/structure/rimworld/flora/tree/get_destroy_products()
 	return fall_products
-
-
-/*
- * ---------------------------------------------------------------------------
- * Tree stump
- * ---------------------------------------------------------------------------
- */
 
 /obj/structure/rimworld/flora/tree/stump
 	name = "tree stump"

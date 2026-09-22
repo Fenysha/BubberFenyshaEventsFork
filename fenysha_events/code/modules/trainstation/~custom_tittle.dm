@@ -305,11 +305,6 @@ img.bg {
 
 #undef TRAINSTATION_TITLE_HTML
 
-/datum/asset/simple/lobby
-	assets = list(
-		"OCRAExtended.ttf" = 'fenysha_events/html/OCRAEXT.TTF',
-	)
-
 /datum/controller/subsystem/train_controller/proc/announce_game()
 	to_chat(world, span_boldnotice( \
 		"[span_big("Trainstation mode - active")] \n \

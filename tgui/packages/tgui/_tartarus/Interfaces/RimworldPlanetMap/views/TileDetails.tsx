@@ -64,6 +64,18 @@ export const TileDetails = ({
           {formatEnum(tile.subBiome)}
         </LabeledList.Item>
 
+        <LabeledList.Item label="Season">
+          {formatEnum(tile.season)}
+        </LabeledList.Item>
+
+        <LabeledList.Item label="Daylight">
+          {tile.isDaylight == null ? '—' : tile.isDaylight ? 'Day' : 'Night'}
+        </LabeledList.Item>
+
+        <LabeledList.Item label="Sun intensity">
+          {formatPercent(tile.sunIntensity)}
+        </LabeledList.Item>
+
         <LabeledList.Item label="Elevation">
           {formatEnum(tile.elevation)}
         </LabeledList.Item>

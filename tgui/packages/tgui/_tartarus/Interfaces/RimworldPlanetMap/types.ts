@@ -73,6 +73,23 @@ export type PlanetMapData = {
   humidityThresholdLow: number;
   humidityThresholdHigh: number;
 
+  canControlTime?: boolean;
+  calendar?: Record<string, unknown>;
+  timeOfDay?: number;
+  currentYear?: number;
+  dayOfYear?: number;
+  quadrum?: string;
+  quadrumName?: string;
+  dayOfQuadrum?: number;
+  seasonNorth?: string;
+  seasonSouth?: string;
+  timeScale?: number;
+  daysPerYear?: number;
+  daysPerQuadrum?: number;
+  quadrumNames?: string[];
+  seasons?: string[];
+  startingYear?: number;
+
   rotationAngle?: number;
   rotationSpeed?: number;
   autoRotate?: BooleanLike;
@@ -162,6 +179,10 @@ export type PlanetTile = {
   snowfall: number;
   waterAvailability: number;
 
+  season?: string;
+  isDaylight?: boolean;
+  sunIntensity?: number;
+
   elevation: string;
   /** A river runs through this tile */
   river?: boolean;
@@ -174,6 +195,10 @@ export type SelectedPlanetTile = {
   objects: PlanetObject[];
   image?: string | null;
   mapsLoaded?: BooleanLike;
+
+  season?: string;
+  isDaylight?: boolean;
+  sunIntensity?: number;
 
   elevation?: string;
   temperature?: number;

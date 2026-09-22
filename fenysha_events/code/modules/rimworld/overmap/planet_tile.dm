@@ -1,26 +1,160 @@
 GLOBAL_LIST_INIT(rimworld_areas, list())
 
+
 /area/rimworld
 	name = "Rim"
 	icon_state = "green"
-
 	area_flags = VALID_TERRITORY | BLOBS_ALLOWED | CULT_PERMITTED
 	area_flags_mapping = CAVES_ALLOWED | FLORA_ALLOWED | MOB_SPAWN_ALLOWED
-
-
-
 	default_gravity = TRUE
-	/// Planet cell we are in
+	outdoors = TRUE
+	daylight = TRUE
+
 	var/datum/planet_cell/cell
+	/// Last applied local intensity (−1 = never applied).
+	var/rimworld_sun_intensity = -1
+	var/rimworld_sun_color = null
+	var/rimworld_forced_intensity = null
+	var/rimworld_forced_color = null
 
 
 /area/rimworld/Initialize(mapload)
 	. = ..()
 	GLOB.rimworld_areas |= src
 
+	var/datum/planet_cell/cell = get_planet_cell(src)
+	if(cell) bind_planet_cell(cell)
+
 /area/rimworld/Destroy()
-	. = ..()
+	cell = null
 	GLOB.rimworld_areas -= src
+	return ..()
+
+
+/area/rimworld/proc/bind_planet_cell(datum/planet_cell/new_cell)
+	cell = new_cell
+	if(daylight)
+		update_rimworld_daylight(force = TRUE)
+
+
+/area/rimworld/proc/get_local_solar_hour()
+	if(isnull(rimworld_forced_intensity) && cell?.planet)
+		var/angle = cell.get_solar_angle() // 0 noon … 180 midnight
+		var/hour = 12 - (angle / 180) * 12
+		if(hour < 0)
+			hour += 24
+		return hour
+	return SSrimworld_planetmap?.time_of_day || 12
+
+
+/area/rimworld/proc/get_local_sun_intensity()
+	if(!isnull(rimworld_forced_intensity))
+		return clamp(rimworld_forced_intensity, 0, 1)
+	if(cell)
+		return cell.get_sun_intensity()
+	if(SSrimworld_planetmap)
+		var/tod = SSrimworld_planetmap.time_of_day
+		var/dist = abs(tod - 12)
+		if(dist > 12)
+			dist = 24 - dist
+		return max(0, cos(dist * 15))
+	return 1
+
+
+/area/rimworld/proc/update_rimworld_daylight(force = FALSE)
+	if(!daylight || QDELETED(src))
+		return
+	var/intensity = get_local_sun_intensity()
+	var/hour = get_local_solar_hour()
+	var/list/phase_state = SSdaylight.get_phase_light_state_for_hour(hour)
+	var/color = rimworld_forced_color || phase_state["color"] || "#ffffff"
+	var/phase_i = phase_state["intensity"]
+	if(!isnull(phase_i))
+		intensity = clamp(intensity * phase_i, 0, 1)
+
+	if(!force && abs(intensity - rimworld_sun_intensity) < 0.02 && color == rimworld_sun_color)
+		return
+
+	rimworld_sun_intensity = intensity
+	rimworld_sun_color = color
+	apply_rimworld_daylight_overlay(intensity, color)
+	SEND_SIGNAL(src, COMSIG_RIMWORLD_AREA_DAYLIGHT_UPDATE, intensity, color, hour)
+
+
+/area/rimworld/proc/apply_rimworld_daylight_overlay(intensity = 1, color = "#ffffff")
+	if(!daylight)
+		return
+	var/strength = round(clamp(intensity, 0, 1) * 255, 1)
+	if(strength <= 0)
+		if(daylight_lit)
+			clear_daylight_overlay()
+		return
+
+	SSdaylight.daylight_areas |= src
+	daylight_lit = TRUE
+	var/list/own_turfs = list()
+	for(var/turf/area_turf in src)
+		clear_daylight_wash(area_turf)
+		var/atom/holder = daylight_overlay_holder(area_turf)
+		holder?.add_overlay(get_daylight_overlay_appearance(strength, area_turf))
+		own_turfs += area_turf
+		CHECK_TICK
+	relight_daylight_leaks_scaled(own_turfs, intensity)
+
+
+/area/rimworld/proc/relight_daylight_leaks_scaled(list/source_turfs, intensity = 1)
+	for(var/turf/leaked in daylight_leaked)
+		if(isturf(leaked))
+			clear_daylight_wash(leaked)
+		CHECK_TICK
+	daylight_leaked = null
+
+	if(!length(source_turfs))
+		return
+
+	var/list/scaled = list()
+	for(var/v in GLOB.daylight_leak_falloff)
+		scaled += round(v * clamp(intensity, 0, 1), 1)
+
+	LAZYINITLIST(daylight_leaked)
+	var/list/visited = list()
+	var/list/frontier = list()
+	for(var/turf/seed in source_turfs)
+		if(!isturf(seed))
+			continue
+		visited[seed] = TRUE
+		frontier += seed
+
+	for(var/ring in 1 to length(scaled))
+		if(scaled[ring] <= 0)
+			break
+		var/list/next_frontier = list()
+		for(var/turf/frontier_turf in frontier)
+			if(!isturf(frontier_turf) || frontier_turf.opacity)
+				continue
+			for(var/dir in GLOB.cardinals)
+				var/turf/neighbor = get_step(frontier_turf, dir)
+				if(!isturf(neighbor) || visited[neighbor])
+					continue
+				visited[neighbor] = TRUE
+				var/area/neighbor_area = neighbor.loc
+				if(neighbor_area?.daylight)
+					continue
+				var/mutable_appearance/leak = get_daylight_overlay_appearance(scaled[ring], neighbor)
+				var/atom/holder = daylight_overlay_holder(neighbor)
+				clear_daylight_wash(neighbor)
+				holder?.add_overlay(leak)
+				daylight_leaked[neighbor] = leak
+				next_frontier += neighbor
+		frontier = next_frontier
+		CHECK_TICK
+
+
+/area/rimworld/proc/set_forced_daylight(intensity = null, color = null)
+	rimworld_forced_intensity = intensity
+	rimworld_forced_color = color
+	update_rimworld_daylight(force = TRUE)
+
 
 /**
  * /datum/planet_cell
@@ -92,6 +226,8 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	var/local_width = 128
 	var/local_height = 128
 
+	/// Cached last known daylight state (optional, for change detection)
+	var/was_daylight = null
 
 	/// Weather
 
@@ -310,6 +446,26 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	)
 
 
+
+/**
+ * After local map is loaded: bind every /area/rimworld on the reservation to this cell.
+ */
+/datum/planet_cell/proc/bind_areas_to_cell()
+	if(!is_loaded())
+		return FALSE
+	var/list/turfs = get_local_turfs()
+	if(!turfs)
+		return FALSE
+	var/list/seen = list()
+	for(var/turf/T as anything in turfs)
+		var/area/rimworld/A = get_area(T)
+		if(!istype(A) || seen[A])
+			continue
+		seen[A] = TRUE
+		A.bind_planet_cell(src)
+
+
+
 /**
  * Unloads the cell's local content (frees the reservation).
  * Does not delete the cell itself.
@@ -387,6 +543,40 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	return reservation.get_all_turfs()
 
 
+/**
+ * Daylight process
+ */
+
+
+/**
+ * Whether this cell is currently on the sunny side of the planet.
+ */
+/datum/planet_cell/proc/is_daylight(fraction = null)
+	if(!planet)
+		return FALSE
+	return planet.is_daylight(x, y, fraction)
+
+
+/datum/planet_cell/proc/is_night(fraction = null)
+	return !is_daylight(fraction)
+
+
+/datum/planet_cell/proc/get_sun_intensity()
+	if(!planet)
+		return 0
+	return planet.get_sun_intensity(x, y)
+
+
+/datum/planet_cell/proc/get_season()
+	if(!planet)
+		return RW_SEASON_SPRING
+	return planet.get_season(x, y)
+
+
+/datum/planet_cell/proc/get_solar_angle()
+	if(!planet)
+		return 180
+	return planet.get_solar_angle(x, y)
 
 /**
  * ------------------------------------------------------------------

@@ -6,3 +6,4 @@
 #define is_planet_level(A) (!!get_planet_cell(A))
 
 #define is_rimworld_area(A) (istype(A, /area/rimworld))
+

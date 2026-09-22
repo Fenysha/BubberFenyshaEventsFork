@@ -8,6 +8,8 @@
 	var/can_edit = FALSE
 	var/can_regenerate = FALSE
 	var/can_select_tiles = TRUE
+	/// Admin (and future) views that may change calendar / time of day
+	var/can_control_time = FALSE
 
 	var/selected_x
 	var/selected_y
@@ -56,12 +58,18 @@
 	data["canEdit"] = can_edit
 	data["canRegenerate"] = can_regenerate
 	data["canSelectTiles"] = can_select_tiles
+	data["canControlTime"] = can_control_time
 
-	// Rotation is owned by the subsystem; keep planet + UI in sync
 	var/list/rotation = SSrimworld_planetmap.get_rotation_data()
 	data["autoRotate"] = rotation["autoRotate"]
 	data["rotationSpeed"] = rotation["rotationSpeed"]
 	data["rotationAngle"] = rotation["rotationAngle"]
+
+	data["daysPerYear"] = RW_DAYS_PER_YEAR
+	data["daysPerQuadrum"] = RW_DAYS_PER_QUADRUM
+	data["quadrumNames"] = RW_QUADRUM_NAMES
+	data["seasons"] = list(RW_SEASON_SPRING, RW_SEASON_SUMMER, RW_SEASON_FALL, RW_SEASON_WINTER)
+	data["startingYear"] = RW_STARTING_YEAR
 
 	return data
 
@@ -84,11 +92,22 @@
 	data["selectedObject"] = get_selected_object_payload()
 	data["view"] = get_view_data()
 
-	// Live rotation angle (updated every fire tick by the subsystem)
 	var/list/rotation = SSrimworld_planetmap.get_rotation_data()
 	data["rotationAngle"] = rotation["rotationAngle"]
 	data["autoRotate"] = rotation["autoRotate"]
 	data["rotationSpeed"] = rotation["rotationSpeed"]
+
+	var/list/calendar = SSrimworld_planetmap.get_calendar_data()
+	data["calendar"] = calendar
+	data["timeOfDay"] = calendar["timeOfDay"]
+	data["currentYear"] = calendar["year"]
+	data["dayOfYear"] = calendar["dayOfYear"]
+	data["quadrum"] = calendar["quadrum"]
+	data["quadrumName"] = calendar["quadrumName"]
+	data["dayOfQuadrum"] = calendar["dayOfQuadrum"]
+	data["seasonNorth"] = calendar["seasonNorth"]
+	data["seasonSouth"] = calendar["seasonSouth"]
+	data["timeScale"] = calendar["timeScale"]
 
 	return data
 
@@ -124,12 +143,10 @@
 /datum/planetmap_view/proc/get_selected_object_payload()
 	if(!selected_object_id || !planet)
 		return null
-
 	var/datum/rimworld_planet_object/object = planet.get_object(selected_object_id)
 	if(!object)
 		selected_object_id = null
 		return null
-
 	return object.get_data()
 
 
@@ -138,7 +155,6 @@
 		return FALSE
 	if(!planet.is_valid_coordinate(x, y))
 		return FALSE
-
 	selected_x = x
 	selected_y = y
 	SStgui.update_uis(src)
@@ -148,11 +164,9 @@
 /datum/planetmap_view/proc/on_select_object(object_id)
 	if(!planet)
 		return FALSE
-
 	var/datum/rimworld_planet_object/object = planet.get_object(object_id)
 	if(!object)
 		return FALSE
-
 	selected_object_id = object_id
 	selected_x = object.x
 	selected_y = object.y
@@ -195,9 +209,15 @@
 
 	return handle_view_act(action, params)
 
+
+// ── Overview ────────────────────────────────────────────────────────────────
+
 /datum/planetmap_view/overview
 	view_type = "overview"
 	window_title = "Planet Overview"
+
+
+// ── Caravan ─────────────────────────────────────────────────────────────────
 
 /datum/planetmap_view/caravan
 	view_type = "caravan"
@@ -243,11 +263,15 @@
 			return FALSE
 	return FALSE
 
+
+// ── Admin ───────────────────────────────────────────────────────────────────
+
 /datum/planetmap_view/admin
 	view_type = "admin"
 	window_title = "Planet Admin"
 	can_edit = TRUE
 	can_regenerate = TRUE
+	can_control_time = TRUE
 
 	var/road_start_x
 	var/road_start_y
@@ -262,12 +286,10 @@
 		"roadStartX" = road_start_x,
 		"roadStartY" = road_start_y,
 	)
-
 	if(planet && !isnull(selected_x) && !isnull(selected_y))
 		var/datum/planet_cell/cell = planet.get_cell(selected_x, selected_y)
 		if(cell)
 			data["cell"] = cell.get_data()
-
 	return data
 
 
@@ -279,7 +301,7 @@
 
 /datum/planetmap_view/admin/handle_view_act(action, list/params)
 	switch(action)
-		// ── Rotation (owned by SSrimworld_planetmap) ──────────────────────────
+		// ── Rotation ────────────────────────────────────────────────────────
 		if("toggle_rotation")
 			SSrimworld_planetmap.set_auto_rotate(!SSrimworld_planetmap.auto_rotate)
 			SStgui.update_uis(src)
@@ -299,42 +321,93 @@
 			SStgui.update_uis(src)
 			return TRUE
 
-		// ── Regeneration ─────────────────────────────────────────────────────
+		// ── Calendar / time ─────────────────────────────────────────────────
+		if("set_time_of_day")
+			if(!can_control_time || isnull(params["hour"]))
+				return FALSE
+			SSrimworld_planetmap.set_time_of_day(text2num(params["hour"]))
+			SStgui.update_uis(src)
+			return TRUE
+
+		if("set_time_scale")
+			if(!can_control_time || isnull(params["scale"]))
+				return FALSE
+			SSrimworld_planetmap.set_time_scale(text2num(params["scale"]))
+			SStgui.update_uis(src)
+			return TRUE
+
+		if("toggle_advance_calendar")
+			if(!can_control_time)
+				return FALSE
+			SSrimworld_planetmap.set_advance_calendar(!SSrimworld_planetmap.advance_calendar)
+			SStgui.update_uis(src)
+			return TRUE
+
+		if("timeskip_days")
+			if(!can_control_time || isnull(params["days"]))
+				return FALSE
+			SSrimworld_planetmap.timeskip_days(text2num(params["days"]))
+			SStgui.update_uis(src)
+			return TRUE
+
+		if("set_calendar")
+			if(!can_control_time)
+				return FALSE
+			var/year = text2num(params["year"])
+			var/doy = text2num(params["dayOfYear"])
+			var/hour = params["hour"]
+			if(!isnull(hour))
+				hour = text2num(hour)
+			if(isnull(year) || isnull(doy))
+				return FALSE
+			SSrimworld_planetmap.set_calendar(year, doy, hour)
+			SStgui.update_uis(src)
+			return TRUE
+
+		if("set_quadrum")
+			if(!can_control_time || isnull(params["quadrum"]))
+				return FALSE
+			// Accept "0".."3" or numeric index
+			var/q = params["quadrum"]
+			if(isnum(q))
+				q = num2text(q)
+			SSrimworld_planetmap.set_quadrum(q)
+			SStgui.update_uis(src)
+			return TRUE
+
+		if("set_season_north")
+			if(!can_control_time || isnull(params["season"]))
+				return FALSE
+			if(!SSrimworld_planetmap.set_season_north(params["season"]))
+				return FALSE
+			SStgui.update_uis(src)
+			return TRUE
+
+		// ── Regeneration ────────────────────────────────────────────────────
 		if("regenerate")
 			if(!can_regenerate)
 				return FALSE
-
 			var/planet_type = params["planetType"] || planet?.planet_type || RW_PLANET_PRESET_TERRAN
 			var/planet_seed = text2num(params["seed"])
 			if(!planet_seed)
 				planet_seed = null
-
 			var/list/custom_params = list()
-			var/list/param_keys = list("mountains", "ocean", "humidity", "temperature", "population")
-			for(var/key in param_keys)
+			for(var/key in list("mountains", "ocean", "humidity", "temperature", "population"))
 				if(!isnull(params[key]))
 					custom_params[key] = text2num(params[key])
-
 			SSrimworld_planetmap.generate_planet(planet_type, planet_seed, custom_params)
-			// bind_planet is called by the subsystem for all active views
 			return TRUE
-
 
 		if("load_cell")
 			return load_selected_cell()
-
 		if("unload_cell")
 			return unload_selected_cell()
-
 		if("reload_cell")
 			return reload_selected_cell()
-
 		if("create_object")
 			return create_object(params)
-
 		if("remove_object")
 			return remove_selected_object(params)
-
 		if("move_object")
 			return move_selected_object(params)
 
@@ -353,28 +426,6 @@
 			return TRUE
 
 	return FALSE
-
-
-/datum/planetmap_view/admin/proc/place_settlement(list/params)
-	if(!can_edit || !planet)
-		return FALSE
-
-	var/x = text2num(params["x"])
-	var/y = text2num(params["y"])
-	if(isnull(x))
-		x = selected_x
-	if(isnull(y))
-		y = selected_y
-
-	var/settlement_name = params["name"] || "Settlement"
-	var/datum/rimworld_planet_object/object = planet.create_settlement(x, y, settlement_name)
-	if(!object)
-		return FALSE
-
-	selected_object_id = object.id
-	selected_x = object.x
-	selected_y = object.y
-	return TRUE
 
 
 /datum/planetmap_view/admin/proc/get_selected_cell()
@@ -416,7 +467,6 @@
 /datum/planetmap_view/admin/proc/create_object(list/params)
 	if(!can_edit || !planet)
 		return FALSE
-
 	var/object_type = lowertext(params["type"])
 	var/x = text2num(params["x"])
 	var/y = text2num(params["y"])
@@ -426,10 +476,8 @@
 		y = selected_y
 	if(isnull(x) || isnull(y))
 		return FALSE
-
 	var/object_name = params["name"] || "Object"
 	var/datum/rimworld_planet_object/object
-
 	switch(object_type)
 		if("settlement")
 			object = planet.create_settlement(x, y, object_name)
@@ -447,19 +495,15 @@
 			object = planet.create_road(start_x, start_y, x, y)
 		else
 			return FALSE
-
 	if(!object)
 		return FALSE
-
 	selected_object_id = object.id
 	selected_x = object.x
 	selected_y = object.y
-
 	if(!!params["loadImmediately"])
 		var/datum/planet_cell/cell = planet.get_or_create_cell(object.x, object.y, FALSE)
 		if(cell)
 			cell.ensure_loaded(object.name)
-
 	road_start_x = null
 	road_start_y = null
 	SStgui.update_uis(src)
@@ -469,11 +513,9 @@
 /datum/planetmap_view/admin/proc/remove_selected_object(list/params)
 	if(!can_edit || !planet)
 		return FALSE
-
 	var/object_id = params["id"] || selected_object_id
 	if(!planet.remove_object(object_id))
 		return FALSE
-
 	if(selected_object_id == object_id)
 		selected_object_id = null
 	return TRUE
@@ -482,7 +524,6 @@
 /datum/planetmap_view/admin/proc/move_selected_object(list/params)
 	if(!can_edit || !planet)
 		return FALSE
-
 	var/object_id = params["id"] || selected_object_id
 	var/new_x = text2num(params["x"])
 	var/new_y = text2num(params["y"])
@@ -490,10 +531,8 @@
 		new_x = selected_x
 	if(isnull(new_y))
 		new_y = selected_y
-
 	if(!planet.move_object(object_id, new_x, new_y))
 		return FALSE
-
 	selected_object_id = object_id
 	selected_x = new_x
 	selected_y = new_y
