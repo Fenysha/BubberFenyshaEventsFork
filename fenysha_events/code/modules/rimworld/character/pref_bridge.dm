@@ -448,8 +448,6 @@
 	return list("species" = species_fields)
 
 /datum/rimworld_preferences/proc/is_genital_pref(datum/preference/pref)
-	if(istype(pref, /datum/preference/choiced/genital) || istype(pref, /datum/preference/toggle/allow_genitals))
-		return TRUE
 	var/key = pref.savefile_key
 	return findtext(key, "penis") || findtext(key, "testicle") || findtext(key, "vagina") || findtext(key, "womb") || findtext(key, "breast") || findtext(key, "butt") || findtext(key, "belly") || findtext(key, "anus") || findtext(key, "genital")
 

@@ -1,3 +1,4 @@
+#define USE_GENDER "use_gender"
 #define SPECIES_AVALI "avali"
 
 #define RW_CHARACTER_SAVE_VERSION 3
