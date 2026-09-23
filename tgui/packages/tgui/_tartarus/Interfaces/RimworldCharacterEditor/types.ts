@@ -53,6 +53,27 @@ export type RwPricedDef = {
   positive?: boolean;
 };
 
+export type PrefFieldKind =
+  | 'choiced'
+  | 'color'
+  | 'tricolor'
+  | 'tri_color'
+  | 'toggle'
+  | 'numeric'
+  | 'text';
+
+export type PrefField = {
+  key: string;
+  name: string;
+  kind: PrefFieldKind;
+  value: unknown;
+  choices?: string[];
+  displayNames?: Record<string, string>;
+  min?: number;
+  max?: number;
+  step?: number;
+};
+
 export type RwClothingChooser = {
   id: string;
   name: string;
@@ -96,10 +117,7 @@ export type RimworldCharacterEditorData = {
   traitDefs: RwPricedDef[];
   loadoutDefs: RwPricedDef[];
   character_preferences?: {
-    basics?: Record<string, unknown>;
-    visual?: Record<string, unknown>;
-    identity?: Record<string, unknown>;
-    [otherKey: string]: unknown;
+    species?: PrefField[];
   };
   profiles: RwProfile[];
   activeSlot: number;

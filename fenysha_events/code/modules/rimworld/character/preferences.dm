@@ -17,57 +17,6 @@
 	var/first_name = "Colonist"
 	var/nickname = ""
 	var/last_name = ""
-	var/biological_age = 21
-	var/chronological_age = 21
-	var/gender = MALE
-	var/body_type = "Use gender"
-	/// Typepath of the colonist's species, not an instance.
-	var/species_type = /datum/species/human
-	var/hairstyle = "Bald"
-	var/hair_color = "#4a3728"
-	var/facial_hairstyle = "Shaved"
-	var/facial_hair_color = "#4a3728"
-	var/underwear = "Nude"
-	var/underwear_color = "#ffffff"
-	var/undershirt = "Nude"
-	var/undershirt_color = "#ffffff"
-	var/bra = "Nude"
-	var/bra_color = "#ffffff"
-	var/socks = "Nude"
-	var/socks_color = "#ffffff"
-	var/jumpsuit_style = PREF_SUIT
-	var/backpack = DBACKPACK
-	var/skin_tone = "caucasian1"
-	var/mutant_color = "#c0965f"
-	var/mutant_color_2 = "#c0965f"
-	var/mutant_color_3 = "#c0965f"
-	var/eye_color = "#336699"
-	var/eye_color_right = ""
-	var/hair_gradient = "None"
-	var/hair_gradient_color = "#ffffff"
-	var/facial_gradient = "None"
-	var/facial_gradient_color = "#ffffff"
-	var/body_size = 1
-	var/custom_species = ""
-	var/custom_species_lore = ""
-	var/flavor_text = ""
-	var/flavor_text_nsfw = ""
-	var/ooc_notes = ""
-	var/headshot = ""
-	var/character_scream = "Human Scream"
-	var/character_laugh = "Human Laugh"
-	var/chat_color = "#b0b0b0"
-	var/blooper_choice = "none"
-	var/blooper_speed = 50
-	var/blooper_pitch = 50
-	var/blooper_pitch_range = 30
-	var/custom_taste = ""
-	var/custom_smell = ""
-	var/general_record = ""
-	var/medical_record = ""
-	var/security_record = ""
-	var/exploitable_info = ""
-	var/background_info = ""
 	var/tattoo = "None"
 	var/list/xenogenes
 	var/childhood_id = "childhood_none"
@@ -114,6 +63,7 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	real_name = trim("[first_name] [last_name]")
 	if(!length(real_name))
 		real_name = first_name || last_name || "Colonist"
+	rw_set_pref(/datum/preference/name/real_name, real_name, force = TRUE)
 
 /datum/rimworld_preferences/proc/split_real_name(full_name)
 	full_name = trim("[full_name]")
@@ -130,54 +80,55 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 		last_name = ""
 
 /datum/rimworld_preferences/proc/reset_to_defaults()
-	gender = pick(MALE, FEMALE)
-	body_type = "Use gender"
-	species_type = /datum/species/human
+	reset_pref_bridge()
+	rw_set_pref(/datum/preference/choiced/gender, pick(MALE, FEMALE), force = TRUE)
+	rw_set_pref(/datum/preference/choiced/body_type, USE_GENDER, force = TRUE)
+	rw_set_species(/datum/species/human)
 	randomize_names()
-	biological_age = rand(AGE_MIN, 40)
-	chronological_age = max(biological_age, biological_age + rand(0, 20))
-	hair_color = ready_random_color()
-	facial_hair_color = hair_color
-	underwear_color = ready_random_color()
-	undershirt_color = underwear_color
-	bra_color = underwear_color
-	socks_color = underwear_color
-	jumpsuit_style = pick(PREF_SUIT, PREF_SKIRT)
-	backpack = DBACKPACK
-	skin_tone = length(GLOB.skin_tones) ? pick(GLOB.skin_tones) : "caucasian1"
-	mutant_color = "#c0965f"
-	mutant_color_2 = "#c0965f"
-	mutant_color_3 = "#c0965f"
-	eye_color = random_eye_color()
-	eye_color_right = ""
-	hair_gradient = "None"
-	hair_gradient_color = "#ffffff"
-	facial_gradient = "None"
-	facial_gradient_color = "#ffffff"
-	body_size = 1
-	custom_species = ""
-	custom_species_lore = ""
-	flavor_text = ""
-	flavor_text_nsfw = ""
-	ooc_notes = ""
-	headshot = ""
-	character_scream = length(GLOB.scream_types) ? pick(GLOB.scream_types) : "Human Scream"
-	character_laugh = length(GLOB.laugh_types) ? pick(GLOB.laugh_types) : "Human Laugh"
-	chat_color = ready_random_color()
-	blooper_choice = default_blooper_id()
-	if(length(SSblooper.blooper_list) && prob(70))
-		blooper_choice = pick(SSblooper.blooper_list)
-	blooper_speed = rand(35, 70)
-	blooper_pitch = rand(35, 70)
-	blooper_pitch_range = rand(20, 40)
+	rw_set_pref(/datum/preference/numeric/age, rand(AGE_MIN, 40), force = TRUE)
+	var/bio_age = rw_pref(/datum/preference/numeric/age) || AGE_MIN
+	if(GLOB.preference_entries[/datum/preference/numeric/chronological_age])
+		rw_set_pref(/datum/preference/numeric/chronological_age, max(bio_age, bio_age + rand(0, 20)), force = TRUE)
+	var/shared_color = ready_random_color()
+	rw_set_pref(/datum/preference/color/hair_color, shared_color, force = TRUE)
+	rw_set_pref(/datum/preference/color/facial_hair_color, shared_color, force = TRUE)
+	rw_set_pref(/datum/preference/color/underwear_color, shared_color, force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/color/undershirt_color])
+		rw_set_pref(/datum/preference/color/undershirt_color, shared_color, force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/color/bra_color])
+		rw_set_pref(/datum/preference/color/bra_color, shared_color, force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/color/socks_color])
+		rw_set_pref(/datum/preference/color/socks_color, shared_color, force = TRUE)
+	rw_set_pref(/datum/preference/choiced/jumpsuit, pick(PREF_SUIT, PREF_SKIRT), force = TRUE)
+	rw_set_pref(/datum/preference/choiced/backpack, DBACKPACK, force = TRUE)
+	rw_set_pref(/datum/preference/choiced/skin_tone, length(GLOB.skin_tones) ? pick(GLOB.skin_tones) : "caucasian1", force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/tri_color/mutant_colors])
+		rw_set_pref(/datum/preference/tri_color/mutant_colors, list("#c0965f", "#c0965f", "#c0965f"), force = TRUE)
+	rw_set_pref(/datum/preference/color/eye_color, random_eye_color(), force = TRUE)
+	rw_set_pref(/datum/preference/choiced/hair_gradient, "None", force = TRUE)
+	rw_set_pref(/datum/preference/color/hair_gradient, "#ffffff", force = TRUE)
+	rw_set_pref(/datum/preference/choiced/facial_hair_gradient, "None", force = TRUE)
+	rw_set_pref(/datum/preference/color/facial_hair_gradient, "#ffffff", force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/numeric/body_size])
+		rw_set_pref(/datum/preference/numeric/body_size, 1, force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/choiced/scream])
+		rw_set_pref(/datum/preference/choiced/scream, length(GLOB.scream_types) ? pick(assoc_to_keys(GLOB.scream_types)) : "Human Scream", force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/choiced/laugh])
+		rw_set_pref(/datum/preference/choiced/laugh, length(GLOB.laugh_types) ? pick(assoc_to_keys(GLOB.laugh_types)) : "Human Laugh", force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/color/chat_color])
+		rw_set_pref(/datum/preference/color/chat_color, ready_random_color(), force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/choiced/blooper])
+		var/blooper_id = default_blooper_id()
+		if(length(SSblooper.blooper_list) && prob(70))
+			blooper_id = pick(SSblooper.blooper_list)
+		rw_set_pref(/datum/preference/choiced/blooper, blooper_id, force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/numeric/blooper_speed])
+		rw_set_pref(/datum/preference/numeric/blooper_speed, rand(35, 70), force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/numeric/blooper_pitch])
+		rw_set_pref(/datum/preference/numeric/blooper_pitch, rand(35, 70), force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/numeric/blooper_pitch_range])
+		rw_set_pref(/datum/preference/numeric/blooper_pitch_range, rand(20, 40), force = TRUE)
 	randomize_appearance()
-	custom_taste = ""
-	custom_smell = ""
-	general_record = ""
-	medical_record = ""
-	security_record = ""
-	exploitable_info = ""
-	background_info = ""
 	tattoo = "None"
 	xenogenes = list()
 	childhood_id = "childhood_none"
@@ -189,10 +140,9 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 		passions[skill_id] = RW_PASSION_NONE
 	traits = list()
 	loadout = list()
-	reset_pref_bridge()
 
 /datum/rimworld_preferences/proc/uses_skintones()
-	var/datum/species/species = GLOB.species_prototypes[species_type]
+	var/datum/species/species = GLOB.species_prototypes[rw_species()]
 	return species && (TRAIT_USES_SKINTONES in species.inherent_traits)
 
 /datum/rimworld_preferences/proc/get_skill_bonus(skill_id)
@@ -240,10 +190,12 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 
 /datum/rimworld_preferences/proc/randomize_names()
 	var/new_name
-	if(ispath(species_type, /datum/species))
-		new_name = generate_random_name_species_based(gender, TRUE, species_type)
+	var/species_path = rw_species()
+	var/used_gender = rw_gender()
+	if(ispath(species_path, /datum/species))
+		new_name = generate_random_name_species_based(used_gender, TRUE, species_path)
 	if(!length(new_name))
-		new_name = generate_random_name(gender, TRUE)
+		new_name = generate_random_name(used_gender, TRUE)
 	if(length(new_name))
 		split_real_name(new_name)
 	if(length(GLOB.rw_nicknames) && prob(RW_NICKNAME_CHANCE))
@@ -258,24 +210,26 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	rebuild_real_name()
 
 /datum/rimworld_preferences/proc/randomize_appearance()
-	hairstyle = "Bald"
-	facial_hairstyle = "Shaved"
-	underwear = "Nude"
-	undershirt = "Nude"
-	bra = "Nude"
-	socks = "Nude"
+	var/used_gender = rw_gender()
+	rw_set_pref(/datum/preference/choiced/hairstyle, "Bald", force = TRUE)
+	rw_set_pref(/datum/preference/choiced/facial_hairstyle, "Shaved", force = TRUE)
+	rw_set_pref(/datum/preference/choiced/underwear, "Nude", force = TRUE)
+	rw_set_pref(/datum/preference/choiced/undershirt, "Nude", force = TRUE)
+	if(GLOB.preference_entries[/datum/preference/choiced/bra])
+		rw_set_pref(/datum/preference/choiced/bra, "Nude", force = TRUE)
+	rw_set_pref(/datum/preference/choiced/socks, "Nude", force = TRUE)
 	if(length(SSaccessories.hairstyles_list))
-		hairstyle = random_hairstyle(gender) || "Bald"
-	if(gender == MALE && prob(55) && length(SSaccessories.facial_hairstyles_list))
-		facial_hairstyle = random_facial_hairstyle(gender) || "Shaved"
+		rw_set_pref(/datum/preference/choiced/hairstyle, random_hairstyle(used_gender) || "Bald", force = TRUE)
+	if(used_gender == MALE && prob(55) && length(SSaccessories.facial_hairstyles_list))
+		rw_set_pref(/datum/preference/choiced/facial_hairstyle, random_facial_hairstyle(used_gender) || "Shaved", force = TRUE)
 	if(length(SSaccessories.underwear_list))
-		underwear = random_underwear(gender) || "Nude"
+		rw_set_pref(/datum/preference/choiced/underwear, random_underwear(used_gender) || "Nude", force = TRUE)
 	if(length(SSaccessories.undershirt_list))
-		undershirt = random_undershirt(gender) || "Nude"
-	if(length(SSaccessories.bra_list))
-		bra = random_bra(gender) || "Nude"
+		rw_set_pref(/datum/preference/choiced/undershirt, random_undershirt(used_gender) || "Nude", force = TRUE)
+	if(length(SSaccessories.bra_list) && GLOB.preference_entries[/datum/preference/choiced/bra])
+		rw_set_pref(/datum/preference/choiced/bra, random_bra(used_gender) || "Nude", force = TRUE)
 	if(length(SSaccessories.socks_list))
-		socks = random_socks() || "Nude"
+		rw_set_pref(/datum/preference/choiced/socks, random_socks() || "Nude", force = TRUE)
 
 /datum/rimworld_preferences/proc/ensure_all_slots_filled()
 	if(!savefile || !load_and_save)

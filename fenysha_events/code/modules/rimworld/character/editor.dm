@@ -201,76 +201,88 @@
 	data["firstName"] = first_name || ""
 	data["nickname"] = nickname || ""
 	data["lastName"] = last_name || ""
-	data["biologicalAge"] = isnum(biological_age) ? biological_age : 21
-	data["chronologicalAge"] = isnum(chronological_age) ? chronological_age : 21
+	data["biologicalAge"] = rw_pref(/datum/preference/numeric/age) || 21
+	data["chronologicalAge"] = rw_pref(/datum/preference/numeric/chronological_age)
+	if(!isnum(data["chronologicalAge"]))
+		data["chronologicalAge"] = data["biologicalAge"]
 	data["realName"] = real_name || ""
-	data["gender"] = gender
-	data["bodyType"] = body_type
-	data["speciesPath"] = "[species_type]"
-	data["hairstyle"] = hairstyle
-	data["hairColor"] = hair_color
-	data["facial"] = facial_hairstyle
-	data["facialHairColor"] = facial_hair_color
-	data["underwear"] = underwear
-	data["underwearColor"] = underwear_color
-	data["undershirt"] = undershirt
-	data["undershirtColor"] = undershirt_color
-	data["bra"] = bra
-	data["braColor"] = bra_color
-	data["socks"] = socks
-	data["socksColor"] = socks_color
-	data["jumpsuit"] = jumpsuit_style
-	data["backpack"] = backpack
+	data["gender"] = rw_gender()
+	data["bodyType"] = rw_pref(/datum/preference/choiced/body_type) || USE_GENDER
+	data["speciesPath"] = "[rw_species()]"
+	data["hairstyle"] = rw_pref(/datum/preference/choiced/hairstyle) || "Bald"
+	data["hairColor"] = rw_hex(/datum/preference/color/hair_color, "#4a3728")
+	data["facial"] = rw_pref(/datum/preference/choiced/facial_hairstyle) || "Shaved"
+	data["facialHairColor"] = rw_hex(/datum/preference/color/facial_hair_color, data["hairColor"])
+	data["underwear"] = rw_pref(/datum/preference/choiced/underwear) || "Nude"
+	data["underwearColor"] = rw_hex(/datum/preference/color/underwear_color)
+	data["undershirt"] = rw_pref(/datum/preference/choiced/undershirt) || "Nude"
+	data["undershirtColor"] = rw_hex(/datum/preference/color/undershirt_color)
+	data["bra"] = rw_pref(/datum/preference/choiced/bra) || "Nude"
+	data["braColor"] = rw_hex(/datum/preference/color/bra_color)
+	data["socks"] = rw_pref(/datum/preference/choiced/socks) || "Nude"
+	data["socksColor"] = rw_hex(/datum/preference/color/socks_color)
+	data["jumpsuit"] = rw_pref(/datum/preference/choiced/jumpsuit) || PREF_SUIT
+	data["backpack"] = rw_pref(/datum/preference/choiced/backpack) || DBACKPACK
 	data["clothing"] = list(
-		"hairstyle" = hairstyle,
-		"facial" = facial_hairstyle,
-		"underwear" = underwear,
-		"undershirt" = undershirt,
-		"bra" = bra,
-		"socks" = socks,
-		"jumpsuit" = jumpsuit_style,
-		"backpack" = backpack,
+		"hairstyle" = data["hairstyle"],
+		"facial" = data["facial"],
+		"underwear" = data["underwear"],
+		"undershirt" = data["undershirt"],
+		"bra" = data["bra"],
+		"socks" = data["socks"],
+		"jumpsuit" = data["jumpsuit"],
+		"backpack" = data["backpack"],
 	)
 	data["clothingColors"] = list(
-		"hairstyle" = hair_color,
-		"facial" = facial_hair_color,
-		"underwear" = underwear_color,
-		"undershirt" = undershirt_color,
-		"bra" = bra_color,
-		"socks" = socks_color,
+		"hairstyle" = data["hairColor"],
+		"facial" = data["facialHairColor"],
+		"underwear" = data["underwearColor"],
+		"undershirt" = data["undershirtColor"],
+		"bra" = data["braColor"],
+		"socks" = data["socksColor"],
 	)
-	data["skinTone"] = skin_tone
-	data["mutantColor"] = mutant_color
-	data["mutantColor2"] = mutant_color_2
-	data["mutantColor3"] = mutant_color_3
-	data["eyeColor"] = eye_color
-	data["eyeColorRight"] = eye_color_right
-	data["hairGradient"] = hair_gradient
-	data["hairGradientColor"] = hair_gradient_color
-	data["facialGradient"] = facial_gradient
-	data["facialGradientColor"] = facial_gradient_color
-	data["bodySize"] = body_size
-	data["customSpecies"] = custom_species
-	data["customSpeciesLore"] = custom_species_lore
-	data["flavorText"] = flavor_text
-	data["flavorTextNsfw"] = flavor_text_nsfw
-	data["oocNotes"] = ooc_notes
-	data["headshot"] = headshot
-	data["characterScream"] = character_scream
-	data["characterLaugh"] = character_laugh
-	data["chatColor"] = chat_color
-	data["blooperChoice"] = blooper_choice
-	data["blooperSpeed"] = blooper_speed
-	data["blooperPitch"] = blooper_pitch
-	data["blooperPitchRange"] = blooper_pitch_range
-	data["customTaste"] = custom_taste
-	data["customSmell"] = custom_smell
-	data["generalRecord"] = general_record
-	data["medicalRecord"] = medical_record
-	data["securityRecord"] = security_record
-	data["exploitableInfo"] = exploitable_info
-	data["backgroundInfo"] = background_info
+	data["skinTone"] = rw_pref(/datum/preference/choiced/skin_tone) || "caucasian1"
+	var/list/mutant_colors = rw_pref(/datum/preference/tri_color/mutant_colors)
+	if(!islist(mutant_colors) || length(mutant_colors) < 3)
+		mutant_colors = list("#c0965f", "#c0965f", "#c0965f")
+	data["mutantColor"] = mutant_colors[1]
+	data["mutantColor2"] = mutant_colors[2]
+	data["mutantColor3"] = mutant_colors[3]
+	data["eyeColor"] = rw_hex(/datum/preference/color/eye_color, "#336699")
+	data["eyeColorRight"] = rw_hex(/datum/preference/color/heterochromatic, "")
+	data["hairGradient"] = rw_pref(/datum/preference/choiced/hair_gradient) || "None"
+	data["hairGradientColor"] = rw_hex(/datum/preference/color/hair_gradient)
+	data["facialGradient"] = rw_pref(/datum/preference/choiced/facial_hair_gradient) || "None"
+	data["facialGradientColor"] = rw_hex(/datum/preference/color/facial_hair_gradient)
+	data["bodySize"] = rw_pref(/datum/preference/numeric/body_size) || 1
+	data["customSpecies"] = rw_pref(/datum/preference/text/custom_species) || ""
+	data["customSpeciesLore"] = rw_pref(/datum/preference/text/custom_species_lore) || ""
+	data["flavorText"] = rw_pref(/datum/preference/text/flavor_text) || ""
+	data["flavorTextNsfw"] = rw_pref(/datum/preference/text/flavor_text_nsfw) || ""
+	data["oocNotes"] = rw_pref(/datum/preference/text/ooc_notes) || ""
+	data["headshot"] = rw_pref(/datum/preference/text/headshot) || ""
+	data["characterScream"] = rw_pref(/datum/preference/choiced/scream) || "Human Scream"
+	data["characterLaugh"] = rw_pref(/datum/preference/choiced/laugh) || "Human Laugh"
+	data["chatColor"] = rw_hex(/datum/preference/color/chat_color, "#b0b0b0")
+	data["blooperChoice"] = rw_pref(/datum/preference/choiced/blooper) || default_blooper_id()
+	data["blooperSpeed"] = rw_pref(/datum/preference/numeric/blooper_speed)
+	if(!isnum(data["blooperSpeed"]))
+		data["blooperSpeed"] = 50
+	data["blooperPitch"] = rw_pref(/datum/preference/numeric/blooper_pitch)
+	if(!isnum(data["blooperPitch"]))
+		data["blooperPitch"] = 50
+	data["blooperPitchRange"] = rw_pref(/datum/preference/numeric/blooper_pitch_range)
+	if(!isnum(data["blooperPitchRange"]))
+		data["blooperPitchRange"] = 30
+	data["customTaste"] = rw_pref(/datum/preference/text/taste) || ""
+	data["customSmell"] = rw_pref(/datum/preference/text/smell) || ""
+	data["generalRecord"] = rw_pref(/datum/preference/text/general) || ""
+	data["medicalRecord"] = rw_pref(/datum/preference/text/medical) || ""
+	data["securityRecord"] = rw_pref(/datum/preference/text/security) || ""
+	data["exploitableInfo"] = rw_pref(/datum/preference/text/exploitable) || ""
+	data["backgroundInfo"] = rw_pref(/datum/preference/text/background) || ""
 	data["tattoo"] = tattoo
+	data["character_preferences"] = compile_character_pref_ui(user)
 	data["xenogenes"] = xenogenes
 	data["childhood"] = childhood_id
 	data["adulthood"] = adulthood_id
@@ -354,38 +366,40 @@
 			save_character()
 			return TRUE
 		if("set_bio_age")
-			biological_age = clamp(text2num(params["value"]) || AGE_MIN, AGE_MIN, AGE_MAX)
-			if(chronological_age < biological_age)
-				chronological_age = biological_age
+			rw_set_pref(/datum/preference/numeric/age, clamp(text2num(params["value"]) || AGE_MIN, AGE_MIN, AGE_MAX), force = TRUE)
+			var/bio_age = rw_pref(/datum/preference/numeric/age)
+			if(GLOB.preference_entries[/datum/preference/numeric/chronological_age])
+				var/chrono_age = rw_pref(/datum/preference/numeric/chronological_age)
+				if(!isnum(chrono_age) || chrono_age < bio_age)
+					rw_set_pref(/datum/preference/numeric/chronological_age, bio_age, force = TRUE)
 			save_character()
 			return TRUE
 		if("set_chrono_age")
-			chronological_age = clamp(text2num(params["value"]) || AGE_MIN, AGE_MIN, AGE_CHRONO_MAX)
-			if(chronological_age < biological_age)
-				chronological_age = biological_age
+			if(GLOB.preference_entries[/datum/preference/numeric/chronological_age])
+				var/bio_age = rw_pref(/datum/preference/numeric/age) || AGE_MIN
+				rw_set_pref(/datum/preference/numeric/chronological_age, clamp(max(text2num(params["value"]) || bio_age, bio_age), AGE_MIN, AGE_CHRONO_MAX), force = TRUE)
 			save_character()
 			return TRUE
 		if("set_gender")
 			var/new_gender = params["value"]
 			if(new_gender == MALE || new_gender == FEMALE || new_gender == PLURAL || new_gender == NEUTER)
-				gender = new_gender
+				rw_set_pref(/datum/preference/choiced/gender, new_gender, force = TRUE)
 				save_character()
 				update_preview()
 			return TRUE
 		if("set_body_type")
 			var/new_body = params["value"]
-			if(new_body == "Use gender" || new_body == MALE || new_body == FEMALE)
-				body_type = new_body
+			if(new_body == USE_GENDER || new_body == MALE || new_body == FEMALE)
+				rw_set_pref(/datum/preference/choiced/body_type, new_body, force = TRUE)
 				save_character()
 				update_preview()
 			return TRUE
 		if("set_species")
 			var/new_species = text2path(params["value"])
-			if(!(new_species in GLOB.rw_base_species))
+			if(!rw_set_species(new_species))
 				return TRUE
-			species_type = new_species
 			var/list/kept_genes = list()
-			var/datum/species/proto = GLOB.species_prototypes[species_type]
+			var/datum/species/proto = GLOB.species_prototypes[rw_species()]
 			for(var/gene_id in xenogenes)
 				var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
 				if(gene?.is_supported(proto?.id))
@@ -426,13 +440,13 @@
 			return apply_clothing_color(user, params["id"])
 		if("set_hair_color")
 			if(params["value"])
-				hair_color = params["value"]
+				rw_set_pref(/datum/preference/color/hair_color, params["value"], force = TRUE)
 				save_character()
 				update_preview()
 			return TRUE
 		if("set_skin_tone")
 			if(params["value"] in GLOB.skin_tones)
-				skin_tone = params["value"]
+				rw_set_pref(/datum/preference/choiced/skin_tone, params["value"], force = TRUE)
 				save_character()
 				update_preview()
 			return TRUE
@@ -451,7 +465,7 @@
 			var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
 			if(!gene)
 				return TRUE
-			var/datum/species/proto = GLOB.species_prototypes[species_type]
+			var/datum/species/proto = GLOB.species_prototypes[rw_species()]
 			if(!gene.is_supported(proto?.id))
 				return TRUE
 			if(gene_id in xenogenes)
@@ -555,103 +569,86 @@
 			return choice_name
 	return null
 
+/datum/rimworld_preferences/proc/clothing_choice_pref(id)
+	switch(id)
+		if("hairstyle")
+			return /datum/preference/choiced/hairstyle
+		if("facial")
+			return /datum/preference/choiced/facial_hairstyle
+		if("underwear")
+			return /datum/preference/choiced/underwear
+		if("undershirt")
+			return /datum/preference/choiced/undershirt
+		if("bra")
+			return /datum/preference/choiced/bra
+		if("socks")
+			return /datum/preference/choiced/socks
+		if("jumpsuit")
+			return /datum/preference/choiced/jumpsuit
+		if("backpack")
+			return /datum/preference/choiced/backpack
+	return null
+
+/datum/rimworld_preferences/proc/clothing_color_pref(id)
+	switch(id)
+		if("hairstyle")
+			return /datum/preference/color/hair_color
+		if("facial")
+			return /datum/preference/color/facial_hair_color
+		if("underwear")
+			return /datum/preference/color/underwear_color
+		if("undershirt")
+			return /datum/preference/color/undershirt_color
+		if("bra")
+			return /datum/preference/color/bra_color
+		if("socks")
+			return /datum/preference/color/socks_color
+	return null
+
+/datum/rimworld_preferences/proc/clothing_choice_list(id)
+	switch(id)
+		if("hairstyle")
+			return SSaccessories.hairstyles_list
+		if("facial")
+			return SSaccessories.facial_hairstyles_list
+		if("underwear")
+			return SSaccessories.underwear_list
+		if("undershirt")
+			return SSaccessories.undershirt_list
+		if("bra")
+			return SSaccessories.bra_list
+		if("socks")
+			return SSaccessories.socks_list
+	return null
+
 /datum/rimworld_preferences/proc/apply_clothing_choice(id, value)
 	id = "[id]"
 	value = "[value]"
 	if(!length(id) || !length(value))
 		return TRUE
-	var/resolved
-	switch(id)
-		if("hairstyle")
-			resolved = resolve_list_choice(SSaccessories.hairstyles_list, value)
-			if(!resolved)
-				return TRUE
-			hairstyle = resolved
-		if("facial")
-			resolved = resolve_list_choice(SSaccessories.facial_hairstyles_list, value)
-			if(!resolved)
-				return TRUE
-			facial_hairstyle = resolved
-		if("underwear")
-			resolved = resolve_list_choice(SSaccessories.underwear_list, value)
-			if(!resolved)
-				return TRUE
-			underwear = resolved
-		if("undershirt")
-			resolved = resolve_list_choice(SSaccessories.undershirt_list, value)
-			if(!resolved)
-				return TRUE
-			undershirt = resolved
-		if("bra")
-			resolved = resolve_list_choice(SSaccessories.bra_list, value)
-			if(!resolved)
-				return TRUE
-			bra = resolved
-		if("socks")
-			resolved = resolve_list_choice(SSaccessories.socks_list, value)
-			if(!resolved)
-				return TRUE
-			socks = resolved
-		if("jumpsuit")
-			if(value != PREF_SUIT && value != PREF_SKIRT)
-				return TRUE
-			jumpsuit_style = value
-		if("backpack")
-			var/datum/preference/choiced/backpack/bag_pref = GLOB.preference_entries[/datum/preference/choiced/backpack]
-			if(!(bag_pref && (value in bag_pref.get_choices())))
-				return TRUE
-			backpack = value
-		else
-			return TRUE
+	var/preference_type = clothing_choice_pref(id)
+	if(!preference_type)
+		return TRUE
+	var/list/choices = clothing_choice_list(id)
+	var/resolved = choices ? resolve_list_choice(choices, value) : value
+	if(!resolved)
+		return TRUE
+	if(!rw_set_pref(preference_type, resolved, force = TRUE))
+		return TRUE
 	save_character()
 	update_preview()
 	return TRUE
 
 /datum/rimworld_preferences/proc/apply_clothing_color(mob/user, id)
 	id = "[id]"
-	if(!length(id) || !user)
+	var/preference_type = clothing_color_pref(id)
+	if(!length(id) || !user || !preference_type)
 		return TRUE
-	var/current
-	var/title
-	switch(id)
-		if("hairstyle")
-			current = hair_color
-			title = "Hair color"
-		if("facial")
-			current = facial_hair_color
-			title = "Facial hair color"
-		if("underwear")
-			current = underwear_color
-			title = "Underwear color"
-		if("undershirt")
-			current = undershirt_color
-			title = "Undershirt color"
-		if("bra")
-			current = bra_color
-			title = "Bra color"
-		if("socks")
-			current = socks_color
-			title = "Socks color"
-		else
-			return TRUE
-	var/new_color = input(user, title, "Prepare Colonist", current) as color|null
+	var/current = rw_hex(preference_type)
+	var/new_color = input(user, "Select color", "Prepare Colonist", current) as color|null
 	if(!new_color)
 		return TRUE
-	switch(id)
-		if("hairstyle")
-			hair_color = new_color
-		if("facial")
-			facial_hair_color = new_color
-		if("underwear")
-			underwear_color = new_color
-		if("undershirt")
-			undershirt_color = new_color
-		if("bra")
-			bra_color = new_color
-		if("socks")
-			socks_color = new_color
-		else
-			return TRUE
+	rw_set_pref(preference_type, new_color, force = TRUE)
 	save_character()
 	update_preview()
 	return TRUE
@@ -662,88 +659,90 @@
 			return TRUE
 	return FALSE
 
+/datum/rimworld_preferences/proc/set_mutant_color_index(index, value)
+	var/list/colors = rw_pref(/datum/preference/tri_color/mutant_colors)
+	if(!islist(colors) || length(colors) < 3)
+		colors = list("#c0965f", "#c0965f", "#c0965f")
+	else
+		colors = colors.Copy()
+	colors[index] = sanitize_hexcolor(value, 6, TRUE, colors[index])
+	rw_set_pref(/datum/preference/tri_color/mutant_colors, colors, force = TRUE)
+
+/datum/rimworld_preferences/proc/detail_pref_type(id)
+	switch(id)
+		if("skin_tone")
+			return /datum/preference/choiced/skin_tone
+		if("eye_color")
+			return /datum/preference/color/eye_color
+		if("eye_color_right")
+			return /datum/preference/color/heterochromatic
+		if("hair_gradient")
+			return /datum/preference/choiced/hair_gradient
+		if("hair_gradient_color")
+			return /datum/preference/color/hair_gradient
+		if("facial_gradient")
+			return /datum/preference/choiced/facial_hair_gradient
+		if("facial_gradient_color")
+			return /datum/preference/color/facial_hair_gradient
+		if("body_size")
+			return /datum/preference/numeric/body_size
+		if("custom_species")
+			return /datum/preference/text/custom_species
+		if("custom_species_lore")
+			return /datum/preference/text/custom_species_lore
+		if("flavor_text")
+			return /datum/preference/text/flavor_text
+		if("flavor_text_nsfw")
+			return /datum/preference/text/flavor_text_nsfw
+		if("ooc_notes")
+			return /datum/preference/text/ooc_notes
+		if("headshot")
+			return /datum/preference/text/headshot
+		if("character_scream")
+			return /datum/preference/choiced/scream
+		if("character_laugh")
+			return /datum/preference/choiced/laugh
+		if("blooper_choice")
+			return /datum/preference/choiced/blooper
+		if("blooper_speed")
+			return /datum/preference/numeric/blooper_speed
+		if("blooper_pitch")
+			return /datum/preference/numeric/blooper_pitch
+		if("blooper_pitch_range")
+			return /datum/preference/numeric/blooper_pitch_range
+		if("chat_color")
+			return /datum/preference/color/chat_color
+		if("custom_taste")
+			return /datum/preference/text/taste
+		if("custom_smell")
+			return /datum/preference/text/smell
+		if("general_record")
+			return /datum/preference/text/general
+		if("medical_record")
+			return /datum/preference/text/medical
+		if("security_record")
+			return /datum/preference/text/security
+		if("exploitable_info")
+			return /datum/preference/text/exploitable
+		if("background_info")
+			return /datum/preference/text/background
+	return null
+
 /datum/rimworld_preferences/proc/set_detail_field(id, value)
 	id = "[id]"
 	switch(id)
-		if("skin_tone")
-			if(!(value in GLOB.skin_tones))
-				return TRUE
-			skin_tone = value
 		if("mutant_color")
-			mutant_color = sanitize_hexcolor(value, 6, TRUE, mutant_color)
+			set_mutant_color_index(1, value)
 		if("mutant_color_2")
-			mutant_color_2 = sanitize_hexcolor(value, 6, TRUE, mutant_color_2)
+			set_mutant_color_index(2, value)
 		if("mutant_color_3")
-			mutant_color_3 = sanitize_hexcolor(value, 6, TRUE, mutant_color_3)
-		if("eye_color")
-			eye_color = sanitize_hexcolor(value, 6, TRUE, eye_color)
-		if("eye_color_right")
-			if(!length(value))
-				eye_color_right = ""
-			else
-				eye_color_right = sanitize_hexcolor(value, 6, TRUE, eye_color_right)
-		if("hair_gradient")
-			if(SSaccessories.hair_gradients_list && !(value in SSaccessories.hair_gradients_list))
-				return TRUE
-			hair_gradient = value || "None"
-		if("hair_gradient_color")
-			hair_gradient_color = sanitize_hexcolor(value, 6, TRUE, hair_gradient_color)
-		if("facial_gradient")
-			if(SSaccessories.facial_hair_gradients_list && !(value in SSaccessories.facial_hair_gradients_list))
-				return TRUE
-			facial_gradient = value || "None"
-		if("facial_gradient_color")
-			facial_gradient_color = sanitize_hexcolor(value, 6, TRUE, facial_gradient_color)
-		if("body_size")
-			body_size = clamp(text2num(value) || 1, BODY_SIZE_MIN, BODY_SIZE_MAX)
-		if("custom_species")
-			custom_species = copytext_char("[value]", 1, 101)
-		if("custom_species_lore")
-			custom_species_lore = copytext_char("[value]", 1, MAX_FLAVOR_LEN + 1)
-		if("flavor_text")
-			flavor_text = copytext_char("[value]", 1, MAX_FLAVOR_LEN + 1)
-		if("flavor_text_nsfw")
-			flavor_text_nsfw = copytext_char("[value]", 1, MAX_FLAVOR_LEN + 1)
-		if("ooc_notes")
-			ooc_notes = copytext_char("[value]", 1, MAX_FLAVOR_LEN + 1)
-		if("headshot")
-			headshot = copytext_char("[value]", 1, MAX_MESSAGE_LEN + 1)
-		if("character_scream")
-			if(!(value in GLOB.scream_types))
-				return TRUE
-			character_scream = value
-		if("character_laugh")
-			if(!(value in GLOB.laugh_types))
-				return TRUE
-			character_laugh = value
-		if("blooper_choice")
-			if(!length(SSblooper.blooper_list) || !(value in SSblooper.blooper_list))
-				return TRUE
-			blooper_choice = value
-		if("blooper_speed")
-			blooper_speed = clamp(text2num(value), 0, 100)
-		if("blooper_pitch")
-			blooper_pitch = clamp(text2num(value), 0, 100)
-		if("blooper_pitch_range")
-			blooper_pitch_range = clamp(text2num(value), 0, 100)
-		if("chat_color")
-			chat_color = sanitize_hexcolor(value, 6, TRUE, chat_color)
-		if("custom_taste")
-			custom_taste = copytext_char("[value]", 1, 101)
-		if("custom_smell")
-			custom_smell = copytext_char("[value]", 1, 101)
-		if("general_record")
-			general_record = copytext_char("[value]", 1, MAX_FLAVOR_LEN + 1)
-		if("medical_record")
-			medical_record = copytext_char("[value]", 1, MAX_FLAVOR_LEN + 1)
-		if("security_record")
-			security_record = copytext_char("[value]", 1, MAX_FLAVOR_LEN + 1)
-		if("exploitable_info")
-			exploitable_info = copytext_char("[value]", 1, MAX_FLAVOR_LEN + 1)
-		if("background_info")
-			background_info = copytext_char("[value]", 1, MAX_FLAVOR_LEN + 1)
+			set_mutant_color_index(3, value)
 		else
-			return TRUE
+			var/preference_type = detail_pref_type(id)
+			if(!preference_type)
+				return TRUE
+			if(!rw_set_pref(preference_type, value, force = TRUE))
+				return TRUE
 	save_character()
 	if(detail_needs_preview(id))
 		update_preview()
@@ -755,30 +754,33 @@
 		return TRUE
 	var/current
 	var/title
+	var/list/mutant_colors = rw_pref(/datum/preference/tri_color/mutant_colors)
+	if(!islist(mutant_colors) || length(mutant_colors) < 3)
+		mutant_colors = list("#c0965f", "#c0965f", "#c0965f")
 	switch(id)
 		if("mutant_color")
-			current = mutant_color
+			current = mutant_colors[1]
 			title = "Body color"
 		if("mutant_color_2")
-			current = mutant_color_2
+			current = mutant_colors[2]
 			title = "Body color 2"
 		if("mutant_color_3")
-			current = mutant_color_3
+			current = mutant_colors[3]
 			title = "Body color 3"
 		if("eye_color")
-			current = eye_color
+			current = rw_hex(/datum/preference/color/eye_color, "#336699")
 			title = "Eye color"
 		if("eye_color_right")
-			current = eye_color_right || eye_color
+			current = rw_hex(/datum/preference/color/heterochromatic, rw_hex(/datum/preference/color/eye_color, "#336699"))
 			title = "Right eye color"
 		if("hair_gradient_color")
-			current = hair_gradient_color
+			current = rw_hex(/datum/preference/color/hair_gradient)
 			title = "Hair gradient color"
 		if("facial_gradient_color")
-			current = facial_gradient_color
+			current = rw_hex(/datum/preference/color/facial_hair_gradient)
 			title = "Facial gradient color"
 		if("chat_color")
-			current = chat_color
+			current = rw_hex(/datum/preference/color/chat_color, "#b0b0b0")
 			title = "Chat color"
 		else
 			return TRUE
@@ -790,8 +792,12 @@
 /datum/rimworld_preferences/proc/play_character_blooper(mob/user)
 	if(!user || !length(SSblooper.blooper_list))
 		return TRUE
-	var/datum/blooper/voice = SSblooper.blooper_list[blooper_choice]
+	var/choice = rw_pref(/datum/preference/choiced/blooper)
+	var/datum/blooper/voice = SSblooper.blooper_list[choice]
 	if(!voice)
 		return TRUE
-	voice.play_bloop(user, list(user), "This is a test message to hear a blooper.", 7, 70, blooper_speed, blooper_pitch, blooper_pitch_range)
+	var/speed = rw_pref(/datum/preference/numeric/blooper_speed)
+	var/pitch = rw_pref(/datum/preference/numeric/blooper_pitch)
+	var/range = rw_pref(/datum/preference/numeric/blooper_pitch_range)
+	voice.play_bloop(user, list(user), "This is a test message to hear a blooper.", 7, 70, isnum(speed) ? speed : 50, isnum(pitch) ? pitch : 50, isnum(range) ? range : 30)
 	return TRUE

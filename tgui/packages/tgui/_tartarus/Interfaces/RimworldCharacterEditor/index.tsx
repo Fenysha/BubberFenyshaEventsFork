@@ -21,6 +21,7 @@ import { classes } from 'tgui-core/react';
 import { Window } from '../../../layouts';
 import '../../Styles/RimworldCharacterEditor.scss';
 import type {
+  PrefField,
   RimworldCharacterEditorData,
   RwClothingChooser,
   RwSkillDef,
@@ -706,15 +707,148 @@ function AccessoryChooser(props: {
   );
 }
 
+function asHexColor(value: unknown, fallback = '#ffffff'): string {
+  if (typeof value !== 'string' || !value.length) {
+    return fallback;
+  }
+  return value.startsWith('#') ? value : `#${value}`;
+}
+
+function asFiniteNumber(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function PrefFieldList(props: { fields: PrefField[] }) {
+  if (!props.fields.length) {
+    return null;
+  }
+  return (
+    <div className="RimworldCharacterEditor__appearance">
+      {props.fields.map((field) => (
+        <PrefFieldRow key={field.key} field={field} />
+      ))}
+    </div>
+  );
+}
+
+function PrefFieldRow(props: { field: PrefField }) {
+  const { act } = useBackend<RimworldCharacterEditorData>();
+  const { field } = props;
+  const kind = field.kind === 'tri_color' ? 'tricolor' : field.kind;
+
+  let control: ReactNode;
+  switch (kind) {
+    case 'choiced': {
+      const selected = String(field.value ?? '');
+      const options = (field.choices || []).map((choice) => ({
+        value: choice,
+        displayText: field.displayNames?.[choice] || choice,
+      }));
+      control = (
+        <Dropdown
+          width="100%"
+          selected={selected}
+          options={options.length ? options : [selected || 'None']}
+          onSelected={(value) =>
+            act('set_preference', { preference: field.key, value })
+          }
+        />
+      );
+      break;
+    }
+    case 'color':
+      control = (
+        <ColorPick
+          color={asHexColor(field.value)}
+          onClick={() =>
+            act('set_color_preference', { preference: field.key })
+          }
+        />
+      );
+      break;
+    case 'tricolor': {
+      const colors = Array.isArray(field.value) ? field.value : [];
+      control = (
+        <Stack>
+          {[0, 1, 2].map((index) => (
+            <Stack.Item key={index}>
+              <ColorPick
+                color={asHexColor(colors[index])}
+                onClick={() =>
+                  act('set_tricolor_preference', {
+                    preference: field.key,
+                    value: index + 1,
+                  })
+                }
+              />
+            </Stack.Item>
+          ))}
+        </Stack>
+      );
+      break;
+    }
+    case 'toggle':
+      control = (
+        <Button.Checkbox
+          checked={!!field.value}
+          onClick={() =>
+            act('set_preference', {
+              preference: field.key,
+              value: !field.value,
+            })
+          }
+        />
+      );
+      break;
+    case 'numeric': {
+      const min = asFiniteNumber(field.min, 0);
+      const max = asFiniteNumber(field.max, 100);
+      const step = asFiniteNumber(field.step, 1);
+      control = (
+        <NumberInput
+          width="100%"
+          value={asFiniteNumber(field.value, min)}
+          minValue={min}
+          maxValue={max}
+          step={step || 1}
+          onChange={(value) =>
+            act('set_preference', { preference: field.key, value })
+          }
+        />
+      );
+      break;
+    }
+    case 'text':
+      control = (
+        <Input
+          fluid
+          value={typeof field.value === 'string' ? field.value : ''}
+          onBlur={(value) =>
+            act('set_preference', { preference: field.key, value })
+          }
+        />
+      );
+      break;
+    default:
+      return null;
+  }
+
+  return (
+    <AppearanceRow label={field.name || field.key}>{control}</AppearanceRow>
+  );
+}
+
 function BiologyTab() {
   const { act, data } = useBackend<RimworldCharacterEditorData>();
   const currentSpecies = (data.speciesDefs || []).find(
     (species) => species.path === data.speciesPath,
   );
+  const speciesFields = data.character_preferences?.species || [];
 
   return (
     <Stack fill>
-      <Stack.Item grow>
+      <Stack.Item grow className="RimworldCharacterEditor__scrollPane">
         <Box className="RimworldCharacterEditor__sectionTitle">Race</Box>
         {(data.speciesDefs || []).map((species) => (
           <Button
@@ -726,8 +860,9 @@ function BiologyTab() {
             {species.name}
           </Button>
         ))}
+        <PrefFieldList fields={speciesFields} />
       </Stack.Item>
-      <Stack.Item grow>
+      <Stack.Item grow className="RimworldCharacterEditor__scrollPane">
         <Box className="RimworldCharacterEditor__sectionTitle">Xenogenes</Box>
         {data.xenogeneDefs.map((gene) => {
           const supported =

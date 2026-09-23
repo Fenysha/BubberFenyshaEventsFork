@@ -54,6 +54,123 @@
 	pref_bridge = new /datum/preferences/rimworld_bridge(parent, src)
 	return pref_bridge
 
+/datum/rimworld_preferences/proc/rw_pref(preference_type)
+	if(!GLOB.preference_entries[preference_type])
+		return null
+	var/datum/preferences/bridge = ensure_pref_bridge()
+	if(!bridge)
+		return null
+	return bridge.read_preference(preference_type)
+
+/datum/rimworld_preferences/proc/rw_set_pref(preference_type, value, force = FALSE)
+	if(!GLOB.preference_entries[preference_type])
+		return FALSE
+	var/datum/preferences/bridge = ensure_pref_bridge()
+	var/datum/preference/pref = GLOB.preference_entries[preference_type]
+	if(!bridge || !pref)
+		return FALSE
+	var/success
+	if(force)
+		success = bridge.write_preference(pref, value)
+	else
+		success = bridge.update_preference(pref, value)
+	if(success)
+		bridge.update_body_parts(pref)
+	return success
+
+/datum/rimworld_preferences/proc/pin_rw_species(species_path)
+	var/datum/preferences/bridge = ensure_pref_bridge()
+	if(!bridge)
+		return FALSE
+	if(!(species_path in GLOB.rw_base_species))
+		species_path = /datum/species/human
+	var/datum/species/proto = GLOB.species_prototypes[species_path]
+	if(!proto)
+		return FALSE
+	if(!islist(bridge.character_data))
+		bridge.character_data = list()
+	bridge.character_data["species"] = proto.id
+	bridge.value_cache[/datum/preference/choiced/species] = species_path
+	return TRUE
+
+/datum/rimworld_preferences/proc/rw_species()
+	var/datum/preferences/bridge = ensure_pref_bridge()
+	if(bridge)
+		var/cached = bridge.value_cache[/datum/preference/choiced/species]
+		if(cached in GLOB.rw_base_species)
+			return cached
+		if(islist(bridge.character_data))
+			var/stored = bridge.character_data["species"]
+			var/species_path = ispath(stored, /datum/species) ? stored : GLOB.species_list[stored]
+			if(species_path in GLOB.rw_base_species)
+				bridge.value_cache[/datum/preference/choiced/species] = species_path
+				return species_path
+	return /datum/species/human
+
+/datum/rimworld_preferences/proc/rw_gender()
+	var/new_gender = rw_pref(/datum/preference/choiced/gender)
+	if(new_gender == MALE || new_gender == FEMALE || new_gender == PLURAL || new_gender == NEUTER)
+		return new_gender
+	return MALE
+
+/datum/rimworld_preferences/proc/rw_hex(preference_type, fallback = "#ffffff")
+	var/value = rw_pref(preference_type)
+	if(!istext(value) || !length(value))
+		return fallback
+	if(copytext(value, 1, 2) != "#")
+		return "#[value]"
+	return value
+
+/datum/rimworld_preferences/proc/refresh_pref_species()
+	var/datum/preferences/bridge = ensure_pref_bridge()
+	if(!bridge)
+		return
+	var/species_path = /datum/species/human
+	if(islist(bridge.character_data))
+		var/stored = bridge.character_data["species"]
+		if(ispath(stored, /datum/species))
+			species_path = stored
+		else if(istext(stored))
+			species_path = GLOB.species_list[stored]
+	if(!(species_path in GLOB.rw_base_species))
+		species_path = /datum/species/human
+	pin_rw_species(species_path)
+	if(bridge.pref_species?.type == species_path)
+		return
+	QDEL_NULL(bridge.pref_species)
+	if(ispath(species_path, /datum/species))
+		bridge.pref_species = new species_path()
+
+/datum/rimworld_preferences/proc/rw_set_species(species_path)
+	if(!(species_path in GLOB.rw_base_species))
+		return FALSE
+	if(!pin_rw_species(species_path))
+		return FALSE
+	refresh_pref_species()
+	var/datum/preferences/bridge = pref_bridge
+	var/datum/species/proto = GLOB.species_prototypes[species_path]
+	if(bridge && proto)
+		var/list/defaults = proto.get_default_mutant_bodyparts()
+		if(islist(defaults))
+			bridge.mutant_bodyparts = list()
+			for(var/part_key in defaults)
+				var/list/part_info = defaults[part_key]
+				if(!islist(part_info) || !length(part_info))
+					continue
+				var/part_name = part_info[1]
+				bridge.mutant_bodyparts[part_key] = list(
+					MUTANT_INDEX_NAME = part_name,
+					MUTANT_INDEX_COLOR_LIST = list("#FFFFFF", "#FFFFFF", "#FFFFFF"),
+					MUTANT_INDEX_EMISSIVE_LIST = list(FALSE, FALSE, FALSE),
+				)
+				var/datum/preference/toggle_pref = GLOB.preference_entries_by_key["[part_key]_toggle"]
+				if(istype(toggle_pref, /datum/preference/toggle))
+					rw_set_pref(toggle_pref.type, TRUE, force = TRUE)
+				var/datum/preference/choice_pref = GLOB.preference_entries_by_key["feature_[part_key]"]
+				if(istype(choice_pref, /datum/preference/choiced) && part_name)
+					rw_set_pref(choice_pref.type, part_name, force = TRUE)
+	return TRUE
+
 /datum/rimworld_preferences/proc/hidden_pref_keys()
 	return list(
 		"real_name",
@@ -94,12 +211,20 @@
 		"operative_species",
 		"skin_tone",
 		"eye_color",
+		"heterochromatic",
 		"hair_gradient",
 		"hair_gradient_color",
 		"facial_hair_gradient",
 		"facial_hair_gradient_color",
 		"flavor_text",
 		"flavor_text_nsfw",
+		"ooc_notes",
+		"eye_emissives",
+		"blooper_send",
+		"blooper_hear",
+		"allow_genitals_toggle",
+		"art_ref_nsfw",
+		"cursekin_char_slot",
 		"body_size",
 		"custom_species",
 		"custom_species_lore",
@@ -114,195 +239,17 @@
 		"blooper_pitch_range",
 		"custom_taste",
 		"custom_smell",
+		"general_record",
+		"medical_record",
+		"security_record",
+		"exploitable_info",
+		"background_info",
+		"mutant_colors_color",
+		"mismatched_customization",
+		"allow_mismatched_parts_toggle",
+		"allow_emissives_toggle",
+		"allow_mismatched_hair_color_toggle",
 	)
-
-/datum/rimworld_preferences/proc/identity_pref_categories()
-	return list(
-		PREFERENCE_CATEGORY_NON_CONTEXTUAL,
-		PREFERENCE_CATEGORY_OOC_PREFS,
-	)
-
-/datum/rimworld_preferences/proc/bridge_write(preference_type, value)
-	var/datum/preferences/bridge = ensure_pref_bridge()
-	var/datum/preference/pref = GLOB.preference_entries[preference_type]
-	if(!bridge || !pref)
-		return
-	bridge.value_cache[preference_type] = value
-	if(!islist(bridge.character_data))
-		bridge.character_data = list()
-	bridge.character_data[pref.savefile_key] = pref.serialize(value)
-
-/datum/rimworld_preferences/proc/sync_owned_to_bridge()
-	var/datum/preferences/bridge = ensure_pref_bridge()
-	if(!bridge)
-		return
-	bridge_write(/datum/preference/name/real_name, real_name)
-	bridge_write(/datum/preference/numeric/age, biological_age)
-	if(GLOB.preference_entries[/datum/preference/numeric/chronological_age])
-		bridge_write(/datum/preference/numeric/chronological_age, chronological_age)
-	bridge_write(/datum/preference/choiced/gender, gender)
-	bridge_write(/datum/preference/choiced/body_type, body_type)
-	bridge_write(/datum/preference/choiced/species, species_type)
-	bridge_write(/datum/preference/choiced/hairstyle, hairstyle)
-	bridge_write(/datum/preference/color/hair_color, hair_color)
-	bridge_write(/datum/preference/choiced/facial_hairstyle, facial_hairstyle)
-	bridge_write(/datum/preference/color/facial_hair_color, facial_hair_color)
-	bridge_write(/datum/preference/choiced/underwear, underwear)
-	bridge_write(/datum/preference/color/underwear_color, underwear_color)
-	bridge_write(/datum/preference/choiced/undershirt, undershirt)
-	if(GLOB.preference_entries[/datum/preference/color/undershirt_color])
-		bridge_write(/datum/preference/color/undershirt_color, undershirt_color)
-	bridge_write(/datum/preference/choiced/bra, bra)
-	if(GLOB.preference_entries[/datum/preference/color/bra_color])
-		bridge_write(/datum/preference/color/bra_color, bra_color)
-	bridge_write(/datum/preference/choiced/socks, socks)
-	if(GLOB.preference_entries[/datum/preference/color/socks_color])
-		bridge_write(/datum/preference/color/socks_color, socks_color)
-	bridge_write(/datum/preference/choiced/jumpsuit, jumpsuit_style)
-	bridge_write(/datum/preference/choiced/backpack, backpack)
-	bridge_write(/datum/preference/choiced/skin_tone, skin_tone)
-	bridge_write(/datum/preference/color/eye_color, eye_color)
-	bridge_write(/datum/preference/choiced/hair_gradient, hair_gradient)
-	bridge_write(/datum/preference/color/hair_gradient, hair_gradient_color)
-	bridge_write(/datum/preference/choiced/facial_hair_gradient, facial_gradient)
-	bridge_write(/datum/preference/color/facial_hair_gradient, facial_gradient_color)
-	if(GLOB.preference_entries[/datum/preference/numeric/body_size])
-		bridge_write(/datum/preference/numeric/body_size, body_size)
-	if(GLOB.preference_entries[/datum/preference/text/custom_species])
-		bridge_write(/datum/preference/text/custom_species, custom_species)
-	if(GLOB.preference_entries[/datum/preference/text/custom_species_lore])
-		bridge_write(/datum/preference/text/custom_species_lore, custom_species_lore)
-	if(GLOB.preference_entries[/datum/preference/text/flavor_text])
-		bridge_write(/datum/preference/text/flavor_text, flavor_text)
-	if(GLOB.preference_entries[/datum/preference/text/flavor_text_nsfw])
-		bridge_write(/datum/preference/text/flavor_text_nsfw, flavor_text_nsfw)
-	if(GLOB.preference_entries[/datum/preference/text/ooc_notes])
-		bridge_write(/datum/preference/text/ooc_notes, ooc_notes)
-	if(GLOB.preference_entries[/datum/preference/text/headshot])
-		bridge_write(/datum/preference/text/headshot, headshot)
-	if(GLOB.preference_entries[/datum/preference/choiced/scream])
-		bridge_write(/datum/preference/choiced/scream, character_scream)
-	if(GLOB.preference_entries[/datum/preference/choiced/laugh])
-		bridge_write(/datum/preference/choiced/laugh, character_laugh)
-	if(GLOB.preference_entries[/datum/preference/color/chat_color])
-		bridge_write(/datum/preference/color/chat_color, chat_color)
-	if(GLOB.preference_entries[/datum/preference/choiced/blooper])
-		bridge_write(/datum/preference/choiced/blooper, blooper_choice)
-	if(GLOB.preference_entries[/datum/preference/numeric/blooper_speed])
-		bridge_write(/datum/preference/numeric/blooper_speed, blooper_speed)
-	if(GLOB.preference_entries[/datum/preference/numeric/blooper_pitch])
-		bridge_write(/datum/preference/numeric/blooper_pitch, blooper_pitch)
-	if(GLOB.preference_entries[/datum/preference/numeric/blooper_pitch_range])
-		bridge_write(/datum/preference/numeric/blooper_pitch_range, blooper_pitch_range)
-	if(GLOB.preference_entries[/datum/preference/text/taste])
-		bridge_write(/datum/preference/text/taste, custom_taste)
-	if(GLOB.preference_entries[/datum/preference/text/smell])
-		bridge_write(/datum/preference/text/smell, custom_smell)
-	if(GLOB.preference_entries[/datum/preference/text/general])
-		bridge_write(/datum/preference/text/general, general_record)
-	if(GLOB.preference_entries[/datum/preference/text/medical])
-		bridge_write(/datum/preference/text/medical, medical_record)
-	if(GLOB.preference_entries[/datum/preference/text/security])
-		bridge_write(/datum/preference/text/security, security_record)
-	if(GLOB.preference_entries[/datum/preference/text/exploitable])
-		bridge_write(/datum/preference/text/exploitable, exploitable_info)
-	if(GLOB.preference_entries[/datum/preference/text/background])
-		bridge_write(/datum/preference/text/background, background_info)
-	if(ispath(species_type, /datum/species) && bridge.pref_species?.type != species_type)
-		QDEL_NULL(bridge.pref_species)
-		bridge.pref_species = new species_type()
-
-/datum/rimworld_preferences/proc/sync_bridge_to_owned()
-	var/datum/preferences/bridge = pref_bridge
-	if(!bridge)
-		return
-	var/new_name = bridge.read_preference(/datum/preference/name/real_name)
-	if(new_name && new_name != real_name)
-		split_real_name(new_name)
-		rebuild_real_name()
-	var/new_age = bridge.read_preference(/datum/preference/numeric/age)
-	if(isnum(new_age))
-		biological_age = clamp(new_age, AGE_MIN, AGE_MAX)
-		if(chronological_age < biological_age)
-			chronological_age = biological_age
-	if(GLOB.preference_entries[/datum/preference/numeric/chronological_age])
-		var/new_chrono = bridge.read_preference(/datum/preference/numeric/chronological_age)
-		if(isnum(new_chrono))
-			chronological_age = clamp(max(new_chrono, biological_age), AGE_MIN, AGE_CHRONO_MAX)
-	var/new_gender = bridge.read_preference(/datum/preference/choiced/gender)
-	if(new_gender == MALE || new_gender == FEMALE || new_gender == PLURAL || new_gender == NEUTER)
-		gender = new_gender
-	var/new_body = bridge.read_preference(/datum/preference/choiced/body_type)
-	if(new_body == "Use gender" || new_body == MALE || new_body == FEMALE)
-		body_type = new_body
-	var/new_species = bridge.read_preference(/datum/preference/choiced/species)
-	if(ispath(new_species, /datum/species) && (new_species in GLOB.rw_base_species))
-		species_type = new_species
-	hairstyle = bridge.read_preference(/datum/preference/choiced/hairstyle) || hairstyle
-	hair_color = bridge.read_preference(/datum/preference/color/hair_color) || hair_color
-	facial_hairstyle = bridge.read_preference(/datum/preference/choiced/facial_hairstyle) || facial_hairstyle
-	facial_hair_color = bridge.read_preference(/datum/preference/color/facial_hair_color) || facial_hair_color
-	underwear = bridge.read_preference(/datum/preference/choiced/underwear) || underwear
-	underwear_color = bridge.read_preference(/datum/preference/color/underwear_color) || underwear_color
-	undershirt = bridge.read_preference(/datum/preference/choiced/undershirt) || undershirt
-	bra = bridge.read_preference(/datum/preference/choiced/bra) || bra
-	socks = bridge.read_preference(/datum/preference/choiced/socks) || socks
-	jumpsuit_style = bridge.read_preference(/datum/preference/choiced/jumpsuit) || jumpsuit_style
-	backpack = bridge.read_preference(/datum/preference/choiced/backpack) || backpack
-	skin_tone = bridge.read_preference(/datum/preference/choiced/skin_tone) || skin_tone
-	eye_color = bridge.read_preference(/datum/preference/color/eye_color) || eye_color
-	hair_gradient = bridge.read_preference(/datum/preference/choiced/hair_gradient) || hair_gradient
-	hair_gradient_color = bridge.read_preference(/datum/preference/color/hair_gradient) || hair_gradient_color
-	facial_gradient = bridge.read_preference(/datum/preference/choiced/facial_hair_gradient) || facial_gradient
-	facial_gradient_color = bridge.read_preference(/datum/preference/color/facial_hair_gradient) || facial_gradient_color
-	if(GLOB.preference_entries[/datum/preference/numeric/body_size])
-		body_size = bridge.read_preference(/datum/preference/numeric/body_size) || body_size
-	if(GLOB.preference_entries[/datum/preference/text/custom_species])
-		custom_species = bridge.read_preference(/datum/preference/text/custom_species) || ""
-	if(GLOB.preference_entries[/datum/preference/text/custom_species_lore])
-		custom_species_lore = bridge.read_preference(/datum/preference/text/custom_species_lore) || ""
-	if(GLOB.preference_entries[/datum/preference/text/flavor_text])
-		flavor_text = bridge.read_preference(/datum/preference/text/flavor_text) || ""
-	if(GLOB.preference_entries[/datum/preference/text/flavor_text_nsfw])
-		flavor_text_nsfw = bridge.read_preference(/datum/preference/text/flavor_text_nsfw) || ""
-	if(GLOB.preference_entries[/datum/preference/text/ooc_notes])
-		ooc_notes = bridge.read_preference(/datum/preference/text/ooc_notes) || ""
-	if(GLOB.preference_entries[/datum/preference/text/headshot])
-		headshot = bridge.read_preference(/datum/preference/text/headshot) || ""
-	if(GLOB.preference_entries[/datum/preference/choiced/scream])
-		character_scream = bridge.read_preference(/datum/preference/choiced/scream) || character_scream
-	if(GLOB.preference_entries[/datum/preference/choiced/laugh])
-		character_laugh = bridge.read_preference(/datum/preference/choiced/laugh) || character_laugh
-	if(GLOB.preference_entries[/datum/preference/color/chat_color])
-		chat_color = bridge.read_preference(/datum/preference/color/chat_color) || chat_color
-	if(GLOB.preference_entries[/datum/preference/choiced/blooper])
-		blooper_choice = bridge.read_preference(/datum/preference/choiced/blooper) || blooper_choice
-	if(GLOB.preference_entries[/datum/preference/numeric/blooper_speed])
-		var/new_speed = bridge.read_preference(/datum/preference/numeric/blooper_speed)
-		if(isnum(new_speed))
-			blooper_speed = new_speed
-	if(GLOB.preference_entries[/datum/preference/numeric/blooper_pitch])
-		var/new_pitch = bridge.read_preference(/datum/preference/numeric/blooper_pitch)
-		if(isnum(new_pitch))
-			blooper_pitch = new_pitch
-	if(GLOB.preference_entries[/datum/preference/numeric/blooper_pitch_range])
-		var/new_range = bridge.read_preference(/datum/preference/numeric/blooper_pitch_range)
-		if(isnum(new_range))
-			blooper_pitch_range = new_range
-	if(GLOB.preference_entries[/datum/preference/text/taste])
-		custom_taste = bridge.read_preference(/datum/preference/text/taste) || ""
-	if(GLOB.preference_entries[/datum/preference/text/smell])
-		custom_smell = bridge.read_preference(/datum/preference/text/smell) || ""
-	if(GLOB.preference_entries[/datum/preference/text/general])
-		general_record = bridge.read_preference(/datum/preference/text/general) || ""
-	if(GLOB.preference_entries[/datum/preference/text/medical])
-		medical_record = bridge.read_preference(/datum/preference/text/medical) || ""
-	if(GLOB.preference_entries[/datum/preference/text/security])
-		security_record = bridge.read_preference(/datum/preference/text/security) || ""
-	if(GLOB.preference_entries[/datum/preference/text/exploitable])
-		exploitable_info = bridge.read_preference(/datum/preference/text/exploitable) || ""
-	if(GLOB.preference_entries[/datum/preference/text/background])
-		background_info = bridge.read_preference(/datum/preference/text/background) || ""
 
 /datum/rimworld_preferences/proc/reset_pref_bridge()
 	var/datum/preferences/bridge = ensure_pref_bridge()
@@ -317,9 +264,7 @@
 	bridge.augment_limb_styles = list()
 	bridge.languages = list()
 	bridge.all_quirks = list()
-	if(bridge.pref_species)
-		QDEL_NULL(bridge.pref_species)
-	sync_owned_to_bridge()
+	QDEL_NULL(bridge.pref_species)
 
 /datum/rimworld_preferences/proc/export_pref_bridge()
 	var/datum/preferences/bridge = pref_bridge
@@ -347,56 +292,166 @@
 	bridge.augments = islist(data["augments"]) ? deep_copy_list(data["augments"]) : list()
 	bridge.augment_limb_styles = islist(data["augment_limb_styles"]) ? deep_copy_list(data["augment_limb_styles"]) : list()
 	bridge.languages = islist(data["languages"]) ? data["languages"].Copy() : list()
-	sync_owned_to_bridge()
+	refresh_pref_species()
+
+/datum/rimworld_preferences/proc/migrate_legacy_appearance(list/data)
+	if(!data || length(data["pref_values"]))
+		return
+	var/static/list/legacy_map = list(
+		"gender" = /datum/preference/choiced/gender,
+		"body_type" = /datum/preference/choiced/body_type,
+		"hairstyle" = /datum/preference/choiced/hairstyle,
+		"hair_color" = /datum/preference/color/hair_color,
+		"facial_hairstyle" = /datum/preference/choiced/facial_hairstyle,
+		"facial_hair_color" = /datum/preference/color/facial_hair_color,
+		"underwear" = /datum/preference/choiced/underwear,
+		"underwear_color" = /datum/preference/color/underwear_color,
+		"undershirt" = /datum/preference/choiced/undershirt,
+		"undershirt_color" = /datum/preference/color/undershirt_color,
+		"bra" = /datum/preference/choiced/bra,
+		"bra_color" = /datum/preference/color/bra_color,
+		"socks" = /datum/preference/choiced/socks,
+		"socks_color" = /datum/preference/color/socks_color,
+		"jumpsuit_style" = /datum/preference/choiced/jumpsuit,
+		"backpack" = /datum/preference/choiced/backpack,
+		"skin_tone" = /datum/preference/choiced/skin_tone,
+		"eye_color" = /datum/preference/color/eye_color,
+		"eye_color_right" = /datum/preference/color/heterochromatic,
+		"hair_gradient" = /datum/preference/choiced/hair_gradient,
+		"hair_gradient_color" = /datum/preference/color/hair_gradient,
+		"facial_gradient" = /datum/preference/choiced/facial_hair_gradient,
+		"facial_gradient_color" = /datum/preference/color/facial_hair_gradient,
+		"body_size" = /datum/preference/numeric/body_size,
+		"custom_species" = /datum/preference/text/custom_species,
+		"custom_species_lore" = /datum/preference/text/custom_species_lore,
+		"flavor_text" = /datum/preference/text/flavor_text,
+		"flavor_text_nsfw" = /datum/preference/text/flavor_text_nsfw,
+		"ooc_notes" = /datum/preference/text/ooc_notes,
+		"headshot" = /datum/preference/text/headshot,
+		"character_scream" = /datum/preference/choiced/scream,
+		"character_laugh" = /datum/preference/choiced/laugh,
+		"chat_color" = /datum/preference/color/chat_color,
+		"blooper_choice" = /datum/preference/choiced/blooper,
+		"blooper_speed" = /datum/preference/numeric/blooper_speed,
+		"blooper_pitch" = /datum/preference/numeric/blooper_pitch,
+		"blooper_pitch_range" = /datum/preference/numeric/blooper_pitch_range,
+		"custom_taste" = /datum/preference/text/taste,
+		"custom_smell" = /datum/preference/text/smell,
+		"general_record" = /datum/preference/text/general,
+		"medical_record" = /datum/preference/text/medical,
+		"security_record" = /datum/preference/text/security,
+		"exploitable_info" = /datum/preference/text/exploitable,
+		"background_info" = /datum/preference/text/background,
+		"biological_age" = /datum/preference/numeric/age,
+		"chronological_age" = /datum/preference/numeric/chronological_age,
+	)
+	for(var/old_key in legacy_map)
+		if(isnull(data[old_key]))
+			continue
+		rw_set_pref(legacy_map[old_key], data[old_key], force = TRUE)
+	var/species_path = text2path(data["species"])
+	if(ispath(species_path, /datum/species))
+		rw_set_species(species_path)
+	var/m1 = data["mutant_color"]
+	var/m2 = data["mutant_color_2"] || m1
+	var/m3 = data["mutant_color_3"] || m1
+	if(m1 && GLOB.preference_entries[/datum/preference/tri_color/mutant_colors])
+		rw_set_pref(/datum/preference/tri_color/mutant_colors, list(m1, m2, m3), force = TRUE)
+	if(data["real_name"])
+		rw_set_pref(/datum/preference/name/real_name, data["real_name"], force = TRUE)
+
+/datum/rimworld_preferences/proc/pref_field_kind(datum/preference/pref)
+	if(istype(pref, /datum/preference/choiced))
+		return "choiced"
+	if(istype(pref, /datum/preference/color))
+		return "color"
+	if(istype(pref, /datum/preference/tri_color))
+		return "tricolor"
+	if(istype(pref, /datum/preference/toggle))
+		return "toggle"
+	if(istype(pref, /datum/preference/numeric))
+		return "numeric"
+	if(istype(pref, /datum/preference/text))
+		return "text"
+	return null
+
+/datum/rimworld_preferences/proc/pref_field_name(datum/preference/pref)
+	if(istype(pref, /datum/preference/choiced))
+		var/datum/preference/choiced/choiced = pref
+		if(choiced.main_feature_name)
+			return choiced.main_feature_name
+	var/list/constant = pref.compile_constant_data()
+	if(islist(constant) && constant["name"])
+		return constant["name"]
+	return capitalize(replacetext("[pref.savefile_key]", "_", " "))
+
+/datum/rimworld_preferences/proc/compile_pref_field(datum/preference/pref, value)
+	var/kind = pref_field_kind(pref)
+	if(!kind)
+		return null
+	var/list/entry = list(
+		"key" = pref.savefile_key,
+		"name" = pref_field_name(pref),
+		"kind" = kind,
+		"value" = pref.serialize(value),
+	)
+	if(kind == "choiced")
+		var/datum/preference/choiced/choiced = pref
+		entry["choices"] = choiced.get_choices_serialized()
+		var/list/constant = choiced.compile_constant_data()
+		if(islist(constant) && constant[CHOICED_PREFERENCE_DISPLAY_NAMES])
+			entry["displayNames"] = constant[CHOICED_PREFERENCE_DISPLAY_NAMES]
+	if(kind == "numeric")
+		var/datum/preference/numeric/numeric = pref
+		entry["min"] = numeric.minimum
+		entry["max"] = numeric.maximum
+		entry["step"] = numeric.step
+	if(kind == "color" && istext(entry["value"]) && copytext(entry["value"], 1, 2) != "#")
+		entry["value"] = "#[entry["value"]]"
+	if(kind == "tricolor" && islist(entry["value"]))
+		var/list/colors = entry["value"]
+		var/list/hexed = list()
+		for(var/index in 1 to length(colors))
+			var/piece = colors[index]
+			if(istext(piece) && copytext(piece, 1, 2) != "#")
+				hexed += "#[piece]"
+			else
+				hexed += piece
+		entry["value"] = hexed
+	return entry
 
 /datum/rimworld_preferences/proc/compile_character_pref_ui(mob/user)
 	var/datum/preferences/bridge = ensure_pref_bridge()
-	sync_owned_to_bridge()
-	var/list/compiled = bridge.compile_character_preferences(user)
+	refresh_pref_species()
 	var/list/hidden = hidden_pref_keys()
-	var/list/basics = list()
-	var/list/visual = list()
-	var/list/identity = list()
-	var/list/entries
-	entries = compiled[PREFERENCE_CATEGORY_CHARACTER_BASICS]
-	if(islist(entries))
-		for(var/key in entries)
-			if(!(key in hidden))
-				basics[key] = entries[key]
-	entries = compiled[PREFERENCE_CATEGORY_SECONDARY_FEATURES]
-	if(islist(entries))
-		for(var/key in entries)
-			if(!(key in hidden))
-				visual[key] = entries[key]
-	for(var/category in identity_pref_categories())
-		entries = compiled[category]
-		if(!islist(entries))
-			continue
-		for(var/key in entries)
-			if(!(key in hidden))
-				identity[key] = entries[key]
-	var/datum/species/proto = GLOB.species_prototypes[species_type]
-	return list(
-		"clothing" = list(),
-		"features" = list(),
-		"game_preferences" = list(),
-		"non_contextual" = identity,
-		"secondary_features" = visual,
-		"character_basics" = basics,
-		"ooc_preferences" = list(),
-		"silicon_preferences" = list(),
-		"supplemental_features" = list(),
-		"manually_rendered_features" = list(),
-		"names" = list(),
-		"misc" = list(
-			"gender" = gender,
-			"species" = proto?.id || "human",
-		),
-		"randomization" = list(),
-		"basics" = basics,
-		"visual" = visual,
-		"identity" = identity,
+	var/list/species_fields = list()
+	var/static/list/species_categories = list(
+		PREFERENCE_CATEGORY_CHARACTER_BASICS,
+		PREFERENCE_CATEGORY_FEATURES,
+		PREFERENCE_CATEGORY_SECONDARY_FEATURES,
+		PREFERENCE_CATEGORY_SUPPLEMENTAL_FEATURES,
 	)
+	for(var/datum/preference/pref as anything in get_preferences_in_priority_order())
+		if(pref.savefile_identifier != PREFERENCE_CHARACTER)
+			continue
+		if(pref.savefile_key in hidden)
+			continue
+		if(is_genital_pref(pref))
+			continue
+		if(!(pref.category in species_categories))
+			continue
+		if(!pref.is_accessible(bridge))
+			continue
+		var/list/entry = compile_pref_field(pref, bridge.read_preference(pref.type))
+		if(entry)
+			species_fields += list(entry)
+	return list("species" = species_fields)
+
+/datum/rimworld_preferences/proc/is_genital_pref(datum/preference/pref)
+	if(istype(pref, /datum/preference/choiced/genital) || istype(pref, /datum/preference/toggle/allow_genitals))
+		return TRUE
+	var/key = pref.savefile_key
+	return findtext(key, "penis") || findtext(key, "testicle") || findtext(key, "vagina") || findtext(key, "womb") || findtext(key, "breast") || findtext(key, "butt") || findtext(key, "belly") || findtext(key, "anus") || findtext(key, "genital")
 
 /datum/rimworld_preferences/proc/handle_pref_act(action, list/params, mob/user)
 	var/datum/preferences/bridge = ensure_pref_bridge()
@@ -408,19 +463,19 @@
 			var/value = params["value"]
 			for(var/datum/preference_middleware/preference_middleware as anything in bridge.middleware)
 				if(preference_middleware.pre_set_preference(user, requested_preference_key, value))
-					sync_bridge_to_owned()
 					save_character()
 					update_preview()
 					return TRUE
 			var/datum/preference/requested_preference = GLOB.preference_entries_by_key[requested_preference_key]
 			if(isnull(requested_preference))
 				return FALSE
-			if(!bridge.update_preference(requested_preference, value))
+			if(!bridge.update_preference(requested_preference, value) && !bridge.write_preference(requested_preference, value))
 				return FALSE
 			bridge.update_body_parts(requested_preference)
 			for(var/datum/preference_middleware/preference_middleware as anything in bridge.middleware)
 				preference_middleware.post_set_preference(user, requested_preference_key, value)
-			sync_bridge_to_owned()
+			if(requested_preference.type == /datum/preference/choiced/species)
+				refresh_pref_species()
 			save_character()
 			update_preview()
 			return TRUE
@@ -433,16 +488,17 @@
 			var/new_color = tgui_color_picker(user, "Select new color", "Prepare Colonist", default_value || COLOR_WHITE)
 			if(!new_color)
 				return TRUE
-			if(!bridge.update_preference(requested_preference, new_color))
+			if(!bridge.update_preference(requested_preference, new_color) && !bridge.write_preference(requested_preference, new_color))
 				return FALSE
 			bridge.update_body_parts(requested_preference)
-			sync_bridge_to_owned()
 			save_character()
 			update_preview()
 			return TRUE
 		if("set_tricolor_preference")
 			var/requested_preference_key = params["preference"]
-			var/index_key = params["value"]
+			var/index_key = text2num(params["value"])
+			if(!index_key)
+				index_key = params["value"]
 			var/datum/preference/requested_preference = GLOB.preference_entries_by_key[requested_preference_key]
 			if(isnull(requested_preference) || !istype(requested_preference, /datum/preference/tri_color))
 				return FALSE
@@ -454,10 +510,9 @@
 			if(!new_color)
 				return TRUE
 			default_value_list[index_key] = new_color
-			if(!bridge.update_preference(requested_preference, default_value_list))
+			if(!bridge.update_preference(requested_preference, default_value_list) && !bridge.write_preference(requested_preference, default_value_list))
 				return FALSE
 			bridge.update_body_parts(requested_preference)
-			sync_bridge_to_owned()
 			save_character()
 			update_preview()
 			return TRUE
@@ -467,7 +522,6 @@
 			continue
 		. = call(preference_middleware, delegation)(params, user)
 		if(.)
-			sync_bridge_to_owned()
 			save_character()
 			update_preview()
 		return .
