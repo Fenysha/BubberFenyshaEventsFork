@@ -216,6 +216,8 @@
 #include "code\modules\rimworld\skills\ranged.dm"
 #include "code\modules\rimworld\skills\component.dm"
 #include "code\modules\rimworld\skills\helpers.dm"
+#include "code\modules\rimworld\xenogenes\SSxenogenes.dm"
+#include "code\modules\rimworld\xenogenes\species.dm"
 #include "code\modules\rimworld\xenogenes\_xenogene.dm"
 #include "code\modules\rimworld\xenogenes\dna.dm"
 #include "code\modules\rimworld\character\species\avali.dm"

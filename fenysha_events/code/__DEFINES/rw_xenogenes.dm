@@ -1,3 +1,9 @@
+#define RW_XENOGEN_SOURCE_INNATE (1<<0)
+#define RW_XENOGEN_SOURCE_ACQUIRED (1<<1)
+
+#define RW_XENOGEN_PROCESSING (1<<2)
+#define RW_XENOGEN_VISUAL (1<<3)
+
 #define RW_XENOGENE_VULP_EARS "vulp_ears"
 
 #define RW_XENOGENE_CATEGORY_COSMETIC "cosmetic"
