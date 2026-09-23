@@ -109,10 +109,15 @@
 	can_be_tilled = TRUE
 
 	slowdown = 0.5
+	seasonal_color = TRUE
 	var/variant_amount = 5
 
 /turf/open/rimworld/grass/Initialize(mapload)
 	icon_state = "[rand(0, variant_amount)]"
+	if(base_color)
+		set_base_color(base_color)
+	else if(color)
+		set_base_color(color)
 	. = ..()
 
 

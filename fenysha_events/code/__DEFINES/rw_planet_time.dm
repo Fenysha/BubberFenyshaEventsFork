@@ -28,3 +28,17 @@
 #define RW_DEFAULT_DAYLIGHT_FRACTION 0.5
 
 #define RIMWORLD_DAYLIGHT_UPDATE_INTERVAL (2 SECONDS)
+
+
+/// Seasonal tints applied via modulate_color_towards / apply_tint_from_base
+#define RW_SEASON_TINT_SPRING  "#A8E070" // bright green
+#define RW_SEASON_TINT_SUMMER  "#5B8C3E" // deep green (near identity for grass)
+#define RW_SEASON_TINT_FALL    "#D4953A" // orange / amber
+#define RW_SEASON_TINT_WINTER  "#C8D4E0" // cool grey-blue
+
+/// How hard the seasonal tint pulls from base_color (0–1)
+#define RW_SEASON_TINT_AMOUNT_SPRING 0.25
+#define RW_SEASON_TINT_AMOUNT_SUMMER 0.10
+#define RW_SEASON_TINT_AMOUNT_FALL   0.55
+#define RW_SEASON_TINT_AMOUNT_WINTER 0.45
+

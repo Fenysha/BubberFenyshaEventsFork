@@ -435,9 +435,18 @@ GLOBAL_LIST_EMPTY(roof_datums)
 	/// Roof type used when init_with_roof is TRUE
 	var/roof_type
 
+	var/seasonal_color = FALSE
 
 /turf/open/rimworld/Initialize(mapload)
 	. = ..()
+
+	if(seasonal_color)
+		if(base_color)
+			set_base_color(base_color)
+		else if(color)
+			set_base_color(color)
+		AddElement(/datum/element/season_visual, CALLBACK(src, PROC_REF(update_season_visual)))
+
 	if(init_with_roof && roof_type)
 		var/datum/turf_roof/R = get_roof_datum(roof_type)
 		if(R)
@@ -453,6 +462,30 @@ GLOBAL_LIST_EMPTY(roof_datums)
 		. += span_notice("Can grow plants with <b>[fertility * 100]%</b> efficiency.")
 	else
 		. += span_notice("Cannot grow plants.")
+
+
+/turf/open/rimworld/proc/update_season_visual(atom/host, hemisphere, old_season, new_season, quadrum, year)
+	if(!seasonal_color || !base_color)
+		return
+	var/tint
+	var/amount
+	switch(new_season)
+		if(RW_SEASON_SPRING)
+			tint = RW_SEASON_TINT_SPRING
+			amount = RW_SEASON_TINT_AMOUNT_SPRING
+		if(RW_SEASON_SUMMER)
+			tint = RW_SEASON_TINT_SUMMER
+			amount = RW_SEASON_TINT_AMOUNT_SUMMER
+		if(RW_SEASON_FALL)
+			tint = RW_SEASON_TINT_FALL
+			amount = RW_SEASON_TINT_AMOUNT_FALL
+		if(RW_SEASON_WINTER)
+			tint = RW_SEASON_TINT_WINTER
+			amount = RW_SEASON_TINT_AMOUNT_WINTER
+		else
+			reset_to_base_color()
+			return
+	modulate_color_towards(tint, amount)
 
 /turf/open/rimworld/proc/set_roof(datum/turf_roof/roof_path)
 	var/datum/turf_roof/R = get_roof_datum(roof_path)
