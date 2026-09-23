@@ -1,0 +1,482 @@
+.RimworldCharacterEditor {
+  font-family: var(--font-family);
+  letter-spacing: 0.02em;
+}
+
+.RimworldCharacterEditor__colony {
+  background: var(--tartarus-panel);
+  border-right: 1px solid var(--tartarus-border);
+  min-width: 196px;
+  max-width: 196px;
+}
+
+.RimworldCharacterEditor__slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 46px;
+  margin-bottom: 4px;
+  padding: 0 48px 0 6px;
+  border: 1px solid var(--tartarus-border);
+  background: var(--tartarus-raised);
+  cursor: pointer;
+  color: var(--tartarus-text);
+  overflow: hidden;
+}
+
+.RimworldCharacterEditor__slot:hover {
+  background: var(--tartarus-hover);
+}
+
+.RimworldCharacterEditor__slot--selected {
+  border-color: var(--tartarus-white);
+  background: var(--tartarus-active);
+}
+
+.RimworldCharacterEditor__slot--empty {
+  opacity: 0.5;
+}
+
+.RimworldCharacterEditor__slotPortrait {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 48px;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  pointer-events: none;
+}
+
+.RimworldCharacterEditor__slotPortrait::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 12px;
+  background: linear-gradient(to bottom, transparent, var(--tartarus-raised));
+  pointer-events: none;
+}
+
+.RimworldCharacterEditor__slotPortrait img {
+  display: block;
+  width: 48px;
+  height: 46px;
+  object-fit: cover;
+  object-position: center top;
+  image-rendering: pixelated;
+  background: transparent;
+}
+
+.RimworldCharacterEditor__slotMeta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  padding: 4px 0;
+}
+
+.RimworldCharacterEditor__slotName {
+  color: var(--tartarus-white);
+  font-size: 0.95em;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: left;
+}
+
+.RimworldCharacterEditor__slotNick {
+  color: var(--tartarus-gray-2);
+  font-size: 0.78em;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: left;
+}
+
+.RimworldCharacterEditor__slotNick--placeholder {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.RimworldCharacterEditor__slotRole {
+  color: var(--tartarus-gray-2);
+  font-size: 0.78em;
+  letter-spacing: 0.04em;
+}
+
+.RimworldCharacterEditor__preview {
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  background: transparent;
+  --color-section: transparent;
+  border-right: 1px solid var(--tartarus-border);
+  padding: 6px 8px 0;
+}
+
+.RimworldCharacterEditor__identity {
+  display: flex;
+  flex-direction: column;
+}
+
+.RimworldCharacterEditor__nameBlock {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.RimworldCharacterEditor__nameStack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.RimworldCharacterEditor__nameRandom {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: 54px !important;
+  min-width: 54px !important;
+  padding: 0 !important;
+  line-height: 0 !important;
+
+  .Button__content,
+  .Button__text,
+  .Button__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+  }
+}
+
+.RimworldCharacterEditor__bodyType {
+  width: 160px;
+}
+
+.RimworldCharacterEditor__fieldLabel {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--tartarus-gray-2);
+  font-size: 0.72em;
+  margin-bottom: 3px;
+}
+
+.RimworldCharacterEditor__pawnStage {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.RimworldCharacterEditor__pawnColumn {
+  display: flex;
+  flex-direction: column;
+  width: 160px;
+}
+
+.RimworldCharacterEditor__pawnControls {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 6px;
+  width: 160px;
+  height: 34px;
+}
+
+.RimworldCharacterEditor__pawnControls > * {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 34px;
+  margin: 0;
+  vertical-align: top;
+}
+
+.RimworldCharacterEditor__pawnControlBtn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+  line-height: 0 !important;
+  vertical-align: top;
+
+  .Button__content,
+  .Button__text,
+  .Button__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+  }
+}
+
+.RimworldCharacterEditor__pawnRandomize {
+  background-color: #8a1f1f !important;
+  border-color: #c0392b !important;
+  color: #fff !important;
+
+  &:hover {
+    background-color: #b71c1c !important;
+  }
+}
+
+.RimworldCharacterEditor__pawnMapWrap {
+  width: 160px;
+  height: 240px;
+  background: transparent;
+}
+
+.RimworldCharacterEditor__pawnMap {
+  width: 160px !important;
+  height: 240px !important;
+  background: transparent !important;
+}
+
+.RimworldCharacterEditor__pawnAccessories {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  width: 54px;
+  gap: 6px;
+}
+
+.RimworldCharacterEditor__chooserBtn {
+  position: relative;
+  overflow: hidden;
+}
+
+.RimworldCharacterEditor__chooserBtn .RimworldCharacterEditor__chooserArt {
+  margin-top: 11px;
+}
+
+.RimworldCharacterEditor__chooser {
+  width: 268px;
+  height: 260px;
+  padding: 8px;
+  background: var(--tartarus-panel);
+  border: 1px solid var(--tartarus-border);
+  box-shadow: 0 0.5em 1em hsla(0, 0%, 0%, 0.5);
+}
+
+.RimworldCharacterEditor__chooserHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.RimworldCharacterEditor__chooserHeader .RimworldCharacterEditor__sectionTitle {
+  margin-bottom: 0;
+}
+
+.RimworldCharacterEditor__chooserGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  height: 188px;
+  overflow: auto;
+  margin-top: 6px;
+}
+
+.RimworldCharacterEditor__chooserCell {
+  position: relative;
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.RimworldCharacterEditor__chooserArt {
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 8px auto 0;
+  image-rendering: pixelated;
+}
+
+.RimworldCharacterEditor__chooserLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  font-size: 0.65em;
+  line-height: 1.1;
+  white-space: normal;
+  text-align: center;
+  overflow: hidden;
+}
+
+.RimworldCharacterEditor__labelButton {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.85em;
+}
+
+.RimworldCharacterEditor__tabBar {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--tartarus-border);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+
+  .Button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 148px;
+    min-height: 34px;
+    padding: 8px 22px;
+    font-size: 1.2em;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .Button__content {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.RimworldCharacterEditor__skillRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--tartarus-border);
+}
+
+.RimworldCharacterEditor__skillBar {
+  flex: 1;
+  height: 10px;
+  background: var(--tartarus-panel);
+  border: 1px solid var(--tartarus-border);
+}
+
+.RimworldCharacterEditor__skillBarFill {
+  height: 100%;
+  background: var(--tartarus-gray-2);
+}
+
+.RimworldCharacterEditor__budget {
+  border-top: 1px solid var(--tartarus-border);
+  padding-top: 8px;
+}
+
+.RimworldCharacterEditor__sectionTitle {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--tartarus-white);
+  font-size: 0.8em;
+  margin-bottom: 6px;
+}
+
+.RimworldCharacterEditor__main {
+  min-height: 0;
+}
+
+.RimworldCharacterEditor__tabBody {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.RimworldCharacterEditor__persona {
+  height: 100%;
+  min-height: 0;
+}
+
+.RimworldCharacterEditor__personaRest {
+  width: 500px;
+  min-width: 420px;
+  max-width: 560px;
+  min-height: 0;
+}
+
+.RimworldCharacterEditor__scrollPane {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.RimworldCharacterEditor__subTabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.RimworldCharacterEditor__scrollPane .LabeledList__label {
+  color: var(--tartarus-gray-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.78em;
+}
+
+.RimworldCharacterEditor__appearance {
+  padding-right: 10px;
+  padding-bottom: 12px;
+}
+
+.RimworldCharacterEditor__appearanceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.RimworldCharacterEditor__appearanceLabel {
+  width: 120px;
+  flex-shrink: 0;
+  color: var(--tartarus-gray-2);
+  font-size: 0.78em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.RimworldCharacterEditor__appearanceControl {
+  flex: 1;
+  min-width: 0;
+}

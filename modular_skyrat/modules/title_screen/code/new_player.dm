@@ -106,6 +106,15 @@
 		preferences.ui_interact(src)
 		return
 
+	// FENYSHA EDIT ADDITION BEGIN - RW_CHARACTER
+	if(href_list["rimworld_character_setup"])
+		play_lobby_button_sound()
+		if(!client.rw_prefs)
+			client.rw_prefs = new /datum/rimworld_preferences(client)
+		client.rw_prefs.ui_interact(src)
+		return
+	// FENYSHA EDIT ADDITION END
+
 	if(href_list["game_options"])
 		play_lobby_button_sound()
 		var/datum/preferences/preferences = client.prefs

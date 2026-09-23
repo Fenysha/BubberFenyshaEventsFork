@@ -15,6 +15,7 @@
   align-items: center;
   width: vp(100vw);
   height: base.rem(32px);
+  overflow: hidden;
   background-color: var(--titlebar-background);
   border-bottom: var(--border-thickness-tiny) solid var(--titlebar-shadow-core);
   box-shadow: 0px 0px base.em(6px) base.em(-1px) var(--titlebar-shadow-color);
@@ -22,7 +23,11 @@
 
   &__dragZone {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    max-height: base.rem(32px);
   }
 
   &__statusIcon {

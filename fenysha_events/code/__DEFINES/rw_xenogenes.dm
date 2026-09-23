@@ -1,0 +1,5 @@
+#define RW_XENOGENE_VULP_EARS "vulp_ears"
+
+#define RW_XENOGENE_CATEGORY_COSMETIC "cosmetic"
+#define RW_XENOGENE_CATEGORY_STAT "stat"
+#define RW_XENOGENE_CATEGORY_ABILITY "ability"
