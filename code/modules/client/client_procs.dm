@@ -309,6 +309,10 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 		GLOB.preferences_datums[ckey] = prefs
 	prefs.last_ip = address //these are gonna be used for banning
 	prefs.last_id = computer_id //these are gonna be used for banning
+	// FENYSHA EDIT ADDITION BEGIN - RW_CHARACTER
+	if(!rw_prefs)
+		rw_prefs = new /datum/rimworld_preferences(src)
+	// FENYSHA EDIT ADDITION END
 
 	// FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT - the panel and its control are built
 	// together, after prefs, exactly as hry-gh's branch does. The transparency params only
@@ -665,6 +669,8 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 		handle_admin_logout()
 
 	QDEL_LIST_ASSOC_VAL(char_render_holders)
+
+	QDEL_NULL(rw_prefs) // FENYSHA EDIT - RW_CHARACTER
 
 	SSambience.remove_ambience_client(src)
 	SSmouse_entered.hovers -= src

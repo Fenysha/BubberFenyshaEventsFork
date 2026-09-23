@@ -140,6 +140,7 @@
 	. += {"
 		<hr>
 		<a class="menu_button" href='byond://?src=[text_ref(user)];character_setup=1'>SETUP CHARACTER</a>
+		<a class="menu_button" href='byond://?src=[text_ref(user)];rimworld_character_setup=1'>PREPARE COLONIST</a>
 		<a class="menu_button" href='byond://?src=[text_ref(user)];game_options=1'>GAME OPTIONS</a>
 		<a id="be_antag" class="menu_button" href='byond://?src=[text_ref(user)];toggle_antag=1'>[user.client.prefs.read_preference(/datum/preference/toggle/be_antag) ? "<span class='checked'>☑</span> BE ANTAGONIST" : "<span class='unchecked'>☒</span> BE ANTAGONIST"]</a>
 		<a id="translate" class="menu_button" href='byond://?src=[text_ref(user)];toggle_translate=1'>[autotranslate_lobby_label(user.client.prefs.read_preference(/datum/preference/choiced/autotranslate_target))]</a>
@@ -261,6 +262,7 @@
 		dat += {"
 			<hr>
 			<a class="menu_button" href='byond://?src=[text_ref(user)];character_setup=1'>SETUP CHARACTER (<span id="character_slot">[uppertext(user.client.prefs.read_preference(/datum/preference/name/real_name))]</span>)</a>
+			<a class="menu_button" href='byond://?src=[text_ref(user)];rimworld_character_setup=1'>PREPARE COLONIST</a>
 			<a class="menu_button" href='byond://?src=[text_ref(user)];game_options=1'>GAME OPTIONS</a>
 			<a id="be_antag" class="menu_button" href='byond://?src=[text_ref(user)];toggle_antag=1'>[user.client.prefs.read_preference(/datum/preference/toggle/be_antag) ? "<span class='checked'>☑</span> BE ANTAGONIST" : "<span class='unchecked'>☒</span> BE ANTAGONIST"]</a>
 			<hr>
@@ -345,7 +347,7 @@
 	// Звук кнопки
 	if(href_list["observe"] || href_list["job_traits"] || href_list["server_swap"] || href_list["view_manifest"] || \
 	   href_list["character_directory"] || href_list["toggle_antag"] || href_list["character_setup"] || \
-	   href_list["game_options"] || href_list["toggle_ready"] || href_list["late_join"] || \
+	   href_list["rimworld_character_setup"] || href_list["game_options"] || href_list["toggle_ready"] || href_list["late_join"] || \
 	   href_list["polls_menu"] || href_list["toggle_translate"] || href_list["export_preferences"] || href_list["import_preferences"])
 		user.play_lobby_button_sound()
 
@@ -390,6 +392,12 @@
 		preferences.current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
 		preferences.update_static_data(user)
 		preferences.ui_interact(user)
+		return TRUE
+
+	if(href_list["rimworld_character_setup"])
+		if(!user.client.rw_prefs)
+			user.client.rw_prefs = new /datum/rimworld_preferences(user.client)
+		user.client.rw_prefs.ui_interact(user)
 		return TRUE
 
 	if(href_list["game_options"])

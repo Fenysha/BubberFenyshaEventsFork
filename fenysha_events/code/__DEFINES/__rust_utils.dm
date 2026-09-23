@@ -349,3 +349,50 @@
 
 	return text2num(result)
 
+/**
+ * Flatten DMI layers into a PNG and return JSON with a base64 payload.
+ *
+ * Input:
+ *     recipe_json
+ *         JSON object containing:
+ *
+ *         size: u32
+ *             Canvas size in pixels (1..256). Default 48.
+ *
+ *         body: u32
+ *             Body sprite size used to center layers. Default 32.
+ *
+ *         dir: i32
+ *             BYOND dir (2 south, 1 north, 4 east, 8 west). Default 2.
+ *
+ *         crop_bottom: f64
+ *             Fraction of the canvas to drop from the bottom (bust crop).
+ *             Default 0.
+ *
+ *         trim: bool | 0/1
+ *             Trim transparent padding after composite. Default true.
+ *
+ *         layers: array of
+ *             path, state, multiply, pixel_w, pixel_z, layer
+ *             blend: optional "rw_grad"
+ *             mask_path, mask_state: required when blend is rw_grad
+ *
+ *         markings: string
+ *             Optional packed pixels "x,y,#rrggbb;..."
+ *
+ * Output on success:
+ *
+ *     {"ok": true, "png": "<base64>"}
+ *
+ * Output on failure:
+ *
+ *     {"ok": false, "error": "<description>"}
+ */
+#define rustg_raw_rw_preview_flatten(recipe_json) \
+	RUSTG_CALL(RUST_UTILS, "rw_preview_flatten")(recipe_json)
+
+/proc/rustg_rw_preview_flatten(recipe_json)
+	if(!istext(recipe_json) || !length(recipe_json))
+		return "{\"ok\":false,\"error\":\"empty recipe\"}"
+	return rustg_raw_rw_preview_flatten(recipe_json)
+

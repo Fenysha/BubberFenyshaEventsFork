@@ -96,6 +96,9 @@ GLOBAL_LIST_INIT(total_uf_len_by_block, populate_total_uf_len_by_block())
 	new_dna.mutant_bodyparts = LAZYCOPY(mutant_bodyparts)
 	new_dna.body_markings = body_markings.Copy()
 	//BUBBER EDIT ADDITION END
+	//FENYSHA EDIT ADDITION BEGIN - RW_CHARACTER
+	new_dna.rw_xenogenes = LAZYCOPY(rw_xenogenes)
+	//FENYSHA EDIT ADDITION END
 	new_dna.temporary_mutations = LAZYLISTDUPLICATE(temporary_mutations)
 	new_dna.mutation_index = mutation_index
 	new_dna.default_mutation_genes = default_mutation_genes
@@ -118,6 +121,10 @@ GLOBAL_LIST_INIT(total_uf_len_by_block, populate_total_uf_len_by_block())
 			if(!length(valid_sources))
 				continue
 			new_dna.add_mutation(mutation, valid_sources)
+	//FENYSHA EDIT ADDITION BEGIN - RW_CHARACTER
+	if(new_dna.holder)
+		new_dna.apply_rw_xenogenes()
+	//FENYSHA EDIT ADDITION END
 
 ///Adds a mutation to the dna if possible. See defines/dna.dm for all sources.
 /datum/dna/proc/add_mutation(mutation_to_add, list/sources)

@@ -154,16 +154,18 @@ type ContentProps = Partial<{
   fitted: boolean;
   scrollable: boolean;
   vertical: boolean;
+  /** If false, Alt+drag from the content area is disabled. */
+  altDrag: boolean;
 }> &
   ComponentProps<typeof Box> &
   PropsWithChildren;
 
 function WindowContent(props: ContentProps) {
-  const { className, fitted, children, ...rest } = props;
+  const { className, fitted, children, altDrag = true, ...rest } = props;
   const [altDown, setAltDown] = useState(false);
 
   function dragStartIfAltHeld(event: React.MouseEvent<HTMLDivElement>): void {
-    if (altDown) {
+    if (altDrag && altDown) {
       dragStartHandler(event);
     }
   }
