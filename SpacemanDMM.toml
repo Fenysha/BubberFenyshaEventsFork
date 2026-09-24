@@ -12,3 +12,6 @@ use_typepath_names = true
 
 [debugger]
 engine = "auxtools"
+
+[dreamchecker]
+sleep_analysis_version = 1

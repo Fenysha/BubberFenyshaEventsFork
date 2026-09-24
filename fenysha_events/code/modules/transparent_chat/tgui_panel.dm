@@ -28,6 +28,8 @@
  * The input bar is a pane rather than a control, so that one is hosted in a CHILD instead.
  */
 /datum/tgui_panel/proc/create_browser(layout = TGPANEL_PANEL, reload = FALSE)
+	set waitfor = FALSE
+
 	log_tgui(client, "create_browser: [current_layout] -> [layout], reload=[reload]", context = "tgui_panel")
 
 	if(current_layout == TGPANEL_WINDOW && layout != TGPANEL_WINDOW)

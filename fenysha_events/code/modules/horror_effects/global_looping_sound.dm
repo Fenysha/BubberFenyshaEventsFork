@@ -15,7 +15,13 @@
 	in_order = TRUE
 	each_once = FALSE
 
-/datum/looping_sound/global_sound/New(start_immediately = FALSE)
+/datum/looping_sound/global_sound/New(
+	_parent,
+	start_immediately = FALSE,
+	_direct = FALSE,
+	_skip_starting_sounds = FALSE,
+	sound_channel
+)
 	if(sounds_to_play)
 		mid_sounds = list()
 		for(var/sound_path in sounds_to_play)
@@ -27,7 +33,7 @@
 			stack_trace("train_sound_loop created without sounds!")
 			qdel(src)
 			return
-	..(null, start_immediately)
+	..()
 
 /datum/looping_sound/global_sound/proc/create_from_list(sounds)
 	sounds_to_play = sounds
@@ -45,7 +51,7 @@
 
 	return soundfile
 
-/datum/looping_sound/global_sound/play(soundfile, volume_override)
+/datum/looping_sound/global_sound/play(soundfile, volume_override, repeat_sound = FALSE, delete_when_finished = FALSE)
 	if(!soundfile)
 		return
 

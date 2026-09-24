@@ -23,7 +23,8 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	GLOB.rimworld_areas |= src
 
 	var/datum/planet_cell/cell = get_planet_cell(src)
-	if(cell) bind_planet_cell(cell)
+	if(cell)
+		INVOKE_ASYNC(src, PROC_REF(bind_planet_cell), cell)
 
 /area/rimworld/Destroy()
 	cell = null

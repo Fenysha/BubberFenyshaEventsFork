@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
@@ -9,7 +10,6 @@ import {
   Slider,
   Stack,
 } from 'tgui-core/components';
-import { Window } from 'tgui/layouts';
 
 type DaylightControlData = {
   cycle_locked: boolean;
@@ -125,9 +125,7 @@ export const DaylightControl = () => {
                       value={Number(
                         (data.planet_time_of_day ?? 12).toFixed?.(2) ?? 12,
                       )}
-                      onChange={(value) =>
-                        act('set_planet_hour', { value })
-                      }
+                      onChange={(value) => act('set_planet_hour', { value })}
                     />
                   </LabeledList.Item>
                 </LabeledList>
@@ -213,9 +211,7 @@ export const DaylightControl = () => {
                       step={1}
                       value={data.daylight_cycle}
                       unit="min"
-                      onChange={(value) =>
-                        act('set_cycle_minutes', { value })
-                      }
+                      onChange={(value) => act('set_cycle_minutes', { value })}
                     />
                   </LabeledList.Item>
                 </LabeledList>
