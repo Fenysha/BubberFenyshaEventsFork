@@ -72,6 +72,76 @@
 	open_turf_type = /turf/open/genturf
 	closed_turf_type = /turf/closed/rw_wall/rock/auto
 
+	/// Base chance (0-100) to attempt flora on an eligible open turf.
+	flora_density = 0
+	/// Base chance to attempt a special feature (geyser, rock formation, etc.).
+	feature_density = 0
+	/// Base chance to attempt fauna.
+	fauna_density = 0
+
+	/// Weighted type paths. Empty = never spawn that category.
+	flora_types = list()
+	feature_types = list()
+	fauna_types = list()
+
+	/// Optional cave-only overrides. If null, surface tables are reused.
+	var/list/cave_flora_types = null
+	var/list/cave_feature_types = null
+	var/list/cave_fauna_types = null
+
+
+	megafauna_types = null
+
+
+	feature_exclusion_radius = 6
+	mob_exclusion_radius = 10
+	tendril_exclusion_radius = 12
+
+	var/flora_soft_radius = 2
+	var/flora_soft_penalty = 0.55  // multiply density by this when soft-blocked
+
+	/// Multipliers applied to density based on current sub-biome key.
+	/// Missing key → 1.0
+	var/list/subbiome_flora_mult = list(
+		RW_SUBBIOME_SHORE        = 0.7,
+		RW_SUBBIOME_PLAINS       = 1.0,
+		RW_SUBBIOME_MARSH        = 1.35,
+		RW_SUBBIOME_ROCKY_HILLS  = 0.45,
+		RW_SUBBIOME_FOREST_HILLS = 1.55,
+	)
+	var/list/subbiome_feature_mult = list(
+		RW_SUBBIOME_SHORE        = 0.8,
+		RW_SUBBIOME_PLAINS       = 1.0,
+		RW_SUBBIOME_MARSH        = 1.2,
+		RW_SUBBIOME_ROCKY_HILLS  = 1.4,
+		RW_SUBBIOME_FOREST_HILLS = 0.9,
+	)
+	var/list/subbiome_fauna_mult = list(
+		RW_SUBBIOME_SHORE        = 0.6,
+		RW_SUBBIOME_PLAINS       = 1.0,
+		RW_SUBBIOME_MARSH        = 1.15,
+		RW_SUBBIOME_ROCKY_HILLS  = 0.85,
+		RW_SUBBIOME_FOREST_HILLS = 1.25,
+	)
+
+	/// When TRUE, flora/feature/fauna attempts are mutually exclusive on one turf
+	/// (first success wins: flora → feature → fauna).
+	var/exclusive_content = TRUE
+
+	/// Runtime: set by generator before a populate pass so exclusion works across turfs.
+	/// Structure: list(category = list(turf, turf, ...))
+	var/list/spawn_book = null
+
+
+/datum/biome/rimworld/New()
+	. = ..()
+	if(islist(cave_flora_types) && length(cave_flora_types))
+		cave_flora_types = expand_weights(fill_with_ones(cave_flora_types))
+	if(islist(cave_feature_types) && length(cave_feature_types))
+		cave_feature_types = expand_weights(fill_with_ones(cave_feature_types))
+	if(islist(cave_fauna_types) && length(cave_fauna_types))
+		cave_fauna_types = expand_weights(fill_with_ones(cave_fauna_types))
+
 
 /datum/biome/rimworld/proc/get_turf_for_height(height, sub_biome, is_cave = FALSE, is_transition = FALSE)
 	height = clamp(height * height_modifier * get_subbiome_height_modifier(sub_biome), 0, 1)
@@ -140,52 +210,151 @@
 /datum/biome/rimworld/proc/get_subbiome_height_modifier(subiome_key)
 	switch(subiome_key)
 		if(RW_SUBBIOME_SHORE)
-			return 2.33
+			return 2
 		if(RW_SUBBIOME_PLAINS)
-			return 2.11
+			return 2
 		if(RW_SUBBIOME_MARSH)
-			return 1.93
+			return 1.70
 		if(RW_SUBBIOME_ROCKY_HILLS)
-			return 0.93
+			return 0.91
+		if(RW_SUBBIOME_FOREST)
+			return 2.11
 		if(RW_SUBBIOME_FOREST_HILLS)
-			return 0.93
+			return 0.89
 		else
 			return 1
+
+
+/// Call once at the start of a cell population pass so exclusion radii work.
+/datum/biome/rimworld/proc/begin_population_pass()
+	spawn_book = list(
+		RW_SPAWN_FLORA     = list(),
+		RW_SPAWN_FEATURE   = list(),
+		RW_SPAWN_MOB       = list(),
+	)
+
+
+/datum/biome/rimworld/proc/end_population_pass()
+	spawn_book = null
+
+
+/datum/biome/rimworld/proc/get_density_mult(category, sub_biome_key)
+	var/list/table
+	switch(category)
+		if(RW_SPAWN_FLORA)
+			table = subbiome_flora_mult
+		if(RW_SPAWN_FEATURE)
+			table = subbiome_feature_mult
+		if(RW_SPAWN_MOB)
+			table = subbiome_fauna_mult
+		else
+			return 1.0
+
+	if(!islist(table) || isnull(table[sub_biome_key]))
+		return 1.0
+	return table[sub_biome_key]
+
+
+/datum/biome/rimworld/proc/pick_content_table(list/surface, list/cave, is_cave)
+	if(is_cave && islist(cave) && length(cave))
+		return cave
+	return surface
+
+
+/datum/biome/rimworld/proc/within_exclusion(turf/T, category, radius)
+	if(!spawn_book || !length(spawn_book[category]) || radius <= 0)
+		return FALSE
+	for(var/turf/other as anything in spawn_book[category])
+		if(get_dist(T, other) <= radius)
+			return TRUE
+	return FALSE
+
+
+/datum/biome/rimworld/proc/record_spawn(turf/T, category)
+	if(!spawn_book)
+		return
+	spawn_book[category] += T
+
 /**
- * Populates cell generated turfs with biome content.
- * WARNING: It calls before all objects are loaded
+ * Populates a single open turf.
+ * Content is created deferred and initialized later by the sub-level loader.
+ *
+ * target_turf     turf to decorate
+ * flora_allowed
+ * features_allowed
+ * fauna_allowed
+ * is_cave         optional — if the generator knows this tile is a cave
+ * sub_biome_key   optional — defaults to plains-style if omitted
  */
 /datum/biome/rimworld/proc/populate_turf(
 	turf/target_turf,
 	flora_allowed,
 	features_allowed,
-	fauna_allowed
+	fauna_allowed,
+	is_cave = FALSE,
+	sub_biome_key = null,
+	list/deferred_init = null
 )
 	if(!target_turf)
 		return FALSE
 
-	if(istype(target_turf, /turf/closed))
+	if(istype(target_turf, /turf/open/rimworld))
+		var/turf/open/rimworld/rw_open_turf = target_turf
+		if(!(rw_open_turf.rw_turf_flags & SUPPORTS_NATURE))
+			return TRUE
+	else
 		return TRUE
 
 	if(target_turf.turf_flags & TURF_BLOCKS_POPULATE_TERRAIN_FLORAFEATURES)
 		return TRUE
 
-	if(flora_allowed && prob(flora_density) && length(flora_types))
-		var/flora_type = pick(flora_types)
-		new flora_type(target_turf)
-		return TRUE
+	if(isnull(sub_biome_key))
+		sub_biome_key = RW_SUBBIOME_PLAINS
 
-	if(features_allowed && prob(feature_density) && length(feature_types))
-		var/picked_feature = pick(feature_types)
-		new picked_feature(target_turf)
-		return TRUE
+	var/list/flora_table = pick_content_table(flora_types, cave_flora_types, is_cave)
+	var/list/feature_table = pick_content_table(feature_types, cave_feature_types, is_cave)
+	var/list/fauna_table = pick_content_table(fauna_types, cave_fauna_types, is_cave)
 
-	if(fauna_allowed && prob(fauna_density) && length(fauna_types))
-		var/picked_mob = pick(fauna_types)
-		new picked_mob(target_turf)
-		return TRUE
+	if(flora_allowed && length(flora_table))
+		var/eff_density = flora_density * get_density_mult(RW_SPAWN_FLORA, sub_biome_key)
+		if(within_exclusion(target_turf, RW_SPAWN_FLORA, flora_soft_radius))
+			eff_density *= flora_soft_penalty
+
+		if(prob(eff_density))
+			var/flora_type = pick(flora_table)
+			if(flora_type)
+				var/atom/flora = SSatoms.NewUninitialized(flora_type, target_turf)
+				if(flora && deferred_init)
+					deferred_init += flora
+				record_spawn(target_turf, RW_SPAWN_FLORA)
+				if(exclusive_content)
+					return TRUE
+
+	if(features_allowed && length(feature_table))
+		var/eff_density = feature_density * get_density_mult(RW_SPAWN_FEATURE, sub_biome_key)
+		if(prob(eff_density) && !within_exclusion(target_turf, RW_SPAWN_FEATURE, feature_exclusion_radius))
+			var/picked_feature = pick(feature_table)
+			if(picked_feature)
+				var/atom/feature = SSatoms.NewUninitialized(picked_feature, target_turf)
+				if(feature && deferred_init)
+					deferred_init += feature
+				record_spawn(target_turf, RW_SPAWN_FEATURE)
+				if(exclusive_content)
+					return TRUE
+
+	if(fauna_allowed && length(fauna_table))
+		var/eff_density = fauna_density * get_density_mult(RW_SPAWN_MOB, sub_biome_key)
+		if(prob(eff_density) && !within_exclusion(target_turf, RW_SPAWN_MOB, mob_exclusion_radius))
+			var/picked_mob = pick(fauna_table)
+			if(picked_mob)
+				var/atom/fauna = SSatoms.NewUninitialized(picked_mob, target_turf)
+				if(fauna && deferred_init)
+					deferred_init += fauna
+				record_spawn(target_turf, RW_SPAWN_MOB)
 
 	return TRUE
+
+
 
 
 /datum/biome/rimworld/land

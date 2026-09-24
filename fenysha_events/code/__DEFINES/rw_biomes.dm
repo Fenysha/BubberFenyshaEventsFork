@@ -22,7 +22,7 @@
  * Open terrain thresholds.
  */
 #define RW_HEIGHT_BAND_KEY_0  "0.00"
-#define RW_HEIGHT_BAND_KEY_1  "0.8"
+#define RW_HEIGHT_BAND_KEY_1  "0.6"
 #define RW_HEIGHT_BAND_KEY_2  "0.149"
 #define RW_HEIGHT_BAND_KEY_3  "0.17"
 #define RW_HEIGHT_BAND_KEY_4  "0.19"
@@ -66,3 +66,9 @@
 
 #define RW_CAVEGUN_TRUE  "caves_true"
 #define RW_CAVEGUN_FALSE "caves_false"
+
+
+/// Spawn category keys for exclusion tracking (shared across a population pass).
+#define RW_SPAWN_FLORA    "flora"
+#define RW_SPAWN_FEATURE  "feature"
+#define RW_SPAWN_MOB      "mob"

@@ -437,12 +437,7 @@
 	var/new_color = blend_towards(base_color, tint, amount)
 
 	if(grayscale_overlay)
-		animate(
-			grayscale_overlay,
-			color = new_color,
-			time = 0.5,
-			easing = LINEAR_EASING
-		)
+		refresh_grayscale_overlay_color(new_color)
 	else
 		var/old_color = color
 
@@ -456,11 +451,11 @@
 		on_color_updated(old_color, new_color, 0.5)
 
 
-/obj/structure/rimworld/flora/grayscale/proc/refresh_grayscale_overlay_color()
+/obj/structure/rimworld/flora/grayscale/proc/refresh_grayscale_overlay_color(new_color)
 	if(!grayscale_overlay)
 		return
 	cut_overlay(grayscale_overlay)
-	grayscale_overlay.color = color
+	grayscale_overlay.color = new_color ? new_color : foliage_color
 	add_overlay(grayscale_overlay)
 
 
@@ -592,6 +587,33 @@
 	qdel(src)
 	return TRUE
 
+/obj/structure/rimworld/flora/grayscale/grass
+	name = "Grass"
+	desc = "Ordinary grass"
+
+	icon = 'fenysha_events/icons/structures/nature/grass_grayscale.dmi'
+	icon_state = "sparsegrass_1"
+	base_icon_state = "sparsegrass"
+
+	foliage_color = GRASS_COLOR_FOREST
+	var/variant_amount = 3
+
+
+/obj/structure/rimworld/flora/grayscale/grass/Initialize(mapload)
+	icon_state = "[base_icon_state]_[rand(1, variant_amount)]"
+	. = ..()
+
+/obj/structure/rimworld/flora/grayscale/grass/alt
+	icon_state = "fullgrass_1"
+	base_icon_state = "fullgrass"
+	foliage_color = GRASS_COLOR_FOREST_TALL
+
+/obj/structure/rimworld/flora/grayscale/grass/jungle
+	icon_state = "leafybush_1"
+	base_icon_state = "leafybush"
+	foliage_color = GRASS_COLOR_JUNGLE
+
+
 
 /obj/structure/rimworld/flora/grayscale/tree/forest
 	name = "forest tree"
@@ -602,7 +624,7 @@
 	base_icon_state = "tree"
 	icon_state_grayscale = "overlay"
 
-	max_integrity = 220
+	max_integrity = 300
 	destroy_amount_low = 8
 	destroy_amount_high = 14
 

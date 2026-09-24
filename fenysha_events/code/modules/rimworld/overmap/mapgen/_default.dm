@@ -68,6 +68,8 @@
 
 	var/list/generated_turfs = list()
 	var/list/generated_open_turfs = list()
+	/// Parallel to generated_open_turfs: TRUE if that open turf is a cave tile.
+	var/list/generated_open_is_cave = list()
 	var/list/pending_init = list()
 
 	var/turfs_initialized = FALSE
@@ -380,6 +382,7 @@
 	pending_init = list(rimworld_area)
 	generated_turfs = list()
 	generated_open_turfs = list()
+	generated_open_is_cave = list()
 	turfs_initialized = FALSE
 
 	return TRUE
@@ -400,43 +403,29 @@
 		return null
 
 	var/turf/inner_BL = reservation.get_inner_bottom_left_turf()
-
 	if(!inner_BL)
 		return null
 
 	var/world_x = inner_BL.x + local_x - 1
 	var/world_y = inner_BL.y + local_y - 1
 
-	var/turf/source_turf = locate(
-		world_x,
-		world_y,
-		inner_BL.z
-	)
-
+	var/turf/source_turf = locate(world_x, world_y, inner_BL.z)
 	if(!source_turf)
 		return null
 
-	source_turf.change_area(
-		get_area(source_turf),
-		rimworld_area
-	)
+	source_turf.change_area(get_area(source_turf), rimworld_area)
 
 	var/index = width * (local_y - 1) + local_x
-
 	if(index < 1 || index > length(heights))
 		return null
 
 	var/terrain_height = heights[index]
 
 	var/is_cave = FALSE
-
 	if(length(cave_mask))
 		is_cave = cave_mask[index]
 
-	var/is_transition = is_geological_transition_xy(
-		local_x,
-		local_y
-	)
+	var/is_transition = is_geological_transition_xy(local_x, local_y)
 
 	var/turf_type = target_biome.get_turf_for_height(
 		terrain_height,
@@ -445,18 +434,10 @@
 		is_transition
 	)
 
-	if(!is_cave && terrain_height <= RW_HEIGHT_WATER_MAX)
-		if(!istype(target_biome, /datum/biome/rimworld/water))
-			turf_type = /turf/open/water
-
 	if(!turf_type)
 		turf_type = /turf/open/genturf
 
-	var/turf/new_turf = SSatoms.NewUninitialized(
-		turf_type,
-		source_turf
-	)
-
+	var/turf/new_turf = SSatoms.NewUninitialized(turf_type, source_turf)
 	if(!new_turf)
 		return null
 
@@ -474,6 +455,7 @@
 
 	if(!istype(new_turf, /turf/closed))
 		generated_open_turfs += new_turf
+		generated_open_is_cave += is_cave
 
 	return new_turf
 
@@ -482,7 +464,8 @@
 	turf/target_turf,
 	flora_allowed,
 	features_allowed,
-	fauna_allowed
+	fauna_allowed,
+	is_cave = FALSE
 )
 	if(!target_turf || !target_biome)
 		return FALSE
@@ -490,15 +473,17 @@
 	if(istype(target_turf, /turf/closed))
 		return TRUE
 
-	if(target_turf.turf_flags & TURF_BLOCKS_POPULATE_TERRAIN_FLORAFEATURES)
-		return TRUE
-
-	return target_biome.populate_turf(
+	var/result = target_biome.populate_turf(
 		target_turf,
 		flora_allowed,
 		features_allowed,
-		fauna_allowed
+		fauna_allowed,
+		is_cave,
+		sub_biome,
+		pending_init
 	)
+
+	return result
 
 
 /datum/map_generator/sub_level/proc/get_generated_turf(index)
@@ -518,6 +503,10 @@
 /datum/map_generator/sub_level/proc/get_generated_turf_count()
 	return length(generated_turfs)
 
+/datum/map_generator/sub_level/proc/get_generated_open_is_cave(index)
+	if(index < 1 || index > length(generated_open_is_cave))
+		return FALSE
+	return generated_open_is_cave[index]
 
 /datum/map_generator/sub_level/proc/get_generated_open_turf_count()
 	return length(generated_open_turfs)

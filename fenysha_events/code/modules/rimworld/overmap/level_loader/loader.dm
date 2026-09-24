@@ -143,7 +143,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/datum/turf_reservation/sub_level/reservation
 	var/datum/map_generator/sub_level/generator
 
-	var/ignore_lag = TRUE
+	var/ignore_lag = FALSE
 	var/phase = RW_CELL_JOB_PREPARE
 
 	var/local_x = 1
@@ -203,11 +203,11 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		if(RW_CELL_JOB_PLACE)
 			return process_placement()
 
-		if(RW_CELL_JOB_INITIALIZE)
-			return process_initialization()
-
 		if(RW_CELL_JOB_POPULATE)
 			return process_population()
+
+		if(RW_CELL_JOB_INITIALIZE)
+			return process_initialization()
 
 		if(RW_CELL_JOB_SMOOTH)
 			return process_smoothing()
@@ -320,8 +320,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		if(processed >= RW_SUBLEVEL_PLACE_BUDGET || (!ignore_lag && TICK_CHECK))
 			return RW_CELL_LOAD_CONTINUE
 
-	phase = RW_CELL_JOB_INITIALIZE
-	initialization_index = 1
+	// All terrain must exist before any content is populated.
+	phase = RW_CELL_JOB_POPULATE
+	populate_index = 1
 
 	return RW_CELL_LOAD_CONTINUE
 
@@ -359,8 +360,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	generator.turfs_initialized = TRUE
 
-	phase = RW_CELL_JOB_POPULATE
-	populate_index = 1
+	phase = RW_CELL_JOB_SMOOTH
+	smooth_index = 1
 
 	return RW_CELL_LOAD_CONTINUE
 
@@ -373,16 +374,23 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/processed = 0
 	var/area/rimworld/A = generator.rimworld_area
 
+	if(populate_index == 1 && generator.target_biome)
+		generator.target_biome.begin_population_pass()
+
 	while(populate_index <= open_count)
 		var/turf/T = generator.get_generated_open_turf(populate_index)
+		var/is_cave = generator.get_generated_open_is_cave(populate_index)
 
 		if(T)
 			if(!generator.populate_turf(
 				T,
 				(A.area_flags_mapping & FLORA_ALLOWED),
 				(A.area_flags_mapping & FLORA_ALLOWED),
-				(A.area_flags_mapping & MOB_SPAWN_ALLOWED)
+				(A.area_flags_mapping & MOB_SPAWN_ALLOWED),
+				is_cave
 			))
+				if(generator.target_biome)
+					generator.target_biome.end_population_pass()
 				return RW_CELL_LOAD_FAILED
 
 		populate_index++
@@ -391,8 +399,13 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		if(processed >= RW_SUBLEVEL_POPULATE_BUDGET || (!ignore_lag && TICK_CHECK))
 			return RW_CELL_LOAD_CONTINUE
 
-	phase = RW_CELL_JOB_SMOOTH
-	lighting_index = 1
+	if(generator.target_biome)
+		generator.target_biome.end_population_pass()
+
+	// Populate is now fully complete. Only now allow SSatoms to initialize
+	// the terrain and all deferred content created during population.
+	phase = RW_CELL_JOB_INITIALIZE
+	initialization_index = 1
 
 	return RW_CELL_LOAD_CONTINUE
 
@@ -453,6 +466,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!generator || QDELETED(generator))
 		return RW_CELL_LOAD_FAILED
 
+	/*
 	var/turf_count = generator.get_generated_turf_count()
 	var/list/batch = list()
 
@@ -471,7 +485,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	if(daylight_index <= turf_count)
 		return RW_CELL_LOAD_CONTINUE
-
+	*/
+	SSdaylight.handle_loaded_turfs(generator.generated_turfs.Copy(), FALSE)
 	phase = RW_CELL_JOB_FINISH
 
 	return RW_CELL_LOAD_CONTINUE

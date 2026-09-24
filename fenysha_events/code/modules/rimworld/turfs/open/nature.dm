@@ -79,6 +79,8 @@
 	edge_priority = 5
 	baseturfs = /turf/open/rimworld/dirt
 	slowdown = 0.35
+	rw_turf_flags = SUPPORTS_MOBS
+
 	footstep = FOOTSTEP_SAND
 	barefootstep = FOOTSTEP_SAND
 	clawfootstep = FOOTSTEP_SAND
