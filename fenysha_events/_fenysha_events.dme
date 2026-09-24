@@ -34,6 +34,7 @@
 #include "code\__DEFINES\rw_tools.dm"
 #include "code\__DEFINES\rw_skills.dm"
 #include "code\__DEFINES\rw_xenogenes.dm"
+#include "code\__DEFINES\rw_xenogene_icons.dm"
 #include "code\__DEFINES\rw_character.dm"
 #include "code\__DEFINES\sublevels.dm"
 #include "code\modules\aesthetic_shuttles\decals.dm"

@@ -279,12 +279,41 @@
 }
 
 .RimworldCharacterEditor__chooserBtn {
-  position: relative;
+  position: relative !important;
   overflow: hidden;
+  padding: 0 !important;
+
+  .Button__content,
+  .Button__text {
+    display: block !important;
+    width: 100%;
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }
 
 .RimworldCharacterEditor__chooserBtn .RimworldCharacterEditor__chooserArt {
-  margin-top: 11px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: 0 !important;
+  transform: translate(-50%, -50%) scale(1.35);
+}
+
+.RimworldCharacterEditor__chooserBtn--hairstyle .RimworldCharacterEditor__chooserArt,
+.RimworldCharacterEditor__chooserBtn--facial .RimworldCharacterEditor__chooserArt {
+  transform: translate(-50%, calc(-50% + 7px)) scale(1.45);
+}
+
+.RimworldCharacterEditor__chooserBtn--bra .RimworldCharacterEditor__chooserArt,
+.RimworldCharacterEditor__chooserBtn--undershirt .RimworldCharacterEditor__chooserArt,
+.RimworldCharacterEditor__chooserBtn--underwear .RimworldCharacterEditor__chooserArt {
+  transform: translate(-50%, calc(-50% - 2px)) scale(1.35);
+}
+
+.RimworldCharacterEditor__chooserBtn--socks .RimworldCharacterEditor__chooserArt {
+  transform: translate(-50%, calc(-50% - 8px)) scale(1.4);
 }
 
 .RimworldCharacterEditor__chooser {
@@ -324,13 +353,16 @@
   min-width: 48px;
   padding: 0 !important;
   overflow: hidden;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
 }
 
 .RimworldCharacterEditor__chooserArt {
   display: block;
   width: 32px;
   height: 32px;
-  margin: 8px auto 0;
+  margin: 0 auto;
   image-rendering: pixelated;
 }
 
@@ -446,6 +478,99 @@
   display: flex;
   gap: 6px;
   margin-bottom: 8px;
+
+  .Button {
+    min-width: 110px;
+    min-height: 26px;
+    text-align: center;
+  }
+
+  .Button__content {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+.RimworldCharacterEditor__geneInspect {
+  padding-left: 8px;
+  border-left: 1px solid var(--tartarus-border);
+}
+
+.RimworldCharacterEditor__raceCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  margin: 0 0 6px;
+  padding: 8px;
+  border: 1px solid var(--tartarus-border);
+  background: var(--tartarus-raised);
+  color: var(--tartarus-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.RimworldCharacterEditor__raceCard:hover {
+  background: var(--tartarus-hover);
+}
+
+.RimworldCharacterEditor__raceCard--selected {
+  border-color: var(--tartarus-white);
+  background: var(--tartarus-active);
+}
+
+.RimworldCharacterEditor__raceCardName {
+  color: var(--tartarus-white);
+  font-size: 0.95em;
+}
+
+.RimworldCharacterEditor__raceCardSub {
+  color: var(--tartarus-gray-2);
+  font-size: 0.75em;
+}
+
+.RimworldCharacterEditor__raceCardGenes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.RimworldCharacterEditor__geneViewTitle {
+  color: var(--tartarus-white);
+  font-size: 1.05em;
+  margin-bottom: 10px;
+}
+
+.RimworldCharacterEditor__geneStats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--tartarus-border);
+  background: var(--tartarus-raised);
+}
+
+.RimworldCharacterEditor__geneStat {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.RimworldCharacterEditor__geneStatLabel {
+  color: var(--tartarus-gray-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75em;
+}
+
+.RimworldCharacterEditor__geneStatMuted {
+  color: var(--tartarus-gray-2);
+  margin-left: 8px;
+  font-size: 0.85em;
 }
 
 .RimworldCharacterEditor__scrollPane .LabeledList__label {
@@ -479,4 +604,212 @@
 .RimworldCharacterEditor__appearanceControl {
   flex: 1;
   min-width: 0;
+}
+
+.RimworldCharacterEditor__geneGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 80px);
+  gap: 6px;
+  padding: 4px 4px 12px 0;
+}
+
+.RimworldCharacterEditor__gene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 4px 8px;
+  width: 80px;
+  min-height: 108px;
+  border: 2px solid var(--tartarus-border);
+  background: var(--tartarus-raised);
+  color: var(--tartarus-text);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.RimworldCharacterEditor__gene:hover {
+  border-color: var(--tartarus-white);
+}
+
+.RimworldCharacterEditor__gene--selected,
+.RimworldCharacterEditor__gene--innate {
+  border-color: var(--tartarus-white);
+}
+
+.RimworldCharacterEditor__gene--disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.RimworldCharacterEditor__gene--inheritable {
+  filter: grayscale(1);
+}
+
+.RimworldCharacterEditor__geneFrame {
+  position: relative;
+  width: 64px;
+  height: 56px;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.RimworldCharacterEditor__geneArt {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  overflow: visible;
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+}
+
+.RimworldCharacterEditor__geneGlyph {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: inherit;
+    transform: scale(0.86);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .DmIcon,
+  .RimworldCharacterEditor__geneIcon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    image-rendering: pixelated;
+    z-index: 1;
+    object-fit: contain;
+    pointer-events: none;
+    display: block;
+
+    &:last-of-type {
+      z-index: 2;
+    }
+  }
+}
+
+.RimworldCharacterEditor__geneGlyph--positive {
+  width: 64px;
+  height: 56px;
+  background: #7eb6d6;
+  clip-path: polygon(
+    25% 0%,
+    75% 0%,
+    100% 50%,
+    75% 100%,
+    25% 100%,
+    0% 50%
+  );
+
+  &::after {
+    background: #4f8eb8;
+  }
+}
+
+.RimworldCharacterEditor__geneGlyph--negative {
+  width: 56px;
+  height: 56px;
+  background: #c45c5c;
+  clip-path: polygon(
+    50% 0%,
+    79% 10%,
+    98% 35%,
+    98% 65%,
+    79% 90%,
+    50% 100%,
+    21% 90%,
+    2% 65%,
+    2% 35%,
+    21% 10%
+  );
+
+  &::after {
+    background: #8a3232;
+  }
+}
+
+.RimworldCharacterEditor__gene--compact {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  gap: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.RimworldCharacterEditor__gene--compact .RimworldCharacterEditor__geneFrame {
+  width: 26px;
+  height: 22px;
+  border: 1px solid var(--tartarus-border);
+  background: var(--tartarus-raised);
+}
+
+.RimworldCharacterEditor__gene--compact .RimworldCharacterEditor__geneGlyph--positive {
+  width: 24px;
+  height: 20px;
+}
+
+.RimworldCharacterEditor__gene--compact .RimworldCharacterEditor__geneGlyph--negative {
+  width: 20px;
+  height: 20px;
+}
+
+.RimworldCharacterEditor__gene:not(.RimworldCharacterEditor__gene--compact)
+  .RimworldCharacterEditor__geneArt {
+  width: 68px;
+  height: 68px;
+}
+
+.RimworldCharacterEditor__gene--compact .RimworldCharacterEditor__geneIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.RimworldCharacterEditor__geneName {
+  font-size: 0.78em;
+  text-align: center;
+  line-height: 1.2;
+  color: var(--tartarus-gray-2);
+  max-width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.RimworldCharacterEditor__gene--selected .RimworldCharacterEditor__geneName,
+.RimworldCharacterEditor__gene--innate .RimworldCharacterEditor__geneName {
+  color: var(--tartarus-text);
 }

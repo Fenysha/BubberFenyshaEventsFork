@@ -43,6 +43,21 @@
 		BODY_ZONE_L_LEG = /obj/item/bodypart/leg/left/mutant/teshari,
 		BODY_ZONE_R_LEG = /obj/item/bodypart/leg/right/mutant/teshari,
 	)
+	rw_label = "Avali"
+	rw_innate_xenogenes = list(
+		RW_XENOGENE_AVALI_EYES,
+		RW_XENOGENE_EARS,
+		RW_XENOGENE_TAIL,
+		RW_XENOGENE_LEGS,
+		RW_XENOGENE_BODY_SIZE,
+		RW_XENOGENE_MUTANT_COLORS,
+	)
+	rw_innate_xenogene_values = list(
+		RW_XENOGENE_EARS = "Teshari Regular",
+		RW_XENOGENE_TAIL = "Teshari (Default)",
+		RW_XENOGENE_LEGS = NORMAL_LEGS,
+		RW_XENOGENE_BODY_SIZE = BODY_SIZE_MIN,
+	)
 
 /datum/species/avali/get_default_mutant_bodyparts()
 	return list(

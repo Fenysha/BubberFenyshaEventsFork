@@ -21,11 +21,12 @@ import { classes } from 'tgui-core/react';
 import { Window } from '../../../layouts';
 import '../../Styles/RimworldCharacterEditor.scss';
 import type {
-  PrefField,
   RimworldCharacterEditorData,
   RwClothingChooser,
   RwSkillDef,
   RwSkillRow,
+  RwSpeciesDef,
+  RwXenogeneDef,
 } from './types';
 
 type TabId = 'biology' | 'features' | 'persona' | 'possessions' | 'ideology';
@@ -147,7 +148,7 @@ export const RimworldCharacterEditor = () => {
   const prefCatalog = usePrefCatalog();
 
   return (
-    <Window title="Prepare Colonist" width={1080} height={760} theme="tartarus">
+    <Window title="Prepare Colonist" width={1320} height={760} theme="tartarus">
       <Window.Content className="RimworldCharacterEditor" altDrag={false}>
         <Stack fill vertical>
           <Stack.Item className="RimworldCharacterEditor__tabBar">
@@ -707,181 +708,612 @@ function AccessoryChooser(props: {
   );
 }
 
-function asHexColor(value: unknown, fallback = '#ffffff'): string {
-  if (typeof value !== 'string' || !value.length) {
-    return fallback;
-  }
-  return value.startsWith('#') ? value : `#${value}`;
-}
+function BiologyTab() {
+  const [subTab, setSubTab] = useState<'race' | 'xenogenes'>('race');
+  const { data } = useBackend<RimworldCharacterEditorData>();
+  const hasSlotGenes = (data.xenogeneDefs || []).some(
+    (gene) => gene.id === 'ears' || gene.id === 'tail' || gene.id === 'wings',
+  );
 
-function asFiniteNumber(value: unknown, fallback: number): number {
-  const parsed = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function PrefFieldList(props: { fields: PrefField[] }) {
-  if (!props.fields.length) {
-    return null;
-  }
   return (
-    <div className="RimworldCharacterEditor__appearance">
-      {props.fields.map((field) => (
-        <PrefFieldRow key={field.key} field={field} />
-      ))}
+    <Stack fill vertical>
+      <Stack.Item>
+        <div className="RimworldCharacterEditor__subTabs">
+          <Button
+            selected={subTab === 'race'}
+            onClick={() => setSubTab('race')}
+          >
+            Race
+          </Button>
+          <Button
+            selected={subTab === 'xenogenes'}
+            onClick={() => setSubTab('xenogenes')}
+          >
+            Xenogenes
+          </Button>
+        </div>
+      </Stack.Item>
+      {!hasSlotGenes && (
+        <Stack.Item>
+          <Box color="bad">
+            Slot xenogenes are not in this Dream Maker build. Recompile the DME,
+            restart the game, then reopen Prepare Colonist. tgui-dev is not
+            enough.
+          </Box>
+        </Stack.Item>
+      )}
+      <Stack.Item grow minHeight={0}>
+        {subTab === 'race' ? <RacePane /> : <XenogenePane />}
+      </Stack.Item>
+    </Stack>
+  );
+}
+
+function geneById(defs: RwXenogeneDef[], id: string) {
+  return defs.find((gene) => gene.id === id);
+}
+
+function genesFromIds(defs: RwXenogeneDef[], ids: string[]) {
+  return ids
+    .map((id) => geneById(defs, id))
+    .filter((gene): gene is RwXenogeneDef => !!gene);
+}
+
+function sumGeneStats(genes: RwXenogeneDef[]) {
+  let complexity = 0;
+  let metabolic = 0;
+  for (const gene of genes) {
+    complexity += gene.complexity ?? 1;
+    metabolic += gene.metabolicEfficiency ?? 0;
+  }
+  return { complexity, metabolic };
+}
+
+function hungerRate(metabolic: number) {
+  return Math.max(45, Math.round((1 - metabolic * 0.1) * 100));
+}
+
+function formatMetabolic(value: number) {
+  if (value > 0) {
+    return `+${value}`;
+  }
+  return `${value}`;
+}
+
+function GeneStats(props: { genes: RwXenogeneDef[] }) {
+  const { complexity, metabolic } = sumGeneStats(props.genes);
+  return (
+    <div className="RimworldCharacterEditor__geneStats">
+      <div className="RimworldCharacterEditor__geneStat">
+        <span className="RimworldCharacterEditor__geneStatLabel">
+          Complexity
+        </span>
+        <span>{complexity}</span>
+      </div>
+      <div className="RimworldCharacterEditor__geneStat">
+        <span className="RimworldCharacterEditor__geneStatLabel">
+          Metabolic efficiency
+        </span>
+        <span>
+          {formatMetabolic(metabolic)}
+          <span className="RimworldCharacterEditor__geneStatMuted">
+            {' '}
+            Hunger rate x{hungerRate(metabolic)}%
+          </span>
+        </span>
+      </div>
     </div>
   );
 }
 
-function PrefFieldRow(props: { field: PrefField }) {
-  const { act } = useBackend<RimworldCharacterEditorData>();
-  const { field } = props;
-  const kind = field.kind === 'tri_color' ? 'tricolor' : field.kind;
+function geneConflicts(gene: RwXenogeneDef, other: RwXenogeneDef) {
+  if (gene.id === other.id) {
+    return false;
+  }
+  if ((gene.incompatibleWith || []).includes(other.id)) {
+    return true;
+  }
+  if ((other.incompatibleWith || []).includes(gene.id)) {
+    return true;
+  }
+  return !!(
+    gene.incompatibilityGroup &&
+    gene.incompatibilityGroup === other.incompatibilityGroup
+  );
+}
 
-  let control: ReactNode;
-  switch (kind) {
-    case 'choiced': {
-      const selected = String(field.value ?? '');
-      const options = (field.choices || []).map((choice) => ({
-        value: choice,
-        displayText: field.displayNames?.[choice] || choice,
-      }));
-      control = (
-        <Dropdown
+function conflictingGeneIds(
+  gene: RwXenogeneDef,
+  ownedIds: string[],
+  defs: RwXenogeneDef[],
+) {
+  return ownedIds.filter((id) => {
+    const other = geneById(defs, id);
+    return !!other && geneConflicts(gene, other);
+  });
+}
+
+function geneValueLabel(
+  gene: RwXenogeneDef,
+  values?: Record<string, unknown>,
+) {
+  const raw = values?.[gene.id];
+  if (gene.option?.kind === 'tricolor' && Array.isArray(raw)) {
+    return raw.map((piece) => String(piece)).join(' ');
+  }
+  if (raw === undefined || raw === null || raw === '') {
+    return '';
+  }
+  return String(raw);
+}
+
+function toPngSrc(value: string) {
+  if (value.startsWith('data:')) {
+    return value;
+  }
+  return `data:image/png;base64,${value}`;
+}
+
+function GeneArt(props: { gene: RwXenogeneDef }) {
+  const { gene } = props;
+  if (gene.iconBgSrc || gene.iconSrc) {
+    return (
+      <span className="RimworldCharacterEditor__geneArt">
+        {!!gene.iconBgSrc && (
+          <img src={toPngSrc(gene.iconBgSrc)} alt="" />
+        )}
+        {!!gene.iconSrc && <img src={toPngSrc(gene.iconSrc)} alt="" />}
+      </span>
+    );
+  }
+  if (gene.id !== 'hair') {
+    return null;
+  }
+  return (
+    <svg
+      className="RimworldCharacterEditor__geneArt"
+      viewBox="0 0 32 32"
+      aria-hidden
+    >
+      <ellipse cx="16" cy="13" rx="11" ry="9" fill="#f4f7fb" stroke="#1c2430" strokeWidth="1.6" />
+      <ellipse cx="9" cy="21" rx="4.2" ry="8" fill="#f4f7fb" stroke="#1c2430" strokeWidth="1.6" />
+      <ellipse cx="23" cy="21" rx="4.2" ry="8" fill="#c5cedb" stroke="#1c2430" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function GeneTile(props: {
+  gene: RwXenogeneDef;
+  selected?: boolean;
+  innate?: boolean;
+  disabled?: boolean;
+  inheritable?: boolean;
+  compact?: boolean;
+  onClick?: () => void;
+  onConfigure?: () => void;
+}) {
+  const {
+    gene,
+    selected,
+    innate,
+    disabled,
+    inheritable,
+    compact,
+    onClick,
+    onConfigure,
+  } = props;
+  const className = classes([
+    'RimworldCharacterEditor__gene',
+    compact && 'RimworldCharacterEditor__gene--compact',
+    selected && 'RimworldCharacterEditor__gene--selected',
+    innate && 'RimworldCharacterEditor__gene--innate',
+    disabled && 'RimworldCharacterEditor__gene--disabled',
+    inheritable && 'RimworldCharacterEditor__gene--inheritable',
+    gene.negative && 'RimworldCharacterEditor__gene--negative',
+  ]);
+  const body = (
+    <>
+      <span className="RimworldCharacterEditor__geneFrame">
+        <span
+          className={classes([
+            'RimworldCharacterEditor__geneGlyph',
+            gene.negative
+              ? 'RimworldCharacterEditor__geneGlyph--negative'
+              : 'RimworldCharacterEditor__geneGlyph--positive',
+          ])}
+        />
+        <GeneArt gene={gene} />
+      </span>
+      {!compact && (
+        <span className="RimworldCharacterEditor__geneName">{gene.name}</span>
+      )}
+    </>
+  );
+  const onContextMenu = onConfigure
+    ? (event: { preventDefault: () => void }) => {
+        event.preventDefault();
+        onConfigure();
+      }
+    : undefined;
+  if (!onClick || compact) {
+    return (
+      <span
+        title={gene.desc}
+        className={className}
+        onContextMenu={onContextMenu}
+      >
+        {body}
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      title={gene.desc}
+      className={className}
+      onClick={onClick}
+      onContextMenu={onContextMenu}
+    >
+      {body}
+    </button>
+  );
+}
+
+function GeneOptionEditor(props: { gene: RwXenogeneDef }) {
+  const { act, data } = useBackend<RimworldCharacterEditorData>();
+  const { gene } = props;
+  const option = gene.option;
+  if (!option) {
+    return null;
+  }
+  const raw = data.xenogeneValues?.[gene.id];
+  if (option.kind === 'numeric') {
+    const value = typeof raw === 'number' ? raw : Number(raw) || 1;
+    return (
+      <Box mt={1}>
+        <Box color="label" mb={0.4}>
+          Size
+        </Box>
+        <NumberInput
           width="100%"
-          selected={selected}
-          options={options.length ? options : [selected || 'None']}
-          onSelected={(value) =>
-            act('set_preference', { preference: field.key, value })
+          value={value}
+          minValue={option.min ?? 0.8}
+          maxValue={option.max ?? 1.5}
+          step={option.step ?? 0.01}
+          onChange={(next) =>
+            act('set_xenogene_option', { id: gene.id, value: next })
           }
         />
-      );
-      break;
-    }
-    case 'color':
-      control = (
-        <ColorPick
-          color={asHexColor(field.value)}
-          onClick={() =>
-            act('set_color_preference', { preference: field.key })
-          }
-        />
-      );
-      break;
-    case 'tricolor': {
-      const colors = Array.isArray(field.value) ? field.value : [];
-      control = (
+      </Box>
+    );
+  }
+  if (option.kind === 'tricolor') {
+    const colors = Array.isArray(raw)
+      ? raw.map((piece) => String(piece))
+      : ['#c0965f', '#c0965f', '#c0965f'];
+    return (
+      <Box mt={1}>
+        <Box color="label" mb={0.4}>
+          Colors
+        </Box>
         <Stack>
           {[0, 1, 2].map((index) => (
             <Stack.Item key={index}>
               <ColorPick
-                color={asHexColor(colors[index])}
+                color={colors[index] || '#c0965f'}
                 onClick={() =>
-                  act('set_tricolor_preference', {
-                    preference: field.key,
-                    value: index + 1,
-                  })
+                  act('pick_xenogene_color', { id: gene.id, index: index + 1 })
                 }
               />
             </Stack.Item>
           ))}
         </Stack>
-      );
-      break;
-    }
-    case 'toggle':
-      control = (
-        <Button.Checkbox
-          checked={!!field.value}
-          onClick={() =>
-            act('set_preference', {
-              preference: field.key,
-              value: !field.value,
-            })
-          }
-        />
-      );
-      break;
-    case 'numeric': {
-      const min = asFiniteNumber(field.min, 0);
-      const max = asFiniteNumber(field.max, 100);
-      const step = asFiniteNumber(field.step, 1);
-      control = (
-        <NumberInput
-          width="100%"
-          value={asFiniteNumber(field.value, min)}
-          minValue={min}
-          maxValue={max}
-          step={step || 1}
-          onChange={(value) =>
-            act('set_preference', { preference: field.key, value })
-          }
-        />
-      );
-      break;
-    }
-    case 'text':
-      control = (
-        <Input
-          fluid
-          value={typeof field.value === 'string' ? field.value : ''}
-          onBlur={(value) =>
-            act('set_preference', { preference: field.key, value })
-          }
-        />
-      );
-      break;
-    default:
-      return null;
+      </Box>
+    );
   }
-
+  const choices = option.choices || [];
+  const selected = typeof raw === 'string' ? raw : String(raw || '');
   return (
-    <AppearanceRow label={field.name || field.key}>{control}</AppearanceRow>
+    <Box mt={1}>
+      <Box color="label" mb={0.4}>
+        Variant
+      </Box>
+      <Dropdown
+        width="100%"
+        selected={selected}
+        options={choices}
+        onSelected={(value) =>
+          act('set_xenogene_option', { id: gene.id, value })
+        }
+      />
+    </Box>
   );
 }
 
-function BiologyTab() {
+function GeneInspector(props: {
+  gene?: RwXenogeneDef;
+  innate?: boolean;
+  equipped?: boolean;
+}) {
   const { act, data } = useBackend<RimworldCharacterEditorData>();
+  const { gene, innate, equipped } = props;
+  if (!gene) {
+    return (
+      <Box color="label">Select a xenogene to see what it changes.</Box>
+    );
+  }
+  const effects = gene.effects?.length ? gene.effects : [gene.desc];
+  const optionLabel = geneValueLabel(gene, data.xenogeneValues);
+  const inheritableIds = data.xenogeneInheritable || [];
+  const innateIds = data.innateXenogenes || [];
+  const pawnInheritable = inheritableIds.includes(gene.id);
+  const innateConflicts = conflictingGeneIds(
+    gene,
+    innateIds,
+    data.xenogeneDefs,
+  );
+  const blockedByInnate = !innate && !equipped && innateConflicts.length > 0;
+  const conflictNames = innateConflicts
+    .map((id) => geneById(data.xenogeneDefs, id)?.name || id)
+    .join(', ');
+  return (
+    <div className="RimworldCharacterEditor__geneInspect">
+      <Box className="RimworldCharacterEditor__sectionTitle">{gene.name}</Box>
+      <Box color="label" mb={0.5}>
+        {gene.category}
+        {innate ? ' · from race' : ''}
+        {(innate || equipped) &&
+          (pawnInheritable ? ' · inheritable' : ' · not inheritable')}
+      </Box>
+      {effects.map((line) => (
+        <Box key={line} mb={0.4}>
+          {line}
+        </Box>
+      ))}
+      {!!optionLabel && (
+        <Box mt={0.6} color="label">
+          Current: {optionLabel}
+        </Box>
+      )}
+      {blockedByInnate && (
+        <Box mt={0.6} color="bad">
+          Incompatible with {conflictNames}.
+        </Box>
+      )}
+      <GeneOptionEditor gene={gene} />
+      {!innate && (
+        <Button
+          mt={1}
+          fluid
+          selected={equipped}
+          disabled={blockedByInnate}
+          onClick={() => act('toggle_xenogene', { id: gene.id })}
+        >
+          {equipped ? 'Remove gene' : 'Add gene'}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function raceTitle(species?: RwSpeciesDef) {
+  return species?.label || species?.name || 'Race';
+}
+
+function RacePane() {
+  const { act, data } = useBackend<RimworldCharacterEditorData>();
+  const [inspectedId, setInspectedId] = useState<string | null>(null);
   const currentSpecies = (data.speciesDefs || []).find(
     (species) => species.path === data.speciesPath,
   );
-  const speciesFields = data.character_preferences?.species || [];
+  const innateIds =
+    currentSpecies?.innateXenogenes || data.innateXenogenes || [];
+  const innateGenes = genesFromIds(data.xenogeneDefs, innateIds);
+  const perks = currentSpecies?.perks || [];
+  const inspected =
+    geneById(data.xenogeneDefs, inspectedId || '') || innateGenes[0];
+
+  return (
+    <Stack fill>
+      <Stack.Item
+        basis="220px"
+        className="RimworldCharacterEditor__scrollPane"
+      >
+        {(data.speciesDefs || []).map((species) => {
+          const selected = species.path === data.speciesPath;
+          const preview = genesFromIds(
+            data.xenogeneDefs,
+            species.innateXenogenes || [],
+          );
+          return (
+            <button
+              key={species.path}
+              type="button"
+              className={classes([
+                'RimworldCharacterEditor__raceCard',
+                selected && 'RimworldCharacterEditor__raceCard--selected',
+              ])}
+              onClick={() => act('set_species', { value: species.path })}
+            >
+              <span className="RimworldCharacterEditor__raceCardName">
+                {raceTitle(species)}
+              </span>
+              {!!species.subtitle && (
+                <span className="RimworldCharacterEditor__raceCardSub">
+                  {species.subtitle}
+                </span>
+              )}
+              <span className="RimworldCharacterEditor__raceCardGenes">
+                {preview.map((gene) => (
+                  <GeneTile key={gene.id} gene={gene} compact innate />
+                ))}
+              </span>
+            </button>
+          );
+        })}
+      </Stack.Item>
+      <Stack.Item grow className="RimworldCharacterEditor__scrollPane">
+        <div className="RimworldCharacterEditor__geneView">
+          <Box className="RimworldCharacterEditor__geneViewTitle">
+            View genes: {raceTitle(currentSpecies)}
+          </Box>
+          {innateGenes.length ? (
+            <div className="RimworldCharacterEditor__geneGrid">
+              {innateGenes.map((gene) => (
+                <GeneTile
+                  key={gene.id}
+                  gene={gene}
+                  selected={inspected?.id === gene.id}
+                  innate
+                  onClick={() => setInspectedId(gene.id)}
+                  onConfigure={() => setInspectedId(gene.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <Box color="label" mb={1}>
+              This race has no innate xenogenes.
+            </Box>
+          )}
+          <GeneStats genes={innateGenes} />
+          {!!currentSpecies?.desc && (
+            <Box mb={1} style={{ whiteSpace: 'pre-wrap' }}>
+              {currentSpecies.desc}
+            </Box>
+          )}
+          {!!perks.length && (
+            <>
+              <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
+                Effects
+              </Box>
+              {perks.map((perk) => (
+                <Box key={`${perk.type}-${perk.name}`} mb={0.6}>
+                  <Box>
+                    {perk.name}
+                    {perk.type ? ` (${perk.type})` : ''}
+                  </Box>
+                  {!!perk.desc && <Box color="label">{perk.desc}</Box>}
+                </Box>
+              ))}
+            </>
+          )}
+          {!!currentSpecies?.lore && (
+            <>
+              <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
+                Lore
+              </Box>
+              <Box color="label" style={{ whiteSpace: 'pre-wrap' }}>
+                {currentSpecies.lore}
+              </Box>
+            </>
+          )}
+        </div>
+      </Stack.Item>
+      <Stack.Item basis="220px" className="RimworldCharacterEditor__scrollPane">
+        <GeneInspector gene={inspected} innate equipped />
+      </Stack.Item>
+    </Stack>
+  );
+}
+
+function XenogenePane() {
+  const { data } = useBackend<RimworldCharacterEditorData>();
+  const innateIds = data.innateXenogenes || [];
+  const equippedIds = data.xenogenes || [];
+  const inheritableIds = data.xenogeneInheritable || [];
+  const [inspectedId, setInspectedId] = useState<string | null>(null);
+
+  const fromRace = genesFromIds(data.xenogeneDefs, innateIds);
+  const equipped = genesFromIds(data.xenogeneDefs, equippedIds).filter(
+    (gene) => !innateIds.includes(gene.id),
+  );
+  const available = data.xenogeneDefs.filter(
+    (gene) =>
+      !equippedIds.includes(gene.id) && !innateIds.includes(gene.id),
+  );
+  const allActive = [...fromRace, ...equipped];
+
+  const inspected =
+    geneById(data.xenogeneDefs, inspectedId || '') ||
+    fromRace[0] ||
+    equipped[0] ||
+    available[0];
 
   return (
     <Stack fill>
       <Stack.Item grow className="RimworldCharacterEditor__scrollPane">
-        <Box className="RimworldCharacterEditor__sectionTitle">Race</Box>
-        {(data.speciesDefs || []).map((species) => (
-          <Button
-            key={species.path}
-            fluid
-            selected={species.path === data.speciesPath}
-            onClick={() => act('set_species', { value: species.path })}
-          >
-            {species.name}
-          </Button>
-        ))}
-        <PrefFieldList fields={speciesFields} />
+        <Box className="RimworldCharacterEditor__sectionTitle">From race</Box>
+        {fromRace.length ? (
+          <div className="RimworldCharacterEditor__geneGrid">
+            {fromRace.map((gene) => (
+              <GeneTile
+                key={gene.id}
+                gene={gene}
+                selected={inspected?.id === gene.id}
+                innate
+                inheritable={inheritableIds.includes(gene.id)}
+                onClick={() => setInspectedId(gene.id)}
+                onConfigure={() => setInspectedId(gene.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <Box color="label" mb={1}>
+            None
+          </Box>
+        )}
+        <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
+          Equipped
+        </Box>
+        {equipped.length ? (
+          <div className="RimworldCharacterEditor__geneGrid">
+            {equipped.map((gene) => (
+              <GeneTile
+                key={gene.id}
+                gene={gene}
+                selected={inspected?.id === gene.id}
+                inheritable={inheritableIds.includes(gene.id)}
+                onClick={() => setInspectedId(gene.id)}
+                onConfigure={() => setInspectedId(gene.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <Box color="label" mb={1}>
+            None
+          </Box>
+        )}
+        <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
+          Available
+        </Box>
+        {available.length ? (
+          <div className="RimworldCharacterEditor__geneGrid">
+            {available.map((gene) => (
+              <GeneTile
+                key={gene.id}
+                gene={gene}
+                selected={inspected?.id === gene.id}
+                disabled={
+                  conflictingGeneIds(gene, innateIds, data.xenogeneDefs)
+                    .length > 0
+                }
+                onClick={() => setInspectedId(gene.id)}
+                onConfigure={() => setInspectedId(gene.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <Box color="label">None</Box>
+        )}
+        <GeneStats genes={allActive} />
       </Stack.Item>
-      <Stack.Item grow className="RimworldCharacterEditor__scrollPane">
-        <Box className="RimworldCharacterEditor__sectionTitle">Xenogenes</Box>
-        {data.xenogeneDefs.map((gene) => {
-          const supported =
-            !gene.supportedSpecies.length ||
-            gene.supportedSpecies.includes(currentSpecies?.id || '');
-          const selected = data.xenogenes.includes(gene.id);
-          return (
-            <Button
-              key={gene.id}
-              fluid
-              disabled={!supported}
-              selected={selected}
-              tooltip={gene.desc}
-              onClick={() => act('toggle_xenogene', { id: gene.id })}
-            >
-              {gene.name}
-            </Button>
-          );
-        })}
+      <Stack.Item basis="220px" className="RimworldCharacterEditor__scrollPane">
+        <GeneInspector
+          gene={inspected}
+          innate={!!inspected && innateIds.includes(inspected.id)}
+          equipped={!!inspected && equippedIds.includes(inspected.id)}
+        />
       </Stack.Item>
     </Stack>
   );

@@ -5,27 +5,43 @@
 	var/list/rw_xenogenes
 
 
-/datum/dna/proc/set_rw_xenogenes(list/new_ids, apply = TRUE)
-	// This replaces acquired xenogenes only.
-	// Innate xenogenes are preserved.
-
-	remove_rw_xenogenes()
-
+/datum/dna/proc/set_rw_xenogenes(list/new_ids, list/option_values = null, apply = TRUE)
 	if(!rw_xenogenes)
 		rw_xenogenes = list()
+	if(!islist(new_ids))
+		new_ids = list()
+
+	var/list/wanted = list()
+	for(var/gene_id in new_ids)
+		wanted[gene_id] = TRUE
+
+	for(var/gene_id in rw_xenogenes.Copy())
+		if(wanted[gene_id])
+			continue
+		var/datum/rw_xenogene/stale = rw_xenogenes[gene_id]
+		if(!stale)
+			rw_xenogenes -= gene_id
+			continue
+		remove_rw_xenogene(gene_id, stale.xenogen_source_flags)
 
 	for(var/gene_id in new_ids)
-		add_rw_xenogene(
-			gene_id,
-			FALSE,
-			RW_XENOGEN_SOURCE_ACQUIRED
-		)
+		var/option_value
+		if(islist(option_values))
+			option_value = option_values[gene_id]
+		var/datum/rw_xenogene/existing = rw_xenogenes[gene_id]
+		var/already = !!existing
+		var/old_option
+		if(existing)
+			old_option = existing.option_value
+		add_rw_xenogene(gene_id, option_value, FALSE, RW_XENOGEN_SOURCE_ACQUIRED)
+		existing = rw_xenogenes[gene_id]
+		if(!apply || !holder || !existing)
+			continue
+		if(!already || (!isnull(option_value) && old_option != existing.option_value))
+			existing.on_gain(holder)
 
-	if(apply)
-		apply_rw_xenogenes()
 
-
-/datum/dna/proc/add_rw_xenogene(gene_id, apply = TRUE, source_flags = RW_XENOGEN_SOURCE_ACQUIRED)
+/datum/dna/proc/add_rw_xenogene(gene_id, option_value = null, apply = TRUE, source_flags = RW_XENOGEN_SOURCE_ACQUIRED)
 	if(!gene_id)
 		return null
 
@@ -35,11 +51,12 @@
 	var/datum/rw_xenogene/gene = rw_xenogenes[gene_id]
 
 	if(gene)
+		var/old_option = gene.option_value
 		gene.xenogen_source_flags |= source_flags
-
-		if(apply && holder)
+		if(!isnull(option_value))
+			gene.option_value = gene.sanitize_option(option_value)
+		if(apply && holder && old_option != gene.option_value)
 			gene.on_gain(holder)
-
 		return gene
 
 	var/datum/rw_xenogene/prototype = GLOB.all_rw_xenogenes[gene_id]
@@ -47,7 +64,13 @@
 		stack_trace("Unknown Rimworld xenogene id: [gene_id]")
 		return null
 
+	var/list/conflicts = prototype.conflicts_with_ids(rw_xenogenes)
+	if(length(conflicts))
+		return null
+
 	gene = prototype.create_instance(holder, source_flags)
+	if(!isnull(option_value))
+		gene.option_value = gene.sanitize_option(option_value)
 	rw_xenogenes[gene_id] = gene
 
 	if(apply && holder)
