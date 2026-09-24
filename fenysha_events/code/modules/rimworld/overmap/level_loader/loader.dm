@@ -143,7 +143,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/datum/turf_reservation/sub_level/reservation
 	var/datum/map_generator/sub_level/generator
 
-	var/ignore_lag = FALSE
+	var/ignore_lag = TRUE
 	var/phase = RW_CELL_JOB_PREPARE
 
 	var/local_x = 1

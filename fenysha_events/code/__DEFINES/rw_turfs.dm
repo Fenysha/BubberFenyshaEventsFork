@@ -1,5 +1,5 @@
 //TURF FLAGS
-#define SUPPORTS_NATURE (1<<1)
+#define SUPPORTS_NATURE (1<<0)
 
 #define SUPPORTS_MOBS (1<<1)
 
