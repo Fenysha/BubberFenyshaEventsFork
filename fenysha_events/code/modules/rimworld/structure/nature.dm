@@ -371,55 +371,89 @@
 
 
 /obj/structure/rimworld/flora/grayscale/proc/setup_grayscale_visuals()
-	if(foliage_color && !icon_state_grayscale)
-		set_base_color(foliage_color)
 	if(icon_state_grayscale)
 		if(!icon_grayscale)
 			icon_grayscale = icon
+
 		if(grayscale_overlay)
 			cut_overlay(grayscale_overlay)
+
 		var/overlay_icon_state = "[icon_state]_[icon_state_grayscale]"
-		grayscale_overlay = mutable_appearance(icon_grayscale, overlay_icon_state)
+
+		grayscale_overlay = mutable_appearance(
+			icon_grayscale,
+			overlay_icon_state,
+			layer = src.layer + 0.1,
+			appearance_flags = RESET_COLOR | RESET_ALPHA | KEEP_APART,
+		)
+
 		grayscale_overlay.color = foliage_color
 		add_overlay(grayscale_overlay)
+		return
 
-	else if(foliage_color)
-		color = foliage_color
+	if(foliage_color)
+		set_base_color(foliage_color)
 
 
 /obj/structure/rimworld/flora/grayscale/proc/update_season_visual(atom/host, hemisphere, old_season, new_season, quadrum, year)
 	if(!seasonal_color)
 		return
+
 	if(!base_color)
-		if(foliage_color)
-			set_base_color(foliage_color)
-		else
-			return
+		base_color = foliage_color
 
 	var/tint
 	var/amount
+
 	switch(new_season)
 		if(RW_SEASON_SPRING)
 			tint = RW_SEASON_TINT_SPRING
 			amount = RW_SEASON_TINT_AMOUNT_SPRING
+
 		if(RW_SEASON_SUMMER)
 			tint = RW_SEASON_TINT_SUMMER
 			amount = RW_SEASON_TINT_AMOUNT_SUMMER
+
 		if(RW_SEASON_FALL)
 			tint = RW_SEASON_TINT_FALL
 			amount = RW_SEASON_TINT_AMOUNT_FALL
+
 		if(RW_SEASON_WINTER)
 			tint = RW_SEASON_TINT_WINTER
 			amount = RW_SEASON_TINT_AMOUNT_WINTER
+
 		else
-			reset_to_base_color()
-			refresh_grayscale_overlay_color()
+			if(grayscale_overlay)
+				animate(
+					grayscale_overlay,
+					color = base_color,
+					time = 0.5,
+					easing = LINEAR_EASING
+				)
+			else
+				reset_to_base_color(0.5)
 			return
 
-	if(!grayscale_overlay)
-		modulate_color_towards(tint, amount)
+	var/new_color = blend_towards(base_color, tint, amount)
+
+	if(grayscale_overlay)
+		animate(
+			grayscale_overlay,
+			color = new_color,
+			time = 0.5,
+			easing = LINEAR_EASING
+		)
 	else
-		refresh_grayscale_overlay_color()
+		var/old_color = color
+
+		animate(
+			src,
+			color = new_color,
+			time = 0.5,
+			easing = LINEAR_EASING
+		)
+
+		on_color_updated(old_color, new_color, 0.5)
 
 
 /obj/structure/rimworld/flora/grayscale/proc/refresh_grayscale_overlay_color()
@@ -474,7 +508,8 @@
 	. = ..()
 	if(isnull(fall_products))
 		fall_products = destroy_products
-
+	if(get_seethrough_map())
+		AddComponent(/datum/component/seethrough, get_seethrough_map())
 
 /obj/structure/rimworld/flora/grayscale/tree/can_destroy(mob/user, obj/item/tool)
 	if(falling)
@@ -524,6 +559,8 @@
 /obj/structure/rimworld/flora/grayscale/tree/get_destroy_products()
 	return fall_products
 
+/obj/structure/rimworld/flora/grayscale/tree/proc/get_seethrough_map()
+	return SEE_THROUGH_MAP_DEFAULT
 
 
 /obj/structure/rimworld/flora/grayscale/tree/stump
@@ -556,7 +593,6 @@
 	return TRUE
 
 
-
 /obj/structure/rimworld/flora/grayscale/tree/forest
 	name = "forest tree"
 	foliage_color = GRASS_COLOR_FOREST
@@ -569,6 +605,9 @@
 	max_integrity = 220
 	destroy_amount_low = 8
 	destroy_amount_high = 14
+
+	pixel_x = -48
+	pixel_y = -20
 
 
 
@@ -658,7 +697,6 @@
 	refresh_grayscale_overlay_color()
 
 
-// --- Desert (minimal foliage, little seasonal swing) ---
 /obj/structure/rimworld/flora/grayscale/cactus
 	name = "cactus"
 	desc = "A spiny desert plant."
@@ -669,8 +707,8 @@
 	density = FALSE
 
 
-// --- Tundra ---
 /obj/structure/rimworld/flora/grayscale/bush/tundra
 	name = "tundra shrub"
 	foliage_color = "#7A8B6A"
 	seasonal_color = TRUE
+
