@@ -303,8 +303,6 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	)
 
 
-// ── Planet lifecycle ────────────────────────────────────────────────────────
-
 /datum/controller/subsystem/rimworld_planetmap/proc/generate_planet(planet_type = RW_PLANET_PRESET_TERRAN, planet_seed = null, list/custom_params = null)
 	if(planet)
 		qdel(planet)
@@ -394,6 +392,9 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 			return view
 	return null
 
+/datum/controller/subsystem/rimworld_planetmap/proc/clear_view(mob/user, datum/planetmap_view/view)
+	if(!QDELETED(view) && (view in active_views))
+		active_views -= view
 
 /datum/controller/subsystem/rimworld_planetmap/proc/open_view(mob/user, datum/planetmap_view/view_path = /datum/planetmap_view/overview)
 	if(!user || !planet)
@@ -410,10 +411,19 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 /datum/controller/subsystem/rimworld_planetmap/proc/open_admin_view(mob/user)
 	return open_view(user, /datum/planetmap_view/admin)
 
-
 /datum/controller/subsystem/rimworld_planetmap/proc/open_overview(mob/user)
 	return open_view(user, /datum/planetmap_view/overview)
 
+/datum/controller/subsystem/rimworld_planetmap/proc/open_settlement_view(mob/user, observer = FALSE)
+	if(!user || !planet)
+		return null
+	var/datum/planetmap_view/settlement/existing = find_view(user, "settlement")
+	if(existing)
+		existing.ui_interact(user)
+		return existing
+	var/datum/planetmap_view/settlement/view = new(user, planet, observer ? "observer" : "start")
+	view.ui_interact(user)
+	return view
 
 /datum/controller/subsystem/rimworld_planetmap/proc/open_caravan_view(mob/user, caravan_id = null, origin_x = null, origin_y = null)
 	if(!user || !planet)

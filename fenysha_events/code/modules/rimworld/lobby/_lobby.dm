@@ -351,6 +351,7 @@
 		dat += {"<div class="container_nav" id="parallax_nav">"}
 
 		if(game_started)
+			dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];join_world=1'>Join world1</a>"}
 			dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];late_join=1'>Join world</a>"}
 
 		dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];observe=1'>Observer</a>"}
@@ -437,6 +438,7 @@
 	dat += "</body></html>"
 	return dat
 
+
 /datum/lobby/rimworld/proc/get_rimworld_lobby_status()
 	if(!SSticker)
 		return "INITIALIZING"
@@ -458,3 +460,8 @@
 	if(P && P.name)
 		return P.name
 	return "Unknown World"
+
+/datum/lobby/rimworld/Topic(href, href_list, mob/dead/new_player/user)
+	. = ..()
+	if(href_list["join_world"])
+		SSrimworld_planetmap.open_settlement_view(user)

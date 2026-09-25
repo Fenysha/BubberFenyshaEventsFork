@@ -373,6 +373,9 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	)
 
 
+/datum/planet_cell/proc/get_name()
+	return "[x]:[y]"
+
 /**
  * Checks whether the cell coordinates are still valid on the current planet.
  */
@@ -389,7 +392,6 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 		&& reservation \
 		&& !QDELETED(reservation) \
 		&& !qdel_pending
-
 
 /**
  * Ensures that local terrain exists.
@@ -583,11 +585,6 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 		return 12
 	return planet.get_solar_hour(x, y)
 
-/**
- * ------------------------------------------------------------------
- * Weather (skeleton)
- * ------------------------------------------------------------------
- */
 
 /**
  * Sets weather type and intensity.
@@ -623,11 +620,6 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	return TRUE
 
 
-/**
- * ------------------------------------------------------------------
- * Zones (skeleton)
- * ------------------------------------------------------------------
- */
 
 /**
  * Adds a zone to the cell.

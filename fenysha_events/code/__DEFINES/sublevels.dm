@@ -46,10 +46,10 @@
  * ============================================================================
  */
 
-#define RW_SUBLEVEL_RESERVE_BUDGET     512
-#define RW_SUBLEVEL_PLACE_BUDGET       160
-#define RW_SUBLEVEL_INITIALIZE_BUDGET  320
-#define RW_SUBLEVEL_POPULATE_BUDGET    160
+#define RW_SUBLEVEL_RESERVE_BUDGET     1024
+#define RW_SUBLEVEL_PLACE_BUDGET       1024
+#define RW_SUBLEVEL_INITIALIZE_BUDGET  512
+#define RW_SUBLEVEL_POPULATE_BUDGET    512
 #define RW_SUBLEVEL_LIGHTING_BUDGET    320
 #define RW_SUBLEVEL_DAYLIGHT_BUDGET    320
 #define RW_SUBLEVEL_SMOOTH_BUDGET      1024
@@ -61,9 +61,12 @@
  * ============================================================================
  */
 
+#define RW_SUBLEVEL_MAX_PARALLEL_LOADS 3
+
 #define RW_CELL_LOAD_CONTINUE 0
 #define RW_CELL_LOAD_COMPLETE 1
 #define RW_CELL_LOAD_FAILED   2
+#define RW_CELL_LOAD_PAUSED   3
 
 #define RW_CELL_JOB_PREPARE     1
 #define RW_CELL_JOB_RESERVE     2

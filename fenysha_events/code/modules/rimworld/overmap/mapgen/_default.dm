@@ -356,7 +356,7 @@
 	if(!islist(cave_mask))
 		cave_mask = list()
 
-	else if(length(cave_mask) != width * height)
+	else if(generate_caves && (length(cave_mask) != width * height))
 		log_world(
 			"Sub-level cave mask size mismatch."
 		)
@@ -366,10 +366,13 @@
 		for(var/i in 1 to length(cave_mask))
 			cave_mask[i] = text2num("[cave_mask[i]]") != 0
 
+	/*
 	rimworld_area = SSatoms.NewUninitialized(
 		/area/rimworld,
 		null
 	)
+	*/
+	rimworld_area = new()
 
 	if(!rimworld_area)
 		return FALSE
@@ -379,7 +382,7 @@
 	rimworld_area.daylight = TRUE
 	rimworld_area.outdoors = TRUE
 
-	pending_init = list(rimworld_area)
+	pending_init = list(/* rimworld_area */)
 	generated_turfs = list()
 	generated_open_turfs = list()
 	generated_open_is_cave = list()

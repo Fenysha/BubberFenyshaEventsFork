@@ -1,3 +1,24 @@
+/client
+	var/datum/planetmap_view/forced_planetmap_view
+
+/client/proc/try_reopen_forced_planetmap()
+	if(!forced_planetmap_view || QDELETED(forced_planetmap_view))
+		forced_planetmap_view = null
+		return
+
+	var/datum/planetmap_view/view = forced_planetmap_view
+	if(!view.auto_reopen_on_login)
+		return
+
+	view.viewer = mob
+	view.ui_interact(mob)
+
+
+/mob/Login()
+	. = ..()
+	if(client)
+		client.try_reopen_forced_planetmap()
+
 /datum/planetmap_view
 	var/mob/viewer
 	var/datum/rimworld_planet/planet
@@ -15,10 +36,15 @@
 	var/selected_y
 	var/selected_object_id
 
+	var/prevent_close = FALSE
+	var/auto_reopen_on_login = FALSE
+	var/client/owner_client
 
 /datum/planetmap_view/New(mob/user, datum/rimworld_planet/new_planet)
 	viewer = user
 	planet = new_planet
+	if(user?.client)
+		owner_client = user.client
 	SSrimworld_planetmap.register_view(src)
 	return ..()
 
@@ -26,10 +52,15 @@
 /datum/planetmap_view/Destroy()
 	SStgui.close_uis(src)
 	SSrimworld_planetmap.unregister_view(src)
+
+	if(owner_client)
+		if(owner_client.forced_planetmap_view == src)
+			owner_client.forced_planetmap_view = null
+		owner_client = null
+
 	viewer = null
 	planet = null
 	return ..()
-
 
 /datum/planetmap_view/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -44,8 +75,10 @@
 
 /datum/planetmap_view/ui_close(mob/user)
 	. = ..()
-	if(!QDELING(src))
-		qdel(src)
+	if(auto_reopen_on_login)
+		SSrimworld_planetmap.clear_view(user, src)
+		if(!QDELING(src))
+			qdel(src)
 
 
 /datum/planetmap_view/ui_static_data(mob/user)
@@ -174,6 +207,9 @@
 	return TRUE
 
 
+/datum/planetmap_view/proc/handle_close(sucessful = FALSE)
+	return
+
 /datum/planetmap_view/proc/handle_view_act(action, list/params)
 	return FALSE
 
@@ -188,6 +224,10 @@
 
 	switch(action)
 		if("close")
+			if(prevent_close)
+				handle_close()
+				return TRUE
+			handle_close(TRUE)
 			SStgui.close_uis(src)
 			return TRUE
 
@@ -209,15 +249,9 @@
 
 	return handle_view_act(action, params)
 
-
-// ── Overview ────────────────────────────────────────────────────────────────
-
 /datum/planetmap_view/overview
 	view_type = "overview"
 	window_title = "Planet Overview"
-
-
-// ── Caravan ─────────────────────────────────────────────────────────────────
 
 /datum/planetmap_view/caravan
 	view_type = "caravan"

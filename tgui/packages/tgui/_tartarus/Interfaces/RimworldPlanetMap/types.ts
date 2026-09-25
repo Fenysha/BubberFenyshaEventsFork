@@ -1,7 +1,7 @@
 import type { BooleanLike } from 'tgui-core/react';
 import type * as THREE from 'three';
 
-export type PlanetViewType = 'admin' | 'caravan' | 'overview';
+export type PlanetViewType = 'admin' | 'caravan' | 'overview' | 'settlement';
 
 export const selectedPlanetTileToPlanetTile = (
   tile: SelectedPlanetTile | PlanetTile | null | undefined,
@@ -159,6 +159,35 @@ export interface PlanetMapViewData {
   roadStartX?: number | null;
   roadStartY?: number | null;
   cell?: PlanetCellData | null;
+
+  mode?: 'start' | 'observer';
+
+  startX?: number | null;
+  startY?: number | null;
+  joinSettlementId?: string | null;
+
+  canCreate?: BooleanLike;
+  canJoin?: BooleanLike;
+
+  playerSettlements?: PlayerSettlementInfo[];
+
+  loadedCells?: LoadedCellInfo[];
+}
+
+export interface PlayerSettlementInfo {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  population: number;
+  faction: string;
+}
+
+export interface LoadedCellInfo {
+  x: number;
+  y: number;
+  id?: string;
+  name?: string;
 }
 
 export type PlanetTile = {

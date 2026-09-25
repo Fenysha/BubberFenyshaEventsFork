@@ -9,6 +9,7 @@ import type { PlanetMapData, PlanetTile } from './types';
 import { AdminPanel } from './views/AdminPanel';
 import { CaravanPanel } from './views/CaravanPanel';
 import { OverviewPanel } from './views/OverviewPanel';
+import { SettlementPanel } from './views/SettlementPanel';
 import { TileDetails } from './views/TileDetails';
 
 export const RimworldPlanetMap = () => {
@@ -149,49 +150,51 @@ export const RimworldPlanetMap = () => {
             }}
           >
             <Stack style={{ pointerEvents: 'auto' }}>
-            <Stack.Item>
-              <Button
-                color="danger"
-                icon="times"
-                tooltip="Close (Esc)"
-                onClick={() => act('close')}
-              >
-                Close
-              </Button>
-            </Stack.Item>
+              <Stack.Item>
+                <Button
+                  color="danger"
+                  icon="times"
+                  tooltip="Close (Esc)"
+                  onClick={() => act('close')}
+                >
+                  Close
+                </Button>
+              </Stack.Item>
 
-            <Stack.Item>
-              <Button
-                icon={showAtmosphere ? 'globe' : 'globe-americas'}
-                selected={showAtmosphere}
-                tooltip={showAtmosphere ? 'Hide Atmosphere' : 'Show Atmosphere'}
-                onClick={() => setShowAtmosphere((prev) => !prev)}
-              >
-                Atmosphere
-              </Button>
-            </Stack.Item>
+              <Stack.Item>
+                <Button
+                  icon={showAtmosphere ? 'globe' : 'globe-americas'}
+                  selected={showAtmosphere}
+                  tooltip={
+                    showAtmosphere ? 'Hide Atmosphere' : 'Show Atmosphere'
+                  }
+                  onClick={() => setShowAtmosphere((prev) => !prev)}
+                >
+                  Atmosphere
+                </Button>
+              </Stack.Item>
 
-            <Stack.Item>
-              <Button
-                icon={showClouds ? 'cloud' : 'cloud-sun'}
-                selected={showClouds}
-                tooltip={showClouds ? 'Hide Clouds' : 'Show Clouds'}
-                onClick={() => setShowClouds((prev) => !prev)}
-              >
-                Clouds
-              </Button>
-            </Stack.Item>
+              <Stack.Item>
+                <Button
+                  icon={showClouds ? 'cloud' : 'cloud-sun'}
+                  selected={showClouds}
+                  tooltip={showClouds ? 'Hide Clouds' : 'Show Clouds'}
+                  onClick={() => setShowClouds((prev) => !prev)}
+                >
+                  Clouds
+                </Button>
+              </Stack.Item>
 
-            <Stack.Item>
-              <Button
-                icon={showRightPanel ? 'eye-slash' : 'eye'}
-                selected={showRightPanel}
-                tooltip={showRightPanel ? 'Hide Controls' : 'Show Controls'}
-                onClick={() => setShowRightPanel((previous) => !previous)}
-              >
-                {showRightPanel ? 'Hide Panel' : 'Show Panel'}
-              </Button>
-            </Stack.Item>
+              <Stack.Item>
+                <Button
+                  icon={showRightPanel ? 'eye-slash' : 'eye'}
+                  selected={showRightPanel}
+                  tooltip={showRightPanel ? 'Hide Controls' : 'Show Controls'}
+                  onClick={() => setShowRightPanel((previous) => !previous)}
+                >
+                  {showRightPanel ? 'Hide Panel' : 'Show Panel'}
+                </Button>
+              </Stack.Item>
             </Stack>
           </div>
         )}
@@ -240,6 +243,8 @@ export const RimworldPlanetMap = () => {
             {viewType === 'caravan' && <CaravanPanel />}
 
             {viewType === 'overview' && <OverviewPanel />}
+
+            {viewType === 'settlement' && <SettlementPanel />}
           </div>
         )}
       </FullscreenWindow.Content>

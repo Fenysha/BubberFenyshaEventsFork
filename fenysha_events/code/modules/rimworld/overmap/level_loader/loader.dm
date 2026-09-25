@@ -1,5 +1,5 @@
 SUBSYSTEM_DEF(rimworld_sublevel_loader)
-	name = "\[rw\] Sub-Level Loader"
+	name = "\[RW\] Sub-Level Loader"
 	wait = 1
 	ss_flags = SS_TICKER
 
@@ -10,12 +10,19 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		/datum/controller/subsystem/lighting,
 	)
 
+	/// Strict FIFO queue of jobs that have not started yet.
 	var/list/datum/rimworld_sublevel_load_job/load_queue = list()
+
+	/// Round-robin queue of currently active jobs.
+	var/list/datum/rimworld_sublevel_load_job/active_queue = list()
+
 	var/list/jobs_by_cell = list()
+
+	var/active_loads = 0
 
 
 /datum/controller/subsystem/rimworld_sublevel_loader/stat_entry(msg)
-	msg = "\n  Queue:[length(load_queue)]"
+	msg = "\n  Pending:[length(load_queue)] Active:[active_loads]/[RW_SUBLEVEL_MAX_PARALLEL_LOADS]"
 	return ..()
 
 
@@ -32,21 +39,29 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			post_load_callback.Invoke(cell, TRUE)
 		return TRUE
 
+	if(cell.loading_job && QDELETED(cell.loading_job))
+		cell.loading_job = null
+		cell.is_generating = FALSE
+
 	if(cell.loading_job)
 		if(post_load_callback)
 			cell.loading_job.add_callback(post_load_callback)
 		return TRUE
 
-	if(cell.id && jobs_by_cell[cell.id])
+	if(cell.id)
 		var/datum/rimworld_sublevel_load_job/existing_job = jobs_by_cell[cell.id]
 
-		if(post_load_callback)
-			existing_job.add_callback(post_load_callback)
+		if(existing_job && !QDELETED(existing_job))
+			if(post_load_callback)
+				existing_job.add_callback(post_load_callback)
 
-		cell.loading_job = existing_job
-		cell.is_generating = TRUE
+			cell.loading_job = existing_job
+			cell.is_generating = TRUE
 
-		return TRUE
+			return TRUE
+
+		if(existing_job)
+			jobs_by_cell -= cell.id
 
 	var/datum/rimworld_sublevel_load_job/job = new /datum/rimworld_sublevel_load_job(
 		cell,
@@ -62,7 +77,32 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	cell.loading_job = job
 	cell.is_generating = TRUE
 
+	fill_active_slots()
+
 	return TRUE
+
+
+/datum/controller/subsystem/rimworld_sublevel_loader/proc/fill_active_slots()
+	while(
+		active_loads < RW_SUBLEVEL_MAX_PARALLEL_LOADS \
+		&& length(load_queue)
+	)
+		// Always take the oldest pending job.
+		var/datum/rimworld_sublevel_load_job/job = load_queue[1]
+
+		load_queue.Cut(1, 2)
+
+		if(!job || QDELETED(job))
+			continue
+
+		if(job.cancel_requested)
+			qdel(job)
+			continue
+
+		job.active = TRUE
+
+		active_queue += job
+		active_loads++
 
 
 /datum/controller/subsystem/rimworld_sublevel_loader/proc/cancel_cell(
@@ -76,13 +116,18 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!job && cell.id)
 		job = jobs_by_cell[cell.id]
 
-	if(!job)
+	if(!job || QDELETED(job))
 		return FALSE
 
-	load_queue -= job
+	/*
+	 * Never delete a job while process() is executing.
+	 * SSatoms.InitializeAtoms() may yield internally.
+	 */
+	if(job.processing)
+		job.cancel_requested = TRUE
+		return TRUE
 
-	if(cell.id && jobs_by_cell[cell.id] == job)
-		jobs_by_cell -= cell.id
+	remove_job(job)
 
 	if(cell.loading_job == job)
 		cell.loading_job = null
@@ -100,41 +145,127 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!job)
 		return
 
+	// Job may still be pending.
 	load_queue -= job
+
+	// Or it may already be active.
+	active_queue -= job
+
+	if(job.active)
+		job.active = FALSE
+		active_loads = max(0, active_loads - 1)
 
 	if(job.cell && job.cell.id && jobs_by_cell[job.cell.id] == job)
 		jobs_by_cell -= job.cell.id
 
+	// Immediately promote the next oldest pending job.
+	fill_active_slots()
+
+
+/datum/controller/subsystem/rimworld_sublevel_loader/proc/rotate_active_job(
+	datum/rimworld_sublevel_load_job/job
+)
+	if(!job || QDELETED(job))
+		return
+
+	if(!(job in active_queue))
+		return
+
+	active_queue -= job
+	active_queue += job
+
 
 /datum/controller/subsystem/rimworld_sublevel_loader/fire(resumed)
-	if(!length(load_queue))
+	if(!length(active_queue) && !length(load_queue))
 		return
 
-	var/datum/rimworld_sublevel_load_job/job = load_queue[1]
+	// Fill empty parallel slots from the FRONT of the FIFO queue.
+	fill_active_slots()
 
-	if(!job || QDELETED(job))
-		load_queue.Cut(1, 2)
+	if(!length(active_queue))
 		return
 
-	var/result = job.process()
+	var/processed_jobs = 0
 
-	switch(result)
-		if(RW_CELL_LOAD_COMPLETE)
-			job.notify_callbacks(TRUE)
-			remove_job(job)
-			qdel(job)
+	while(length(active_queue))
+		if(TICK_CHECK)
+			return
 
-		if(RW_CELL_LOAD_FAILED)
-			job.notify_callbacks(FALSE)
-			remove_job(job)
-			qdel(job)
+		/*
+		 * active_queue itself is round-robin.
+		 * The first element gets the next slice of CPU.
+		 */
+		var/datum/rimworld_sublevel_load_job/job = active_queue[1]
 
-		if(RW_CELL_LOAD_CONTINUE)
-			if(length(load_queue) > 1)
-				load_queue.Cut(1, 2)
-				load_queue += job
+		if(!job || QDELETED(job))
+			active_queue.Cut(1, 2)
+			active_loads = max(0, active_loads - 1)
 
+			fill_active_slots()
+			continue
 
+		// A paused job stays active, but doesn't consume work.
+		if(job.paused)
+			rotate_active_job(job)
+			processed_jobs++
+
+			if(processed_jobs >= 64)
+				return
+
+			continue
+
+		job.processing = TRUE
+		var/result = job.process()
+		job.processing = FALSE
+
+		if(QDELETED(job))
+			active_queue -= job
+			active_loads = max(0, active_loads - 1)
+
+			fill_active_slots()
+			continue
+
+		if(job.cancel_requested)
+			result = RW_CELL_LOAD_FAILED
+
+		switch(result)
+			if(RW_CELL_LOAD_COMPLETE)
+				/*
+				 * remove_job() also promotes the oldest waiting job.
+				 */
+				remove_job(job)
+
+				job.notify_callbacks(TRUE)
+				qdel(job)
+
+			if(RW_CELL_LOAD_FAILED)
+				remove_job(job)
+
+				job.notify_callbacks(FALSE)
+				qdel(job)
+
+			if(RW_CELL_LOAD_CONTINUE)
+				/*
+				 * The job is still active, but gives the next active
+				 * job its turn.
+				 */
+				rotate_active_job(job)
+
+			if(RW_CELL_LOAD_PAUSED)
+				/*
+				 * Keep the slot reserved, but don't let this job
+				 * monopolize the scheduler.
+				 */
+				rotate_active_job(job)
+
+		processed_jobs++
+
+		/*
+		 * Prevent a large amount of tiny jobs from causing the loader
+		 * to monopolize one fire().
+		 */
+		if(processed_jobs >= 64)
+			return
 
 /datum/rimworld_sublevel_load_job
 	var/datum/planet_cell/cell
@@ -143,7 +274,11 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/datum/turf_reservation/sub_level/reservation
 	var/datum/map_generator/sub_level/generator
 
-	var/ignore_lag = TRUE
+	var/active = FALSE
+	var/paused = FALSE
+	var/processing = FALSE
+	var/cancel_requested = FALSE
+
 	var/phase = RW_CELL_JOB_PREPARE
 
 	var/local_x = 1
@@ -182,6 +317,12 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 /datum/rimworld_sublevel_load_job/process()
 	if(!cell || QDELETED(cell) || !cell.is_valid())
 		return RW_CELL_LOAD_FAILED
+
+	if(cancel_requested)
+		return RW_CELL_LOAD_FAILED
+
+	if(paused)
+		return RW_CELL_LOAD_PAUSED
 
 	switch(phase)
 		if(RW_CELL_JOB_PREPARE)
@@ -276,6 +417,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	local_x = 1
 	local_y = 1
+
 	initialization_index = 1
 	populate_index = 1
 	lighting_index = 1
@@ -311,57 +453,27 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			local_x++
 			processed++
 
-			if(processed >= RW_SUBLEVEL_PLACE_BUDGET || (!ignore_lag && TICK_CHECK))
+			if(
+				processed >= RW_SUBLEVEL_PLACE_BUDGET \
+				|| TICK_CHECK \
+				|| cancel_requested
+			)
+				if(cancel_requested)
+					return RW_CELL_LOAD_FAILED
+
 				return RW_CELL_LOAD_CONTINUE
 
 		local_x = 1
 		local_y++
 
-		if(processed >= RW_SUBLEVEL_PLACE_BUDGET || (!ignore_lag && TICK_CHECK))
+		if(TICK_CHECK || cancel_requested)
+			if(cancel_requested)
+				return RW_CELL_LOAD_FAILED
+
 			return RW_CELL_LOAD_CONTINUE
 
-	// All terrain must exist before any content is populated.
 	phase = RW_CELL_JOB_POPULATE
 	populate_index = 1
-
-	return RW_CELL_LOAD_CONTINUE
-
-
-/datum/rimworld_sublevel_load_job/proc/process_initialization()
-	if(!generator || QDELETED(generator))
-		return RW_CELL_LOAD_FAILED
-
-	var/list/pending = generator.pending_init
-
-	if(!length(pending))
-		return RW_CELL_LOAD_FAILED
-
-	var/list/batch = list()
-
-	while(
-		initialization_index <= length(pending) \
-		&& length(batch) < RW_SUBLEVEL_INITIALIZE_BUDGET
-	)
-		var/atom/A = pending[initialization_index]
-		initialization_index++
-
-		if(A && !QDELETED(A))
-			batch += A
-
-	if(length(batch))
-		Master.StartLoadingMap()
-		SSatoms.InitializeAtoms(batch)
-		Master.StopLoadingMap()
-
-	if(initialization_index <= length(pending))
-		return RW_CELL_LOAD_CONTINUE
-
-	SSmapping.reg_in_areas_in_z(list(generator.rimworld_area))
-
-	generator.turfs_initialized = TRUE
-
-	phase = RW_CELL_JOB_SMOOTH
-	smooth_index = 1
 
 	return RW_CELL_LOAD_CONTINUE
 
@@ -378,6 +490,12 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		generator.target_biome.begin_population_pass()
 
 	while(populate_index <= open_count)
+		if(cancel_requested)
+			if(generator.target_biome)
+				generator.target_biome.end_population_pass()
+
+			return RW_CELL_LOAD_FAILED
+
 		var/turf/T = generator.get_generated_open_turf(populate_index)
 		var/is_cave = generator.get_generated_open_is_cave(populate_index)
 
@@ -391,23 +509,75 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			))
 				if(generator.target_biome)
 					generator.target_biome.end_population_pass()
+
 				return RW_CELL_LOAD_FAILED
 
 		populate_index++
 		processed++
 
-		if(processed >= RW_SUBLEVEL_POPULATE_BUDGET || (!ignore_lag && TICK_CHECK))
+		if(
+			processed >= RW_SUBLEVEL_POPULATE_BUDGET \
+			|| TICK_CHECK
+		)
 			return RW_CELL_LOAD_CONTINUE
 
 	if(generator.target_biome)
 		generator.target_biome.end_population_pass()
 
-	// Populate is now fully complete. Only now allow SSatoms to initialize
-	// the terrain and all deferred content created during population.
 	phase = RW_CELL_JOB_INITIALIZE
 	initialization_index = 1
 
 	return RW_CELL_LOAD_CONTINUE
+
+
+/datum/rimworld_sublevel_load_job/proc/process_initialization()
+	if(!generator || QDELETED(generator))
+		return RW_CELL_LOAD_FAILED
+
+	var/list/pending = generator.pending_init
+
+	if(!length(pending))
+		// There is simply nothing left to initialize.
+		generator.turfs_initialized = TRUE
+		phase = RW_CELL_JOB_SMOOTH
+		smooth_index = 1
+
+		return RW_CELL_LOAD_CONTINUE
+
+	var/list/batch = list()
+
+	while(
+		initialization_index <= length(pending) \
+		&& length(batch) < RW_SUBLEVEL_INITIALIZE_BUDGET
+	)
+		if(cancel_requested)
+			return RW_CELL_LOAD_FAILED
+
+		var/atom/A = pending[initialization_index]
+		initialization_index++
+
+		if(A && !QDELETED(A))
+			batch += A
+
+	if(length(batch))
+		SSatoms.InitializeAtoms(batch)
+
+		if(cancel_requested)
+			return RW_CELL_LOAD_FAILED
+
+	if(initialization_index <= length(pending))
+		return RW_CELL_LOAD_CONTINUE
+
+	if(generator.rimworld_area)
+		SSmapping.reg_in_areas_in_z(list(generator.rimworld_area))
+
+	generator.turfs_initialized = TRUE
+
+	phase = RW_CELL_JOB_SMOOTH
+	smooth_index = 1
+
+	return RW_CELL_LOAD_CONTINUE
+
 
 /datum/rimworld_sublevel_load_job/proc/process_smoothing()
 	if(!generator || QDELETED(generator))
@@ -417,21 +587,31 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/processed = 0
 
 	while(smooth_index <= turf_count)
+		if(cancel_requested)
+			return RW_CELL_LOAD_FAILED
+
 		var/turf/T = generator.get_generated_turf(smooth_index)
 		smooth_index++
 
 		if(T)
 			QUEUE_SMOOTH(T)
+
 			for(var/atom/movable/A as anything in T)
 				QUEUE_SMOOTH(A)
 
 		processed++
 
-		if(processed >= RW_SUBLEVEL_SMOOTH_BUDGET || (!ignore_lag && TICK_CHECK))
+		if(
+			processed >= RW_SUBLEVEL_SMOOTH_BUDGET \
+			|| TICK_CHECK
+		)
 			return RW_CELL_LOAD_CONTINUE
 
 	phase = RW_CELL_JOB_LIGHTING
+	lighting_index = 1
+
 	return RW_CELL_LOAD_CONTINUE
+
 
 /datum/rimworld_sublevel_load_job/proc/process_lighting()
 	if(!generator || QDELETED(generator))
@@ -444,6 +624,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		lighting_index <= turf_count \
 		&& length(batch) < RW_SUBLEVEL_LIGHTING_BUDGET
 	)
+		if(cancel_requested)
+			return RW_CELL_LOAD_FAILED
+
 		var/turf/T = generator.get_generated_turf(lighting_index)
 		lighting_index++
 
@@ -466,7 +649,6 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!generator || QDELETED(generator))
 		return RW_CELL_LOAD_FAILED
 
-	/*
 	var/turf_count = generator.get_generated_turf_count()
 	var/list/batch = list()
 
@@ -474,6 +656,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		daylight_index <= turf_count \
 		&& length(batch) < RW_SUBLEVEL_DAYLIGHT_BUDGET
 	)
+		if(cancel_requested)
+			return RW_CELL_LOAD_FAILED
+
 		var/turf/T = generator.get_generated_turf(daylight_index)
 		daylight_index++
 
@@ -485,8 +670,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	if(daylight_index <= turf_count)
 		return RW_CELL_LOAD_CONTINUE
-	*/
-	SSdaylight.handle_loaded_turfs(generator.generated_turfs.Copy(), FALSE)
+
 	phase = RW_CELL_JOB_FINISH
 
 	return RW_CELL_LOAD_CONTINUE
@@ -501,6 +685,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		|| !generator \
 		|| QDELETED(generator)
 	)
+		return FALSE
+
+	if(cancel_requested)
 		return FALSE
 
 	cell.reservation = reservation
@@ -550,3 +737,299 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	cell = null
 
 	return ..()
+
+
+
+
+
+GLOBAL_DATUM(rimworld_sublevel_load_test, /datum/rimworld_sublevel_load_test)
+/datum/rimworld_sublevel_load_test
+	var/start_time
+	var/end_time
+
+	var/requested = 0
+	var/queued = 0
+	var/completed = 0
+	var/failed = 0
+
+	var/active = TRUE
+
+	/// Cell key -> start realtime
+	var/list/cell_start_times = list()
+
+	/// Cell key -> result information
+	var/list/results = list()
+
+	/// Cell key -> cell datum
+	var/list/test_cells = list()
+
+
+/datum/rimworld_sublevel_load_test/New(requested_count)
+	. = ..()
+
+	start_time = REALTIMEOFDAY
+	requested = requested_count
+
+	cell_start_times = list()
+	results = list()
+	test_cells = list()
+
+
+/datum/rimworld_sublevel_load_test/proc/queue_cell(
+	datum/planet_cell/cell,
+	datum/controller/subsystem/rimworld_sublevel_loader/loader
+)
+	if(!active || !cell || QDELETED(cell))
+		return FALSE
+
+	var/key = "[cell.x]:[cell.y]"
+
+	if(test_cells[key])
+		return FALSE
+
+	if(cell.is_loaded())
+		return FALSE
+
+	if(cell.loading_job)
+		return FALSE
+
+	test_cells[key] = cell
+	cell_start_times[key] = REALTIMEOFDAY
+
+	if(!loader.queue_cell(
+		cell,
+		"LoadTest ([cell.x],[cell.y])",
+		CALLBACK(src, PROC_REF(on_cell_complete))
+	))
+		test_cells -= key
+		cell_start_times -= key
+		return FALSE
+
+	queued++
+
+	log_world(
+		"RW LOAD TEST: queued cell ([cell.x],[cell.y]) \
+		[queued]/[requested]"
+	)
+
+	return TRUE
+
+
+/datum/rimworld_sublevel_load_test/proc/on_cell_complete(
+	datum/planet_cell/cell,
+	success
+)
+	if(!cell)
+		return
+
+	var/key = "[cell.x]:[cell.y]"
+	var/start = cell_start_times[key]
+	var/elapsed = isnull(start) ? 0 : (REALTIMEOFDAY - start) / 10
+
+	if(success)
+		completed++
+	else
+		failed++
+
+	results[key] = list(
+		"x" = cell.x,
+		"y" = cell.y,
+		"success" = !!success,
+		"time" = elapsed,
+	)
+
+	cell_start_times -= key
+
+	log_world(
+		"RW LOAD TEST: cell ([cell.x],[cell.y]) \
+		[success ? "COMPLETED" : "FAILED"] \
+		in [round(elapsed, 0.01)]s \
+		([completed + failed]/[queued])"
+	)
+
+	check_finished()
+
+
+/datum/rimworld_sublevel_load_test/proc/check_finished()
+	if(!active)
+		return
+
+	if(completed + failed < queued)
+		return
+
+	active = FALSE
+	end_time = REALTIMEOFDAY
+
+	report()
+
+
+/datum/rimworld_sublevel_load_test/proc/report()
+	var/elapsed = (end_time - start_time) / 10
+	var/success_rate = queued ? (completed / queued) * 100 : 0
+	var/average_time = 0
+
+	if(completed + failed)
+		var/total_cell_time = 0
+
+		for(var/key in results)
+			var/list/result = results[key]
+			total_cell_time += result["time"]
+
+		average_time = total_cell_time / length(results)
+
+	log_world("============================================================")
+	log_world("RW LOAD TEST COMPLETE")
+	log_world("Requested cells: [requested]")
+	log_world("Queued cells:    [queued]")
+	log_world("Completed:       [completed]")
+	log_world("Failed:          [failed]")
+	log_world("Success rate:    [round(success_rate, 0.1)]%")
+	log_world("Total time:      [round(elapsed, 0.01)]s")
+	log_world("Average cell:    [round(average_time, 0.01)]s")
+
+	if(elapsed > 0)
+		log_world(
+			"Throughput:      [round(completed / elapsed, 0.01)] cells/s"
+		)
+
+	log_world("============================================================")
+
+	to_chat(
+		GLOB.admins,
+		span_notice("\[RW\] Load test finished:[completed]/[queued] cells loaded, [failed] failed, [round(elapsed, 0.1)]s total.")
+	)
+
+
+/// Returns a random valid, currently unloaded cell.
+/// Returns null when no suitable cell can be found.
+/datum/rimworld_sublevel_load_test/proc/find_random_cell(
+	datum/rimworld_planet/planet
+)
+	if(!planet)
+		return null
+
+	// Avoid potentially looping forever if most of the planet is already loaded.
+	var/max_attempts = 100
+
+	for(var/i in 1 to max_attempts)
+		var/x = rand(1, planet.map_width)
+		var/y = rand(1, planet.map_height)
+
+		if(!planet.is_valid_coordinate(x, y))
+			continue
+
+		var/key = "[x]:[y]"
+		if(test_cells[key])
+			continue
+
+		var/datum/planet_cell/cell = planet.cells[key]
+
+		// Create the cell lazily if it does not exist yet.
+		if(!cell)
+			cell = new /datum/planet_cell(planet, x, y)
+			planet.cells[key] = cell
+
+		if(!cell || QDELETED(cell))
+			continue
+
+		if(cell.is_loaded())
+			continue
+
+		if(cell.loading_job)
+			continue
+
+		return cell
+
+	return null
+
+
+ADMIN_VERB(rimworld_load_random_cells, R_ADMIN, "\[RW\] Load random cells", "Load a specified number of random planet cells as a stress test.", ADMIN_CATEGORY_DEBUG)
+	if(!SSrimworld_planetmap.planet)
+		to_chat(usr, span_warning("RimWorld planet has not been generated."))
+		return
+
+	if(GLOB.rimworld_sublevel_load_test?.active)
+		to_chat(
+			usr,
+			span_warning("A RimWorld sub-level load test is already running.")
+		)
+		return
+
+	var/count = input(
+		usr,
+		"How many random cells should be loaded?",
+		"RimWorld Load Test",
+		10
+	) as num
+
+	count = round(count)
+
+	if(count <= 0)
+		return
+
+	// Safety limit for accidental huge stress tests.
+	count = min(count, 500)
+
+	var/datum/rimworld_planet/planet = SSrimworld_planetmap.planet
+	var/datum/rimworld_sublevel_load_test/test = new(count)
+
+	GLOB.rimworld_sublevel_load_test = test
+
+	var/max_attempts = count * 20
+	var/attempts = 0
+
+	while(
+		test.queued < count \
+		&& attempts < max_attempts
+	)
+		attempts++
+
+		var/datum/planet_cell/cell = test.find_random_cell(planet)
+
+		if(!cell)
+			continue
+
+		test.queue_cell(
+			cell,
+			SSrimworld_sublevel_loader
+		)
+
+	if(!test.queued)
+		test.active = FALSE
+		qdel(test)
+		GLOB.rimworld_sublevel_load_test = null
+
+		to_chat(
+			usr,
+			span_warning("Could not find any unloaded cells suitable for testing.")
+		)
+		return
+
+	log_world(
+		"============================================================"
+	)
+
+	log_world(
+		"RW LOAD TEST STARTED BY [key_name(usr)]"
+	)
+
+	log_world(
+		"Requested: [count]"
+	)
+
+	log_world(
+		"Queued: [test.queued]"
+	)
+
+	log_world(
+		"Parallel loader limit: [RW_SUBLEVEL_MAX_PARALLEL_LOADS]"
+	)
+
+	log_world(
+		"============================================================"
+	)
+
+	to_chat(
+		usr,
+		span_notice("\[RW\] Load test started: [test.queued] random cells queued. Maximum parallel loads: [RW_SUBLEVEL_MAX_PARALLEL_LOADS]. Results will be written to the world log.")
+	)

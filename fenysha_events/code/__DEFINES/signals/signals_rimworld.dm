@@ -23,3 +23,5 @@
 /// Rimworld daylight: area should recompute local sun state
 #define COMSIG_RIMWORLD_AREA_DAYLIGHT_UPDATE "rimworld_area_daylight_update"
 
+
+#define COMSIG_RIMWORLD_CELL_POD_LANDED "rimworld_cell_pod_landed"
