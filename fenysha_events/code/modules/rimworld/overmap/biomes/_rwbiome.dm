@@ -69,6 +69,16 @@
 	var/open_turf_type_cave = null
 	var/transition_chance = 35
 
+	var/solid_height_threshold = 0.366
+	var/list/open_band_thresholds
+	var/list/open_band_turfs
+	var/list/open_transition_thresholds
+	var/list/open_transition_turfs
+	var/list/closed_band_thresholds
+	var/list/closed_band_turfs
+	var/list/closed_transition_thresholds
+	var/list/closed_transition_turfs
+
 	open_turf_type = /turf/open/genturf
 	closed_turf_type = /turf/closed/rw_wall/rock/auto
 
@@ -142,6 +152,53 @@
 	if(islist(cave_fauna_types) && length(cave_fauna_types))
 		cave_fauna_types = expand_weights(fill_with_ones(cave_fauna_types))
 
+	solid_height_threshold = text2num(RW_HEIGHT_BAND_KEY_SOLID)
+	var/list/open_bands = compile_height_bands(open_turf_by_height)
+	open_band_thresholds = open_bands[1]
+	open_band_turfs = open_bands[2]
+	var/list/open_transitions = compile_height_bands(open_turf_by_height_transition)
+	open_transition_thresholds = open_transitions[1]
+	open_transition_turfs = open_transitions[2]
+	var/list/closed_bands = compile_height_bands(closed_turf_by_height)
+	closed_band_thresholds = closed_bands[1]
+	closed_band_turfs = closed_bands[2]
+	var/list/closed_transitions = compile_height_bands(closed_turf_by_height_transition)
+	closed_transition_thresholds = closed_transitions[1]
+	closed_transition_turfs = closed_transitions[2]
+
+/datum/biome/rimworld/proc/compile_height_bands(list/table)
+	var/list/thresholds = list()
+	var/list/entries = list()
+	if(!length(table))
+		return list(thresholds, entries)
+
+	for(var/threshold_key in table)
+		var/threshold = text2num(threshold_key)
+		if(isnull(threshold))
+			continue
+		var/inserted = FALSE
+		for(var/i in 1 to length(thresholds))
+			if(threshold < thresholds[i])
+				thresholds.Insert(i, threshold)
+				entries.Insert(i, table[threshold_key])
+				inserted = TRUE
+				break
+		if(!inserted)
+			thresholds += threshold
+			entries += table[threshold_key]
+
+	return list(thresholds, entries)
+
+/datum/biome/rimworld/proc/pick_compiled_band(list/thresholds, list/entries, height)
+	for(var/i in length(thresholds) to 1 step -1)
+		if(height < thresholds[i])
+			continue
+		var/entry = entries[i]
+		if(islist(entry))
+			return pick(entry)
+		return entry
+	return null
+
 
 /datum/biome/rimworld/proc/get_turf_for_height(height, sub_biome, is_cave = FALSE, is_transition = FALSE)
 	height = clamp(height * height_modifier * get_subbiome_height_modifier(sub_biome), 0, 1)
@@ -150,61 +207,19 @@
 		if(open_turf_type_cave)
 			return open_turf_type_cave
 
-		return pick_from_height_table(
-			open_turf_by_height,
-			open_turf_by_height_transition,
-			height,
-			is_transition
-		) || open_turf_type
+		if(is_transition && prob(transition_chance))
+			return pick_compiled_band(open_transition_thresholds, open_transition_turfs, height) || open_turf_type
+		return pick_compiled_band(open_band_thresholds, open_band_turfs, height) || open_turf_type
 
-	if(height >= text2num(RW_HEIGHT_BAND_KEY_SOLID))
-		return pick_from_height_table(
-			closed_turf_by_height,
-			closed_turf_by_height_transition,
-			height,
-			is_transition
-		) || closed_turf_type
+	if(height >= solid_height_threshold)
+		if(is_transition && prob(transition_chance))
+			return pick_compiled_band(closed_transition_thresholds, closed_transition_turfs, height) || closed_turf_type
+		return pick_compiled_band(closed_band_thresholds, closed_band_turfs, height) || closed_turf_type
 
-	return pick_from_height_table(
-		open_turf_by_height,
-		open_turf_by_height_transition,
-		height,
-		is_transition
-	) || open_turf_type
+	if(is_transition && prob(transition_chance))
+		return pick_compiled_band(open_transition_thresholds, open_transition_turfs, height) || open_turf_type
 
-
-/datum/biome/rimworld/proc/pick_from_height_table(list/primary, list/secondary, height, is_transition)
-	if(!length(primary))
-		return null
-
-	var/list/table = primary
-
-	if(is_transition && length(secondary) && prob(transition_chance))
-		table = secondary
-
-	var/best_threshold = null
-	var/best_entry = null
-
-	for(var/threshold_key in table)
-		var/t = text2num(threshold_key)
-
-		if(isnull(t))
-			continue
-
-		if(height < t)
-			continue
-
-		if(isnull(best_threshold) || t > best_threshold)
-			best_threshold = t
-			best_entry = table[threshold_key]
-
-	if(isnull(best_entry))
-		return null
-
-	if(islist(best_entry))
-		return pick(best_entry)
-
-	return best_entry
+	return pick_compiled_band(open_band_thresholds, open_band_turfs, height) || open_turf_type
 
 
 /datum/biome/rimworld/proc/get_subbiome_height_modifier(subiome_key)

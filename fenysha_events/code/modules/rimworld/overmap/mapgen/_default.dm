@@ -66,6 +66,11 @@
 	var/sub_biome = RW_SUBBIOME_PLAINS
 	var/area/rimworld/rimworld_area
 
+	var/origin_x = 1
+	var/origin_y = 1
+	var/origin_z = 1
+	var/list/transition_mask
+
 	var/list/generated_turfs = list()
 	var/list/generated_open_turfs = list()
 	/// Parallel to generated_open_turfs: TRUE if that open turf is a cave tile.
@@ -367,7 +372,11 @@
 	rimworld_area.daylight = TRUE
 	rimworld_area.outdoors = TRUE
 
-	pending_init = list(/* rimworld_area */)
+	origin_x = BL.x
+	origin_y = BL.y
+	origin_z = BL.z
+
+	pending_init = list()
 	generated_turfs = list()
 	generated_open_turfs = list()
 	generated_open_is_cave = list()
@@ -402,6 +411,16 @@
 		processed++
 
 	return idx
+
+
+/datum/map_generator/sub_level/proc/build_transition_mask()
+	transition_mask = list()
+	transition_mask.len = width * height
+
+	for(var/local_y in 1 to height)
+		for(var/local_x in 1 to width)
+			var/index = width * (local_y - 1) + local_x
+			transition_mask[index] = is_geological_transition_xy(local_x, local_y)
 
 
 /datum/map_generator/sub_level/proc/decode_cave_mask_step(start_index, budget)
@@ -440,18 +459,11 @@
 	if(local_y < 1 || local_y > height)
 		return null
 
-	var/turf/inner_BL = reservation.get_inner_bottom_left_turf()
-	if(!inner_BL)
-		return null
-
-	var/world_x = inner_BL.x + local_x - 1
-	var/world_y = inner_BL.y + local_y - 1
-
-	var/turf/source_turf = locate(world_x, world_y, inner_BL.z)
+	var/turf/source_turf = locate(origin_x + local_x - 1, origin_y + local_y - 1, origin_z)
 	if(!source_turf)
 		return null
 
-	source_turf.change_area(get_area(source_turf), rimworld_area)
+	source_turf.change_area(source_turf.loc, rimworld_area)
 
 	var/index = width * (local_y - 1) + local_x
 	if(index < 1 || index > length(heights))
@@ -463,7 +475,9 @@
 	if(length(cave_mask))
 		is_cave = cave_mask[index]
 
-	var/is_transition = is_geological_transition_xy(local_x, local_y)
+	var/is_transition = FALSE
+	if(length(transition_mask) >= index)
+		is_transition = transition_mask[index]
 
 	var/turf_type = target_biome.get_turf_for_height(
 		terrain_height,

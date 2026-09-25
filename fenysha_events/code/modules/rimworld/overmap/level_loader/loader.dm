@@ -302,6 +302,10 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	/// walking cave_mask[] within the same DECODE phase.
 	var/decode_stage_cave_mask = FALSE
 
+	/// Mapload source held for the whole initialize phase, not per batch.
+	var/mapload_source
+	var/list/mapload_arg
+
 	var/list/datum/callback/completion_callbacks = list()
 
 
@@ -468,7 +472,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 			decode_index = next_index
 
-			if(!ignore_lag && TICK_CHECK)
+			if(TICK_CHECK)
 				return RW_CELL_LOAD_CONTINUE
 
 			// Budget exhausted for this call (decode_heights_step
@@ -476,7 +480,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			if(decode_index <= heights_count)
 				return RW_CELL_LOAD_CONTINUE
 
-		// heights[] fully decoded -- move on to cave_mask[] next call.
+		// heights[] fully decoded. Transition checks need every neighbor numeric.
+		generator.build_transition_mask()
+
 		decode_stage_cave_mask = TRUE
 		decode_index = 1
 
@@ -500,7 +506,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 		decode_index = next_index
 
-		if(!ignore_lag && TICK_CHECK)
+		if(TICK_CHECK)
 			return RW_CELL_LOAD_CONTINUE
 
 		if(decode_index <= cave_count)
@@ -539,7 +545,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 			if(
 				processed >= RW_SUBLEVEL_PLACE_BUDGET \
-				|| (!ignore_lag && TICK_CHECK) \
+				|| TICK_CHECK \
 				|| cancel_requested
 			)
 				if(cancel_requested)
@@ -550,7 +556,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		local_x = 1
 		local_y++
 
-		if((!ignore_lag && TICK_CHECK) || cancel_requested)
+		if(TICK_CHECK || cancel_requested)
 			if(cancel_requested)
 				return RW_CELL_LOAD_FAILED
 
@@ -601,7 +607,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 		if(
 			processed >= RW_SUBLEVEL_POPULATE_BUDGET \
-			|| (!ignore_lag && TICK_CHECK)
+			|| TICK_CHECK
 		)
 			return RW_CELL_LOAD_CONTINUE
 
@@ -616,41 +622,42 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 /datum/rimworld_sublevel_load_job/proc/process_initialization()
 	if(!generator || QDELETED(generator))
+		end_initialization(FALSE)
 		return RW_CELL_LOAD_FAILED
 
 	var/list/pending = generator.pending_init
 
 	if(!length(pending))
-		// There is simply nothing left to initialize.
+		end_initialization(TRUE)
 		generator.turfs_initialized = TRUE
 		phase = RW_CELL_JOB_SMOOTH
 		smooth_index = 1
 
 		return RW_CELL_LOAD_CONTINUE
 
-	var/list/batch = list()
+	if(!mapload_source)
+		mapload_source = "rw_cell_[cell.x]_[cell.y]_[REF(src)]"
+		mapload_arg = list(TRUE)
+		SSatoms.set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, mapload_source)
 
-	while(
-		initialization_index <= length(pending) \
-		&& length(batch) < RW_SUBLEVEL_INITIALIZE_BUDGET
-	)
+	var/processed = 0
+
+	while(initialization_index <= length(pending))
 		if(cancel_requested)
+			end_initialization(FALSE)
 			return RW_CELL_LOAD_FAILED
 
 		var/atom/A = pending[initialization_index]
 		initialization_index++
 
-		if(A && !QDELETED(A))
-			batch += A
+		if(A && !QDELETED(A) && !(A.flags_1 & INITIALIZED_1))
+			SSatoms.InitAtom(A, TRUE, mapload_arg)
 
-	if(length(batch))
-		SSatoms.InitializeAtoms(batch)
+		processed++
+		if(processed >= RW_SUBLEVEL_INITIALIZE_BUDGET || TICK_CHECK)
+			return RW_CELL_LOAD_CONTINUE
 
-		if(cancel_requested)
-			return RW_CELL_LOAD_FAILED
-
-	if(initialization_index <= length(pending))
-		return RW_CELL_LOAD_CONTINUE
+	end_initialization(TRUE)
 
 	if(generator.rimworld_area)
 		SSmapping.reg_in_areas_in_z(list(generator.rimworld_area))
@@ -661,6 +668,26 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	smooth_index = 1
 
 	return RW_CELL_LOAD_CONTINUE
+
+
+/datum/rimworld_sublevel_load_job/proc/end_initialization(late_init)
+	if(!mapload_source)
+		return
+
+	var/source = mapload_source
+	mapload_source = null
+	mapload_arg = null
+
+	SSicon_smooth.free_deferred(source)
+
+	if(late_init)
+		var/list/late_loaders = SSatoms.late_loaders
+		for(var/atom/late as anything in late_loaders)
+			if(!QDELETED(late))
+				late.LateInitialize()
+		late_loaders.Cut()
+
+	SSatoms.clear_tracked_initalize(source)
 
 
 /datum/rimworld_sublevel_load_job/proc/process_smoothing()
@@ -678,6 +705,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		smooth_index++
 
 		if(T)
+			if(istype(T, /turf/open))
+				var/turf/open/open_turf = T
+				open_turf.update_edges()
 			QUEUE_SMOOTH(T)
 
 			for(var/atom/movable/A as anything in T)
@@ -687,7 +717,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 		if(
 			processed >= RW_SUBLEVEL_SMOOTH_BUDGET \
-			|| (!ignore_lag && TICK_CHECK)
+			|| TICK_CHECK
 		)
 			return RW_CELL_LOAD_CONTINUE
 
@@ -803,6 +833,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 
 /datum/rimworld_sublevel_load_job/Destroy()
+	end_initialization(FALSE)
+
 	if(reservation)
 		qdel(reservation)
 		reservation = null

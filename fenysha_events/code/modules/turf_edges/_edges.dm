@@ -11,22 +11,27 @@
 
 
 /turf/open/Initialize(mapload)
-	update_edges()
-	refresh_blend_neighbors()
+	// Mapload builds every neighbor before anyone should look at edges.
+	// A per-turf refresh here redraws the same corner once per adjacent tile.
+	if(!mapload)
+		update_edges()
+		refresh_blend_neighbors()
 
 	. = ..()
 
 /turf/open/Destroy()
-	var/list/turf/open/neighbors = list()
-	for(var/turf/open/neighbor in RANGE_TURFS(1, src))
-		if(neighbor != src && !isnull(neighbor.get_blend_priority()))
-			neighbors += neighbor
-
 	clear_edge_overlays()
+	return ..()
 
-	. = ..()
 
-	for(var/turf/open/neighbor as anything in neighbors)
+/// Drops edge corners that were painted by a turf which has since been replaced.
+/turf/proc/refresh_neighbor_edges()
+	for(var/turf/open/neighbor in RANGE_TURFS(1, src))
+		if(neighbor == src || !neighbor.edge_overlays)
+			continue
+		// Still inside the reservation: its own Destroy drops the overlay.
+		if(neighbor.turf_flags & RESERVATION_TURF)
+			continue
 		neighbor.update_edges()
 
 

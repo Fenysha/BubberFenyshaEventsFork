@@ -365,6 +365,22 @@
 	return T.x >= BL.x && T.x <= TR.x && T.y >= BL.y && T.y <= TR.y
 
 
+/datum/turf_reservation/sub_level/Release()
+	bottom_left_turfs.Cut()
+	top_right_turfs.Cut()
+
+	var/list/release_turfs = reserved_turfs + cordon_turfs
+	reserved_turfs = list()
+	cordon_turfs = list()
+
+	var/list/used_turfs = SSmapping.used_turfs
+	for(var/turf/releasing as anything in release_turfs)
+		used_turfs -= releasing
+		SEND_SIGNAL(releasing, COMSIG_TURF_RESERVATION_RELEASED, src)
+
+	INVOKE_ASYNC(SSmapping, TYPE_PROC_REF(/datum/controller/subsystem/mapping, reserve_turfs), release_turfs)
+
+
 /datum/turf_reservation/sub_level/Destroy()
 	SSsub_levels.unregister_reservation(src)
 

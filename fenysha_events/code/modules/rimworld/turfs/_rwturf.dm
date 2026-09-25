@@ -68,6 +68,14 @@
 	health = max_health
 	register_context()
 
+// Walls already skip air init. Don't queue an adjacency rebuild either.
+/turf/closed/rw_wall/AfterChange(flags, oldType)
+	levelupdate()
+	SSair.high_pressure_delta -= src
+
+/turf/closed/rw_wall/air_update_turf(update = FALSE, remove = FALSE)
+	return
+
 /turf/closed/rw_wall/Destroy(force)
 	. = ..()
 
@@ -392,10 +400,19 @@ GLOBAL_LIST_EMPTY(roof_datums)
 	// Detach ourselves (this also fires COMSIG_TURF_ROOF_REMOVED)
 	T.RemoveElement(/datum/element/roof, roof_data)
 
+// One shared mix for every outdoor tile. Planetary atmos would allocate a gas_mixture per turf.
+/datum/gas_mixture/immutable/planetary/rimworld/New()
+	..()
+	parse_string_immutable(OPENTURF_DEFAULT_ATMOS)
+
 /turf/open/rimworld
 	name = "ground"
 	desc = "The ground."
 	baseturfs = /turf/open/bottom_or_region
+	blocks_air = TRUE
+	init_air = FALSE
+
+	var/static/datum/gas_mixture/immutable/planetary/rimworld/static_air
 
 	flags_1 = NO_SCREENTIPS_1 | CAN_BE_DIRTY_1
 	turf_flags = IS_SOLID | NO_RUST
@@ -438,6 +455,9 @@ GLOBAL_LIST_EMPTY(roof_datums)
 	var/seasonal_color = FALSE
 
 /turf/open/rimworld/Initialize(mapload)
+	if(!static_air)
+		static_air = new
+	air = static_air
 	. = ..()
 
 	if(seasonal_color)
@@ -451,6 +471,16 @@ GLOBAL_LIST_EMPTY(roof_datums)
 		var/datum/turf_roof/R = get_roof_datum(roof_type)
 		if(R)
 			AddElement(/datum/element/roof, R)
+
+/turf/open/rimworld/AfterChange(flags, oldType)
+	levelupdate()
+	RemoveLattice()
+
+/turf/open/rimworld/air_update_turf(update = FALSE, remove = FALSE)
+	return
+
+/turf/open/rimworld/atmos_spawn_air(text)
+	return
 
 /turf/open/rimworld/examine(mob/user)
 	. = ..()

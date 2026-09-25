@@ -116,6 +116,11 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 	var/turf/new_turf = new path(src)
 	new_turf.turf_flags |= carryover_turf_flags
 
+	// space/basic and closed turfs never rebuild neighbor edge overlays.
+	// Grass corners would otherwise stay on adjacent tiles.
+	if(!istype(new_turf, /turf/open) || istype(new_turf, /turf/open/space/basic))
+		new_turf.refresh_neighbor_edges()
+
 	// WARNING WARNING
 	// Turfs DO NOT lose their signals when they get replaced, REMEMBER THIS
 	// It's possible because turfs are fucked, and if you have one in a list and it's replaced with another one, the list ref points to the new turf
