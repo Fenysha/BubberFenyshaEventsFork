@@ -9,11 +9,23 @@ export type RwProfile = {
   portrait?: string | null;
 };
 
+export type RwSpeciesPerk = {
+  type: string;
+  name: string;
+  desc: string;
+};
+
 export type RwSpeciesDef = {
   id: string;
   name: string;
+  label?: string;
+  subtitle?: string;
   path: string;
   usesSkintones: boolean;
+  desc?: string;
+  lore?: string;
+  innateXenogenes?: string[];
+  perks?: RwSpeciesPerk[];
 };
 
 export type RwSkillDef = {
@@ -31,12 +43,37 @@ export type RwSkillRow = {
   passion: number;
 };
 
+export type RwXenogeneOption = {
+  kind: 'accessory' | 'choiced' | 'numeric' | 'tricolor';
+  choices?: string[];
+  min?: number;
+  max?: number;
+  step?: number;
+  defaultOption?: unknown;
+};
+
 export type RwXenogeneDef = {
   id: string;
   name: string;
   desc: string;
   category: string;
   supportedSpecies: string[];
+  effects?: string[];
+  partKey?: string | null;
+  partName?: string | null;
+  complexity?: number;
+  metabolicEfficiency?: number;
+  icon?: string | null;
+  iconState?: string | null;
+  iconBg?: string | null;
+  iconSrc?: string | null;
+  iconBgSrc?: string | null;
+  negative?: boolean;
+  pointCost?: number;
+  inheritableCost?: number;
+  incompatibleWith?: string[];
+  incompatibilityGroup?: string | null;
+  option?: RwXenogeneOption | null;
 };
 
 export type RwNamedDef = {
@@ -179,6 +216,9 @@ export type RimworldCharacterEditorData = {
   backgroundInfo?: string;
   tattoo: string;
   xenogenes: string[];
+  xenogeneValues?: Record<string, unknown>;
+  xenogeneInheritable?: string[];
+  innateXenogenes?: string[];
   childhood: string;
   adulthood: string;
   traits: string[];

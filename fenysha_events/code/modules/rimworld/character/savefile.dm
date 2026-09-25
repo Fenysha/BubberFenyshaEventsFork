@@ -33,13 +33,15 @@
 		"nickname" = nickname,
 		"last_name" = last_name,
 		"tattoo" = tattoo,
-		"xenogenes" = xenogenes?.Copy() || list(),
+		"xenogenes" = copy_list(xenogenes),
+		"xenogene_values" = copy_list(xenogene_values),
+		"xenogene_inheritable" = copy_list(xenogene_inheritable),
 		"childhood" = childhood_id,
 		"adulthood" = adulthood_id,
-		"skills" = skills?.Copy() || list(),
-		"passions" = passions?.Copy() || list(),
-		"traits" = traits?.Copy() || list(),
-		"loadout" = loadout?.Copy() || list(),
+		"skills" = copy_list(skills),
+		"passions" = copy_list(passions),
+		"traits" = copy_list(traits),
+		"loadout" = copy_list(loadout),
 	)
 	return data + export_pref_bridge()
 
@@ -60,13 +62,15 @@
 		split_real_name(data["real_name"] || real_name)
 		rebuild_real_name()
 	tattoo = data["tattoo"] || "None"
-	xenogenes = data["xenogenes"]?.Copy() || list()
+	xenogenes = copy_list(data["xenogenes"])
+	xenogene_values = copy_list(data["xenogene_values"])
+	xenogene_inheritable = copy_list(data["xenogene_inheritable"])
 	childhood_id = data["childhood"] || "childhood_none"
 	adulthood_id = data["adulthood"] || "adulthood_none"
-	skills = data["skills"]?.Copy() || list()
-	passions = data["passions"]?.Copy() || list()
-	traits = data["traits"]?.Copy() || list()
-	loadout = data["loadout"]?.Copy() || list()
+	skills = copy_list(data["skills"])
+	passions = copy_list(data["passions"])
+	traits = copy_list(data["traits"])
+	loadout = copy_list(data["loadout"])
 	for(var/skill_id in GLOB.all_rw_skills)
 		if(!(skill_id in skills))
 			skills[skill_id] = 0
@@ -87,7 +91,7 @@
 		split_real_name(real_name)
 		rebuild_real_name()
 	if(!length(real_name))
-		split_real_name(generate_random_name(rw_gender(), unique = TRUE))
+		split_real_name(generate_random_name(rw_gender(), TRUE))
 		rebuild_real_name()
 	var/bio_age = rw_pref(/datum/preference/numeric/age)
 	if(!isnum(bio_age))
@@ -111,11 +115,13 @@
 	var/datum/rw_backstory/adulthood = GLOB.all_rw_backstories[adulthood_id]
 	if(adulthood && adulthood.slot != RW_BACKSTORY_ADULTHOOD)
 		adulthood_id = "adulthood_none"
+	migrate_legacy_xenogenes()
 	var/list/valid_genes = list()
 	for(var/gene_id in xenogenes)
 		if(GLOB.all_rw_xenogenes[gene_id])
 			valid_genes += gene_id
 	xenogenes = valid_genes
+	sync_species_xenogenes()
 	var/list/valid_traits = list()
 	for(var/trait_id in traits)
 		if(GLOB.all_rw_traits[trait_id])
@@ -134,6 +140,45 @@
 		loadout = list()
 		for(var/skill_id in GLOB.all_rw_skills)
 			skills[skill_id] = 0
+
+/datum/rimworld_preferences/proc/migrate_legacy_xenogenes()
+	if(!islist(xenogenes))
+		xenogenes = list()
+	if(!islist(xenogene_values))
+		xenogene_values = list()
+	if(!islist(xenogene_inheritable))
+		xenogene_inheritable = list()
+	var/static/list/legacy = list(
+		"vulp_ears" = list(RW_XENOGENE_EARS, "Fox"),
+		"teshari_ears" = list(RW_XENOGENE_EARS, "Teshari Regular"),
+		"teshari_tail" = list(RW_XENOGENE_TAIL, "Teshari (Default)"),
+		"lizard_tail" = list(RW_XENOGENE_TAIL, "Smooth"),
+		"lizard_snout" = list(RW_XENOGENE_SNOUT, "Sharp + Light"),
+		"lizard_horns" = list(RW_XENOGENE_HORNS, "Simple"),
+		"small_frame" = list(RW_XENOGENE_BODY_SIZE, BODY_SIZE_MIN),
+		"feathered" = list(RW_XENOGENE_FLUFF, null),
+		"scaled_skin" = list(RW_XENOGENE_SCALED_SKIN, null),
+	)
+	var/static/list/dropped = list(
+		"lizard_frills" = TRUE,
+		"lizard_spines" = TRUE,
+		"standard_metabolism" = TRUE,
+	)
+	var/list/migrated = list()
+	for(var/gene_id in xenogenes)
+		if(dropped[gene_id])
+			continue
+		var/list/mapped = legacy[gene_id]
+		if(islist(mapped))
+			var/new_id = mapped[1]
+			if(!(new_id in migrated))
+				migrated += new_id
+			if(!isnull(mapped[2]) && isnull(xenogene_values[new_id]))
+				xenogene_values[new_id] = mapped[2]
+			continue
+		if(!(gene_id in migrated))
+			migrated += gene_id
+	xenogenes = migrated
 
 /datum/rimworld_preferences/proc/load_character(slot)
 	if(!savefile)
@@ -183,7 +228,9 @@
 				"portrait" = portrait_cache["[index]"],
 			))
 			continue
-		var/list/data = savefile?.get_entry(slot_key(index))
+		var/list/data
+		if(savefile)
+			data = savefile.get_entry(slot_key(index))
 		if(!data)
 			profiles += list(list(
 				"slot" = index,

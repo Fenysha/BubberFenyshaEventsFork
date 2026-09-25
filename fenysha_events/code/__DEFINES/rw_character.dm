@@ -1,7 +1,9 @@
-#define USE_GENDER "use_gender"
 #define SPECIES_AVALI "avali"
 
-#define RW_CHARACTER_SAVE_VERSION 3
+/// body_type.dm defines this only for itself, then #undefs it.
+#define USE_GENDER "Use gender"
+
+#define RW_CHARACTER_SAVE_VERSION 4
 #define RW_CHARACTER_MAX_SLOTS 8
 #define RW_CHARACTER_BUDGET 1500
 #define RW_SKILL_LEVEL_COST 100

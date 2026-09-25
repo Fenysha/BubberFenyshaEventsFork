@@ -37,7 +37,7 @@
 /datum/rimworld_preferences/proc/update_preview()
 	var/mob/living/carbon/human/dummy/mannequin = ensure_preview_dummy()
 	mannequin.wipe_state()
-	apply_to_human(mannequin, visuals_only = TRUE)
+	apply_to_human(mannequin, TRUE)
 	mannequin.setDir(preview_dir)
 	STOP_FLOATING_ANIM(mannequin)
 	mannequin.pixel_z = 0
@@ -99,7 +99,7 @@
 		return
 	var/old_dir = mannequin.dir
 	mannequin.setDir(SOUTH)
-	var/icon/flat = getFlatIcon(mannequin, defdir = SOUTH, no_anim = TRUE)
+	var/icon/flat = getFlatIcon(mannequin, SOUTH, null, null, null, TRUE, TRUE)
 	mannequin.setDir(old_dir)
 	if(!flat)
 		portrait_cache -= "[slot]"
@@ -120,7 +120,9 @@
 			if(preview_dummy && !QDELETED(preview_dummy))
 				cache_portrait_for_slot(index, preview_dummy)
 			continue
-		var/list/data = savefile?.get_entry(slot_key(index))
+		var/list/data
+		if(savefile)
+			data = savefile.get_entry(slot_key(index))
 		if(!data)
 			continue
 		var/mob/living/carbon/human/dummy/mannequin = generate_or_wait_for_human_dummy(RW_PORTRAIT_DUMMY)

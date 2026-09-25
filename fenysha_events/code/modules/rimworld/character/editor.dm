@@ -9,7 +9,8 @@
 		ui = new(user, src, "RimworldCharacterEditor", "Prepare Colonist")
 		ui.set_autoupdate(FALSE)
 		ui.open()
-		character_preview_view?.display_to(user, ui.window)
+		if(character_preview_view)
+			character_preview_view.display_to(user, ui.window)
 
 /datum/rimworld_preferences/ui_state(mob/user)
 	return GLOB.always_state
@@ -48,6 +49,34 @@
 			names += choice
 	return names
 
+/datum/rimworld_preferences/proc/flatten_species_text(value)
+	if(istext(value))
+		return value
+	if(islist(value))
+		return jointext(value, "\n")
+	return ""
+
+/datum/rimworld_preferences/proc/compile_species_perk_ui(datum/species/proto)
+	var/list/rows = list()
+	if(!proto)
+		return rows
+	var/list/grouped = proto.get_species_perks()
+	if(!islist(grouped))
+		return rows
+	for(var/perk_kind in grouped)
+		var/list/perks = grouped[perk_kind]
+		if(!islist(perks))
+			continue
+		for(var/list/perk as anything in perks)
+			if(!islist(perk))
+				continue
+			rows += list(list(
+				"type" = perk[SPECIES_PERK_TYPE] || perk_kind,
+				"name" = perk[SPECIES_PERK_NAME],
+				"desc" = perk[SPECIES_PERK_DESC],
+			))
+	return rows
+
 /datum/rimworld_preferences/proc/clothing_chooser_defs(list/hairstyles, list/facials)
 	return list(
 		list("id" = "hairstyle", "name" = "Hairstyle", "thumbs" = "hair", "hasColor" = TRUE, "choices" = hairstyles || list("Bald")),
@@ -59,7 +88,7 @@
 	)
 
 /datum/rimworld_preferences/ui_static_data(mob/user)
-	var/list/data = list()
+	var/list/data = compile_biology_catalog()
 	data["budgetMax"] = RW_CHARACTER_BUDGET
 	data["skillManualMax"] = RW_SKILL_MANUAL_MAX
 	data["skillMax"] = RW_SKILL_MAX
@@ -115,17 +144,32 @@
 		blooper_names["none"] = "None"
 	data["blooperTypes"] = blooper_ids
 	data["blooperNames"] = blooper_names
+	data["characterPreviewView"] = character_preview_view?.assigned_map
+	return data
 
+/datum/rimworld_preferences/proc/compile_biology_catalog()
+	if(!length(GLOB.all_rw_xenogenes) && SSrw_character)
+		SSrw_character.init_singletons()
+	var/list/data = list()
 	var/list/species = list()
 	for(var/species_path as anything in GLOB.rw_base_species)
 		var/datum/species/proto = GLOB.species_prototypes[species_path]
 		if(!proto)
 			continue
+		var/list/innate = proto.rw_innate_xenogenes
+		if(!islist(innate))
+			innate = list()
 		species += list(list(
 			"id" = proto.id,
 			"name" = proto.name,
+			"label" = proto.rw_label || proto.name,
+			"subtitle" = proto.rw_subtitle || "",
 			"path" = "[species_path]",
 			"usesSkintones" = (TRAIT_USES_SKINTONES in proto.inherent_traits),
+			"desc" = flatten_species_text(proto.get_species_description()),
+			"lore" = flatten_species_text(proto.get_species_lore()),
+			"innateXenogenes" = innate.Copy(),
+			"perks" = compile_species_perk_ui(proto),
 		))
 	data["speciesDefs"] = species
 
@@ -143,12 +187,30 @@
 	var/list/gene_data = list()
 	for(var/gene_id in GLOB.all_rw_xenogenes)
 		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(!gene)
+			continue
+		var/list/option_ui = gene.compile_option_ui()
 		gene_data += list(list(
 			"id" = gene.id,
 			"name" = gene.name,
 			"desc" = gene.desc,
 			"category" = gene.category,
-			"supportedSpecies" = gene.supported_species || list(),
+			"supportedSpecies" = list(),
+			"effects" = gene.compile_effect_lines(),
+			"partKey" = gene.option_key,
+			"complexity" = gene.complexity,
+			"metabolicEfficiency" = gene.metabolic_efficiency,
+			"icon" = gene.ui_icon,
+			"iconState" = gene.icon_state,
+			"iconBg" = gene.icon_bg,
+			"iconSrc" = gene.compile_icon_png(gene.icon_state),
+			"iconBgSrc" = gene.compile_icon_png(gene.icon_bg),
+			"negative" = gene.negative,
+			"pointCost" = gene.point_cost,
+			"inheritableCost" = gene.inheritable_cost,
+			"incompatibleWith" = islist(gene.incompatible_with) ? gene.incompatible_with.Copy() : list(),
+			"incompatibilityGroup" = gene.incompatibility_group,
+			"option" = option_ui,
 		))
 	data["xenogeneDefs"] = gene_data
 
@@ -190,7 +252,6 @@
 			"cost" = item.cost,
 		))
 	data["loadoutDefs"] = loadout_data
-	data["characterPreviewView"] = character_preview_view?.assigned_map
 	return data
 
 /datum/rimworld_preferences/ui_data(mob/user)
@@ -282,8 +343,11 @@
 	data["exploitableInfo"] = rw_pref(/datum/preference/text/exploitable) || ""
 	data["backgroundInfo"] = rw_pref(/datum/preference/text/background) || ""
 	data["tattoo"] = tattoo
-	data["character_preferences"] = compile_character_pref_ui(user)
 	data["xenogenes"] = xenogenes
+	data["xenogeneValues"] = xenogene_values || list()
+	data["xenogeneInheritable"] = xenogene_inheritable || list()
+	var/datum/species/xenogene_species = GLOB.species_prototypes[rw_species()]
+	data["innateXenogenes"] = xenogene_species?.rw_innate_xenogenes || list()
 	data["childhood"] = childhood_id
 	data["adulthood"] = adulthood_id
 	data["traits"] = traits
@@ -308,11 +372,19 @@
 	. = ..()
 	if(.)
 		return
+	if(action == "rotate")
+		preview_dir = turn(preview_dir, params["left"] ? 90 : -90)
+		if(preview_dummy && !QDELETED(preview_dummy))
+			preview_dummy.setDir(preview_dir)
+			return FALSE
+		update_preview()
+		return TRUE
 	var/mob/user = usr
 	if(action == "play_blooper")
 		return play_character_blooper(user)
-	if(handle_pref_act(action, params, user))
-		return TRUE
+	if(action == "set_preference" || action == "set_color_preference" || action == "set_tricolor_preference")
+		if(handle_pref_act(action, params, user))
+			return TRUE
 	switch(action)
 		if("change_slot")
 			var/wanted = text2num(params["slot"])
@@ -325,13 +397,6 @@
 			preview_dir = SOUTH
 			save_character()
 			update_preview()
-			return TRUE
-		if("rotate")
-			preview_dir = turn(preview_dir, params["left"] ? 90 : -90)
-			if(preview_dummy && !QDELETED(preview_dummy))
-				preview_dummy.setDir(preview_dir)
-			else
-				update_preview()
 			return TRUE
 		if("set_name")
 			var/new_name = reject_bad_name(params["value"])
@@ -396,15 +461,16 @@
 			return TRUE
 		if("set_species")
 			var/new_species = text2path(params["value"])
+			var/datum/species/old_proto = GLOB.species_prototypes[rw_species()]
+			var/list/old_innate = copy_list(old_proto?.rw_innate_xenogenes)
 			if(!rw_set_species(new_species))
 				return TRUE
-			var/list/kept_genes = list()
-			var/datum/species/proto = GLOB.species_prototypes[rw_species()]
+			var/list/acquired = list()
 			for(var/gene_id in xenogenes)
-				var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
-				if(gene?.is_supported(proto?.id))
-					kept_genes += gene_id
-			xenogenes = kept_genes
+				if(!(gene_id in old_innate))
+					acquired += gene_id
+			xenogenes = acquired
+			sync_species_xenogenes()
 			save_character()
 			update_preview()
 			return TRUE
@@ -466,12 +532,67 @@
 			if(!gene)
 				return TRUE
 			var/datum/species/proto = GLOB.species_prototypes[rw_species()]
-			if(!gene.is_supported(proto?.id))
+			if(proto && (gene_id in proto.rw_innate_xenogenes))
 				return TRUE
 			if(gene_id in xenogenes)
 				xenogenes -= gene_id
+				if(islist(xenogene_inheritable))
+					xenogene_inheritable -= gene_id
 			else
+				var/list/conflicts = gene.conflicts_with_ids(xenogenes)
+				var/list/innate = proto?.rw_innate_xenogenes
+				if(!islist(innate))
+					innate = list()
+				for(var/conflict_id in conflicts)
+					if(conflict_id in innate)
+						return TRUE
+				for(var/conflict_id in conflicts)
+					xenogenes -= conflict_id
+					if(islist(xenogene_inheritable))
+						xenogene_inheritable -= conflict_id
 				xenogenes += gene_id
+				ensure_xenogene_value(gene_id)
+			save_character()
+			update_preview()
+			return TRUE
+		if("set_xenogene_option")
+			var/gene_id = params["id"]
+			var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+			if(!gene || gene.option_kind == RW_XENOGENE_OPTION_NONE)
+				return TRUE
+			if(!islist(xenogene_values))
+				xenogene_values = list()
+			if(gene.option_kind == RW_XENOGENE_OPTION_TRICOLOR)
+				var/list/colors = islist(xenogene_values[gene_id]) ? xenogene_values[gene_id] : gene.sanitize_option(gene.default_option)
+				var/index = text2num(params["index"]) || 1
+				index = clamp(index, 1, 3)
+				var/new_color = params["value"]
+				if(!istext(new_color) || !length(new_color))
+					return TRUE
+				if(copytext(new_color, 1, 2) != "#")
+					new_color = "#[new_color]"
+				colors[index] = new_color
+				xenogene_values[gene_id] = gene.sanitize_option(colors)
+			else
+				xenogene_values[gene_id] = gene.sanitize_option(params["value"])
+			save_character()
+			update_preview()
+			return TRUE
+		if("pick_xenogene_color")
+			var/gene_id = params["id"]
+			var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+			if(!gene || gene.option_kind != RW_XENOGENE_OPTION_TRICOLOR)
+				return TRUE
+			if(!islist(xenogene_values))
+				xenogene_values = list()
+			var/list/colors = islist(xenogene_values[gene_id]) ? xenogene_values[gene_id] : gene.sanitize_option(gene.default_option)
+			var/index = text2num(params["index"]) || 1
+			index = clamp(index, 1, 3)
+			var/new_color = tgui_color_picker(user, "Select color [index]", "Prepare Colonist", colors[index] || COLOR_WHITE)
+			if(!new_color)
+				return TRUE
+			colors[index] = new_color
+			xenogene_values[gene_id] = gene.sanitize_option(colors)
 			save_character()
 			update_preview()
 			return TRUE

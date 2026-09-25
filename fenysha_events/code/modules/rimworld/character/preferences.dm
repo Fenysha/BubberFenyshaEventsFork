@@ -19,6 +19,10 @@
 	var/last_name = ""
 	var/tattoo = "None"
 	var/list/xenogenes
+	/// gene id -> selected option (style name, number, or 3 colors)
+	var/list/xenogene_values
+	/// gene ids on this colonist that are inheritable (gray). Empty = none; genes start not inheritable.
+	var/list/xenogene_inheritable
 	var/childhood_id = "childhood_none"
 	var/adulthood_id = "adulthood_none"
 	/// SKILL_ID -> bought levels (0-10)
@@ -34,6 +38,8 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 /datum/rimworld_preferences/New(client/owner)
 	parent = owner
 	xenogenes = list()
+	xenogene_values = list()
+	xenogene_inheritable = list()
 	skills = list()
 	passions = list()
 	traits = list()
@@ -48,7 +54,7 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 		if(!load_character(default_slot))
 			save_character()
 		ensure_all_slots_filled()
-	else if(owner?.is_localhost())
+	else if(owner && owner.is_localhost())
 		load_and_save = FALSE
 
 /datum/rimworld_preferences/Destroy(force)
@@ -58,6 +64,11 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	QDEL_NULL(pref_bridge)
 	QDEL_NULL(savefile)
 	return ..()
+
+/datum/rimworld_preferences/proc/copy_list(list/source)
+	if(!islist(source))
+		return list()
+	return source.Copy()
 
 /datum/rimworld_preferences/proc/rebuild_real_name()
 	real_name = trim("[first_name] [last_name]")
@@ -131,6 +142,9 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	randomize_appearance()
 	tattoo = "None"
 	xenogenes = list()
+	xenogene_values = list()
+	xenogene_inheritable = list()
+	sync_species_xenogenes()
 	childhood_id = "childhood_none"
 	adulthood_id = "adulthood_none"
 	skills = list()
@@ -140,6 +154,84 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 		passions[skill_id] = RW_PASSION_NONE
 	traits = list()
 	loadout = list()
+
+/datum/rimworld_preferences/proc/sync_species_xenogenes()
+	var/datum/species/proto = GLOB.species_prototypes[rw_species()]
+	var/list/innate = proto?.rw_innate_xenogenes
+	if(!islist(innate))
+		innate = list()
+	if(!islist(xenogene_values))
+		xenogene_values = list()
+	var/list/kept = list()
+	for(var/gene_id in xenogenes)
+		if(!GLOB.all_rw_xenogenes[gene_id])
+			continue
+		kept += gene_id
+	for(var/gene_id in innate)
+		if(!(gene_id in kept))
+			kept += gene_id
+	xenogenes = kept
+	if(islist(proto?.rw_innate_xenogene_values))
+		for(var/gene_id in proto.rw_innate_xenogene_values)
+			if(isnull(xenogene_values[gene_id]))
+				xenogene_values[gene_id] = proto.rw_innate_xenogene_values[gene_id]
+	for(var/gene_id in xenogenes)
+		ensure_xenogene_value(gene_id)
+	prune_xenogene_inheritable()
+	prune_incompatible_xenogenes()
+
+/datum/rimworld_preferences/proc/ensure_xenogene_value(gene_id)
+	var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+	if(!gene || gene.option_kind == RW_XENOGENE_OPTION_NONE)
+		return
+	if(isnull(xenogene_values[gene_id]))
+		xenogene_values[gene_id] = gene.default_option
+	xenogene_values[gene_id] = gene.sanitize_option(xenogene_values[gene_id])
+
+/datum/rimworld_preferences/proc/prune_xenogene_inheritable()
+	if(!islist(xenogene_inheritable))
+		xenogene_inheritable = list()
+		return
+	var/list/kept = list()
+	for(var/gene_id in xenogene_inheritable)
+		if(gene_id in xenogenes)
+			kept += gene_id
+	xenogene_inheritable = kept
+
+/datum/rimworld_preferences/proc/prune_incompatible_xenogenes()
+	var/datum/species/proto = GLOB.species_prototypes[rw_species()]
+	var/list/innate = proto?.rw_innate_xenogenes
+	if(!islist(innate))
+		innate = list()
+	var/list/kept = list()
+	var/list/owned = list()
+	for(var/gene_id in innate)
+		if(!(gene_id in xenogenes))
+			continue
+		kept += gene_id
+		owned += gene_id
+	for(var/gene_id in xenogenes)
+		if(gene_id in owned)
+			continue
+		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(!gene)
+			continue
+		if(length(gene.conflicts_with_ids(owned)))
+			continue
+		kept += gene_id
+		owned += gene_id
+	xenogenes = kept
+	prune_xenogene_inheritable()
+
+/datum/rimworld_preferences/proc/apply_xenogene_options()
+	rw_set_pref(/datum/preference/toggle/allow_mismatched_parts, TRUE, force = TRUE)
+	if(!islist(xenogene_values))
+		xenogene_values = list()
+	for(var/gene_id in GLOB.all_rw_xenogenes)
+		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(!gene)
+			continue
+		gene.apply_to_preferences(src, (gene_id in xenogenes), xenogene_values[gene_id])
 
 /datum/rimworld_preferences/proc/uses_skintones()
 	var/datum/species/species = GLOB.species_prototypes[rw_species()]
@@ -175,6 +267,19 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	for(var/item_id in loadout)
 		var/datum/rw_loadout_item/item = GLOB.all_rw_loadout[item_id]
 		. += item?.cost || 0
+	var/datum/species/proto = GLOB.species_prototypes[rw_species()]
+	var/list/innate = proto?.rw_innate_xenogenes
+	if(!islist(innate))
+		innate = list()
+	for(var/gene_id in xenogenes)
+		if(gene_id in innate)
+			continue
+		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(!gene)
+			continue
+		. += gene.point_cost
+		if(islist(xenogene_inheritable) && (gene_id in xenogene_inheritable))
+			. += gene.inheritable_cost
 
 /datum/rimworld_preferences/proc/points_remaining()
 	return RW_CHARACTER_BUDGET - points_spent()

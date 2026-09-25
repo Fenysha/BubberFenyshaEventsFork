@@ -41,12 +41,26 @@
 /datum/preferences/rimworld_bridge/save_preferences()
 	return
 
+/datum/preferences/rimworld_bridge/apply_prefs_to(mob/living/carbon/human/character, icon_updates = TRUE, list/do_not_apply = null, visuals_only = FALSE)
+	if(!istype(character) || !character.dna)
+		return
+	character.dna.features = MANDATORY_FEATURE_LIST
+	for(var/datum/preference/preference as anything in get_preferences_in_priority_order())
+		if(preference.savefile_identifier != PREFERENCE_CHARACTER)
+			continue
+		if(preference.type in do_not_apply)
+			continue
+		preference.apply_to_human(character, read_preference(preference.type), src)
+	character.dna.real_name = character.real_name
+	if(icon_updates)
+		character.icon_render_keys = list()
+		character.update_body(TRUE)
+	SEND_SIGNAL(character, COMSIG_HUMAN_PREFS_APPLIED)
+
 /atom/movable/screen/map_view/char_preview/rw_hook
 
 /atom/movable/screen/map_view/char_preview/rw_hook/update_body()
-	var/datum/preferences/rimworld_bridge/bridge = preferences
-	if(istype(bridge))
-		bridge.rw_owner?.update_preview()
+	return
 
 /datum/rimworld_preferences/proc/ensure_pref_bridge()
 	if(pref_bridge && !QDELETED(pref_bridge))
@@ -169,6 +183,12 @@
 				var/datum/preference/choice_pref = GLOB.preference_entries_by_key["feature_[part_key]"]
 				if(istype(choice_pref, /datum/preference/choiced) && part_name)
 					rw_set_pref(choice_pref.type, part_name, force = TRUE)
+		for(var/save_key in GLOB.preference_entries_by_key)
+			var/datum/preference/toggle/mutant_toggle/part_toggle = GLOB.preference_entries_by_key[save_key]
+			if(!istype(part_toggle))
+				continue
+			var/part_on = part_toggle.relevant_mutant_bodypart && (part_toggle.relevant_mutant_bodypart in bridge.mutant_bodyparts)
+			rw_set_pref(part_toggle.type, part_on, force = TRUE)
 	return TRUE
 
 /datum/rimworld_preferences/proc/hidden_pref_keys()
@@ -222,7 +242,6 @@
 		"eye_emissives",
 		"blooper_send",
 		"blooper_hear",
-		"allow_genitals_toggle",
 		"art_ref_nsfw",
 		"cursekin_char_slot",
 		"body_size",
@@ -271,27 +290,27 @@
 	if(!bridge)
 		return list()
 	return list(
-		"pref_values" = islist(bridge.character_data) ? bridge.character_data.Copy() : list(),
+		"pref_values" = copy_list(bridge.character_data),
 		"mutant_bodyparts" = islist(bridge.mutant_bodyparts) ? deep_copy_list(bridge.mutant_bodyparts) : list(),
 		"body_markings" = islist(bridge.body_markings) ? deep_copy_list(bridge.body_markings) : list(),
 		"features" = islist(bridge.features) ? deep_copy_list(bridge.features) : list(),
 		"augments" = islist(bridge.augments) ? deep_copy_list(bridge.augments) : list(),
 		"augment_limb_styles" = islist(bridge.augment_limb_styles) ? deep_copy_list(bridge.augment_limb_styles) : list(),
-		"languages" = islist(bridge.languages) ? bridge.languages.Copy() : list(),
+		"languages" = copy_list(bridge.languages),
 	)
 
 /datum/rimworld_preferences/proc/import_pref_bridge(list/data)
 	var/datum/preferences/bridge = ensure_pref_bridge()
 	if(!bridge || !data)
 		return
-	bridge.character_data = islist(data["pref_values"]) ? data["pref_values"].Copy() : list()
+	bridge.character_data = copy_list(data["pref_values"])
 	bridge.value_cache = list()
 	bridge.mutant_bodyparts = islist(data["mutant_bodyparts"]) ? deep_copy_list(data["mutant_bodyparts"]) : list()
 	bridge.body_markings = islist(data["body_markings"]) ? deep_copy_list(data["body_markings"]) : list()
 	bridge.features = islist(data["features"]) ? deep_copy_list(data["features"]) : MANDATORY_FEATURE_LIST
 	bridge.augments = islist(data["augments"]) ? deep_copy_list(data["augments"]) : list()
 	bridge.augment_limb_styles = islist(data["augment_limb_styles"]) ? deep_copy_list(data["augment_limb_styles"]) : list()
-	bridge.languages = islist(data["languages"]) ? data["languages"].Copy() : list()
+	bridge.languages = copy_list(data["languages"])
 	refresh_pref_species()
 
 /datum/rimworld_preferences/proc/migrate_legacy_appearance(list/data)
@@ -436,8 +455,6 @@
 			continue
 		if(pref.savefile_key in hidden)
 			continue
-		if(is_genital_pref(pref))
-			continue
 		if(!(pref.category in species_categories))
 			continue
 		if(!pref.is_accessible(bridge))
@@ -446,10 +463,6 @@
 		if(entry)
 			species_fields += list(entry)
 	return list("species" = species_fields)
-
-/datum/rimworld_preferences/proc/is_genital_pref(datum/preference/pref)
-	var/key = pref.savefile_key
-	return findtext(key, "penis") || findtext(key, "testicle") || findtext(key, "vagina") || findtext(key, "womb") || findtext(key, "breast") || findtext(key, "butt") || findtext(key, "belly") || findtext(key, "anus") || findtext(key, "genital")
 
 /datum/rimworld_preferences/proc/handle_pref_act(action, list/params, mob/user)
 	var/datum/preferences/bridge = ensure_pref_bridge()
@@ -524,3 +537,18 @@
 			update_preview()
 		return .
 	return FALSE
+
+/// Skyrat's snout apply_to_human drops the preferences arg, so the part always
+/// sanitizes to None. Keep the 3-arg call so mismatched snouts can render.
+/datum/preference/choiced/mutant_choice/snout/apply_to_human(mob/living/carbon/human/target, value, datum/preferences/preferences)
+	var/visible = ..(target, value, preferences)
+	var/obj/item/bodypart/head/our_head = target.get_bodypart(BODY_ZONE_HEAD)
+	if(isnull(our_head))
+		return visible
+	if(visible)
+		our_head.bodyshape |= BODYSHAPE_SNOUTED
+	else
+		our_head.bodyshape &= ~BODYSHAPE_SNOUTED
+	target.synchronize_bodytypes()
+	target.synchronize_bodyshapes()
+	return visible
