@@ -130,6 +130,8 @@
 		var/neighbor_priority = neighbor.get_blend_priority()
 		if(isnull(neighbor_priority) || neighbor_priority <= src_priority)
 			continue
+		if(istype(src, /turf/open/rimworld/grass) && istype(neighbor, /turf/open/rimworld/grass))
+			continue
 
 		var/bleed_dir = REVERSE_DIR(direction)
 

@@ -27,7 +27,17 @@
 	tracked[target] = update_cb
 	ensure_global_signals()
 
-	// Apply current season immediately if planet clock exists
+	// Mapgen already baked the current season into the atom. Applying it again
+	// walks the cell a second time and repaints every plant.
+	if(istype(target, /turf/open/rimworld))
+		var/turf/open/rimworld/stamped_turf = target
+		if(stamped_turf.stamp_visual)
+			return
+	if(istype(target, /obj/structure/rimworld/flora/grayscale))
+		var/obj/structure/rimworld/flora/grayscale/stamped_plant = target
+		if(stamped_plant.visual_ready)
+			return
+
 	if(SSrimworld_planetmap)
 		var/hemisphere = "north"
 		if(isturf(target) || isobj(target))

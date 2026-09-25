@@ -453,6 +453,8 @@ GLOBAL_LIST_EMPTY(roof_datums)
 	var/roof_type
 
 	var/seasonal_color = FALSE
+	/// Set when the loader already applied the finished color. Init must not paint it again.
+	var/stamp_visual = FALSE
 
 /turf/open/rimworld/Initialize(mapload)
 	if(!static_air)
@@ -461,10 +463,11 @@ GLOBAL_LIST_EMPTY(roof_datums)
 	. = ..()
 
 	if(seasonal_color)
-		if(base_color)
-			set_base_color(base_color)
-		else if(color)
-			set_base_color(color)
+		if(!stamp_visual)
+			if(base_color)
+				set_base_color(base_color)
+			else if(color)
+				set_base_color(color)
 		AddElement(/datum/element/season_visual, CALLBACK(src, PROC_REF(update_season_visual)))
 
 	if(init_with_roof && roof_type)
@@ -497,6 +500,9 @@ GLOBAL_LIST_EMPTY(roof_datums)
 /turf/open/rimworld/proc/update_season_visual(atom/host, hemisphere, old_season, new_season, quadrum, year)
 	if(!seasonal_color || !base_color)
 		return
+	if(stamp_visual && !old_season)
+		return
+	stamp_visual = FALSE
 	var/tint
 	var/amount
 	switch(new_season)

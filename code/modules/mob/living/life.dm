@@ -71,6 +71,8 @@
 		return TRUE
 
 /mob/living/proc/handle_breathing(seconds_per_tick)
+	if(istype(get_area(src), /area/rimworld))
+		return
 	SEND_SIGNAL(src, COMSIG_LIVING_HANDLE_BREATHING, seconds_per_tick)
 
 // Base mob environment handler for body temperature

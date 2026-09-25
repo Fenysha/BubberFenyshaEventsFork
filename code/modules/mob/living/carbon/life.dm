@@ -43,6 +43,8 @@
 
 // Start of a breath chain, calls [carbon/proc/breathe()]
 /mob/living/carbon/handle_breathing(seconds_per_tick)
+	if(istype(get_area(src), /area/rimworld))
+		return
 	var/next_breath = 4
 	var/obj/item/organ/lungs/L = get_organ_slot(ORGAN_SLOT_LUNGS)
 	var/obj/item/organ/heart/H = get_organ_slot(ORGAN_SLOT_HEART)

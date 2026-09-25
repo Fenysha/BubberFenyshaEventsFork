@@ -345,9 +345,11 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			if(!prepare())
 				return RW_CELL_LOAD_FAILED
 
-			phase = RW_CELL_JOB_DECODE
-			decode_index = 1
-			decode_stage_cave_mask = FALSE
+			if(!generator.has_stamp)
+				log_world("RimWorld loader: cell [cell.x],[cell.y] has no stamp.")
+				return RW_CELL_LOAD_FAILED
+
+			phase = RW_CELL_JOB_RESERVE
 
 			return RW_CELL_LOAD_CONTINUE
 
@@ -366,11 +368,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		if(RW_CELL_JOB_PLACE)
 			return process_placement()
 
-		if(RW_CELL_JOB_POPULATE)
-			return process_population()
-
-		if(RW_CELL_JOB_INITIALIZE)
-			return process_initialization()
+		if(RW_CELL_JOB_POPULATE, RW_CELL_JOB_INITIALIZE)
+			log_world("RimWorld loader: cell [cell.x],[cell.y] entered a retired pass [phase].")
+			return RW_CELL_LOAD_FAILED
 
 		if(RW_CELL_JOB_SMOOTH)
 			return process_smoothing()
@@ -526,6 +526,11 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	var/processed = 0
 
+	if(generator.has_stamp && !mapload_source)
+		mapload_source = "rw_cell_[cell.x]_[cell.y]_[REF(src)]"
+		mapload_arg = list(TRUE)
+		SSatoms.set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, mapload_source)
+
 	while(local_y <= generator.height)
 		while(local_x <= generator.width)
 			var/turf/new_turf = generator.place_sub_level_turf(
@@ -539,6 +544,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 					"RimWorld loader: failed to place turf at local [local_x],[local_y] for cell [cell.x],[cell.y]."
 				)
 				return RW_CELL_LOAD_FAILED
+
+			if(generator.has_stamp)
+				finish_stamped_turf(new_turf)
 
 			local_x++
 			processed++
@@ -562,10 +570,30 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 			return RW_CELL_LOAD_CONTINUE
 
-	phase = RW_CELL_JOB_POPULATE
-	populate_index = 1
+	if(generator.has_stamp)
+		end_initialization(FALSE)
+		if(generator.rimworld_area)
+			SSmapping.reg_in_areas_in_z(list(generator.rimworld_area))
+		generator.turfs_initialized = TRUE
+		smooth_index = 1
+		phase = RW_CELL_JOB_SMOOTH
+	else
+		log_world("RimWorld loader: cell [cell.x],[cell.y] has no stamp.")
+		return RW_CELL_LOAD_FAILED
 
 	return RW_CELL_LOAD_CONTINUE
+
+
+/datum/rimworld_sublevel_load_job/proc/finish_stamped_turf(turf/new_turf)
+	if(!(new_turf.flags_1 & INITIALIZED_1))
+		SSatoms.InitAtom(new_turf, TRUE, mapload_arg)
+	SSicon_smooth.remove_from_queues(new_turf)
+
+	for(var/atom/movable/content as anything in new_turf)
+		if(content.flags_1 & INITIALIZED_1)
+			continue
+		SSatoms.InitAtom(content, TRUE, mapload_arg)
+		SSicon_smooth.remove_from_queues(content)
 
 
 /datum/rimworld_sublevel_load_job/proc/process_population()
@@ -595,7 +623,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 				(A.area_flags_mapping & FLORA_ALLOWED),
 				(A.area_flags_mapping & FLORA_ALLOWED),
 				(A.area_flags_mapping & MOB_SPAWN_ALLOWED),
-				is_cave
+				is_cave,
+				populate_index
 			))
 				if(generator.target_biome)
 					generator.target_biome.end_population_pass()
@@ -630,8 +659,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!length(pending))
 		end_initialization(TRUE)
 		generator.turfs_initialized = TRUE
-		phase = RW_CELL_JOB_SMOOTH
+		phase = generator.has_stamp ? RW_CELL_JOB_LIGHTING : RW_CELL_JOB_SMOOTH
 		smooth_index = 1
+		lighting_index = 1
 
 		return RW_CELL_LOAD_CONTINUE
 
@@ -664,8 +694,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	generator.turfs_initialized = TRUE
 
-	phase = RW_CELL_JOB_SMOOTH
+	phase = generator.has_stamp ? RW_CELL_JOB_LIGHTING : RW_CELL_JOB_SMOOTH
 	smooth_index = 1
+	lighting_index = 1
 
 	return RW_CELL_LOAD_CONTINUE
 
@@ -678,7 +709,13 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	mapload_source = null
 	mapload_arg = null
 
-	SSicon_smooth.free_deferred(source)
+	// Releasing this queue is the smoothing pass. The stamp already has corners.
+	var/list/deferred = SSicon_smooth.deferred_by_source[source]
+	if(deferred)
+		for(var/atom/thing as anything in deferred)
+			if(thing)
+				thing.smoothing_flags &= ~SMOOTH_QUEUED
+		SSicon_smooth.deferred_by_source -= source
 
 	if(late_init)
 		var/list/late_loaders = SSatoms.late_loaders
@@ -704,14 +741,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		var/turf/T = generator.get_generated_turf(smooth_index)
 		smooth_index++
 
-		if(T)
-			if(istype(T, /turf/open))
-				var/turf/open/open_turf = T
-				open_turf.update_edges()
-			QUEUE_SMOOTH(T)
-
-			for(var/atom/movable/A as anything in T)
-				QUEUE_SMOOTH(A)
+		if(istype(T, /turf/open) && !istype(T, /turf/open/rimworld/grass))
+			var/turf/open/open_turf = T
+			open_turf.update_edges()
 
 		processed++
 
@@ -721,8 +753,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		)
 			return RW_CELL_LOAD_CONTINUE
 
-	phase = RW_CELL_JOB_LIGHTING
-	lighting_index = 1
+	phase = RW_CELL_JOB_FINISH
 
 	return RW_CELL_LOAD_CONTINUE
 
@@ -763,30 +794,14 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!generator || QDELETED(generator))
 		return RW_CELL_LOAD_FAILED
 
-	var/turf_count = generator.get_generated_turf_count()
-	var/list/batch = list()
-
-	while(
-		daylight_index <= turf_count \
-		&& length(batch) < RW_SUBLEVEL_DAYLIGHT_BUDGET
-	)
-		if(cancel_requested)
-			return RW_CELL_LOAD_FAILED
-
-		var/turf/T = generator.get_generated_turf(daylight_index)
-		daylight_index++
-
-		if(T)
-			batch += T
-
-	if(length(batch) && SSdaylight.setup_complete)
-		SSdaylight.handle_loaded_turfs(batch, FALSE)
-
-	if(daylight_index <= turf_count)
-		return RW_CELL_LOAD_CONTINUE
+	// Per-turf daylight wash during load repaints the whole cell while it is still being built.
+	var/area/rimworld/loaded_area = generator.rimworld_area
+	if(loaded_area && SSdaylight.setup_complete)
+		loaded_area.update_base_lighting()
+		if(loaded_area.daylight && !loaded_area.daylight_lit)
+			loaded_area.apply_daylight_overlay()
 
 	phase = RW_CELL_JOB_FINISH
-
 	return RW_CELL_LOAD_CONTINUE
 
 
@@ -809,6 +824,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	reservation = null
 
+	if(generator.rimworld_area)
+		generator.rimworld_area.cell_loading = FALSE
 	cell.is_generated = TRUE
 	cell.is_generating = FALSE
 	cell.loading_job = null
@@ -840,6 +857,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		reservation = null
 
 	if(generator)
+		if(generator.rimworld_area)
+			generator.rimworld_area.cell_loading = FALSE
 		qdel(generator)
 		generator = null
 

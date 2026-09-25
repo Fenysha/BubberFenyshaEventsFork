@@ -308,7 +308,8 @@
 	fauna_allowed,
 	is_cave = FALSE,
 	sub_biome_key = null,
-	list/deferred_init = null
+	list/deferred_init = null,
+	planned_kind = null
 )
 	if(!target_turf)
 		return FALSE
@@ -325,6 +326,9 @@
 
 	if(isnull(sub_biome_key))
 		sub_biome_key = RW_SUBBIOME_PLAINS
+
+	if(!isnull(planned_kind))
+		return spawn_planned(target_turf, planned_kind, is_cave, deferred_init)
 
 	var/list/flora_table = pick_content_table(flora_types, cave_flora_types, is_cave)
 	var/list/feature_table = pick_content_table(feature_types, cave_feature_types, is_cave)
@@ -370,6 +374,183 @@
 	return TRUE
 
 
+/datum/biome/rimworld/proc/spawn_planned(turf/target_turf, kind, is_cave, list/deferred_init)
+	if(!kind)
+		return TRUE
+
+	var/list/table
+	switch(kind)
+		if(1)
+			table = pick_content_table(flora_types, cave_flora_types, is_cave)
+		if(2)
+			table = pick_content_table(feature_types, cave_feature_types, is_cave)
+		if(3)
+			table = pick_content_table(fauna_types, cave_fauna_types, is_cave)
+
+	if(!length(table))
+		return TRUE
+
+	var/picked = pick(table)
+	if(!picked)
+		return TRUE
+
+	var/atom/spawned = SSatoms.NewUninitialized(picked, target_turf)
+	if(spawned && deferred_init)
+		deferred_init += spawned
+	return TRUE
+
+
+/datum/biome/rimworld/proc/stamp_rules(sub_biome_key)
+	var/list/turf_meta = list()
+	var/list/seen = list()
+	note_stamp_turf(open_turf_type, turf_meta, seen)
+	note_stamp_turf(closed_turf_type, turf_meta, seen)
+	if(open_turf_type_cave)
+		note_stamp_turf(open_turf_type_cave, turf_meta, seen)
+	note_stamp_turf(/turf/open/rimworld/dirt/mud, turf_meta, seen)
+
+	return list(
+		"height_modifier" = height_modifier * get_subbiome_height_modifier(sub_biome_key),
+		"solid_threshold" = solid_height_threshold,
+		"transition_chance" = transition_chance,
+		"transition_delta" = RW_HEIGHT_TRANSITION_DELTA,
+		"cave_turf" = open_turf_type_cave ? "[open_turf_type_cave]" : "",
+		"fallback_open" = "[open_turf_type]",
+		"mud_path" = "/turf/open/rimworld/dirt/mud",
+		"fallback_closed" = "[closed_turf_type]",
+		"open_bands" = encode_stamp_bands(open_band_thresholds, open_band_turfs, turf_meta, seen),
+		"open_transition_bands" = encode_stamp_bands(open_transition_thresholds, open_transition_turfs, turf_meta, seen),
+		"closed_bands" = encode_stamp_bands(closed_band_thresholds, closed_band_turfs, turf_meta, seen),
+		"closed_transition_bands" = encode_stamp_bands(closed_transition_thresholds, closed_transition_turfs, turf_meta, seen),
+		"flora" = encode_stamp_weights(flora_types),
+		"flora_cave" = encode_stamp_weights(cave_flora_types),
+		"feature" = encode_stamp_weights(feature_types),
+		"feature_cave" = encode_stamp_weights(cave_feature_types),
+		"fauna" = encode_stamp_weights(fauna_types),
+		"fauna_cave" = encode_stamp_weights(cave_fauna_types),
+		"flora_density" = flora_density * get_density_mult(RW_SPAWN_FLORA, sub_biome_key),
+		"feature_density" = feature_density * get_density_mult(RW_SPAWN_FEATURE, sub_biome_key),
+		"fauna_density" = fauna_density * get_density_mult(RW_SPAWN_MOB, sub_biome_key),
+		"turfs" = turf_meta,
+	)
+
+
+/datum/biome/rimworld/proc/encode_stamp_bands(list/thresholds, list/entries, list/turf_meta, list/seen)
+	var/list/out = list()
+	for(var/i in 1 to length(thresholds))
+		out += list(list(
+			"threshold" = thresholds[i],
+			"options" = encode_stamp_weights(entries[i], turf_meta, seen, TRUE),
+		))
+	return out
+
+
+/datum/biome/rimworld/proc/encode_stamp_weights(table, list/turf_meta, list/seen, register_turfs = FALSE)
+	var/list/out = list()
+	if(isnull(table))
+		return out
+	if(!islist(table))
+		if(register_turfs)
+			note_stamp_turf(table, turf_meta, seen)
+		return list(stamp_weight(table, 1))
+	if(!length(table))
+		return out
+
+	var/first = table[1]
+	if(!isnull(table[first]) && isnum(table[first]))
+		for(var/path in table)
+			if(register_turfs)
+				note_stamp_turf(path, turf_meta, seen)
+			out += list(stamp_weight(path, table[path]))
+		return out
+
+	var/list/counts = list()
+	for(var/path in table)
+		counts["[path]"] += 1
+		if(register_turfs)
+			note_stamp_turf(path, turf_meta, seen)
+	for(var/path in counts)
+		out += list(stamp_weight(path, counts[path]))
+	return out
+
+
+/datum/biome/rimworld/proc/stamp_weight(path, weight)
+	var/foliage = ""
+	var/variants = 0
+	if(ispath(path, /obj/structure/rimworld/flora/grayscale))
+		var/obj/structure/rimworld/flora/grayscale/plant = path
+		foliage = "[initial(plant.foliage_color)]"
+		if(ispath(path, /obj/structure/rimworld/flora/grayscale/grass))
+			var/obj/structure/rimworld/flora/grayscale/grass/tuft = path
+			variants = initial(tuft.variant_amount)
+		else if(ispath(path, /obj/structure/rimworld/flora/grayscale/tree))
+			var/obj/structure/rimworld/flora/grayscale/tree/tree = path
+			variants = initial(tree.variants)
+	return list("path" = "[path]", "weight" = weight, "color" = foliage, "variants" = variants)
+
+
+/datum/biome/rimworld/proc/note_stamp_turf(path, list/turf_meta, list/seen)
+	if(!ispath(path))
+		return
+	var/key = "[path]"
+	if(seen[key])
+		return
+	seen[key] = TRUE
+	var/nature = 0
+	var/blend = 0
+	var/color = ""
+	var/edge_priority = 0
+	var/cardinal = 0
+	var/edge_mask = 0
+	var/smooth = 0
+	var/rock = 0
+	var/variants = 0
+	var/water = 0
+	if(ispath(path, /turf/open))
+		var/turf/open/open_sample = path
+		edge_priority = initial(open_sample.edge_priority)
+		if(initial(open_sample.cardinal_edges_only))
+			cardinal = 1
+		var/sample_icon = initial(open_sample.icon)
+		var/bit = 1
+		for(var/direction in list(NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST))
+			var/edge_state = TURF_EDGE_STATE_FOR_DIR(direction)
+			if(sample_icon && edge_state && icon_exists(sample_icon, edge_state))
+				edge_mask |= bit
+			bit *= 2
+	if(ispath(path, /turf/open/rimworld))
+		var/turf/open/rimworld/sample = path
+		if(initial(sample.rw_turf_flags) & SUPPORTS_NATURE)
+			nature = 1
+		if(ispath(path, /turf/open/rimworld/grass))
+			var/turf/open/rimworld/grass/grass = path
+			color = "[initial(grass.color)]"
+			blend = 1
+			variants = initial(grass.variant_amount) + 1
+		else if(ispath(path, /turf/open/rimworld/dirt))
+			var/turf/open/rimworld/dirt/dirt = path
+			variants = initial(dirt.variant_amount) + 1
+	if(ispath(path, /turf/open/rimworld/rock) || ispath(path, /turf/closed/rw_wall/rock))
+		rock = 1
+	if(ispath(path, /turf/open/water))
+		water = 1
+	if(ispath(path, /turf/closed))
+		var/turf/closed/closed_sample = path
+		if(initial(closed_sample.smoothing_flags) & SMOOTH_BITMASK)
+			smooth = 1
+	turf_meta += list(list(
+		"path" = key,
+		"nature" = nature,
+		"blend" = blend,
+		"color" = color,
+		"edge_priority" = edge_priority,
+		"cardinal" = cardinal,
+		"edge_mask" = edge_mask,
+		"smooth" = smooth,
+		"rock" = rock,
+		"variants" = variants,
+		"water" = water,
+	))
 
 
 /datum/biome/rimworld/land

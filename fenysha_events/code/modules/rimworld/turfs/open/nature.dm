@@ -87,8 +87,14 @@
 
 	var/variant_amount = 15
 
+/turf/open/rimworld/dirt/mud
+	name = "mud"
+	desc = "Wet earth along the water. Grass does not take here."
+	baseturfs = /turf/open/rimworld/dirt/mud
+
 /turf/open/rimworld/dirt/Initialize(mapload)
-	icon_state = "[rand(0, variant_amount)]"
+	if(!stamp_visual)
+		icon_state = "[rand(0, variant_amount)]"
 	. = ..()
 
 
@@ -115,12 +121,47 @@
 	var/variant_amount = 5
 
 /turf/open/rimworld/grass/Initialize(mapload)
-	icon_state = "[rand(0, variant_amount)]"
-	if(base_color)
-		set_base_color(base_color)
-	else if(color)
-		set_base_color(color)
+	if(!stamp_visual)
+		icon_state = "[rand(0, variant_amount)]"
+		if(base_color)
+			set_base_color(base_color)
+		else if(color)
+			set_base_color(color)
 	. = ..()
+
+/turf/open/rimworld/grass/proc/blend_neighbor_color()
+	var/list/mine = rw_color_channels(color)
+	if(!mine)
+		return
+	var/red = mine[1]
+	var/green = mine[2]
+	var/blue = mine[3]
+	var/samples = 1
+	for(var/direction in GLOB.cardinals)
+		var/turf/open/rimworld/grass/neighbor = get_step(src, direction)
+		if(!istype(neighbor))
+			continue
+		var/list/theirs = rw_color_channels(neighbor.color)
+		if(!theirs)
+			continue
+		red += theirs[1]
+		green += theirs[2]
+		blue += theirs[3]
+		samples++
+	if(samples <= 1)
+		return
+	var/blended = rgb(round(red / samples), round(green / samples), round(blue / samples))
+	color = blended
+	set_base_color(blended)
+
+/proc/rw_color_channels(value)
+	if(!istext(value) || length(value) < 7 || copytext(value, 1, 2) != "#")
+		return null
+	return list(
+		text2num(copytext(value, 2, 4), 16),
+		text2num(copytext(value, 4, 6), 16),
+		text2num(copytext(value, 6, 8), 16)
+	)
 
 
 /turf/open/rimworld/grass/light
@@ -371,9 +412,10 @@
 	slowdown = 0.1
 
 /turf/open/rimworld/rock/Initialize(mapload)
-	icon_state = "[rand(0, varian_amount)]"
-	if(material_type && ispath(material_type, /datum/material/rimworld_material))
-		apply_material(SSmaterials.get_material(material_type))
+	if(!stamp_visual)
+		icon_state = "[rand(0, varian_amount)]"
+		if(material_type && ispath(material_type, /datum/material/rimworld_material))
+			apply_material(SSmaterials.get_material(material_type))
 	. = ..()
 
 /turf/open/rimworld/rock/examine(mob/user)
@@ -393,7 +435,8 @@
 
 /turf/open/rimworld/rock/auto/Initialize(mapload)
 	. = ..()
-	set_regional_effects()
+	if(!stamp_visual)
+		set_regional_effects()
 
 /turf/open/rimworld/rock/auto/proc/set_regional_effects()
 	var/datum/planet_cell/my_cell = get_planet_cell(src)

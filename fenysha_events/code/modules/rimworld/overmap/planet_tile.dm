@@ -11,6 +11,8 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	daylight = TRUE
 
 	var/datum/planet_cell/cell
+	/// While the cell is being stamped, turf changes must not schedule a second paint sweep.
+	var/cell_loading = FALSE
 	/// Last applied local intensity (−1 = never applied).
 	var/rimworld_sun_intensity = -1
 	var/rimworld_sun_color = null
@@ -85,7 +87,7 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 
 
 /area/rimworld/proc/apply_rimworld_daylight_overlay(intensity = 1, color = "#ffffff")
-	if(!daylight)
+	if(!daylight || cell_loading)
 		return
 	var/strength = round(clamp(intensity, 0, 1) * 255, 1)
 	if(strength <= 0)

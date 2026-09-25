@@ -37,11 +37,14 @@
 	var/datum/material/rimworld_material/material
 	/// Type of material, used is subtypes
 	var/material_type
+	var/stamp_visual = FALSE
 
 
 
 /turf/closed/rw_wall/rock/Initialize(mapload)
 	. = ..()
+	if(stamp_visual)
+		return
 	var/wall_icon_state = "[base_icon_state]-255"
 	add_large_wall_overlay(icon, wall_icon_state)
 
@@ -55,7 +58,8 @@
 /turf/closed/rw_wall/rock/auto
 
 /turf/closed/rw_wall/rock/auto/Initialize(mapload)
-	set_regional_effects()
+	if(!stamp_visual)
+		set_regional_effects()
 	. = ..()
 
 /turf/closed/rw_wall/rock/auto/proc/set_regional_effects()

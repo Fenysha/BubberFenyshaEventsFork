@@ -361,10 +361,17 @@
 	var/seasonal_color = TRUE
 	/// Default foliage tint (also used as base_color)
 	var/foliage_color = GRASS_COLOR_FOREST
+	var/visual_ready = FALSE
 
 
 /obj/structure/rimworld/flora/grayscale/Initialize(mapload)
 	. = ..()
+	if(visual_ready)
+		if(grayscale_overlay)
+			add_overlay(grayscale_overlay)
+		if(seasonal_color)
+			AddElement(/datum/element/season_visual, CALLBACK(src, PROC_REF(update_season_visual)))
+		return
 	setup_grayscale_visuals()
 	if(seasonal_color)
 		AddElement(/datum/element/season_visual, CALLBACK(src, PROC_REF(update_season_visual)))
@@ -398,6 +405,9 @@
 /obj/structure/rimworld/flora/grayscale/proc/update_season_visual(atom/host, hemisphere, old_season, new_season, quadrum, year)
 	if(!seasonal_color)
 		return
+	if(visual_ready && !old_season)
+		return
+	visual_ready = FALSE
 
 	if(!base_color)
 		base_color = foliage_color
@@ -499,7 +509,8 @@
 
 
 /obj/structure/rimworld/flora/grayscale/tree/Initialize(mapload)
-	icon_state = "[base_icon_state][rand(1, variants)]"
+	if(!visual_ready)
+		icon_state = "[base_icon_state][rand(1, variants)]"
 	. = ..()
 	if(isnull(fall_products))
 		fall_products = destroy_products
@@ -600,7 +611,8 @@
 
 
 /obj/structure/rimworld/flora/grayscale/grass/Initialize(mapload)
-	icon_state = "[base_icon_state]_[rand(1, variant_amount)]"
+	if(!visual_ready)
+		icon_state = "[base_icon_state]_[rand(1, variant_amount)]"
 	. = ..()
 
 /obj/structure/rimworld/flora/grayscale/grass/alt

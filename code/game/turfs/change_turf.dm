@@ -165,8 +165,12 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 	new_turf.weak_reference = old_ref
 
 	if(SSlighting.initialized)
-		// Space tiles should never have lighting objects
-		if(!space_lit)
+		// The day cycle lights a cell. Building a lighting object per tile is the slow part.
+		var/area/rimworld/loading_area = src.loc
+		if(istype(loading_area) && loading_area.cell_loading)
+			if(old_lighting_object)
+				qdel(old_lighting_object, force = TRUE)
+		else if(!space_lit)
 			if(old_lighting_object)
 				lighting_object = old_lighting_object
 				vis_contents += lighting_object
@@ -176,11 +180,12 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 		else if (old_lighting_object)
 			qdel(old_lighting_object, force = TRUE)
 
-		directional_opacity = old_directional_opacity
-		recalculate_directional_opacity()
+		if(!istype(loading_area) || !loading_area.cell_loading)
+			directional_opacity = old_directional_opacity
+			recalculate_directional_opacity()
 
-		if(lighting_object && !lighting_object.needs_update)
-			lighting_object.update()
+			if(lighting_object && !lighting_object.needs_update)
+				lighting_object.update()
 
 	// If we're space, then we're either lit, or not, and impacting our neighbors, or not
 	if(isspaceturf(src))
@@ -251,6 +256,9 @@ GLOBAL_LIST_INIT(blacklisted_automated_baseturfs, typecacheof(list(
 	return new_turf
 
 /turf/open/ChangeTurf(path, list/new_baseturfs, flags) //Resist the temptation to make this default to keeping air.
+	// Planetary tiles do not share air with their neighbors.
+	if(istype(src, /turf/open/rimworld) || ispath(path, /turf/open/rimworld))
+		return ..()
 	if ((flags & CHANGETURF_INHERIT_AIR) && ispath(path, /turf/open))
 		var/datum/gas_mixture/stashed_air = new()
 		stashed_air.copy_from(air)

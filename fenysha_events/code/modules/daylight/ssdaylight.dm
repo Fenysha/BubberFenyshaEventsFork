@@ -197,11 +197,19 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 
 /turf/AfterChange(flags, oldType)
 	. = ..()
+	if(istype(loc, /area/rimworld))
+		var/area/rimworld/loading_area = loc
+		if(loading_area.cell_loading)
+			return
 	INVOKE_ASYNC(SSdaylight, TYPE_PROC_REF(/datum/controller/subsystem/daylight, refresh_turf_daylight), src)
 
 
 /turf/on_change_area(area/old_area, area/new_area)
 	. = ..()
+	if(istype(new_area, /area/rimworld))
+		var/area/rimworld/loading_area = new_area
+		if(loading_area.cell_loading)
+			return
 	INVOKE_ASYNC(SSdaylight, TYPE_PROC_REF(/datum/controller/subsystem/daylight, refresh_turf_daylight), src)
 
 
@@ -643,6 +651,10 @@ SUBSYSTEM_DEF(daylight)
 		return
 	clear_daylight_wash(changed)
 	var/area/turf_area = changed.loc
+	if(istype(turf_area, /area/rimworld))
+		var/area/rimworld/loading_area = turf_area
+		if(loading_area.cell_loading)
+			return
 	if(istype(turf_area, /area/rimworld) && turf_area.daylight)
 		var/area/rimworld/RA = turf_area
 		var/strength = round(clamp(RA.rimworld_sun_intensity >= 0 ? RA.rimworld_sun_intensity : 1, 0, 1) * 255, 1)
