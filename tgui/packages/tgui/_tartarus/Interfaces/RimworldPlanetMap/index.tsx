@@ -23,6 +23,15 @@ export const RimworldPlanetMap = () => {
   const [showAtmosphere, setShowAtmosphere] = useState(true);
   const [showClouds, setShowClouds] = useState(true);
 
+  // Bump to request camera recenter on player tile
+  const [centerOnPlayerRequest, setCenterOnPlayerRequest] = useState(0);
+
+  const hasPlayerOnMap =
+    data.playerX != null &&
+    data.playerY != null &&
+    Number.isFinite(data.playerX) &&
+    Number.isFinite(data.playerY);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -71,6 +80,11 @@ export const RimworldPlanetMap = () => {
     act('select_object', {
       id: object.id,
     });
+  };
+
+  const handleCenterOnSelf = () => {
+    if (!hasPlayerOnMap) return;
+    setCenterOnPlayerRequest((n) => n + 1);
   };
 
   const viewType = data.viewType || 'overview';
@@ -130,6 +144,9 @@ export const RimworldPlanetMap = () => {
           data={data}
           selectedX={selectedX}
           selectedY={selectedY}
+          playerX={data.playerX}
+          playerY={data.playerY}
+          centerOnPlayerRequest={centerOnPlayerRequest}
           showAtmosphere={showAtmosphere}
           showClouds={showClouds}
           onTileClick={handleTileClick}
@@ -184,6 +201,18 @@ export const RimworldPlanetMap = () => {
                   Clouds
                 </Button>
               </Stack.Item>
+
+              {hasPlayerOnMap && (
+                <Stack.Item>
+                  <Button
+                    icon="crosshairs"
+                    tooltip="Center map on your current tile"
+                    onClick={handleCenterOnSelf}
+                  >
+                    Center on Self
+                  </Button>
+                </Stack.Item>
+              )}
 
               <Stack.Item>
                 <Button

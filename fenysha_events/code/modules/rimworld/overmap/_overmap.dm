@@ -436,6 +436,72 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	view.ui_interact(user)
 	return view
 
+
+/datum/controller/subsystem/rimworld_planetmap/proc/create_observer(mob/dead/new_player/user)
+	set waitfor = FALSE
+
+	if(QDELETED(user) || !user.client || !isnewplayer(user))
+		return
+
+	var/less_input_message
+	if(SSlag_switch.measures[DISABLE_DEAD_KEYLOOP])
+		less_input_message = " - Notice: Observer freelook is currently disabled."
+
+	var/this_is_like_playing_right = tgui_alert(user, "Are you sure you wish to observe?[less_input_message]", "Observe", list("Yes", "No"))
+	if(QDELETED(user) || !user.client || this_is_like_playing_right != "Yes" || !isnewplayer(user))
+		return
+
+	user.hide_title_screen()
+	var/mob/dead/observer/observer = new()
+	observer.started_as_observer = TRUE
+
+
+	var/turf/spawn_point = null
+	if(length(planet.cells))
+		var/list/possible_maps = shuffle(planet.cells.Copy())
+		for(var/key in possible_maps)
+			var/datum/planet_cell/cell = possible_maps[key]
+			if(!cell.is_loaded())
+				continue
+			spawn_point = cell.reservation.get_center_turf()
+
+	if(!spawn_point)
+		// Second try
+		var/obj/effect/landmark/observer_start/O = locate(/obj/effect/landmark/observer_start) in GLOB.landmarks_list
+		if(O) spawn_point = get_turf(O)
+
+	if(!spawn_point)
+		// Tast try to spawn ghost somewhere else
+		for(var/datum/space_level/level in SSmapping.levels_by_trait(ZTRAIT_CENTCOM))
+			var/turf/possible_spawn = locate(rand(1, world.maxx), rand(1, world.maxy), level.z_value)
+			if(possible_spawn)
+				spawn_point = possible_spawn
+
+	to_chat(user, span_notice("Now teleporting."))
+	if(spawn_point)
+		observer.forceMove(spawn_point)
+	else
+		to_chat(user, span_notice("Teleporting failed. Ahelp an admin please"))
+		stack_trace("There's no freaking observer landmark available on this map or you're making observers before the map is initialised")
+
+	observer.PossessByPlayer(user.key)
+	observer.client = user.client
+	observer.set_ghost_appearance()
+
+	if(observer.client && observer.client.prefs)
+		observer.real_name = observer.client.prefs.read_preference(/datum/preference/name/real_name)
+		observer.name = observer.real_name
+		observer.client.init_verbs()
+		observer.persistent_client.time_of_death = world.time
+
+	observer.update_appearance()
+	observer.stop_sound_channel(CHANNEL_LOBBYMUSIC)
+	deadchat_broadcast(" has observed.", "<b>[observer.real_name]</b>", follow_target = observer, turf_target = get_turf(observer), message_type = DEADCHAT_DEATHRATTLE)
+	QDEL_NULL(user.mind)
+	qdel(user)
+	return
+
+
 /datum/controller/subsystem/shuttle/Initialize()
 	if(SSmapping.current_map.rimworld_map)
 		order_number = rand(1, 9000)
@@ -571,3 +637,26 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 
 ADMIN_VERB(open_planet_map, R_ADMIN, "\[RW\] Open planet map", "Open the planetary admin map.", ADMIN_CATEGORY_EVENTS)
 	SSrimworld_planetmap.open_admin_view(usr)
+
+/atom/movable/screen/ghost/planet_map
+	name = "Planet map"
+	icon = 'icons/hud/implants.dmi'
+	icon_state = "minimap"
+	screen_loc = ui_ghost_spawners_menu
+
+/atom/movable/screen/ghost/planet_map/Click(location, control, params)
+	. = ..()
+	var/mob/dead/observer/ghost = usr
+	SSrimworld_planetmap.open_settlement_view(ghost, TRUE)
+
+/datum/hud/ghost/initialize_screen_objects()
+	add_screen_object(/atom/movable/screen/ghost/orbit, HUD_GHOST_ORBIT)
+	add_screen_object(/atom/movable/screen/ghost/planet_map, "ghost_planetmap")
+	add_screen_object(/atom/movable/screen/ghost/reenter_corpse, HUD_GHOST_REENTER_CORPSE)
+	add_screen_object(/atom/movable/screen/ghost/teleport, HUD_GHOST_TELEPORT)
+	add_screen_object(/atom/movable/screen/ghost/settings, HUD_GHOST_SETTINGS)
+	add_screen_object(/atom/movable/screen/language_menu, HUD_MOB_LANGUAGE_MENU, HUD_GROUP_STATIC, ui_style, ui_ghost_language_menu)
+
+	var/list/hudboxes = valid_subtypesof(/atom/movable/screen/ghost/hudbox)
+	for(var/i in 1 to length(hudboxes))
+		add_screen_object(hudboxes[i], HUD_KEY_GHOST_HUDBOX(i), ui_loc = position_hudbox(i - 1))

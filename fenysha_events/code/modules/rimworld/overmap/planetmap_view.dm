@@ -62,6 +62,32 @@
 	planet = null
 	return ..()
 
+/**
+ * Returns the viewer's planet-map tile (1-based) if they are inside a loaded cell of this planet.
+ * null if not on the map / not in a cell.
+ */
+/datum/planetmap_view/proc/get_viewer_planet_position(mob/user)
+	if(!user || !planet)
+		return null
+
+	var/turf/T = get_turf(user)
+	if(!T)
+		return null
+
+	var/datum/planet_cell/cell = get_planet_cell(T)
+	if(!cell)
+		return null
+
+	// Only show marker when the cell belongs to the planet this view is bound to
+	if(cell.planet && cell.planet != planet)
+		return null
+
+	if(!planet.is_valid_coordinate(cell.x, cell.y))
+		return null
+
+	return list("x" = cell.x, "y" = cell.y)
+
+
 /datum/planetmap_view/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -141,6 +167,15 @@
 	data["seasonNorth"] = calendar["seasonNorth"]
 	data["seasonSouth"] = calendar["seasonSouth"]
 	data["timeScale"] = calendar["timeScale"]
+
+	// Player position on the global hex map (only when inside a planet cell)
+	var/list/player_pos = get_viewer_planet_position(user)
+	if(player_pos)
+		data["playerX"] = player_pos["x"]
+		data["playerY"] = player_pos["y"]
+	else
+		data["playerX"] = null
+		data["playerY"] = null
 
 	return data
 

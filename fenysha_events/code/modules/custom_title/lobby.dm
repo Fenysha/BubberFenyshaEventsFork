@@ -354,7 +354,7 @@
 	if(href_list["observe"])
 		if(!user.unvetted_notified && !user.trigger_unvetted_warning())
 			return TRUE
-		user.make_me_an_observer()
+		SSrimworld_planetmap.create_observer(user)
 		return TRUE
 
 	if(href_list["job_traits"])

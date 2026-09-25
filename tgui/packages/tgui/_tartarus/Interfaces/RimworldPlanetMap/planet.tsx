@@ -1,8 +1,3 @@
-/*
- * Copyright (c) 2026 Fenysha
- * All rights reserved.
- */
-
 import { useEffect, useRef, useState } from 'react';
 import { resolveAsset } from 'tgui/assets';
 import * as THREE from 'three';
@@ -66,6 +61,10 @@ type PlanetProps = {
   data: PlanetMapData;
   selectedX?: number;
   selectedY?: number;
+  playerX?: number | null;
+  playerY?: number | null;
+  /** Bump this value to request centering the camera on the player tile */
+  centerOnPlayerRequest?: number;
   showAtmosphere?: boolean;
   showClouds?: boolean;
   onTileClick?: (x: number, y: number, tile: PlanetTile) => void;
@@ -78,6 +77,7 @@ type PlanetProps = {
 type PlanetRuntime = {
   objectGroup: THREE.Group;
   selection: THREE.Group;
+  playerMarker: THREE.Group;
   generator: PlanetGenerator;
   surface: THREE.Mesh;
   planetGroup: THREE.Group;
@@ -86,6 +86,8 @@ type PlanetRuntime = {
   atmosphereMesh: THREE.Mesh;
   cloudsMesh: THREE.Mesh;
   currentLod: LodLevel;
+  camera: THREE.PerspectiveCamera;
+  controls: OrbitControls;
 };
 
 const LOD_DISTANCES = {
@@ -227,6 +229,9 @@ const sharedMarkerMaterials = {
   default: new THREE.MeshBasicMaterial({ color: 0xf0f4ff }),
 };
 
+const sharedPlayerMarkerGeometry = new THREE.SphereGeometry(0.022, 16, 16);
+const sharedPlayerGlowGeometry = new THREE.SphereGeometry(0.038, 12, 12);
+
 /** Radians per second per unit of camera height above the surface */
 const WASD_ANGULAR_SPEED = 0.12;
 /** How much faster WASD moves while Shift is held */
@@ -237,6 +242,10 @@ const WASD_SHIFT_MULTIPLIER = 3;
 const HEIGHT_SELECTION_OUTLINE = PLANET_RADIUS + 0.0003;
 const HEIGHT_SELECTION_GLOW = PLANET_RADIUS + 0.0004;
 const HEIGHT_OBJECT_MARKER = PLANET_RADIUS + 0.004;
+const HEIGHT_PLAYER_MARKER = PLANET_RADIUS + 0.005;
+
+const PLAYER_MARKER_COLOR = 0xffe566;
+const PLAYER_MARKER_GLOW_COLOR = 0xffcc33;
 
 /** The selected tile's real outline: a hexagon, or a pentagon at the 12 icosahedron corners. */
 const buildTileOutlineGeometry = (
@@ -309,6 +318,9 @@ export const Planet = ({
   data,
   selectedX,
   selectedY,
+  playerX,
+  playerY,
+  centerOnPlayerRequest,
   showAtmosphere = true,
   showClouds = true,
   onTileClick,
@@ -695,9 +707,38 @@ export const Planet = ({
     const selection = createSelection(grid);
     planetGroup.add(selection);
 
+    // Player position marker (small yellow sphere + soft glow)
+    const playerMarker = new THREE.Group();
+    playerMarker.name = 'PlayerMarker';
+    playerMarker.visible = false;
+
+    const playerGlow = new THREE.Mesh(
+      sharedPlayerGlowGeometry,
+      new THREE.MeshBasicMaterial({
+        color: PLAYER_MARKER_GLOW_COLOR,
+        transparent: true,
+        opacity: 0.35,
+        depthWrite: false,
+      }),
+    );
+    playerGlow.renderOrder = 15;
+
+    const playerCore = new THREE.Mesh(
+      sharedPlayerMarkerGeometry,
+      new THREE.MeshBasicMaterial({
+        color: PLAYER_MARKER_COLOR,
+        depthWrite: false,
+      }),
+    );
+    playerCore.renderOrder = 16;
+
+    playerMarker.add(playerGlow, playerCore);
+    planetGroup.add(playerMarker);
+
     runtimeRef.current = {
       objectGroup,
       selection,
+      playerMarker,
       generator,
       surface,
       planetGroup,
@@ -706,6 +747,8 @@ export const Planet = ({
       atmosphereMesh: atmosphere,
       cloudsMesh: clouds,
       currentLod,
+      camera,
+      controls,
     };
 
     const switchLod = (newLod: LodLevel) => {
@@ -991,6 +1034,21 @@ export const Planet = ({
         });
       }
 
+      // Gentle pulse on player marker glow
+      if (runtimeRef.current?.playerMarker?.visible) {
+        const glow = runtimeRef.current.playerMarker.children[0] as THREE.Mesh;
+        if (glow?.material) {
+          (glow.material as THREE.MeshBasicMaterial).opacity =
+            0.28 + Math.sin(time * 3.2) * 0.12;
+        }
+        const playerScale = THREE.MathUtils.lerp(
+          0.55,
+          1.8,
+          THREE.MathUtils.clamp((distance - 2.2) / (10.0 - 2.2), 0, 1),
+        );
+        runtimeRef.current.playerMarker.scale.setScalar(playerScale);
+      }
+
       controls.target.set(0, 0, 0);
       controls.update();
 
@@ -1059,6 +1117,12 @@ export const Planet = ({
       selection.traverse((child) => {
         if (child instanceof THREE.LineLoop) {
           child.geometry.dispose();
+          (child.material as THREE.Material).dispose();
+        }
+      });
+
+      playerMarker.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
           (child.material as THREE.Material).dispose();
         }
       });
@@ -1151,6 +1215,70 @@ export const Planet = ({
 
     updateSelection(runtime.selection, gridFor(data), selectedX, selectedY);
   }, [mapIdentity, selectedX, selectedY, data.width, data.height]);
+
+  // Player marker position on the planet surface
+  useEffect(() => {
+    const runtime = runtimeRef.current;
+    if (!runtime) {
+      return;
+    }
+
+    const { playerMarker } = runtime;
+    if (playerX == null || playerY == null) {
+      playerMarker.visible = false;
+      return;
+    }
+
+    const grid = gridFor(data);
+    if (!grid.isValid(playerX, playerY)) {
+      playerMarker.visible = false;
+      return;
+    }
+
+    playerMarker.position.copy(
+      tileToVector(grid, playerX, playerY, HEIGHT_PLAYER_MARKER),
+    );
+    playerMarker.visible = true;
+  }, [mapIdentity, playerX, playerY, data.width, data.height]);
+
+  // Center camera on the player's current tile
+  useEffect(() => {
+    if (centerOnPlayerRequest == null || centerOnPlayerRequest === 0) {
+      return;
+    }
+
+    const runtime = runtimeRef.current;
+    if (!runtime || playerX == null || playerY == null) {
+      return;
+    }
+
+    const grid = gridFor(data);
+    if (!grid.isValid(playerX, playerY)) {
+      return;
+    }
+
+    const { camera, controls, planetGroup } = runtime;
+    const distance = Math.max(controls.getDistance(), PLANET_RADIUS * 1.15);
+
+    // Tile direction in planet-local space → world after current rotation
+    const localDir = tileToVector(grid, playerX, playerY, 1).normalize();
+    const worldDir = localDir
+      .clone()
+      .applyQuaternion(planetGroup.quaternion)
+      .normalize();
+
+    camera.position.copy(worldDir.multiplyScalar(distance));
+    controls.target.set(0, 0, 0);
+    controls.update();
+    saveCameraState(camera, controls);
+  }, [
+    centerOnPlayerRequest,
+    playerX,
+    playerY,
+    mapIdentity,
+    data.width,
+    data.height,
+  ]);
 
   return (
     <div
