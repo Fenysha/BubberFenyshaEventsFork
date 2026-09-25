@@ -340,17 +340,6 @@
 		)
 		return FALSE
 
-	for(var/i in 1 to length(heights))
-		var/value = text2num("[heights[i]]")
-
-		if(isnull(value))
-			log_world(
-				"Sub-level heightmap contains a non-numeric value at index [i]."
-			)
-			return FALSE
-
-		heights[i] = clamp(value, 0, 1)
-
 	cave_mask = export["cave_mask"]
 
 	if(!islist(cave_mask))
@@ -361,10 +350,6 @@
 			"Sub-level cave mask size mismatch."
 		)
 		return FALSE
-
-	if(length(cave_mask))
-		for(var/i in 1 to length(cave_mask))
-			cave_mask[i] = text2num("[cave_mask[i]]") != 0
 
 	/*
 	rimworld_area = SSatoms.NewUninitialized(
@@ -389,6 +374,56 @@
 	turfs_initialized = FALSE
 
 	return TRUE
+
+
+/datum/map_generator/sub_level/proc/decode_heights_step(start_index, budget)
+	if(!islist(heights))
+		return -1
+
+	var/count = length(heights)
+	var/idx = start_index
+	var/processed = 0
+
+	while(idx <= count && processed < budget)
+		var/value = heights[idx]
+
+		if(!isnum(value))
+			value = text2num("[value]")
+
+		if(isnull(value))
+			log_world(
+				"Sub-level heightmap contains a non-numeric value at index [idx]."
+			)
+			return -1
+
+		heights[idx] = clamp(value, 0, 1)
+
+		idx++
+		processed++
+
+	return idx
+
+
+/datum/map_generator/sub_level/proc/decode_cave_mask_step(start_index, budget)
+	if(!islist(cave_mask) || !length(cave_mask))
+		return 1
+
+	var/count = length(cave_mask)
+	var/idx = start_index
+	var/processed = 0
+
+	while(idx <= count && processed < budget)
+		var/value = cave_mask[idx]
+
+		if(!isnum(value))
+			value = text2num("[value]")
+
+		cave_mask[idx] = !isnull(value) && value != 0
+
+		idx++
+		processed++
+
+	return idx
 
 
 /datum/map_generator/sub_level/proc/place_sub_level_turf(

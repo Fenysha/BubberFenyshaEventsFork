@@ -267,6 +267,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		if(processed_jobs >= 64)
 			return
 
+
 /datum/rimworld_sublevel_load_job
 	var/datum/planet_cell/cell
 	var/poi_name
@@ -279,6 +280,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/processing = FALSE
 	var/cancel_requested = FALSE
 
+	/// When TRUE, TICK_CHECK inside this job is ignored.
+	var/ignore_lag = TRUE
+
 	var/phase = RW_CELL_JOB_PREPARE
 
 	var/local_x = 1
@@ -289,6 +293,14 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/lighting_index = 1
 	var/daylight_index = 1
 	var/smooth_index = 1
+
+	/// Progress index for RW_CELL_JOB_DECODE. Walks heights[] first,
+	/// then gets reset to 1 to walk cave_mask[].
+	var/decode_index = 1
+
+	/// Set once decode_index has finished heights[] and moved on to
+	/// walking cave_mask[] within the same DECODE phase.
+	var/decode_stage_cave_mask = FALSE
 
 	var/list/datum/callback/completion_callbacks = list()
 
@@ -329,8 +341,14 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			if(!prepare())
 				return RW_CELL_LOAD_FAILED
 
-			phase = RW_CELL_JOB_RESERVE
+			phase = RW_CELL_JOB_DECODE
+			decode_index = 1
+			decode_stage_cave_mask = FALSE
+
 			return RW_CELL_LOAD_CONTINUE
+
+		if(RW_CELL_JOB_DECODE)
+			return process_decode()
 
 		if(RW_CELL_JOB_RESERVE)
 			if(!reservation || QDELETED(reservation))
@@ -423,8 +441,74 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	lighting_index = 1
 	daylight_index = 1
 	smooth_index = 1
+	decode_index = 1
+	decode_stage_cave_mask = FALSE
 
 	return TRUE
+
+
+/datum/rimworld_sublevel_load_job/proc/process_decode()
+	if(!generator || QDELETED(generator))
+		return RW_CELL_LOAD_FAILED
+
+	if(!decode_stage_cave_mask)
+		var/heights_count = length(generator.heights)
+
+		while(decode_index <= heights_count)
+			if(cancel_requested)
+				return RW_CELL_LOAD_FAILED
+
+			var/next_index = generator.decode_heights_step(
+				decode_index,
+				RW_SUBLEVEL_DECODE_BUDGET
+			)
+
+			if(next_index == -1)
+				return RW_CELL_LOAD_FAILED
+
+			decode_index = next_index
+
+			if(!ignore_lag && TICK_CHECK)
+				return RW_CELL_LOAD_CONTINUE
+
+			// Budget exhausted for this call (decode_heights_step
+			// itself enforces the RW_SUBLEVEL_DECODE_BUDGET cap).
+			if(decode_index <= heights_count)
+				return RW_CELL_LOAD_CONTINUE
+
+		// heights[] fully decoded -- move on to cave_mask[] next call.
+		decode_stage_cave_mask = TRUE
+		decode_index = 1
+
+		return RW_CELL_LOAD_CONTINUE
+
+	var/cave_count = length(generator.cave_mask)
+
+	if(!cave_count)
+		// Nothing to decode (caves disabled / empty mask).
+		phase = RW_CELL_JOB_RESERVE
+		return RW_CELL_LOAD_CONTINUE
+
+	while(decode_index <= cave_count)
+		if(cancel_requested)
+			return RW_CELL_LOAD_FAILED
+
+		var/next_index = generator.decode_cave_mask_step(
+			decode_index,
+			RW_SUBLEVEL_DECODE_BUDGET
+		)
+
+		decode_index = next_index
+
+		if(!ignore_lag && TICK_CHECK)
+			return RW_CELL_LOAD_CONTINUE
+
+		if(decode_index <= cave_count)
+			return RW_CELL_LOAD_CONTINUE
+
+	phase = RW_CELL_JOB_RESERVE
+
+	return RW_CELL_LOAD_CONTINUE
 
 
 /datum/rimworld_sublevel_load_job/proc/process_placement()
@@ -455,7 +539,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 			if(
 				processed >= RW_SUBLEVEL_PLACE_BUDGET \
-				|| TICK_CHECK \
+				|| (!ignore_lag && TICK_CHECK) \
 				|| cancel_requested
 			)
 				if(cancel_requested)
@@ -466,7 +550,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		local_x = 1
 		local_y++
 
-		if(TICK_CHECK || cancel_requested)
+		if((!ignore_lag && TICK_CHECK) || cancel_requested)
 			if(cancel_requested)
 				return RW_CELL_LOAD_FAILED
 
@@ -517,7 +601,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 		if(
 			processed >= RW_SUBLEVEL_POPULATE_BUDGET \
-			|| TICK_CHECK
+			|| (!ignore_lag && TICK_CHECK)
 		)
 			return RW_CELL_LOAD_CONTINUE
 
@@ -603,7 +687,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 		if(
 			processed >= RW_SUBLEVEL_SMOOTH_BUDGET \
-			|| TICK_CHECK
+			|| (!ignore_lag && TICK_CHECK)
 		)
 			return RW_CELL_LOAD_CONTINUE
 
@@ -737,7 +821,6 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	cell = null
 
 	return ..()
-
 
 
 

@@ -55,13 +55,16 @@
 #define RW_SUBLEVEL_SMOOTH_BUDGET      1024
 
 
+#define RW_SUBLEVEL_DECODE_BUDGET      4096
+
+
 /**
  * ============================================================================
  * Loader phases
  * ============================================================================
  */
 
-#define RW_SUBLEVEL_MAX_PARALLEL_LOADS 3
+#define RW_SUBLEVEL_MAX_PARALLEL_LOADS 1
 
 #define RW_CELL_LOAD_CONTINUE 0
 #define RW_CELL_LOAD_COMPLETE 1
@@ -69,11 +72,12 @@
 #define RW_CELL_LOAD_PAUSED   3
 
 #define RW_CELL_JOB_PREPARE     1
-#define RW_CELL_JOB_RESERVE     2
-#define RW_CELL_JOB_PLACE       3
-#define RW_CELL_JOB_POPULATE    4
-#define RW_CELL_JOB_INITIALIZE  5
-#define RW_CELL_JOB_SMOOTH      6
-#define RW_CELL_JOB_LIGHTING    7
-#define RW_CELL_JOB_DAYLIGHT    8
-#define RW_CELL_JOB_FINISH      9
+#define RW_CELL_JOB_DECODE      2
+#define RW_CELL_JOB_RESERVE     3
+#define RW_CELL_JOB_PLACE       4
+#define RW_CELL_JOB_POPULATE    5
+#define RW_CELL_JOB_INITIALIZE  6
+#define RW_CELL_JOB_SMOOTH      7
+#define RW_CELL_JOB_LIGHTING    8
+#define RW_CELL_JOB_DAYLIGHT    9
+#define RW_CELL_JOB_FINISH      10
