@@ -400,7 +400,11 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
  *
  * Returns TRUE if the cell is already loaded or was successfully loaded.
  */
-/datum/planet_cell/proc/ensure_loaded(poi_name = null, datum/callback/post_load_callback = null)
+/datum/planet_cell/proc/ensure_loaded(
+	poi_name = null,
+	datum/callback/post_load_callback = null,
+	datum/callback/progress_callback = null
+)
 	if(!is_valid())
 		return FALSE
 
@@ -411,12 +415,20 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 		return TRUE
 
 	if(is_generating)
-		if(loading_job && post_load_callback)
-			loading_job.add_callback(post_load_callback)
+		if(loading_job)
+			if(post_load_callback)
+				loading_job.add_callback(post_load_callback)
+
+			if(progress_callback)
+				loading_job.add_progress_callback(progress_callback)
 
 		return TRUE
 
-	return generate_local_content(poi_name, post_load_callback)
+	return generate_local_content(
+		poi_name,
+		post_load_callback,
+		progress_callback
+	)
 
 
 /**
@@ -431,7 +443,11 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
  *
  * after the complete local map has finished loading.
  */
-/datum/planet_cell/proc/generate_local_content(poi_name = null, datum/callback/post_load_callback = null)
+/datum/planet_cell/proc/generate_local_content(
+	poi_name = null,
+	datum/callback/post_load_callback = null,
+	datum/callback/progress_callback = null
+)
 	if(!is_valid())
 		return FALSE
 
@@ -444,9 +460,9 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	return SSrimworld_sublevel_loader.queue_cell(
 		src,
 		poi_name,
-		post_load_callback
+		post_load_callback,
+		progress_callback
 	)
-
 
 
 /**

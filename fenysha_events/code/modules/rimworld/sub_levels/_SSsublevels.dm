@@ -8,6 +8,7 @@ SUBSYSTEM_DEF(sub_levels)
 	var/list/datum/map_spatial_node/root_nodes = list()
 	var/list/datum/turf_reservation/sub_level/active_reservations = list()
 	var/next_id = 1
+	var/allocating = FALSE
 
 /datum/controller/subsystem/sub_levels/Initialize()
 	allocate_new_root_z_level()
@@ -28,8 +29,13 @@ SUBSYSTEM_DEF(sub_levels)
 	if(!length(name))
 		name = "Sub-Level #[next_id]"
 
+	if(allocating)
+		return null  // fail / retry
+
+	allocating = TRUE
+
 	var/res_id = next_id++
-	Master.StartLoadingMap()
+
 	var/datum/turf_reservation/sub_level/res = null
 	for(var/datum/map_spatial_node/root in root_nodes)
 		res = root.allocate_sub_level(width, height, res_id, name)
@@ -39,9 +45,11 @@ SUBSYSTEM_DEF(sub_levels)
 	if(!res)
 		var/datum/map_spatial_node/new_root = allocate_new_root_z_level()
 		res = new_root.allocate_sub_level(width, height, res_id, name)
-	Master.StopLoadingMap()
+
+	allocating = FALSE
+
 	if(!res)
-		CRASH("SSsub_levels: Faied to allocate sublevel of size [width]x[height]")
+		CRASH("SSsub_levels: Failed to allocate sublevel of size [width]x[height]")
 
 	active_reservations["[res.id]"] = res
 	return res

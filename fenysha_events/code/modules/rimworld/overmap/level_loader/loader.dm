@@ -29,7 +29,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 /datum/controller/subsystem/rimworld_sublevel_loader/proc/queue_cell(
 	datum/planet_cell/cell,
 	poi_name = null,
-	datum/callback/post_load_callback = null
+	datum/callback/post_load_callback = null,
+	datum/callback/progress_callback = null
 )
 	if(!cell || QDELETED(cell) || !cell.is_valid())
 		return FALSE
@@ -55,6 +56,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			if(post_load_callback)
 				existing_job.add_callback(post_load_callback)
 
+			if(progress_callback)
+				existing_job.add_progress_callback(progress_callback)
+
 			cell.loading_job = existing_job
 			cell.is_generating = TRUE
 
@@ -66,7 +70,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/datum/rimworld_sublevel_load_job/job = new /datum/rimworld_sublevel_load_job(
 		cell,
 		poi_name,
-		post_load_callback
+		post_load_callback,
+		progress_callback
 	)
 
 	load_queue += job
@@ -76,6 +81,15 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	cell.loading_job = job
 	cell.is_generating = TRUE
+
+	if(cell.loading_job)
+		if(post_load_callback)
+			cell.loading_job.add_callback(post_load_callback)
+
+		if(progress_callback)
+			cell.loading_job.add_progress_callback(progress_callback)
+
+		return TRUE
 
 	fill_active_slots()
 
@@ -217,6 +231,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		job.processing = TRUE
 		var/result = job.process()
 		job.processing = FALSE
+		job.notify_progress()
 
 		if(QDELETED(job))
 			active_queue -= job
@@ -233,12 +248,14 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 				/*
 				 * remove_job() also promotes the oldest waiting job.
 				 */
+				job.notify_progress(TRUE)
 				remove_job(job)
 
 				job.notify_callbacks(TRUE)
 				qdel(job)
 
 			if(RW_CELL_LOAD_FAILED)
+				job.notify_progress(TRUE)
 				remove_job(job)
 
 				job.notify_callbacks(FALSE)
@@ -280,6 +297,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/processing = FALSE
 	var/cancel_requested = FALSE
 
+	var/list/datum/callback/progress_callbacks = list()
+	var/last_progress_update = 0
+
 	/// When TRUE, TICK_CHECK inside this job is ignored.
 	var/ignore_lag = TRUE
 
@@ -312,7 +332,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 /datum/rimworld_sublevel_load_job/New(
 	datum/planet_cell/new_cell,
 	new_poi_name = null,
-	datum/callback/post_load_callback = null
+	datum/callback/post_load_callback = null,
+	datum/callback/progress_callback = null
 )
 	. = ..()
 
@@ -322,6 +343,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(post_load_callback)
 		completion_callbacks += post_load_callback
 
+	if(progress_callback)
+		progress_callbacks += progress_callback
+
 
 /datum/rimworld_sublevel_load_job/proc/add_callback(
 	datum/callback/post_load_callback
@@ -329,6 +353,11 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(post_load_callback)
 		completion_callbacks += post_load_callback
 
+/datum/rimworld_sublevel_load_job/proc/add_progress_callback(
+	datum/callback/progress_callback
+)
+	if(progress_callback)
+		progress_callbacks += progress_callback
 
 /datum/rimworld_sublevel_load_job/process()
 	if(!cell || QDELETED(cell) || !cell.is_valid())
@@ -847,6 +876,131 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			callback.Invoke(cell, success)
 
 	completion_callbacks.Cut()
+
+
+/datum/rimworld_sublevel_load_job/proc/notify_progress(force = FALSE)
+	if(!length(progress_callbacks))
+		return
+
+	if(!force && world.time < last_progress_update + 2)
+		return
+
+	last_progress_update = world.time
+
+	for(var/datum/callback/callback in progress_callbacks)
+		if(callback)
+			callback.Invoke(src)
+
+
+/datum/rimworld_sublevel_load_job/proc/get_progress_data()
+	var/list/data = list(
+		"progress" = 0,
+		"stage" = "Preparing",
+		"detail" = "Preparing local world generation...",
+		"current" = 0,
+		"total" = 0,
+		"unit" = "steps",
+	)
+
+	if(!generator || QDELETED(generator))
+		return data
+
+	switch(phase)
+		if(RW_CELL_JOB_PREPARE)
+			data["progress"] = 0.02
+			data["stage"] = "Preparing"
+			data["detail"] = "Preparing local terrain generator..."
+
+		if(RW_CELL_JOB_DECODE)
+			if(!decode_stage_cave_mask)
+				var/total = length(generator.heights)
+				var/current = clamp(decode_index - 1, 0, total)
+
+				data["progress"] = total \
+					? 0.03 + (current / total) * 0.10 \
+					: 0.13
+
+				data["stage"] = "Decoding Terrain"
+				data["detail"] = "Decoding terrain heights..."
+				data["current"] = current
+				data["total"] = total
+				data["unit"] = "samples"
+			else
+				var/total = length(generator.cave_mask)
+				var/current = clamp(decode_index - 1, 0, total)
+
+				data["progress"] = total \
+					? 0.13 + (current / total) * 0.04 \
+					: 0.17
+
+				data["stage"] = "Building Caves"
+				data["detail"] = "Building cave mask..."
+				data["current"] = current
+				data["total"] = total
+				data["unit"] = "cells"
+
+		if(RW_CELL_JOB_RESERVE)
+			data["progress"] = 0.18
+			data["stage"] = "Allocating Map"
+			data["detail"] = "Reserving a sub-level for the settlement..."
+			data["current"] = 0
+			data["total"] = 1
+			data["unit"] = "stage"
+
+		if(RW_CELL_JOB_PLACE)
+			var/total = max(1, generator.width * generator.height)
+			var/current = clamp(
+				((local_y - 1) * generator.width) + local_x - 1,
+				0,
+				total
+			)
+
+			data["progress"] = 0.18 + (current / total) * 0.42
+			data["stage"] = "Generating Terrain"
+			data["detail"] = "Placing terrain and structures..."
+			data["current"] = current
+			data["total"] = total
+			data["unit"] = "tiles"
+
+		if(RW_CELL_JOB_SMOOTH)
+			var/total = max(1, generator.get_generated_turf_count())
+			var/current = clamp(smooth_index - 1, 0, total)
+
+			data["progress"] = 0.60 + (current / total) * 0.14
+			data["stage"] = "Smoothing Terrain"
+			data["detail"] = "Connecting terrain edges and smoothing tiles..."
+			data["current"] = current
+			data["total"] = total
+			data["unit"] = "tiles"
+
+		if(RW_CELL_JOB_LIGHTING)
+			var/total = max(1, generator.get_generated_turf_count())
+			var/current = clamp(lighting_index - 1, 0, total)
+
+			data["progress"] = 0.74 + (current / total) * 0.16
+			data["stage"] = "Lighting"
+			data["detail"] = "Preparing static lighting..."
+			data["current"] = current
+			data["total"] = total
+			data["unit"] = "tiles"
+
+		if(RW_CELL_JOB_DAYLIGHT)
+			data["progress"] = 0.93
+			data["stage"] = "Daylight"
+			data["detail"] = "Applying planetary daylight..."
+			data["current"] = 1
+			data["total"] = 1
+			data["unit"] = "stage"
+
+		if(RW_CELL_JOB_FINISH)
+			data["progress"] = 0.98
+			data["stage"] = "Finishing"
+			data["detail"] = "Finalizing settlement map..."
+			data["current"] = 1
+			data["total"] = 1
+			data["unit"] = "stage"
+
+	return data
 
 
 /datum/rimworld_sublevel_load_job/Destroy()

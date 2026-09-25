@@ -159,6 +159,7 @@ export interface PlanetMapViewData {
   roadStartX?: number | null;
   roadStartY?: number | null;
   cell?: PlanetCellData | null;
+  isLoading?: BooleanLike | false;
 
   mode?: 'start' | 'observer';
 

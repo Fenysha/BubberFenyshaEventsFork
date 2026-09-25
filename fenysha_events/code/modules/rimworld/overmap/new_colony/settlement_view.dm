@@ -6,6 +6,7 @@
 	can_regenerate = FALSE
 	can_control_time = FALSE
 
+	var/loading = FALSE
 	var/mode = "start"
 
 	var/start_x
@@ -33,6 +34,7 @@
 /datum/planetmap_view/settlement/get_view_data()
 	var/list/data = list(
 		"mode" = mode,
+		"isLoading" = loading,
 		"startX" = start_x,
 		"startY" = start_y,
 		"joinSettlementId" = join_settlement_id,
@@ -213,6 +215,9 @@
 	var/faction_icon = "default"
 	var/faction_ideology = "placeholder"
 
+	var/datum/planet_cell/loading_cell
+	var/loading_error
+
 
 /datum/settlement_setup/New(mob/user, datum/rimworld_planet/new_planet, datum/planetmap_view/settlement/parent, x, y, existing_id = null)
 	viewer = user
@@ -239,6 +244,19 @@
 	return ..()
 
 
+/datum/settlement_setup/proc/fail_loading(message)
+	loading_error = message || "Settlement generation failed."
+
+	if(parent_view && !QDELETED(parent_view))
+		parent_view.loading = FALSE
+		parent_view.prevent_close = FALSE
+		parent_view.auto_reopen_on_login = FALSE
+
+	SStgui.update_uis(src)
+
+	return FALSE
+
+
 /datum/settlement_setup/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -253,27 +271,59 @@
 /datum/settlement_setup/ui_data(mob/user)
 	var/list/data = list(
 		"isJoin" = !!join_settlement_id,
+		"isLoading" = parent_view?.loading || FALSE,
+
 		"targetX" = target_x,
 		"targetY" = target_y,
+
 		"factionName" = faction_name,
 		"factionDesc" = faction_desc,
 		"factionIcon" = faction_icon,
 		"factionIdeology" = faction_ideology,
+
+		"loadingProgress" = 0,
+		"loadingStage" = "Preparing",
+		"loadingDetail" = "Preparing local world...",
+		"loadingCurrent" = 0,
+		"loadingTotal" = 0,
+		"loadingUnit" = "steps",
+		"loadingError" = loading_error,
 	)
+
+	if(loading_cell?.loading_job)
+		var/list/progress = loading_cell.loading_job.get_progress_data()
+
+		data["loadingProgress"] = progress["progress"]
+		data["loadingStage"] = progress["stage"]
+		data["loadingDetail"] = progress["detail"]
+		data["loadingCurrent"] = progress["current"]
+		data["loadingTotal"] = progress["total"]
+		data["loadingUnit"] = progress["unit"]
 
 	if(join_settlement_id && planet)
 		var/datum/rimworld_planet_object/settlement/sett = planet.get_object(join_settlement_id)
+
 		if(sett)
 			data["settlementName"] = sett.name
 			data["population"] = sett.data["population"] || 0
+
 			var/faction_id = sett.data["faction"]
 			var/datum/rw_faction/fac = faction_id ? SSfactions.get_faction(faction_id) : null
+
 			if(fac)
 				data["factionName"] = fac.name
 				data["factionDesc"] = fac.desc || ""
 
 	return data
 
+/datum/settlement_setup/proc/on_load_progress(
+	datum/rimworld_sublevel_load_job/job
+)
+	if(QDELETED(src))
+		return
+
+	if(parent_view && !QDELETED(parent_view))
+		SStgui.update_uis(src)
 
 /datum/settlement_setup/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
