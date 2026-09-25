@@ -153,7 +153,6 @@
 	if(is_rimworld_map)
 		rimworld_map = TRUE
 		defaulted = FALSE
-		add_startup_message("Mao loading is supressed by rimworld generation!")
 		return json
 
 	CHECK_EXISTS("map_name")

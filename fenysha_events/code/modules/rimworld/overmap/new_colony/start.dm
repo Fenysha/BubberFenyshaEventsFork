@@ -83,14 +83,14 @@
 	)
 
 	if(!player_faction)
-		return FALSE
+		return fail_loading("Unable to create faction.")
 
 	player_faction.name = faction_name
 	player_faction.desc = faction_desc
 
 	var/mob/living/carbon/human/owner = prepare_character()
 	if(!owner)
-		return FALSE
+		return fail_loading("Unable to prepare character.")
 
 	// TODO: icon / ideology
 
@@ -103,7 +103,7 @@
 
 	if(!settlement)
 		qdel(owner)
-		return FALSE
+		return fail_loading("Unable to create settlement.")
 
 	settlement.set_faction(player_faction.id)
 	settlement.set_population(1)

@@ -452,35 +452,12 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 		return
 
 	user.hide_title_screen()
-	var/mob/dead/observer/observer = new()
+	var/turf/spawn_point = get_observer_spawn_turf()
+	var/mob/dead/observer/observer = new(spawn_point)
 	observer.started_as_observer = TRUE
 
-
-	var/turf/spawn_point = null
-	if(length(planet.cells))
-		var/list/possible_maps = shuffle(planet.cells.Copy())
-		for(var/key in possible_maps)
-			var/datum/planet_cell/cell = possible_maps[key]
-			if(!cell.is_loaded())
-				continue
-			spawn_point = cell.reservation.get_center_turf()
-
-	if(!spawn_point)
-		// Second try
-		var/obj/effect/landmark/observer_start/O = locate(/obj/effect/landmark/observer_start) in GLOB.landmarks_list
-		if(O) spawn_point = get_turf(O)
-
-	if(!spawn_point)
-		// Tast try to spawn ghost somewhere else
-		for(var/datum/space_level/level in SSmapping.levels_by_trait(ZTRAIT_CENTCOM))
-			var/turf/possible_spawn = locate(rand(1, world.maxx), rand(1, world.maxy), level.z_value)
-			if(possible_spawn)
-				spawn_point = possible_spawn
-
 	to_chat(user, span_notice("Now teleporting."))
-	if(spawn_point)
-		observer.forceMove(spawn_point)
-	else
+	if(!spawn_point)
 		to_chat(user, span_notice("Teleporting failed. Ahelp an admin please"))
 		stack_trace("There's no freaking observer landmark available on this map or you're making observers before the map is initialised")
 
@@ -501,6 +478,40 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	qdel(user)
 	return
 
+
+/datum/controller/subsystem/rimworld_planetmap/proc/get_observer_spawn_turf()
+	if(planet)
+		for(var/datum/planet_cell/cell as anything in shuffle(assoc_to_values(planet.cells)))
+			var/turf/center = cell?.is_loaded() && cell.reservation.get_center_turf()
+			if(center)
+				return center
+
+	var/obj/effect/landmark/observer_start/landmark = locate() in GLOB.landmarks_list
+	if(landmark)
+		return get_turf(landmark)
+
+	for(var/z_level in SSmapping.levels_by_trait(ZTRAIT_CENTCOM))
+		var/turf/centcom_turf = locate(rand(1, world.maxx), rand(1, world.maxy), z_level)
+		if(centcom_turf)
+			return centcom_turf
+
+	// Nothing generated yet; anywhere beats nullspace, the planet map can jump them later
+	return locate(round(world.maxx * 0.5, 1), round(world.maxy * 0.5, 1), 1)
+
+/datum/controller/subsystem/mapping/get_station_center()
+	if(current_map?.rimworld_map && !length(levels_by_trait(ZTRAIT_STATION)))
+		return SSrimworld_planetmap.get_observer_spawn_turf()
+	return ..()
+
+/mob/dead/observer/Initialize(mapload)
+	var/atom/initial_loc = loc
+	. = ..()
+	if(!SSmapping.current_map?.rimworld_map || ismob(initial_loc))
+		return
+	// Parent drops non-body spawns at arrivals/station center, which doesn't exist here
+	var/turf/target = get_turf(initial_loc) || SSrimworld_planetmap.get_observer_spawn_turf()
+	if(target && get_turf(src) != target)
+		abstract_move(target)
 
 /datum/controller/subsystem/shuttle/Initialize()
 	if(SSmapping.current_map.rimworld_map)
@@ -589,22 +600,22 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	InitializeDefaultZLevels()
 	var/list/FailedZs = list()
 
-	LoadGroup(
-		FailedZs,
-		"CentCom",
-		"map_files/generic",
-		"CentCom_minimal.dmm",
-		traits = list(list(
-			ZTRAIT_CENTCOM = TRUE,
-			ZTRAIT_GRAVITY = 1,
-		)),
-		default_traits = list(
-			ZTRAIT_CENTCOM = TRUE,
-			ZTRAIT_GRAVITY = 1,
-		),
-		silent = FALSE,
-		height_autosetup = FALSE
-	)
+	// LoadGroup(
+	// 	FailedZs,
+	// 	"CentCom",
+	// 	"map_files/generic",
+	// 	"CentCom_minimal.dmm",
+	// 	traits = list(list(
+	// 		ZTRAIT_CENTCOM = TRUE,
+	// 		ZTRAIT_GRAVITY = 1,
+	// 	)),
+	// 	default_traits = list(
+	// 		ZTRAIT_CENTCOM = TRUE,
+	// 		ZTRAIT_GRAVITY = 1,
+	// 	),
+	// 	silent = FALSE,
+	// 	height_autosetup = FALSE
+	// )
 
 	if(LAZYLEN(FailedZs))
 		CRASH("Rimworld boot: failed to load CentCom: [FailedZs.Join(", ")]")

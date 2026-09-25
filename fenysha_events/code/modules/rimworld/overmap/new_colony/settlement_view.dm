@@ -25,11 +25,7 @@
 			var/mob/dead/new_player/new_player = user
 			new_player.hide_title_screen()
 	else
-		prevent_close = TRUE
-		auto_reopen_on_login = TRUE
 		window_title = "Planet Observer"
-		if(user?.client)
-			user.client.forced_planetmap_view = src
 
 /datum/planetmap_view/settlement/get_view_data()
 	var/list/data = list(
@@ -190,11 +186,16 @@
 		return FALSE
 
 	var/datum/planet_cell/cell = planet.get_cell(x, y)
-	if(!cell || !cell.is_generated)
+	if(!cell?.is_loaded())
 		return FALSE
 
-	// TODO: реальный прыжок призрака
-	to_chat(viewer, span_notice("Jumped to cell [x]:[y]."))
+	var/turf/destination = cell.reservation.get_center_turf()
+	if(!destination)
+		return FALSE
+
+	var/mob/dead/observer/ghost = viewer
+	ghost.abstract_move(destination)
+	to_chat(ghost, span_notice("Jumped to cell [x]:[y]."))
 	return TRUE
 
 

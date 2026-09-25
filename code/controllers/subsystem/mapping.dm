@@ -128,6 +128,7 @@ SUBSYSTEM_DEF(mapping)
 	initialize_biomes()
 	load_map_handler(current_map) // FENYSHA EVENETS ADD MAP HANDLERS
 	if(current_map.rimworld_map)
+		add_startup_message("Map loading is supressed by rimworld generation!")
 		initialize_rimworld_empty_world()
 		preloadTemplates()
 		return SS_INIT_SUCCESS
