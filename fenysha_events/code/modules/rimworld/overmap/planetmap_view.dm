@@ -119,6 +119,8 @@
 	data["canSelectTiles"] = can_select_tiles
 	data["canControlTime"] = can_control_time
 
+	data["staticObjects"] = planet.get_static_objects()
+
 	var/list/rotation = SSrimworld_planetmap.get_rotation_data()
 	data["autoRotate"] = rotation["autoRotate"]
 	data["rotationSpeed"] = rotation["rotationSpeed"]
@@ -219,7 +221,7 @@
 
 /// Overview and any view without its own filter see settlements only.
 /datum/planetmap_view/proc/get_visible_objects()
-	return objects_of_types(list(RW_OBJECT_TYPE_SETTLEMENT))
+	return planet ? planet.get_dynamic_objects() : list()
 
 
 /datum/planetmap_view/proc/get_selected_tile_payload()

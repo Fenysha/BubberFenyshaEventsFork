@@ -406,6 +406,12 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 /datum/controller/subsystem/rimworld_planetmap/proc/unregister_view(datum/planetmap_view/view)
 	active_views -= view
 
+/datum/controller/subsystem/rimworld_planetmap/proc/get_views_for_planet(datum/rimworld_planet/P)
+	var/list/out = list()
+	for(var/datum/planetmap_view/V as anything in active_views)
+		if(V.planet == P)
+			out += V
+	return out
 
 /datum/controller/subsystem/rimworld_planetmap/proc/find_view(mob/user, view_type)
 	for(var/datum/planetmap_view/view as anything in active_views)

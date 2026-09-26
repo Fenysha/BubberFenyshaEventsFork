@@ -391,6 +391,7 @@
 	GLOB.rimworld_planet_noise_revision = generation_revision
 	var/datum/asset/simple/rimworld_planet_layers/asset = get_asset_datum(/datum/asset/simple/rimworld_planet_layers)
 	asset.register_for_planet(src)
+	generate_settlements()
 	log_world("[name] planetary parameters ready in [(REALTIMEOFDAY - start_time) / 10]s. Generated [length(generated_layers)] planet layers.")
 	return TRUE
 
@@ -454,6 +455,62 @@
 		if(mask & (1 << tile[3]))
 			result += list(list(tile[1], tile[2]))
 	return result
+
+
+/datum/rimworld_planet/proc/generate_roads(list/settlement_points)
+	var/list/settlements_json = list()
+	for(var/list/point in settlement_points)
+		settlements_json += list(list("x" = point["x"], "y" = point["y"]))
+
+	var/list/config = list(
+		"seed" = seed,
+		"frequency" = grid_frequency,
+		"output_dir" = "data/rimworld_planets/[seed]",
+		"settlements" = settlements_json,
+	)
+
+	var/result = rustg_tp_planet_generate_roads(json_encode(config))
+	if(!result || findtext(result, "ERROR:") == 1)
+		log_world("[name] road generation failed: [result]")
+		return FALSE
+
+	var/list/decoded
+	try
+		decoded = json_decode(result)
+	catch
+		log_world("[name] road generation returned invalid JSON.")
+		return FALSE
+
+	if(!decoded || decoded["status"] != "ok")
+		return FALSE
+
+	var/list/layer = decoded["layer"]
+	if(layer && layer["name"] && layer["path"])
+		generated_layers[layer["name"]] = TRUE
+		layer_files[layer["name"]] = layer["path"]
+		cell_cache = list()
+
+	log_world("[name] generated roads: [decoded["edges"]] segments, [decoded["road_tiles"]] tiles.")
+	return TRUE
+
+/datum/rimworld_planet/proc/get_road_mask(x, y)
+	if(!is_valid_coordinate(x, y))
+		return 0
+	return get_layer_value("roads", x, y) || 0
+
+/datum/rimworld_planet/proc/has_road(x, y)
+	return get_road_mask(x, y) != 0
+
+/datum/rimworld_planet/proc/get_road_connections(x, y)
+	var/mask = get_road_mask(x, y)
+	var/list/result = list()
+	if(!mask)
+		return result
+	for(var/list/tile as anything in get_neighbors_with_bits(x, y))
+		if(mask & (1 << tile[3]))
+			result += list(list(tile[1], tile[2]))
+	return result
+
 
 /**
  * Returns the elevation level at the given coordinates.
@@ -956,7 +1013,7 @@
  */
 /datum/rimworld_planet/proc/get_runtime_data()
 	return list(
-		"objects" = get_interactive_objects(),
+		"objects" = get_dynamic_objects(),
 		"generationRevision" = generation_revision,
 		"tileImages" = get_tile_images_payload(),
 		"mapsLoaded" = maps_generated(),
@@ -965,6 +1022,57 @@
 		"rotationAngle" = rotation_angle,
 		"generatedLayers" = generated_layers.Copy()
 	)
+
+
+/**
+ * Rebuilds staticObjects for all open views of this planet.
+ * Call after remove_object / destroy settlement / road rebuild.
+ */
+/datum/rimworld_planet/proc/push_static_objects()
+	for(var/datum/planetmap_view/view as anything in SSrimworld_planetmap.get_views_for_planet(src))
+		if(QDELETED(view))
+			continue
+		view.update_static_data_for_all_viewers()
+
+/**
+ * Static map objects: non-player settlements + roads.
+ * Sent once via ui_static_data; refresh via push_static_objects().
+ */
+/datum/rimworld_planet/proc/get_static_objects()
+	var/list/result = list()
+	for(var/object_id in objects)
+		var/datum/rimworld_planet_object/object = objects[object_id]
+		if(!object)
+			continue
+		if(object.object_type == RW_OBJECT_TYPE_ROAD)
+			result += list(object.get_data())
+			continue
+		if(object.object_type != RW_OBJECT_TYPE_SETTLEMENT)
+			continue
+		// Player settlements stay dynamic
+		if(object.data["faction"] == "player")
+			continue
+		result += list(object.get_data())
+	return result
+
+
+/**
+ * Dynamic objects only (player settlements, POIs, etc.).
+ */
+/datum/rimworld_planet/proc/get_dynamic_objects()
+	var/list/result = list()
+	for(var/object_id in objects)
+		var/datum/rimworld_planet_object/object = objects[object_id]
+		if(!object)
+			continue
+		if(object.object_type == RW_OBJECT_TYPE_ROAD)
+			continue
+		if(object.object_type == RW_OBJECT_TYPE_SETTLEMENT)
+			if(object.data["faction"] != "player")
+				continue
+		result += list(object.get_data())
+	return result
+
 
 /**
  * Returns the full map payload (generator + runtime).

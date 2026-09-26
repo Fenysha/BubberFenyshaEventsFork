@@ -27,6 +27,53 @@
 /proc/rust_utils_get_version() return CALL_LIB(RUST_UTILS, "get_version")()
 
 /**
+ * Flatten DMI layers into a PNG and return JSON with a base64 payload.
+ *
+ * Input:
+ *     recipe_json
+ *         JSON object containing:
+ *
+ *         size: u32
+ *             Canvas size in pixels (1..256). Default 48.
+ *
+ *         body: u32
+ *             Body sprite size used to center layers. Default 32.
+ *
+ *         dir: i32
+ *             BYOND dir (2 south, 1 north, 4 east, 8 west). Default 2.
+ *
+ *         crop_bottom: f64
+ *             Fraction of the canvas to drop from the bottom (bust crop).
+ *             Default 0.
+ *
+ *         trim: bool | 0/1
+ *             Trim transparent padding after composite. Default true.
+ *
+ *         layers: array of
+ *             path, state, multiply, pixel_w, pixel_z, layer
+ *             blend: optional "rw_grad"
+ *             mask_path, mask_state: required when blend is rw_grad
+ *
+ *         markings: string
+ *             Optional packed pixels "x,y,#rrggbb;..."
+ *
+ * Output on success:
+ *
+ *     {"ok": true, "png": "<base64>"}
+ *
+ * Output on failure:
+ *
+ *     {"ok": false, "error": "<description>"}
+ */
+#define rustg_raw_rw_preview_flatten(recipe_json) \
+	RUSTG_CALL(RUST_UTILS, "rw_preview_flatten")(recipe_json)
+
+/proc/rustg_rw_preview_flatten(recipe_json)
+	if(!istext(recipe_json) || !length(recipe_json))
+		return "{\"ok\":false,\"error\":\"empty recipe\"}"
+	return rustg_raw_rw_preview_flatten(recipe_json)
+
+/**
  * Low-level call into the Rust sub-level heightmap generator.
  *
  * This is intentionally kept as a thin wrapper around the Rust bridge.
@@ -180,8 +227,6 @@
 
 	return rustg_raw_tp_sublevel_generate(config_json)
 
-
-
 /**
  * Low-level call into the Rust planet generator.
  *
@@ -190,16 +235,6 @@
  */
 #define rustg_raw_tp_planet_generate(config_json) \
 	RUSTG_CALL(RUST_UTILS, "tp_planet_generate")(config_json)
-
-/**
- * Low-level call that reads one packed cell from a generated planet layer.
- *
- * The Rust side expects the coordinates as strings because they are received
- * through the generic BYOND -> Rust bridge.
- */
-#define rustg_raw_tp_planet_get_cell(path, x, y) \
-	RUSTG_CALL(RUST_UTILS, "tp_planet_get_cell")(path, "[x]", "[y]")
-
 
 /**
  * Generates all planet layers through Rust and writes the generated
@@ -295,6 +330,14 @@
 
 	return rustg_raw_tp_planet_generate(config_json)
 
+/**
+ * Low-level call that reads one packed cell from a generated planet layer.
+ *
+ * The Rust side expects the coordinates as strings because they are received
+ * through the generic BYOND -> Rust bridge.
+ */
+#define rustg_raw_tp_planet_get_cell(path, x, y) \
+	RUSTG_CALL(RUST_UTILS, "tp_planet_get_cell")(path, "[x]", "[y]")
 
 /**
  * Reads one cell from a generated planet layer file.
@@ -349,50 +392,168 @@
 
 	return text2num(result)
 
+
+
+
+
 /**
- * Flatten DMI layers into a PNG and return JSON with a base64 payload.
+ * Low-level call that scores every land tile against one or more settlement
+ * "plans" and returns only the top candidates per kind.
  *
+ * This reads the layer files `tp_planet_generate` already wrote to
+ * `output_dir` (elevation/heat/humidity/precipitation/geology/rivers) — it
+ * does NOT re-run any noise generation, so calling it is cheap even for the
+ * full ~2M-tile planet. Scoring mirrors DM's old
+ * `get_settlement_suitability()`; DM no longer needs to iterate the grid
+ * itself, only walk the (already sorted, already capped) candidate lists
+ * this returns while handling occupancy / min-distance / faction bookkeeping.
+ */
+#define rustg_raw_tp_planet_settlement_candidates(config_json) \
+	RUSTG_CALL(RUST_UTILS, "tp_planet_settlement_candidates")(config_json)
+
+/**
  * Input:
- *     recipe_json
+ *     config_json
  *         JSON object containing:
  *
- *         size: u32
- *             Canvas size in pixels (1..256). Default 48.
+ *         seed: u32
+ *         frequency: usize
+ *         output_dir: string
+ *             Same three values passed to tp_planet_generate() for this
+ *             planet — must point at the same directory its layers were
+ *             written to, or this call fails.
  *
- *         body: u32
- *             Body sprite size used to center layers. Default 32.
+ *         plan: array of objects, each:
  *
- *         dir: i32
- *             BYOND dir (2 south, 1 north, 4 east, 8 west). Default 2.
+ *             kind: string
+ *                 Settlement kind identifier. Must match the exact string
+ *                 value your RW_SETTLEMENT_* defines resolve to — the Rust
+ *                 side matches on this string to apply kind-specific score
+ *                 modifiers (pirate / gentle_tribe / fierce_tribe /
+ *                 savage_tribe / mechanoid / insectoid / rough_outlander;
+ *                 anything else gets only the generic suitability score).
  *
- *         crop_bottom: f64
- *             Fraction of the canvas to drop from the bottom (bust crop).
- *             Default 0.
+ *             min_score: f64
+ *                 Tiles scoring below this are dropped before ever reaching
+ *                 the candidate list (same meaning as the old
+ *                 get_settlement_candidates(min_score=...) argument).
  *
- *         trim: bool | 0/1
- *             Trim transparent padding after composite. Default true.
- *
- *         layers: array of
- *             path, state, multiply, pixel_w, pixel_z, layer
- *             blend: optional "rw_grad"
- *             mask_path, mask_state: required when blend is rw_grad
- *
- *         markings: string
- *             Optional packed pixels "x,y,#rrggbb;..."
+ *             max_candidates: usize (optional, default 300)
+ *                 Top-k cap per kind, kept via a bounded min-heap — memory
+ *                 use never exceeds max_candidates regardless of how many
+ *                 tiles clear min_score.
  *
  * Output on success:
  *
- *     {"ok": true, "png": "<base64>"}
+ *     JSON string:
  *
- * Output on failure:
+ *         {
+ *             "status": "ok",
+ *             "candidates": {
+ *                 "<kind>": [
+ *                     { "x": <number>, "y": <number>, "score": <number> },
+ *                     ...
+ *                 ],
+ *                 ...
+ *             }
+ *         }
  *
- *     {"ok": false, "error": "<description>"}
+ *     Each kind's list is sorted best-score-first and capped at that entry's
+ *     max_candidates. A kind with no plan entry is simply absent from the
+ *     result.
+ *
+ * On failure:
+ *
+ *     ERROR: <description>
+ *
+ *     Common causes: output_dir doesn't contain layer files yet (planet not
+ *     generated), frequency doesn't match the frequency the layers were
+ *     generated with, or plan is empty.
  */
-#define rustg_raw_rw_preview_flatten(recipe_json) \
-	RUSTG_CALL(RUST_UTILS, "rw_preview_flatten")(recipe_json)
+/proc/rustg_tp_planet_settlement_candidates(config_json)
+	if(!istext(config_json) || !length(config_json))
+		return "ERROR: config_json must be a non-empty string"
 
-/proc/rustg_rw_preview_flatten(recipe_json)
-	if(!istext(recipe_json) || !length(recipe_json))
-		return "{\"ok\":false,\"error\":\"empty recipe\"}"
-	return rustg_raw_rw_preview_flatten(recipe_json)
+	return rustg_raw_tp_planet_settlement_candidates(config_json)
+
+
+
+/**
+ * Low-level call that connects a set of settlement coordinates with roads
+ * and writes the result as a packed layer file, same bitmask scheme as the
+ * `rivers` layer.
+ */
+#define rustg_raw_tp_planet_generate_roads(config_json) \
+	RUSTG_CALL(RUST_UTILS, "tp_planet_generate_roads")(config_json)
+
+/**
+ * Builds a road network connecting the given settlements: a minimum
+ * spanning tree decides which pairs get a direct road, then A* (terrain-
+ * aware — oceans are impassable, mountains/snow are expensive, reusing an
+ * already-built segment is cheap so branches merge into a shared trunk)
+ * finds the actual tile path for each MST edge.
+ *
+ * Input:
+ *     config_json
+ *         JSON object containing:
+ *
+ *         seed: u32
+ *         frequency: usize
+ *         output_dir: string
+ *             Same three values passed to tp_planet_generate() for this
+ *             planet — the elevation layer must already exist there.
+ *
+ *         settlements: array of objects, each:
+ *
+ *             x: usize
+ *             y: usize
+ *                 1-based BYOND coordinates of a settlement to connect.
+ *                 Points that are out of bounds or sit on open ocean are
+ *                 dropped (see skipped_settlements in the response) rather
+ *                 than failing the whole call.
+ *
+ * Output on success:
+ *
+ *     JSON string:
+ *
+ *         {
+ *             "status": "ok",
+ *             "layer": {
+ *                 "name": "roads",
+ *                 "path": "<file path>",
+ *                 "bits_per_cell": 6,
+ *                 "bytes": <number>
+ *             },
+ *             "edges": <number>,
+ *             "road_tiles": <number>,
+ *             "skipped_settlements": <number>
+ *         }
+ *
+ *     "edges" is how many MST connections actually got a buildable land
+ *     path (an edge whose two settlements are on ocean-separated landmasses
+ *     is silently skipped, not an error). "road_tiles" is how many tiles
+ *     ended up with a nonzero road bitmask.
+ *
+ *     Read the layer exactly like rivers:
+ *
+ *         bit = tile's index in get_neighbors_with_bits()
+ *         mask & (1 << bit) != 0  =>  road continues into that neighbour
+ *
+ * On failure:
+ *
+ *     ERROR: <description>
+ *
+ * Called with fewer than 2 valid settlements, this still succeeds and
+ * writes an all-zero roads layer (so has_road()/get_road_mask() always have
+ * something to read, even before any settlements exist).
+ */
+/proc/rustg_tp_planet_generate_roads(config_json)
+	if(!istext(config_json) || !length(config_json))
+		return "ERROR: config_json must be a non-empty string"
+
+	return rustg_raw_tp_planet_generate_roads(config_json)
+
+
+
+
 

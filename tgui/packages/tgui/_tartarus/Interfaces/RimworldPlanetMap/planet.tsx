@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { resolveAsset } from 'tgui/assets';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -196,6 +196,59 @@ const getCachedPlanetGeometry = (
   return geom;
 };
 
+/** Cache road arc geometries: "sx:sy:ex:ey:steps" -> BufferGeometry */
+const roadGeometryCache = new Map<string, THREE.BufferGeometry>();
+const MAX_ROAD_GEOMETRY_CACHE_SIZE = 256;
+const ROAD_ARC_STEPS = 12;
+const HEIGHT_ROAD = PLANET_RADIUS + 0.004;
+
+const roadGeometryKey = (
+  sx: number,
+  sy: number,
+  ex: number,
+  ey: number,
+): string => `${sx}:${sy}:${ex}:${ey}:${ROAD_ARC_STEPS}`;
+
+const getCachedRoadGeometry = (
+  grid: HexGrid,
+  sx: number,
+  sy: number,
+  ex: number,
+  ey: number,
+): THREE.BufferGeometry => {
+  const key = roadGeometryKey(sx, sy, ex, ey);
+  let geom = roadGeometryCache.get(key);
+  if (geom) {
+    return geom;
+  }
+
+  const start = tileToVector(grid, sx, sy, HEIGHT_ROAD);
+  const end = tileToVector(grid, ex, ey, HEIGHT_ROAD);
+  const points: THREE.Vector3[] = [];
+  for (let i = 0; i <= ROAD_ARC_STEPS; i++) {
+    const t = i / ROAD_ARC_STEPS;
+    // Slerp-ish via normalize after lerp so the polyline stays on the sphere
+    const p = start
+      .clone()
+      .lerp(end, t)
+      .normalize()
+      .multiplyScalar(HEIGHT_ROAD);
+    points.push(p);
+  }
+
+  geom = new THREE.BufferGeometry().setFromPoints(points);
+
+  if (roadGeometryCache.size >= MAX_ROAD_GEOMETRY_CACHE_SIZE) {
+    const firstKey = roadGeometryCache.keys().next().value;
+    if (firstKey) {
+      roadGeometryCache.get(firstKey)?.dispose();
+      roadGeometryCache.delete(firstKey);
+    }
+  }
+  roadGeometryCache.set(key, geom);
+  return geom;
+};
+
 let sharedStarGeometry: THREE.BufferGeometry | null = null;
 
 const getSharedStarGeometry = (): THREE.BufferGeometry => {
@@ -230,6 +283,13 @@ const sharedMarkerMaterials = {
   road: new THREE.MeshBasicMaterial({ color: 0xc4a574 }),
   default: new THREE.MeshBasicMaterial({ color: 0xf0f4ff }),
 };
+
+const sharedRoadLineMaterial = new THREE.LineBasicMaterial({
+  color: 0xc4a574,
+  transparent: true,
+  opacity: 0.88,
+  depthWrite: false,
+});
 
 const sharedPlayerMarkerGeometry = new THREE.SphereGeometry(0.022, 16, 16);
 const sharedPlayerGlowGeometry = new THREE.SphereGeometry(0.038, 12, 12);
@@ -316,6 +376,13 @@ const updateSelection = (
   group.visible = true;
 };
 
+const isRoadObject = (object: PlanetObject): boolean =>
+  object.type === 'road' ||
+  (object.start_x != null &&
+    object.start_y != null &&
+    object.end_x != null &&
+    object.end_y != null);
+
 export const Planet = ({
   data,
   selectedX,
@@ -343,6 +410,36 @@ export const Planet = ({
   const keysPressed = useRef<{ [key: string]: boolean }>({});
 
   const mapIdentity = getPlanetMapIdentity(data);
+
+  /** staticObjects (settlements + roads) + dynamic objects from ui_data */
+  const mergedObjects = useMemo((): PlanetObject[] => {
+    const staticList = data.staticObjects ?? [];
+    const dynamicList = data.objects ?? [];
+    if (staticList.length === 0) {
+      return dynamicList;
+    }
+    if (dynamicList.length === 0) {
+      return staticList;
+    }
+    // Avoid duplicate ids if the same object somehow appears in both
+    const seen = new Set<string>();
+    const result: PlanetObject[] = [];
+    for (const obj of staticList) {
+      if (obj?.id != null && !seen.has(obj.id)) {
+        seen.add(obj.id);
+        result.push(obj);
+      }
+    }
+    for (const obj of dynamicList) {
+      if (obj?.id != null && !seen.has(obj.id)) {
+        seen.add(obj.id);
+        result.push(obj);
+      } else if (obj?.id == null) {
+        result.push(obj);
+      }
+    }
+    return result;
+  }, [data.staticObjects, data.objects]);
 
   const [isLoading, setIsLoading] = useState(
     () => !textureCache.has(mapIdentity),
@@ -1026,6 +1123,11 @@ export const Planet = ({
         runtimeRef.current.objectGroup.children.forEach((child) => {
           child.visible = true;
 
+          // Roads are lines — do not scale like markers
+          if (child.userData.isRoad) {
+            return;
+          }
+
           if (child.userData.flatIcon) {
             child.scale.set(spriteScale, spriteScale, 1);
           } else if (child instanceof THREE.Sprite) {
@@ -1154,6 +1256,7 @@ export const Planet = ({
     }
   }, [showAtmosphere, showClouds]);
 
+  // Rebuild markers + road lines from mergedObjects
   useEffect(() => {
     const runtime = runtimeRef.current;
     if (!runtime) {
@@ -1171,10 +1274,37 @@ export const Planet = ({
           material.dispose();
         }
       }
+      // Road geometries are shared via roadGeometryCache — do not dispose here
     }
 
     const grid = gridFor(data);
-    for (const object of data.objects ?? []) {
+
+    for (const object of mergedObjects) {
+      if (isRoadObject(object)) {
+        const sx = object.start_x ?? object.x;
+        const sy = object.start_y ?? object.y;
+        const ex = object.end_x;
+        const ey = object.end_y;
+        if (
+          sx == null ||
+          sy == null ||
+          ex == null ||
+          ey == null ||
+          !grid.isValid(sx, sy) ||
+          !grid.isValid(ex, ey)
+        ) {
+          continue;
+        }
+
+        const geom = getCachedRoadGeometry(grid, sx, sy, ex, ey);
+        const line = new THREE.Line(geom, sharedRoadLineMaterial);
+        line.renderOrder = 8;
+        line.userData.object = object;
+        line.userData.isRoad = true;
+        objectGroup.add(line);
+        continue;
+      }
+
       let objectMesh: THREE.Object3D;
 
       if (object.icon) {
@@ -1215,9 +1345,7 @@ export const Planet = ({
         const material =
           object.type === 'settlement'
             ? sharedMarkerMaterials.settlement
-            : object.type === 'road'
-              ? sharedMarkerMaterials.road
-              : sharedMarkerMaterials.default;
+            : sharedMarkerMaterials.default;
 
         objectMesh = new THREE.Mesh(sharedMarkerGeometry, material);
         objectMesh.position.copy(
@@ -1228,7 +1356,7 @@ export const Planet = ({
       objectMesh.userData.object = object;
       objectGroup.add(objectMesh);
     }
-  }, [mapIdentity, data.objects, data.width, data.height]);
+  }, [mapIdentity, mergedObjects, data.width, data.height]);
 
   useEffect(() => {
     const runtime = runtimeRef.current;

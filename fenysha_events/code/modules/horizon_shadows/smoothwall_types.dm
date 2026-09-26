@@ -164,24 +164,11 @@ SUBSYSTEM_DEF(shadow)
 
 	base_icon_state = "shadow_mask"
 
-	tiles_with = list(
-		/atom/movable/atom_shadow,
-		/obj/machinery/door,
-		/obj/structure/grille,
-		/obj/structure/window/fulltile,
-		/obj/structure/window/reinforced/fulltile,
-		/obj/structure/window/reinforced/plasma/fulltile,
-		/obj/structure/window/reinforced/tinted/fulltile,
-		/turf/cordon,
-	)
-
 	var/atom/movable/atom_shadow/ghost_override_shadow
 
 
 /atom/movable/atom_shadow/Initialize(mapload)
 	. = ..()
-	relativewall()
-	relativewall_neighbours()
 	if(ghost_override_shadow)
 		sync_ghost_override()
 
@@ -213,7 +200,7 @@ SUBSYSTEM_DEF(shadow)
 	ghost_override_shadow.alpha = 255
 	ghost_override_shadow.color = null
 
-/atom/movable/atom_shadow/handle_icon_junction(junction)
+/atom/movable/atom_shadow/proc/handle_icon_junction(junction)
 	icon_state = "[base_icon_state]-[junction]"
 	sync_ghost_override()
 
@@ -227,7 +214,7 @@ SUBSYSTEM_DEF(shadow)
 /atom/movable/atom_shadow/ghost_override
 	name = "ghost shadow"
 
-	plane = GHOST_PLANE
+	plane = ATOMS_FOV_SHADOWS_PLANE
 
 	invisibility = INVISIBILITY_OBSERVER
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT

@@ -95,6 +95,10 @@ export type PlanetMapData = {
   rotationSpeed?: number;
   autoRotate?: BooleanLike;
 
+  /** Non-player settlements + roads; from ui_static_data */
+  staticObjects?: PlanetObject[];
+
+  /** Dynamic only (player settlements, POIs, …) from ui_data */
   objects: PlanetObject[];
 
   generatorVersion: number;
