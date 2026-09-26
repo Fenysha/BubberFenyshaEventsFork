@@ -1,9 +1,9 @@
 @echo off
 setlocal
 
-set SCRIPT_DIR=%~dp0
-set SCRIPT_PATH=%SCRIPT_DIR%sort_horizon_dme.py
-set ARGS=--all
+set "SCRIPT_DIR=%~dp0"
+set "SCRIPT_PATH=%SCRIPT_DIR%sort_dme.py"
+set "ARGS=--all"
 
 where py >nul 2>nul
 if %ERRORLEVEL% EQU 0 (
