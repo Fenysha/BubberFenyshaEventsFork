@@ -17,27 +17,36 @@
 // Additional check for auto-rotation
 /obj/machinery/door/proc/find_list_object_in_dir(search_dir)
 	var/turf/adjacent_turf = get_step(src, search_dir)
-	var/obj/item = null
+	if(!adjacent_turf)
+		return 0
 
-	for(item in adjacent_turf)
+	for(var/atom/movable/item in adjacent_turf)
 		if(is_type_in_list(item, autodir_list))
 			return 3
 
 	if(istype(adjacent_turf, /turf/closed/wall))
-		return 2 // Wall priority less than object from list
+		return 2
 
 	return 0
 
 // Auto-rotate
 /obj/machinery/door/proc/update_dir()
-	var/horizontal = find_list_object_in_dir(WEST) + find_list_object_in_dir(EAST)
-	var/vertical = find_list_object_in_dir(NORTH) + find_list_object_in_dir(SOUTH)
+	var/north = find_list_object_in_dir(NORTH)
+	var/south = find_list_object_in_dir(SOUTH)
+	var/east  = find_list_object_in_dir(EAST)
+	var/west  = find_list_object_in_dir(WEST)
+
+	var/vertical_score   = north + south
+	var/horizontal_score = east + west
 
 	var/new_dir
-	if(horizontal > vertical)
-		new_dir = SOUTH
+
+	if(horizontal_score > vertical_score)
+		new_dir = (north <= south) ? NORTH : SOUTH
 	else
-		new_dir = EAST
+		new_dir = (west <= east) ? WEST : EAST
+	if(vertical_score == 0 && horizontal_score == 0)
+		return
 
 	if(dir != new_dir)
 		setDir(new_dir)
