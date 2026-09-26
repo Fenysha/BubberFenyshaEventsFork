@@ -8,6 +8,7 @@ SUBSYSTEM_DEF(shadow)
 	ss_flags = SS_TICKER | SS_NO_INIT
 
 	var/list/queue = list()
+	var/list/door_queue = list()
 
 /datum/controller/subsystem/shadow/fire()
 	if(SSatoms.initializing_something())
@@ -26,7 +27,20 @@ SUBSYSTEM_DEF(shadow)
 		if(MC_TICK_CHECK)
 			return
 
-	if(!length(cache))
+	cache = door_queue
+	while(length(cache))
+		var/obj/machinery/door/D = cache[length(cache)]
+		cache.len--
+
+		if(QDELETED(D))
+			continue
+
+		D.update_dir()
+
+		if(MC_TICK_CHECK)
+			return
+
+	if(!length(queue) && !length(door_queue))
 		can_fire = FALSE
 
 /datum/controller/subsystem/shadow/proc/queue_shadow(atom/A)
@@ -35,6 +49,13 @@ SUBSYSTEM_DEF(shadow)
 	if(A in queue)
 		return
 	queue += A
+	if(!can_fire)
+		can_fire = TRUE
+
+/datum/controller/subsystem/shadow/proc/queue_door(obj/machinery/door/D)
+	if(D in door_queue)
+		return
+	door_queue += D
 	if(!can_fire)
 		can_fire = TRUE
 

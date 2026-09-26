@@ -1,8 +1,6 @@
-// Sheet for automatic spread
 /obj/machinery/door
 	var/list/autodir_list = list(
-		/obj/machinery/door/poddoor,
-		/obj/machinery/door/airlock,
+		/obj/machinery/door,
 		/obj/structure/window/fulltile,
 		/obj/structure/window/reinforced/fulltile,
 		/obj/structure/window/reinforced/plasma/fulltile,
@@ -11,8 +9,7 @@
 
 /obj/machinery/door/post_machine_initialize()
 	. = ..()
-	update_dir()
-	update_icon()
+	SSshadow.queue_door(src)
 
 // Additional check for auto-rotation
 /obj/machinery/door/proc/find_list_object_in_dir(search_dir)
@@ -24,7 +21,7 @@
 		if(is_type_in_list(item, autodir_list))
 			return 3
 
-	if(istype(adjacent_turf, /turf/closed/wall))
+	if(isclosedturf(adjacent_turf))
 		return 2
 
 	return 0
@@ -39,17 +36,29 @@
 	var/vertical_score   = north + south
 	var/horizontal_score = east + west
 
-	var/new_dir
-
-	if(horizontal_score > vertical_score)
-		new_dir = (north <= south) ? NORTH : SOUTH
-	else
-		new_dir = (west <= east) ? WEST : EAST
 	if(vertical_score == 0 && horizontal_score == 0)
 		return
 
+	var/new_dir
+
+	if(horizontal_score > vertical_score)
+		new_dir = (north < south) ? NORTH : SOUTH
+	else if(vertical_score > horizontal_score)
+		new_dir = (west < east) ? WEST : EAST
+	else
+		var/max_score = max(north, south, east, west)
+		if(west == max_score)
+			new_dir = EAST
+		else if(east == max_score)
+			new_dir = WEST
+		else if(north == max_score)
+			new_dir = SOUTH
+		else
+			new_dir = NORTH
+
 	if(dir != new_dir)
 		setDir(new_dir)
+	update_icon()
 
 // Mechanism for turning the gateway with a key
 /obj/machinery/door/airlock/proc/airlock_dir_change(mob/user, obj/item/wrench, new_dir, time = 40)
