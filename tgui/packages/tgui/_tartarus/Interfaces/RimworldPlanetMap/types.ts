@@ -84,6 +84,7 @@ export type PlanetMapData = {
   seasonNorth?: string;
   seasonSouth?: string;
   timeScale?: number;
+  dayLengthMinutes?: number;
   daysPerYear?: number;
   daysPerQuadrum?: number;
   quadrumNames?: string[];
@@ -112,8 +113,6 @@ export type PlanetMapData = {
 
   selectedTile?: SelectedPlanetTile | null;
   selectedObject?: PlanetObject | null;
-
-  view?: PlanetMapViewData;
 
   tileImages?: PlanetTileImage[];
   biomeImages?: Record<string, string>;
@@ -153,42 +152,6 @@ export interface PlanetCellData {
 
   localWidth: number;
   localHeight: number;
-}
-
-export interface PlanetMapViewData {
-  roadStartX?: number | null;
-  roadStartY?: number | null;
-  cell?: PlanetCellData | null;
-  isLoading?: BooleanLike | false;
-
-  mode?: 'start' | 'observer';
-
-  startX?: number | null;
-  startY?: number | null;
-  joinSettlementId?: string | null;
-
-  canCreate?: BooleanLike;
-  canJoin?: BooleanLike;
-
-  playerSettlements?: PlayerSettlementInfo[];
-
-  loadedCells?: LoadedCellInfo[];
-}
-
-export interface PlayerSettlementInfo {
-  id: string;
-  name: string;
-  x: number;
-  y: number;
-  population: number;
-  faction: string;
-}
-
-export interface LoadedCellInfo {
-  x: number;
-  y: number;
-  id?: string;
-  name?: string;
 }
 
 export type PlanetTile = {
@@ -258,6 +221,7 @@ export type PlanetObject = {
   x: number;
   y: number;
   icon: string | null;
+  color?: string | null;
   data: Record<string, unknown>;
   start_x?: number;
   start_y?: number;

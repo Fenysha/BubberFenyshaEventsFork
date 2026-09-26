@@ -27,7 +27,14 @@
 /// Day arc around solar noon (0-1). 0.5 ≈ 12h daylight.
 #define RW_DEFAULT_DAYLIGHT_FRACTION 0.5
 
+/// Real time for one planetary day. The clock and the globe both use this.
+#define RW_DAY_LENGTH_MINUTES     30
+#define RW_DAY_LENGTH_MIN_MINUTES 5
+#define RW_DAY_LENGTH_MAX_MINUTES 120
+
 #define RIMWORLD_DAYLIGHT_UPDATE_INTERVAL (2 SECONDS)
+/// Sun alpha/color is written only when it crosses this step, so the tick does not touch appearances every update.
+#define RW_DAYLIGHT_LEVEL_STEP 16
 
 
 /// Seasonal tints applied via modulate_color_towards / apply_tint_from_base

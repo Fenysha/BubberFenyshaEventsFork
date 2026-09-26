@@ -823,11 +823,12 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!generator || QDELETED(generator))
 		return RW_CELL_LOAD_FAILED
 
-	// Per-turf daylight wash during load repaints the whole cell while it is still being built.
+	// The map is built. Attach daylight overlays once; later ticks only move the plate.
 	var/area/rimworld/loaded_area = generator.rimworld_area
 	if(loaded_area && SSdaylight.setup_complete)
+		loaded_area.cell_loading = FALSE
 		loaded_area.update_base_lighting()
-		if(loaded_area.daylight && !loaded_area.daylight_lit)
+		if(loaded_area.daylight && !loaded_area.daylight_overlays_ready)
 			loaded_area.apply_daylight_overlay()
 
 	phase = RW_CELL_JOB_FINISH

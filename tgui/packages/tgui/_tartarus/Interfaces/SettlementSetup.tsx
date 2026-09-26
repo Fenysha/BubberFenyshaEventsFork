@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
@@ -30,6 +32,8 @@ type SettlementSetupData = {
   factionName: string;
   factionDesc: string;
   factionIcon: string;
+  factionColor: string;
+  iconChoices?: string[];
   factionIdeology: string;
 
   settlementName?: string;
@@ -55,8 +59,8 @@ export const SettlementSetup = () => {
     : hasError
       ? 350
       : isJoin
-        ? 300
-        : 450;
+        ? 340
+        : 520;
 
   return (
     <Window
@@ -203,6 +207,20 @@ export const SettlementSetup = () => {
                             <Box color="label">{data.factionDesc}</Box>
                           </LabeledList.Item>
                         )}
+                        <LabeledList.Item label="Icon">
+                          <SettlementMark
+                            icon={data.factionIcon}
+                            color={data.factionColor}
+                          />
+                        </LabeledList.Item>
+                        <LabeledList.Item label="Color">
+                          <Box
+                            inline
+                            width="14px"
+                            height="14px"
+                            style={{ background: data.factionColor || '#ffffff' }}
+                          />
+                        </LabeledList.Item>
                       </>
                     )}
 
@@ -232,14 +250,64 @@ export const SettlementSetup = () => {
                         </LabeledList.Item>
 
                         <LabeledList.Item label="Icon">
-                          <Input
-                            fluid
-                            value={data.factionIcon}
-                            disabled={isLoading}
-                            onChange={(value) =>
-                              act('set_faction_icon', { icon: value })
-                            }
-                          />
+                          <Stack align="center">
+                            {(data.iconChoices || []).map((iconId) => (
+                              <Stack.Item key={iconId}>
+                                <button
+                                  type="button"
+                                  title={iconId}
+                                  disabled={isLoading}
+                                  onClick={() =>
+                                    act('set_faction_icon', { icon: iconId })
+                                  }
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: 40,
+                                    height: 40,
+                                    margin: 0,
+                                    padding: 0,
+                                    boxSizing: 'border-box',
+                                    background: '#141414',
+                                    border: '2px solid',
+                                    borderColor:
+                                      data.factionIcon === iconId
+                                        ? '#f2f2f2'
+                                        : '#3a3a3a',
+                                    lineHeight: 0,
+                                    cursor: isLoading ? 'default' : 'pointer',
+                                  }}
+                                >
+                                  <SettlementMark
+                                    icon={iconId}
+                                    color={data.factionColor}
+                                    size={26}
+                                  />
+                                </button>
+                              </Stack.Item>
+                            ))}
+                          </Stack>
+                        </LabeledList.Item>
+
+                        <LabeledList.Item label="Color">
+                          <Stack align="center">
+                            <Stack.Item>
+                              <input
+                                type="color"
+                                value={data.factionColor || '#ffffff'}
+                                disabled={isLoading}
+                                onChange={(event) =>
+                                  act('set_faction_color', {
+                                    color: event.target.value,
+                                  })
+                                }
+                              />
+                            </Stack.Item>
+                            <Stack.Item>
+                              <Box color="label">{data.factionColor}</Box>
+                            </Stack.Item>
+                          </Stack>
                         </LabeledList.Item>
 
                         <LabeledList.Item label="Ideology">
@@ -293,3 +361,89 @@ export const SettlementSetup = () => {
     </Window>
   );
 };
+
+function markerSrc(icon: string) {
+  try {
+    return resolveAsset(`rimworld_planet_icon_${icon}.png`);
+  } catch {
+    return '';
+  }
+}
+
+function hexToRgb(hex: string) {
+  const raw = hex.replace('#', '');
+  const full =
+    raw.length === 3
+      ? raw
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : raw;
+  const value = Number.parseInt(full, 16);
+  if (Number.isNaN(value)) {
+    return { r: 255, g: 255, b: 255 };
+  }
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  };
+}
+
+function SettlementMark(props: { icon?: string; color?: string; size?: number }) {
+  const src = props.icon ? markerSrc(props.icon) : '';
+  const size = props.size ?? 24;
+  const [painted, setPainted] = useState('');
+
+  useEffect(() => {
+    if (!src) {
+      setPainted('');
+      return;
+    }
+    let cancelled = false;
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return;
+      }
+      context.drawImage(image, 0, 0);
+      const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+      const tint = hexToRgb(props.color || '#ffffff');
+      const pixels = frame.data;
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (pixels[i + 3] < 8) {
+          continue;
+        }
+        const whiteness = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / (255 * 3);
+        pixels[i] = tint.r * whiteness;
+        pixels[i + 1] = tint.g * whiteness;
+        pixels[i + 2] = tint.b * whiteness;
+      }
+      context.putImageData(frame, 0, 0);
+      if (!cancelled) {
+        setPainted(canvas.toDataURL());
+      }
+    };
+    image.src = src;
+    return () => {
+      cancelled = true;
+    };
+  }, [src, props.color]);
+
+  if (!painted) {
+    return <span style={{ display: 'block', width: size, height: size }} />;
+  }
+  return (
+    <img
+      src={painted}
+      alt=""
+      width={size}
+      height={size}
+      style={{ display: 'block', imageRendering: 'pixelated' }}
+    />
+  );
+}

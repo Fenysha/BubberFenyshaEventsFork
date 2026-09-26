@@ -5,6 +5,8 @@
 	var/x = 1
 	var/y = 1
 	var/icon = RW_PLANET_CELL_TOWN_ICON
+	/// Multiplies the map sprite. White leaves the texture unchanged.
+	var/color = "#ffffff"
 	var/list/data = list()
 
 /datum/rimworld_planet_object/New(new_id, new_x, new_y, new_name = null)
@@ -26,6 +28,7 @@
 		"x" = x,
 		"y" = y,
 		"icon" = icon,
+		"color" = color,
 		"data" = data.Copy()
 	)
 
@@ -50,8 +53,15 @@
 /**
  * Sets the settlement faction.
  */
-/datum/rimworld_planet_object/settlement/proc/set_faction(faction)
-	data["faction"] = faction
+/datum/rimworld_planet_object/settlement/proc/set_faction(faction_id)
+	data["faction"] = faction_id
+	var/datum/rw_faction/faction = SSfactions.get_faction(faction_id)
+	if(!faction)
+		return
+	if(faction.color)
+		color = faction.color
+	if(faction.icon_state)
+		icon = faction.icon_state
 
 /datum/rimworld_planet_object/point_of_interest
 	object_type = RW_OBJECT_TYPE_POINT_OF_INTEREST
@@ -98,7 +108,7 @@
 	var/map_width
 	var/map_height
 	var/rotation_angle = 0.0
-	var/rotation_speed = 0.001
+	var/rotation_speed = 0.2
 	var/auto_rotate = TRUE
 
 	var/time_of_day = 0

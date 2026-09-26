@@ -1,6 +1,6 @@
 import { useBackend } from 'tgui/backend';
 import { LabeledList, Section, Stack } from 'tgui-core/components';
-import type { PlanetMapData } from '../types';
+import type { OverviewMapData } from './types';
 
 const formatHour = (hour: number | undefined | null) => {
   if (hour == null || Number.isNaN(hour)) {
@@ -12,7 +12,7 @@ const formatHour = (hour: number | undefined | null) => {
 };
 
 export const OverviewPanel = () => {
-  const { data } = useBackend<PlanetMapData>();
+  const { data } = useBackend<OverviewMapData>();
 
   return (
     <Stack fill vertical>

@@ -16,8 +16,14 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	/// Last applied local intensity (−1 = never applied).
 	var/rimworld_sun_intensity = -1
 	var/rimworld_sun_color = null
+	/// Last plate alpha actually written. -1 forces the first write.
+	var/rimworld_sun_alpha_bucket = -1
 	var/rimworld_forced_intensity = null
 	var/rimworld_forced_color = null
+	/// Visual sun. Turf overlays mirror this; ticks only change its color and alpha.
+	var/obj/rimworld_daylight_plate/sun_plate
+	/// TRUE after outdoor and leak overlays have been attached once.
+	var/daylight_overlays_ready = FALSE
 
 
 /area/rimworld/Initialize(mapload)
@@ -29,6 +35,8 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 		INVOKE_ASYNC(src, PROC_REF(bind_planet_cell), cell)
 
 /area/rimworld/Destroy()
+	daylight_overlays_ready = FALSE
+	QDEL_NULL(sun_plate)
 	cell = null
 	GLOB.rimworld_areas -= src
 	return ..()
@@ -64,8 +72,50 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	return 1
 
 
+/area/rimworld/apply_daylight_overlay()
+	if(cell_loading)
+		return
+	update_rimworld_daylight(force = TRUE)
+
+
+/area/rimworld/clear_daylight_overlay()
+	daylight_overlays_ready = FALSE
+	..()
+	QDEL_NULL(sun_plate)
+
+
+/area/rimworld/proc/ensure_sun_plate()
+	if(sun_plate && !QDELETED(sun_plate))
+		return sun_plate
+	sun_plate = new /obj/rimworld_daylight_plate(null, src)
+	return sun_plate
+
+
+/area/rimworld/proc/sync_sun_plate(intensity = 1, color = "#ffffff")
+	var/obj/rimworld_daylight_plate/plate = ensure_sun_plate()
+	if(QDELETED(plate))
+		return
+	// One assignment. Restarting animate() every tick was a steady appearance send.
+	animate(plate)
+	plate.color = color
+	plate.alpha = rimworld_daylight_alpha_bucket(intensity)
+
+
+/area/rimworld/proc/apply_plate_wash(turf/target, strength = 255)
+	if(!sun_plate || QDELETED(sun_plate) || !sun_plate.render_target)
+		return
+	var/atom/holder = daylight_overlay_holder(target)
+	if(isnull(holder))
+		return
+	clear_daylight_wash(target)
+	var/mutable_appearance/wash = get_rimworld_daylight_appearance(sun_plate.render_target, strength, target)
+	holder.add_overlay(wash)
+	holder.daylight_wash_applied = wash
+	return wash
+
+
 /area/rimworld/proc/update_rimworld_daylight(force = FALSE)
-	if(!daylight || QDELETED(src))
+	if(!daylight || QDELETED(src) || cell_loading)
 		return
 	var/intensity = get_local_sun_intensity()
 	var/hour = get_local_solar_hour()
@@ -75,50 +125,39 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	if(!isnull(phase_i))
 		intensity = clamp(intensity * phase_i, 0, 1)
 
-	var/new_strength = round(clamp(intensity, 0, 1) * 255, 1)
-	var/old_strength = round(clamp(rimworld_sun_intensity >= 0 ? rimworld_sun_intensity : -1, 0, 1) * 255, 1)
-	if(!force && rimworld_sun_intensity >= 0 && new_strength == old_strength && color == rimworld_sun_color)
+	var/bucket_alpha = rimworld_daylight_alpha_bucket(intensity)
+	var/bucket_color = rimworld_quantize_daylight_color(color)
+	if(!force && daylight_overlays_ready && bucket_alpha == rimworld_sun_alpha_bucket && bucket_color == rimworld_sun_color)
 		return
 
-	rimworld_sun_intensity = intensity
-	rimworld_sun_color = color
-	apply_rimworld_daylight_overlay(intensity, color)
-	SEND_SIGNAL(src, COMSIG_RIMWORLD_AREA_DAYLIGHT_UPDATE, intensity, color, hour)
+	rimworld_sun_intensity = bucket_alpha / 255
+	rimworld_sun_color = bucket_color
+	rimworld_sun_alpha_bucket = bucket_alpha
+	sync_sun_plate(rimworld_sun_intensity, bucket_color)
+	if(!daylight_overlays_ready)
+		attach_daylight_overlays()
+	SEND_SIGNAL(src, COMSIG_RIMWORLD_AREA_DAYLIGHT_UPDATE, rimworld_sun_intensity, bucket_color, hour)
 
 
-/area/rimworld/proc/apply_rimworld_daylight_overlay(intensity = 1, color = "#ffffff")
-	if(!daylight || cell_loading)
+/area/rimworld/proc/attach_daylight_overlays()
+	if(!daylight || cell_loading || daylight_overlays_ready)
 		return
-	var/strength = round(clamp(intensity, 0, 1) * 255, 1)
-	if(strength <= 0)
-		if(daylight_lit)
-			clear_daylight_overlay()
-		return
-
+	daylight_overlays_ready = TRUE
+	ensure_sun_plate()
 	SSdaylight.daylight_areas |= src
 	daylight_lit = TRUE
 	var/list/own_turfs = list()
 	for(var/turf/area_turf in src)
-		apply_daylight_wash(area_turf, strength)
+		apply_plate_wash(area_turf, 255)
 		own_turfs += area_turf
 		CHECK_TICK
-	relight_daylight_leaks_scaled(own_turfs, intensity)
+	attach_daylight_leaks(own_turfs)
 
 
-/area/rimworld/proc/relight_daylight_leaks_scaled(list/source_turfs, intensity = 1)
-	for(var/turf/leaked in daylight_leaked)
-		if(isturf(leaked))
-			clear_daylight_wash(leaked)
-		CHECK_TICK
-	daylight_leaked = null
-
+/area/rimworld/proc/attach_daylight_leaks(list/source_turfs)
 	if(!length(source_turfs))
 		return
-
-	var/list/scaled = list()
-	for(var/v in GLOB.daylight_leak_falloff)
-		scaled += round(v * clamp(intensity, 0, 1), 1)
-
+	var/list/leak_falloff = GLOB.daylight_leak_falloff
 	LAZYINITLIST(daylight_leaked)
 	var/list/visited = list()
 	var/list/frontier = list()
@@ -128,9 +167,7 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 		visited[seed] = TRUE
 		frontier += seed
 
-	for(var/ring in 1 to length(scaled))
-		if(scaled[ring] <= 0)
-			break
+	for(var/ring in 1 to length(leak_falloff))
 		var/list/next_frontier = list()
 		for(var/turf/frontier_turf in frontier)
 			if(!isturf(frontier_turf) || frontier_turf.opacity)
@@ -143,11 +180,26 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 				var/area/neighbor_area = neighbor.loc
 				if(neighbor_area?.daylight)
 					continue
-				var/mutable_appearance/leak = apply_daylight_wash(neighbor, scaled[ring])
+				var/mutable_appearance/leak = apply_plate_wash(neighbor, leak_falloff[ring])
 				daylight_leaked[neighbor] = leak
 				next_frontier += neighbor
 		frontier = next_frontier
 		CHECK_TICK
+
+
+/area/rimworld/relight_daylight_leaks()
+	if(!daylight_overlays_ready)
+		return
+	for(var/turf/leaked in daylight_leaked)
+		if(isturf(leaked))
+			clear_daylight_wash(leaked)
+		CHECK_TICK
+	daylight_leaked = null
+	var/list/own_turfs = list()
+	for(var/turf/area_turf in src)
+		own_turfs += area_turf
+		CHECK_TICK
+	attach_daylight_leaks(own_turfs)
 
 
 /area/rimworld/proc/set_forced_daylight(intensity = null, color = null)

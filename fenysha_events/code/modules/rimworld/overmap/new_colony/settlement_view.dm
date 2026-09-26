@@ -27,6 +27,9 @@
 	else
 		window_title = "Planet Observer"
 
+/datum/planetmap_view/settlement/get_visible_objects()
+	return objects_of_types(list(RW_OBJECT_TYPE_SETTLEMENT, RW_OBJECT_TYPE_ROAD))
+
 /datum/planetmap_view/settlement/get_view_data()
 	var/list/data = list(
 		"mode" = mode,
@@ -63,6 +66,8 @@
 				"y" = sett.y,
 				"population" = sett.data["population"] || 0,
 				"faction" = fac.name,
+				"icon" = sett.icon,
+				"color" = sett.color || fac.color,
 			))
 
 		data["playerSettlements"] = player_settlements
@@ -213,7 +218,8 @@
 
 	var/faction_name = "New Colony"
 	var/faction_desc = "A fledgling settlement."
-	var/faction_icon = "default"
+	var/faction_icon = RW_PLANET_CELL_TOWN
+	var/faction_color = "#ffffff"
 	var/faction_ideology = "placeholder"
 
 	var/datum/planet_cell/loading_cell
@@ -236,6 +242,8 @@
 			var/datum/rw_faction/fac = faction_id ? SSfactions.get_faction(faction_id) : null
 			if(fac)
 				faction_desc = fac.desc || ""
+				faction_icon = fac.icon_state || sett.icon
+				faction_color = fac.color || sett.color
 
 
 /datum/settlement_setup/Destroy()
@@ -269,6 +277,19 @@
 	return GLOB.always_state
 
 
+/datum/settlement_setup/ui_assets(mob/user)
+	return list(get_asset_datum(/datum/asset/simple/rimworld_planet_icons))
+
+
+/datum/settlement_setup/proc/settlement_icon_choices()
+	return list(
+		RW_PLANET_CELL_TOWN,
+		RW_PLANET_CELL_TOWN_OTHER,
+		RW_PLANET_CELL_TOWN_TRIBAL,
+		RW_PLANET_CELL_TOWN_PIRATE,
+	)
+
+
 /datum/settlement_setup/ui_data(mob/user)
 	var/list/data = list(
 		"isJoin" = !!join_settlement_id,
@@ -280,6 +301,8 @@
 		"factionName" = faction_name,
 		"factionDesc" = faction_desc,
 		"factionIcon" = faction_icon,
+		"factionColor" = faction_color,
+		"iconChoices" = settlement_icon_choices(),
 		"factionIdeology" = faction_ideology,
 
 		"loadingProgress" = 0,
@@ -314,6 +337,8 @@
 			if(fac)
 				data["factionName"] = fac.name
 				data["factionDesc"] = fac.desc || ""
+				data["factionIcon"] = fac.icon_state || sett.icon
+				data["factionColor"] = fac.color || sett.color
 
 	return data
 
@@ -347,7 +372,19 @@
 		if("set_faction_icon")
 			if(join_settlement_id)
 				return FALSE
-			faction_icon = params["icon"] || "default"
+			var/chosen = params["icon"]
+			if(!(chosen in settlement_icon_choices()))
+				return FALSE
+			faction_icon = chosen
+			return TRUE
+
+		if("set_faction_color")
+			if(join_settlement_id)
+				return FALSE
+			var/chosen = lowertext("[params["color"]]")
+			if(length(chosen) != 7 || copytext(chosen, 1, 2) != "#")
+				return FALSE
+			faction_color = chosen
 			return TRUE
 
 		if("set_faction_ideology")

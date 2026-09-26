@@ -223,6 +223,8 @@ const getSharedStarGeometry = (): THREE.BufferGeometry => {
 };
 
 const sharedMarkerGeometry = new THREE.SphereGeometry(0.018, 12, 12);
+const sharedIconGeometry = new THREE.PlaneGeometry(1, 1);
+const ICON_FACING = new THREE.Vector3(0, 0, 1);
 const sharedMarkerMaterials = {
   settlement: new THREE.MeshBasicMaterial({ color: 0xffc857 }),
   road: new THREE.MeshBasicMaterial({ color: 0xc4a574 }),
@@ -241,7 +243,7 @@ const WASD_SHIFT_MULTIPLIER = 3;
 // The surface mesh's faces dip inside the sphere, so a hair above it always stays visible.
 const HEIGHT_SELECTION_OUTLINE = PLANET_RADIUS + 0.0003;
 const HEIGHT_SELECTION_GLOW = PLANET_RADIUS + 0.0004;
-const HEIGHT_OBJECT_MARKER = PLANET_RADIUS + 0.004;
+const HEIGHT_OBJECT_MARKER = PLANET_RADIUS + 0.012;
 const HEIGHT_PLAYER_MARKER = PLANET_RADIUS + 0.005;
 
 const PLAYER_MARKER_COLOR = 0xffe566;
@@ -967,7 +969,8 @@ export const Planet = ({
         currentData.autoRotate == null || Boolean(currentData.autoRotate);
 
       if (autoRotateEnabled) {
-        const speedDeg = currentData.rotationSpeed ?? 0.25;
+        const dayMinutes = Math.max(currentData.dayLengthMinutes ?? 30, 1);
+        const speedDeg = 360 / (dayMinutes * 60);
         const radPerSecond = (speedDeg * Math.PI) / 180;
 
         let rotDelta = delta * radPerSecond;
@@ -1023,7 +1026,9 @@ export const Planet = ({
         runtimeRef.current.objectGroup.children.forEach((child) => {
           child.visible = true;
 
-          if (child instanceof THREE.Sprite) {
+          if (child.userData.flatIcon) {
+            child.scale.set(spriteScale, spriteScale, 1);
+          } else if (child instanceof THREE.Sprite) {
             child.scale.set(spriteScale, spriteScale, 1);
             if (child.material) {
               child.material.opacity = 1.0;
@@ -1160,27 +1165,51 @@ export const Planet = ({
     while (objectGroup.children.length > 0) {
       const child = objectGroup.children[0];
       objectGroup.remove(child);
+      if (child.userData.flatIcon && child instanceof THREE.Mesh) {
+        const material = child.material;
+        if (material instanceof THREE.Material) {
+          material.dispose();
+        }
+      }
     }
 
+    const grid = gridFor(data);
     for (const object of data.objects ?? []) {
       let objectMesh: THREE.Object3D;
 
       if (object.icon) {
         const texture = loadObjectTexture(object.icon);
         if (texture) {
-          const spriteMaterial = new THREE.SpriteMaterial({
+          const iconMaterial = new THREE.MeshBasicMaterial({
             map: texture,
+            color: new THREE.Color(object.color || '#ffffff'),
             transparent: true,
             opacity: 1.0,
             depthTest: true,
             depthWrite: false,
+            side: THREE.FrontSide,
           });
-          const sprite = new THREE.Sprite(spriteMaterial);
-          sprite.renderOrder = 10;
-          objectMesh = sprite;
+          const iconMesh = new THREE.Mesh(sharedIconGeometry, iconMaterial);
+          iconMesh.renderOrder = 10;
+          iconMesh.userData.flatIcon = true;
+          const position = tileToVector(
+            grid,
+            object.x,
+            object.y,
+            HEIGHT_OBJECT_MARKER,
+          );
+          iconMesh.position.copy(position);
+          iconMesh.quaternion.setFromUnitVectors(
+            ICON_FACING,
+            position.clone().normalize(),
+          );
+          objectMesh = iconMesh;
         } else {
           const material = sharedMarkerMaterials.default;
           objectMesh = new THREE.Mesh(sharedMarkerGeometry, material);
+          objectMesh.position.copy(
+            tileToVector(grid, object.x, object.y, HEIGHT_OBJECT_MARKER),
+          );
         }
       } else {
         const material =
@@ -1191,11 +1220,10 @@ export const Planet = ({
               : sharedMarkerMaterials.default;
 
         objectMesh = new THREE.Mesh(sharedMarkerGeometry, material);
+        objectMesh.position.copy(
+          tileToVector(grid, object.x, object.y, HEIGHT_OBJECT_MARKER),
+        );
       }
-
-      objectMesh.position.copy(
-        tileToVector(gridFor(data), object.x, object.y, HEIGHT_OBJECT_MARKER),
-      );
 
       objectMesh.userData.object = object;
       objectGroup.add(objectMesh);

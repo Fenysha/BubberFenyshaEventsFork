@@ -17,8 +17,12 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	var/list/active_views = list()
 
 	var/auto_rotate = TRUE
-	/// Degrees per fire tick when auto_rotate is TRUE
-	var/rotation_speed = 0.25
+	/// Real duration of one full rotation. The globe uses the same value.
+	var/day_length = RW_DAY_LENGTH_MINUTES MINUTES
+	/// world.time of the last rotation step. Angle advances by real elapsed time.
+	var/last_rotation_time = 0
+	/// Degrees per real second, derived from day_length.
+	var/rotation_speed = 0.2
 	/// 0-360, kept in sync with planet
 	var/rotation_angle = 0
 
@@ -42,6 +46,7 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 /datum/controller/subsystem/rimworld_planetmap/Initialize()
 	if(SSmapping.current_map.rimworld_map)
 		planet = new /datum/rimworld_planet(null, default_planet_type)
+		sync_derived_rotation_speed()
 		apply_rotation_settings()
 		sync_time_to_planet()
 
@@ -55,27 +60,25 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	if(!planet)
 		return
 
-	if(auto_rotate && rotation_speed)
-		var/delta = rotation_speed * time_scale
-		var/old_angle = rotation_angle
-		rotation_angle = rotation_angle + delta
-		if(rotation_angle >= 360)
-			rotation_angle -= 360
-		else if(rotation_angle < 0)
-			rotation_angle += 360
-		planet.rotation_angle = rotation_angle
+	var/now = world.time
+	var/elapsed = last_rotation_time ? (now - last_rotation_time) : 0
+	last_rotation_time = now
+	if(!auto_rotate || day_length <= 0 || elapsed <= 0)
+		return
 
-		time_of_day = (rotation_angle / 360) * RW_HOURS_PER_DAY
-		planet.time_of_day = time_of_day
+	var/delta = (elapsed / day_length) * 360
+	var/days_crossed = 0
+	rotation_angle += delta
+	while(rotation_angle >= 360)
+		rotation_angle -= 360
+		days_crossed++
+	planet.rotation_angle = rotation_angle
 
-		if(advance_calendar)
-			var/crossed = FALSE
-			if(delta > 0 && old_angle + delta >= 360)
-				crossed = TRUE
-			else if(delta < 0 && old_angle + delta < 0)
-				crossed = TRUE
-			if(crossed)
-				advance_day(sign(delta))
+	time_of_day = (rotation_angle / 360) * RW_HOURS_PER_DAY
+	planet.time_of_day = time_of_day
+
+	if(advance_calendar && days_crossed > 0)
+		advance_day(days_crossed)
 
 
 /datum/controller/subsystem/rimworld_planetmap/proc/sync_time_to_planet()
@@ -196,6 +199,7 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 		"seasonNorth" = get_season_for_hemisphere("north"),
 		"seasonSouth" = get_season_for_hemisphere("south"),
 		"timeScale" = time_scale,
+		"dayLengthMinutes" = day_length / (1 MINUTES),
 		"daysPerYear" = RW_DAYS_PER_YEAR,
 		"daysPerQuadrum" = RW_DAYS_PER_QUADRUM,
 	)
@@ -277,6 +281,22 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	return auto_rotate
 
 
+/datum/controller/subsystem/rimworld_planetmap/proc/sync_derived_rotation_speed()
+	if(day_length <= 0)
+		rotation_speed = 0
+	else
+		rotation_speed = 360 / (day_length / (1 SECONDS))
+	if(planet)
+		planet.rotation_speed = rotation_speed
+	return rotation_speed
+
+
+/datum/controller/subsystem/rimworld_planetmap/proc/set_day_length_minutes(minutes)
+	minutes = clamp(round(minutes), RW_DAY_LENGTH_MIN_MINUTES, RW_DAY_LENGTH_MAX_MINUTES)
+	day_length = minutes MINUTES
+	return sync_derived_rotation_speed()
+
+
 /datum/controller/subsystem/rimworld_planetmap/proc/set_rotation_speed(new_speed)
 	rotation_speed = new_speed
 	if(planet)
@@ -300,6 +320,7 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 		"autoRotate" = auto_rotate,
 		"rotationSpeed" = rotation_speed,
 		"rotationAngle" = rotation_angle,
+		"dayLengthMinutes" = day_length / (1 MINUTES),
 	)
 
 
