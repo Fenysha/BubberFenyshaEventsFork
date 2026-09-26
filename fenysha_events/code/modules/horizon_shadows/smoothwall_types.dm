@@ -1,3 +1,65 @@
+SUBSYSTEM_DEF(shadow)
+	name = "Shadow"
+	dependencies = list(
+		/datum/controller/subsystem/icon_smooth,
+	)
+	wait = 1
+	priority = FIRE_PRIORITY_SMOOTHING + 10
+	ss_flags = SS_TICKER | SS_NO_INIT
+
+	var/list/queue = list()
+	var/list/door_queue = list()
+
+/datum/controller/subsystem/shadow/fire()
+	if(SSatoms.initializing_something())
+		return
+
+	var/list/cache = queue
+	while(length(cache))
+		var/atom/A = cache[length(cache)]
+		cache.len--
+
+		if(QDELETED(A) || !(A.shadow_flags & ATOM_SHADOW_USE_ICON_STATE) || !A.shadow)
+			continue
+
+		A.update_shadow_from_icon_state()
+
+		if(MC_TICK_CHECK)
+			return
+
+	cache = door_queue
+	while(length(cache))
+		var/obj/machinery/door/D = cache[length(cache)]
+		cache.len--
+
+		if(QDELETED(D))
+			continue
+
+		D.update_dir()
+
+		if(MC_TICK_CHECK)
+			return
+
+	if(!length(queue) && !length(door_queue))
+		can_fire = FALSE
+
+/datum/controller/subsystem/shadow/proc/queue_shadow(atom/A)
+	if(!(A.shadow_flags & ATOM_SHADOW_USE_ICON_STATE))
+		return
+	if(A in queue)
+		return
+	queue += A
+	if(!can_fire)
+		can_fire = TRUE
+
+/datum/controller/subsystem/shadow/proc/queue_door(obj/machinery/door/D)
+	if(D in door_queue)
+		return
+	door_queue += D
+	if(!can_fire)
+		can_fire = TRUE
+
+
 /atom
 	var/shadow_flags = NONE
 	var/shadow_base_icon_state = "shadow_mask"
@@ -38,15 +100,23 @@
 	shadow.base_icon_state = shadow_base_icon_state
 
 	if(shadow_flags & ATOM_SHADOW_USE_ICON_STATE)
-		var/junction = get_shadow_junction_from_icon()
-		shadow.icon_state = "[shadow_base_icon_state]-[junction]"
+		shadow.icon_state = "[shadow_base_icon_state]-0"
 		shadow.smoothing_flags = NONE
+		SSshadow.queue_shadow(src)
 	else if(istype(shadow, /atom/movable/atom_shadow/door))
 		shadow.icon_state = icon_state
 		shadow.dir = dir
 
 	if(shadow_flags & ATOM_SHADOW_ABSOLUTE)
 		shadow.enable_ghost_override()
+
+/atom/proc/update_shadow_from_icon_state()
+	if(!(shadow_flags & ATOM_SHADOW_USE_ICON_STATE) || QDELETED(shadow))
+		return
+
+	var/junction = get_shadow_junction_from_icon()
+	shadow.icon_state = "[shadow_base_icon_state]-[junction]"
+	shadow.sync_ghost_override()
 
 /atom/proc/remove_shadow()
 	QDEL_NULL(shadow)
@@ -89,7 +159,7 @@
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 	smoothing_flags = SMOOTH_BITMASK
-	smoothing_groups = SMOOTH_GROUP_SHADOWMASK + SMOOTH_GROUP_WALLS + SMOOTH_GROUP_CLOSED_TURFS
+	smoothing_groups = SMOOTH_GROUP_SHADOWMASK
 	canSmoothWith = SMOOTH_GROUP_SHADOWMASK + SMOOTH_GROUP_WALLS
 
 	base_icon_state = "shadow_mask"
@@ -174,19 +244,22 @@
 
 // MARK: WALL
 /turf/closed/wall
-	shadow_flags = ATOM_CAST_SHADOW
+	shadow_flags = ATOM_CAST_SHADOW | ATOM_SHADOW_USE_ICON_STATE
 
 /turf/closed/indestructible
-	shadow_flags = ATOM_CAST_SHADOW
+	shadow_flags = ATOM_CAST_SHADOW | ATOM_SHADOW_USE_ICON_STATE
+
+/turf/closed/indestructible/fakeglass
+	shadow_flags = NONE
 
 /turf/closed/mineral
-	shadow_flags = ATOM_CAST_SHADOW
+	shadow_flags = ATOM_CAST_SHADOW | ATOM_SHADOW_USE_ICON_STATE
 
 /turf/closed/rw_wall
-	shadow_flags = ATOM_CAST_SHADOW
+	shadow_flags = ATOM_CAST_SHADOW | ATOM_SHADOW_USE_ICON_STATE
 
 /turf/cordon/absolute
-	shadow_flags = ATOM_CAST_SHADOW
+	shadow_flags = ATOM_CAST_SHADOW | ATOM_SHADOW_ABSOLUTE
 
 /obj/machinery/door
 	shadow_flags = ATOM_CAST_SHADOW
