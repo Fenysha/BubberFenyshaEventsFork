@@ -1,3 +1,4 @@
+/* // [HORIZON-SHADOWS]
 import { CheckboxInput, type FeatureToggle } from '../base';
 
 export const multiz_parallax: FeatureToggle = {
@@ -6,3 +7,4 @@ export const multiz_parallax: FeatureToggle = {
   description: 'Enable multi-z parallax, for a 3D effect.',
   component: CheckboxInput,
 };
+*/ // [/HORIZON-SHADOWS]

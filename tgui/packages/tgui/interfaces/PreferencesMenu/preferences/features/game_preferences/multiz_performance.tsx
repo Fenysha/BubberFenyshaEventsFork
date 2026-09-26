@@ -1,3 +1,4 @@
+/* // [HORIZON-SHADOWS]
 import { createDropdownInput, type Feature } from '../base';
 
 export const multiz_performance: Feature<number> = {
@@ -12,3 +13,4 @@ export const multiz_performance: Feature<number> = {
     0: 'Low',
   }),
 };
+*/ // [/HORIZON-SHADOWS]
