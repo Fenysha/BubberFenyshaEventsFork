@@ -111,5 +111,3 @@
 		corner_sw,
 	)
 
-
-#define SMOOTH_GROUP_SHADOWMASK S_OBJ(199)

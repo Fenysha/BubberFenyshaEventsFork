@@ -1,3 +1,84 @@
+/atom
+	var/shadow_flags = NONE
+	var/shadow_base_icon_state = "shadow_mask"
+	var/atom/movable/atom_shadow/shadow
+
+/atom/Initialize(mapload, ...)
+	. = ..()
+	if(shadow_flags & ATOM_CAST_SHADOW)
+		give_shadow()
+
+/turf/Initialize(mapload)
+	. = ..()
+	if(shadow_flags & ATOM_CAST_SHADOW)
+		give_shadow()
+
+/atom/Destroy(force)
+	. = ..()
+	if(shadow)
+		remove_shadow()
+
+/atom/proc/give_shadow()
+	if(shadow)
+		return
+
+	var/turf/T = get_turf(src)
+	if(!T)
+		return
+
+	var/shadow_path = /atom/movable/atom_shadow
+
+	if(istype(src, /obj/machinery/door))
+		var/obj/machinery/door/D = src
+		if(D.glass)
+			return
+		shadow_path = /atom/movable/atom_shadow/door
+
+	shadow = new shadow_path(T)
+	shadow.base_icon_state = shadow_base_icon_state
+
+	if(shadow_flags & ATOM_SHADOW_USE_ICON_STATE)
+		var/junction = get_shadow_junction_from_icon()
+		shadow.icon_state = "[shadow_base_icon_state]-[junction]"
+		shadow.smoothing_flags = NONE
+	else if(istype(shadow, /atom/movable/atom_shadow/door))
+		shadow.icon_state = icon_state
+		shadow.dir = dir
+
+	if(shadow_flags & ATOM_SHADOW_ABSOLUTE)
+		shadow.enable_ghost_override()
+
+/atom/proc/remove_shadow()
+	QDEL_NULL(shadow)
+
+/atom/proc/get_shadow_junction_from_icon()
+	var/static/list/cache = list()
+	var/state = icon_state
+	if(!state)
+		return 0
+	if(state in cache)
+		return cache[state]
+
+	var/pos = findlasttext(state, "-")
+	var/num = 0
+	if(pos)
+		var/numtext = copytext(state, pos + 1)
+		num = text2num(numtext)
+		if(isnull(num))
+			num = 0
+
+	cache[state] = num
+	return num
+
+/atom/movable/Moved(atom/old_loc, movement_dir, forced, list/old_locs, momentum_change)
+	. = ..()
+	if(shadow)
+		shadow.forceMove(loc)
+
+/atom/movable/setDir(newdir)
+	. = ..()
+	shadow?.dir = newdir
+
 // MARK: Shadow-atom
 /atom/movable/atom_shadow
 	name = "shadow"
@@ -8,8 +89,10 @@
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 	smoothing_flags = SMOOTH_BITMASK
-	smoothing_groups = SMOOTH_GROUP_SHADOWMASK
-	canSmoothWith = SMOOTH_GROUP_SHADOWMASK
+	smoothing_groups = SMOOTH_GROUP_SHADOWMASK + SMOOTH_GROUP_WALLS + SMOOTH_GROUP_CLOSED_TURFS
+	canSmoothWith = SMOOTH_GROUP_SHADOWMASK + SMOOTH_GROUP_WALLS
+
+	base_icon_state = "shadow_mask"
 
 	tiles_with = list(
 		/atom/movable/atom_shadow,
@@ -27,56 +110,48 @@
 
 /atom/movable/atom_shadow/Initialize(mapload)
 	. = ..()
-
 	relativewall()
 	relativewall_neighbours()
-
 	if(ghost_override_shadow)
 		sync_ghost_override()
-
-	return .
-
 
 /atom/movable/atom_shadow/Destroy()
 	ghost_override_shadow?.Destroy()
 	ghost_override_shadow = null
-
 	return ..()
-
 
 /atom/movable/atom_shadow/proc/enable_ghost_override()
 	if(ghost_override_shadow)
 		return
-
 	ghost_override_shadow = new /atom/movable/atom_shadow/ghost_override(loc)
 	sync_ghost_override()
-
 
 /atom/movable/atom_shadow/proc/disable_ghost_override()
 	ghost_override_shadow?.Destroy()
 	ghost_override_shadow = null
 
-
 /atom/movable/atom_shadow/proc/sync_ghost_override()
 	if(!ghost_override_shadow)
 		return
-
 	ghost_override_shadow.icon = icon
 	ghost_override_shadow.icon_state = icon_state
 	ghost_override_shadow.dir = dir
 	ghost_override_shadow.pixel_x = pixel_x
 	ghost_override_shadow.pixel_y = pixel_y
-
 	// Do NOT copy alpha/color from the normal shadow.
 	// This shadow is outside the WALL_FOV pipeline.
 	ghost_override_shadow.alpha = 255
 	ghost_override_shadow.color = null
 
-
 /atom/movable/atom_shadow/handle_icon_junction(junction)
-	icon_state = "shadow_mask-[junction]"
+	icon_state = "[base_icon_state]-[junction]"
 	sync_ghost_override()
 
+/atom/movable/atom_shadow/door
+	icon = 'fenysha_events/icons/shadows/airlock_mask.dmi'
+
+/atom/movable/atom_shadow/door/handle_icon_junction(junction)
+	return
 
 // MARK: Ghost shadow
 /atom/movable/atom_shadow/ghost_override
@@ -97,83 +172,27 @@
 	canSmoothWith = null
 
 
-/atom/movable/atom_shadow/door
-	icon = 'fenysha_events/icons/shadows/airlock_mask.dmi'
-
-/atom/movable/atom_shadow/door/handle_icon_junction(junction)
-	return
-
 // MARK: WALL
 /turf/closed/wall
-	var/atom/movable/atom_shadow/shadow
+	shadow_flags = ATOM_CAST_SHADOW
 
-/turf/closed/wall/Initialize(mapload)
-	. = ..()
-	shadow = new /atom/movable/atom_shadow(src, src)
-
-/turf/closed/wall/Destroy()
-	shadow?.Destroy()
-	return ..()
-
-// Indestructible
 /turf/closed/indestructible
-	var/atom/movable/atom_shadow/shadow
+	shadow_flags = ATOM_CAST_SHADOW
 
-/turf/closed/indestructible/Initialize(mapload)
-	. = ..()
-	shadow = new /atom/movable/atom_shadow(src, src)
-
-/turf/closed/indestructible/Destroy()
-	shadow?.Destroy()
-	return ..()
-
-// Mineral
 /turf/closed/mineral
-	var/atom/movable/atom_shadow/shadow
+	shadow_flags = ATOM_CAST_SHADOW
 
-/turf/closed/mineral/Initialize(mapload)
-	. = ..()
-	shadow = new /atom/movable/atom_shadow(src, src)
-
-/turf/closed/mineral/Destroy()
-	shadow?.Destroy()
-	return ..()
-
-// Rim Wall
 /turf/closed/rw_wall
-	var/atom/movable/atom_shadow/shadow
-
-/turf/closed/rw_wall/Initialize(mapload)
-	. = ..()
-	shadow = new /atom/movable/atom_shadow(src, src)
-
-/turf/closed/rw_wall/Destroy()
-	shadow?.Destroy()
-	return ..()
+	shadow_flags = ATOM_CAST_SHADOW
 
 /turf/cordon/absolute
-	var/atom/movable/atom_shadow/shadow
+	shadow_flags = ATOM_CAST_SHADOW
 
-/turf/cordon/absolute/Initialize(mapload)
-	. = ..()
-	shadow = new /atom/movable/atom_shadow(src, src)
-	shadow.enable_ghost_override()
+/obj/machinery/door
+	shadow_flags = ATOM_CAST_SHADOW
+
 
 // MARK: Door Airlock
-/obj/machinery/door
-	var/atom/movable/atom_shadow/door/shadow
-
-/obj/machinery/door/Initialize(mapload)
-	. = ..()
-	if(!glass)
-		shadow = new(loc)
-		shadow.icon_state = icon_state
-		shadow.dir = dir
-
-/obj/machinery/door/setDir(newdir)
-    . = ..()
-    shadow?.dir = newdir
-
 /obj/machinery/door/airlock/update_icon(updates = ALL)
 	. = ..()
 	if(shadow)
@@ -186,10 +205,6 @@
 				shadow.icon_state = "closing"
 			if(AIRLOCK_CLOSED)
 				shadow.icon_state = "closed"
-
-/obj/machinery/door/Destroy()
-	shadow?.Destroy()
-	return ..()
 
 /obj/machinery/door/poddoor/update_icon(updates = ALL)
 	. = ..()
