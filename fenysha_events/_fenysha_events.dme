@@ -42,6 +42,7 @@
 #include "code\modules\aesthetic_shuttles\turfs.dm"
 #include "code\modules\aesthetics\closed_turfs.dm"
 #include "code\modules\aesthetics\closets.dm"
+#include "code\modules\aesthetics\door.dm"
 #include "code\modules\aesthetics\effects.dm"
 #include "code\modules\aesthetics\machinery.dm"
 #include "code\modules\aesthetics\open_turfs.dm"
