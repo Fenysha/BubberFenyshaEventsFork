@@ -123,6 +123,7 @@
 	data["autoRotate"] = rotation["autoRotate"]
 	data["rotationSpeed"] = rotation["rotationSpeed"]
 	data["rotationAngle"] = rotation["rotationAngle"]
+	data["dayLengthMinutes"] = rotation["dayLengthMinutes"]
 
 	data["daysPerYear"] = RW_DAYS_PER_YEAR
 	data["daysPerQuadrum"] = RW_DAYS_PER_QUADRUM
@@ -150,11 +151,13 @@
 	data["selectedTile"] = get_selected_tile_payload()
 	data["selectedObject"] = get_selected_object_payload()
 	data["view"] = get_view_data()
+	data["objects"] = get_visible_objects()
 
 	var/list/rotation = SSrimworld_planetmap.get_rotation_data()
 	data["rotationAngle"] = rotation["rotationAngle"]
 	data["autoRotate"] = rotation["autoRotate"]
 	data["rotationSpeed"] = rotation["rotationSpeed"]
+	data["dayLengthMinutes"] = rotation["dayLengthMinutes"]
 
 	var/list/calendar = SSrimworld_planetmap.get_calendar_data()
 	data["calendar"] = calendar
@@ -200,6 +203,23 @@
 
 /datum/planetmap_view/proc/get_view_data()
 	return list()
+
+
+/datum/planetmap_view/proc/objects_of_types(list/allowed_types)
+	var/list/result = list()
+	if(!planet)
+		return result
+	for(var/object_id in planet.objects)
+		var/datum/rimworld_planet_object/object = planet.objects[object_id]
+		if(!object || !(object.object_type in allowed_types))
+			continue
+		result += list(object.get_data())
+	return result
+
+
+/// Overview and any view without its own filter see settlements only.
+/datum/planetmap_view/proc/get_visible_objects()
+	return objects_of_types(list(RW_OBJECT_TYPE_SETTLEMENT))
 
 
 /datum/planetmap_view/proc/get_selected_tile_payload()
@@ -318,6 +338,36 @@
 	)
 
 
+/datum/planetmap_view/caravan/get_visible_objects()
+	var/list/result = list()
+	if(!planet)
+		return result
+	for(var/object_id in planet.objects)
+		var/datum/rimworld_planet_object/object = planet.objects[object_id]
+		if(!object)
+			continue
+		if(object.object_type == RW_OBJECT_TYPE_SETTLEMENT || on_caravan_route(object))
+			result += list(object.get_data())
+	return result
+
+
+/datum/planetmap_view/caravan/proc/on_caravan_route(datum/rimworld_planet_object/object)
+	if(tile_is_endpoint(object.x, object.y))
+		return TRUE
+	if(!istype(object, /datum/rimworld_planet_object/road))
+		return FALSE
+	var/datum/rimworld_planet_object/road/road = object
+	return tile_is_endpoint(road.start_x, road.start_y) || tile_is_endpoint(road.end_x, road.end_y)
+
+
+/datum/planetmap_view/caravan/proc/tile_is_endpoint(x, y)
+	if(!isnull(origin_x) && x == origin_x && y == origin_y)
+		return TRUE
+	if(!isnull(destination_x) && x == destination_x && y == destination_y)
+		return TRUE
+	return FALSE
+
+
 /datum/planetmap_view/caravan/on_select_tile(x, y)
 	. = ..()
 	if(!.)
@@ -350,6 +400,12 @@
 	return ADMIN_STATE(R_ADMIN)
 
 
+/datum/planetmap_view/admin/get_visible_objects()
+	if(!planet)
+		return list()
+	return planet.get_interactive_objects()
+
+
 /datum/planetmap_view/admin/get_view_data()
 	var/list/data = list(
 		"roadStartX" = road_start_x,
@@ -376,10 +432,10 @@
 			SStgui.update_uis(src)
 			return TRUE
 
-		if("set_rotation_speed")
-			if(isnull(params["speed"]))
+		if("set_day_length")
+			if(!can_control_time || isnull(params["minutes"]))
 				return FALSE
-			SSrimworld_planetmap.set_rotation_speed(text2num(params["speed"]))
+			SSrimworld_planetmap.set_day_length_minutes(text2num(params["minutes"]))
 			SStgui.update_uis(src)
 			return TRUE
 
@@ -399,11 +455,7 @@
 			return TRUE
 
 		if("set_time_scale")
-			if(!can_control_time || isnull(params["scale"]))
-				return FALSE
-			SSrimworld_planetmap.set_time_scale(text2num(params["scale"]))
-			SStgui.update_uis(src)
-			return TRUE
+			return FALSE
 
 		if("toggle_advance_calendar")
 			if(!can_control_time)

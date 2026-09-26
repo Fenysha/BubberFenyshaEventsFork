@@ -164,6 +164,30 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 	return light
 
 
+/**
+ * Rimworld wash. Mirrors one area plate. strength is a constant multiplier:
+ * 255 outdoors, leak falloff on indoor rings. The plate's own alpha is the sun level.
+ */
+/proc/get_rimworld_daylight_appearance(render_target_id, strength = 255, turf/reference)
+	var/static/list/cached = list()
+	var/plane_offset = 0
+	if(SSmapping.max_plane_offset && isturf(reference) && reference.z)
+		plane_offset = GET_Z_PLANE_OFFSET(reference.z)
+	var/cache_key = "[render_target_id]-[strength]-[plane_offset]"
+	. = cached[cache_key]
+	if(.)
+		return
+	var/mutable_appearance/light = new()
+	light.plane = GET_NEW_PLANE(LIGHTING_PLANE, plane_offset)
+	light.layer = LIGHTING_PRIMARY_LAYER
+	light.blend_mode = BLEND_ADD
+	light.appearance_flags = RESET_TRANSFORM | RESET_ALPHA | RESET_COLOR
+	light.render_source = render_target_id
+	light.alpha = strength
+	cached[cache_key] = light
+	return light
+
+
 /// Prefer lighting_object so BLEND_ADD composites against the same darkness tree.
 /proc/daylight_overlay_holder(turf/target)
 	if(!isturf(target))
@@ -261,6 +285,7 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 SUBSYSTEM_DEF(daylight)
 	name = "Daylight Controller"
 	wait = 1 SECONDS
+	ss_flags = SS_BACKGROUND
 	runlevels = RUNLEVEL_GAME
 	dependencies = list(
 		/datum/controller/subsystem/mapping,
@@ -271,8 +296,10 @@ SUBSYSTEM_DEF(daylight)
 	var/static/list/daylight_areas = list()
 	var/static/list/obj/effect/light_emitter/daylight/all_emitters = list()
 
-	/// Shared source mirrored by every turf overlay.
+	/// Shared source mirrored by every station turf overlay.
 	var/obj/daylight_wash_source/wash_source
+	/// One plate per loaded rimworld area. Turf overlays mirror these.
+	var/list/rimworld_plates = list()
 	/// TRUE after the first full lighting pass in Initialize.
 	var/setup_complete = FALSE
 
@@ -313,6 +340,9 @@ SUBSYSTEM_DEF(daylight)
 	// Rimworld / planet
 	var/use_planet_time = FALSE
 	var/last_planet_rotation = -1
+	/// Last emitter sun bucket. -1 forces the first apply.
+	var/rimworld_emitter_alpha = -1
+	var/rimworld_emitter_color
 	COOLDOWN_DECLARE(rimworld_daylight_cd)
 
 	// Optional visual weather particles (station flavour)
@@ -452,17 +482,23 @@ SUBSYSTEM_DEF(daylight)
 	var/angle = SSrimworld_planetmap.rotation_angle
 	last_planet_rotation = angle
 
-	// Global wash colour/intensity from planet clock (shared render target)
-	if(manual_time < 0 && !time_locked)
-		var/list/global_phase = get_phase_light_state_for_hour(SSrimworld_planetmap.time_of_day)
-		set_target(global_phase["intensity"], global_phase["color"], RIMWORLD_DAYLIGHT_UPDATE_INTERVAL)
-
-	// Per-area local strength from cell solar geometry
+	// Plates carry the sun. Do not animate the shared wash or restart the
+	// transition: that called update_light() every second and sawed the tick.
 	for(var/area/rimworld/A as anything in GLOB.rimworld_areas)
 		if(A.daylight)
 			A.update_rimworld_daylight()
-		CHECK_TICK
 
+	if(!length(all_emitters) || manual_time >= 0 || time_locked)
+		return
+	var/list/global_phase = get_phase_light_state_for_hour(SSrimworld_planetmap.time_of_day)
+	var/bucket_color = rimworld_quantize_daylight_color(global_phase["color"])
+	var/bucket_alpha = rimworld_daylight_alpha_bucket(global_phase["intensity"])
+	if(bucket_alpha == rimworld_emitter_alpha && bucket_color == rimworld_emitter_color)
+		return
+	rimworld_emitter_alpha = bucket_alpha
+	rimworld_emitter_color = bucket_color
+	current_intensity = bucket_alpha / 255
+	current_color = bucket_color
 	for(var/obj/effect/light_emitter/daylight/E as anything in all_emitters)
 		E.apply_current_state()
 
@@ -627,11 +663,23 @@ SUBSYSTEM_DEF(daylight)
 		refreshed_areas[loaded_area] = TRUE
 		loaded_area.update_base_lighting()
 
+	var/list/rimworld_attached = list()
 	for(var/turf/loaded_turf in turfs)
 		if(!isturf(loaded_turf))
 			continue
 		var/area/loaded_area = loaded_turf.loc
 		if(!loaded_area?.daylight)
+			continue
+		if(istype(loaded_area, /area/rimworld))
+			var/area/rimworld/loaded_rimworld = loaded_area
+			if(loaded_rimworld.cell_loading || rimworld_attached[loaded_rimworld])
+				continue
+			if(!loaded_rimworld.daylight_overlays_ready)
+				loaded_rimworld.apply_daylight_overlay()
+				rimworld_attached[loaded_rimworld] = TRUE
+				continue
+			loaded_rimworld.apply_plate_wash(loaded_turf, 255)
+			CHECK_TICK
 			continue
 		if(!loaded_area.daylight_lit)
 			loaded_area.apply_daylight_overlay()
@@ -657,9 +705,10 @@ SUBSYSTEM_DEF(daylight)
 			return
 	if(istype(turf_area, /area/rimworld) && turf_area.daylight)
 		var/area/rimworld/RA = turf_area
-		var/strength = round(clamp(RA.rimworld_sun_intensity >= 0 ? RA.rimworld_sun_intensity : 1, 0, 1) * 255, 1)
-		if(strength > 0)
-			apply_daylight_wash(changed, strength)
+		if(!RA.daylight_overlays_ready)
+			RA.apply_daylight_overlay()
+			return
+		RA.apply_plate_wash(changed, 255)
 		return
 	if(turf_area?.daylight)
 		apply_daylight_wash(changed, 255)
@@ -686,6 +735,22 @@ SUBSYSTEM_DEF(daylight)
 		if(leaked)
 			return leaked
 	return null
+
+
+/datum/controller/subsystem/daylight/proc/register_rimworld_plate(obj/rimworld_daylight_plate/plate)
+	if(!plate || QDELETED(plate) || (plate in rimworld_plates))
+		return
+	rimworld_plates += plate
+	// VIS_HIDE keeps the plate out of the HUD. Clients already render wash_source,
+	// so its vis_contents still fill the plate's render_target.
+	if(wash_source)
+		wash_source.vis_contents += plate
+
+
+/datum/controller/subsystem/daylight/proc/unregister_rimworld_plate(obj/rimworld_daylight_plate/plate)
+	rimworld_plates -= plate
+	if(wash_source)
+		wash_source.vis_contents -= plate
 
 
 /datum/controller/subsystem/daylight/proc/register_emitter(obj/effect/light_emitter/daylight/emitter)
@@ -778,6 +843,17 @@ SUBSYSTEM_DEF(daylight)
 	)
 
 
+/proc/rimworld_daylight_alpha_bucket(intensity)
+	return round(clamp(intensity, 0, 1) * 255 / RW_DAYLIGHT_LEVEL_STEP) * RW_DAYLIGHT_LEVEL_STEP
+
+/proc/rimworld_quantize_daylight_color(color)
+	var/list/rgb = hex2rgb(color)
+	return rgb(
+		round(rgb[1] / RW_DAYLIGHT_LEVEL_STEP) * RW_DAYLIGHT_LEVEL_STEP,
+		round(rgb[2] / RW_DAYLIGHT_LEVEL_STEP) * RW_DAYLIGHT_LEVEL_STEP,
+		round(rgb[3] / RW_DAYLIGHT_LEVEL_STEP) * RW_DAYLIGHT_LEVEL_STEP,
+	)
+
 /proc/color_interpolate(color1, color2, ratio)
 	var/list/c1 = hex2rgb(color1)
 	var/list/c2 = hex2rgb(color2)
@@ -796,6 +872,35 @@ SUBSYSTEM_DEF(daylight)
 	render_target = DAYLIGHT_WASH_RENDER_TARGET
 	screen_loc = "1,1"
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+
+
+/// One per rimworld area. Changing color/alpha updates every turf that mirrors it.
+/obj/rimworld_daylight_plate
+	icon = 'icons/effects/alphacolors.dmi'
+	icon_state = "white"
+	plane = LIGHTING_PLANE
+	blend_mode = BLEND_ADD
+	screen_loc = "1,1"
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	vis_flags = VIS_HIDE
+	var/area/rimworld/owner
+	var/static/next_id = 0
+
+
+/obj/rimworld_daylight_plate/Initialize(mapload, area/rimworld/owner_area)
+	. = ..()
+	owner = owner_area
+	next_id++
+	render_target = "*RW_SUN_[next_id]"
+	SSdaylight?.register_rimworld_plate(src)
+
+
+/obj/rimworld_daylight_plate/Destroy()
+	SSdaylight?.unregister_rimworld_plate(src)
+	if(owner)
+		owner.sun_plate = null
+		owner = null
+	return ..()
 
 
 /atom/movable/screen/plane_master/daylight_anchor

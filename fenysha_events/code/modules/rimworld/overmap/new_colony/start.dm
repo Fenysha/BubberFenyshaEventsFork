@@ -87,12 +87,12 @@
 
 	player_faction.name = faction_name
 	player_faction.desc = faction_desc
+	player_faction.color = faction_color
+	player_faction.icon_state = faction_icon
 
 	var/mob/living/carbon/human/owner = prepare_character()
 	if(!owner)
 		return fail_loading("Unable to prepare character.")
-
-	// TODO: icon / ideology
 
 	SSfactions.add_member(player_faction, owner, force = TRUE)
 	var/datum/rimworld_planet_object/settlement/settlement = planet.create_settlement(

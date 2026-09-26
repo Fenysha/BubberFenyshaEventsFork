@@ -15,10 +15,10 @@ import {
   Stack,
 } from 'tgui-core/components';
 
-import type { PlanetMapData } from '../types';
+import type { AdminMapData } from './types';
 
 export const AdminPanel = () => {
-  const { act, data } = useBackend<PlanetMapData>();
+  const { act, data } = useBackend<AdminMapData>();
 
   const selected = data.selectedTile;
   const selectedObject = data.selectedObject;
@@ -98,16 +98,16 @@ export const AdminPanel = () => {
               </Button>
             </LabeledList.Item>
 
-            <LabeledList.Item label="Rotation Speed">
+            <LabeledList.Item label="Day length (min)">
               <NumberInput
                 width="100%"
-                step={0.1}
-                minValue={-10}
-                maxValue={10}
-                value={data.rotationSpeed ?? 0.001}
+                step={1}
+                minValue={5}
+                maxValue={120}
+                value={data.dayLengthMinutes ?? 30}
                 onChange={(value) =>
-                  act('set_rotation_speed', {
-                    speed: value,
+                  act('set_day_length', {
+                    minutes: value,
                   })
                 }
               />
@@ -152,17 +152,6 @@ export const AdminPanel = () => {
                 maxValue={24}
                 value={Number(data.timeOfDay?.toFixed?.(2) ?? 0)}
                 onChange={(value) => act('set_time_of_day', { hour: value })}
-              />
-            </LabeledList.Item>
-
-            <LabeledList.Item label="Time scale">
-              <NumberInput
-                width="100%"
-                step={0.5}
-                minValue={0}
-                maxValue={100}
-                value={data.timeScale ?? 1}
-                onChange={(value) => act('set_time_scale', { scale: value })}
               />
             </LabeledList.Item>
 

@@ -1,10 +1,10 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
-import type { PlanetMapData } from '../types';
+import type { CaravanMapData, CaravanViewData } from './types';
 
 export const CaravanPanel = () => {
-  const { act, data } = useBackend<PlanetMapData>();
-  const view = data.view ?? {};
+  const { act, data } = useBackend<CaravanMapData>();
+  const view: CaravanViewData = data.view ?? {};
 
   return (
     <Stack fill vertical>
