@@ -42,6 +42,7 @@
 	shadow?.Destroy()
 	return ..()
 
+// Indestructible
 /turf/closed/indestructible
 	var/atom/movable/atom_shadow/shadow
 
@@ -50,6 +51,30 @@
 	shadow = new /atom/movable/atom_shadow(src, src)
 
 /turf/closed/indestructible/Destroy()
+	shadow?.Destroy()
+	return ..()
+
+// Mineral
+/turf/closed/mineral
+	var/atom/movable/atom_shadow/shadow
+
+/turf/closed/mineral/Initialize(mapload)
+	. = ..()
+	shadow = new /atom/movable/atom_shadow(src, src)
+
+/turf/closed/mineral/Destroy()
+	shadow?.Destroy()
+	return ..()
+
+// Rim Wall
+/turf/closed/rw_wall
+	var/atom/movable/atom_shadow/shadow
+
+/turf/closed/rw_wall/Initialize(mapload)
+	. = ..()
+	shadow = new /atom/movable/atom_shadow(src, src)
+
+/turf/closed/rw_wall/Destroy()
 	shadow?.Destroy()
 	return ..()
 
