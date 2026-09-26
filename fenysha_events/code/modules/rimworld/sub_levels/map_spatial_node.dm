@@ -164,29 +164,14 @@
 	/**
 	 * Requested size is the PLAYABLE area.
 	 *
-	 * Reservation automatically gets one-tile border on every side.
+	 * Reservation automatically gets one-tile border on every side,
+	 * and takes the smallest node that fits it.
 	 */
-	if(
-		req_w != RW_SUBLEVEL_INNER_WIDTH \
-		|| req_h != RW_SUBLEVEL_INNER_HEIGHT
-	)
-		return null
-
 	var/slot_w = req_w + RW_SUBLEVEL_BORDER_SIZE * 2
 	var/slot_h = req_h + RW_SUBLEVEL_BORDER_SIZE * 2
 
 	if(bounds.width < slot_w || bounds.height < slot_h)
 		return null
-
-	if(bounds.width == slot_w && bounds.height == slot_h)
-		reserved = TRUE
-		reservation = new /datum/turf_reservation/sub_level(
-			src,
-			res_id,
-			res_name,
-			TRUE
-		)
-		return reservation
 
 	if(split)
 		for(var/datum/map_spatial_node/child in children)
@@ -202,21 +187,31 @@
 
 		return null
 
-	if(!subdivide())
+	// Halves are rounded down, so the smallest child is this size
+	var/smallest_child_w = round(bounds.width / 2)
+	var/smallest_child_h = round(bounds.height / 2)
+	if(smallest_child_w >= slot_w && smallest_child_h >= slot_h && subdivide())
+		for(var/datum/map_spatial_node/child in children)
+			var/datum/turf_reservation/sub_level/res = child.allocate_sub_level(
+				req_w,
+				req_h,
+				res_id,
+				res_name
+			)
+
+			if(res)
+				return res
+
 		return null
 
-	for(var/datum/map_spatial_node/child in children)
-		var/datum/turf_reservation/sub_level/res = child.allocate_sub_level(
-			req_w,
-			req_h,
-			res_id,
-			res_name
-		)
-
-		if(res)
-			return res
-
-	return null
+	reserved = TRUE
+	reservation = new /datum/turf_reservation/sub_level(
+		src,
+		res_id,
+		res_name,
+		TRUE
+	)
+	return reservation
 
 
 /datum/map_spatial_node/proc/check_merge()

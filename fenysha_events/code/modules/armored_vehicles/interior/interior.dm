@@ -1,5 +1,15 @@
 #define INTERIOR_BUFFER_TILES 1
 
+GLOBAL_LIST_EMPTY(vehicle_interiors)
+
+/// Returns the interior a turf belongs to, if any
+/proc/get_vehicle_interior(turf/checked)
+	if(!istype(get_area(checked), /area/interior))
+		return null
+	for(var/datum/interior/interior as anything in GLOB.vehicle_interiors)
+		if(checked in interior.loaded_turfs)
+			return interior
+
 /// The inside of a vehicle: a map template loaded into reserved space that follows its container
 /datum/interior
 	var/datum/map_template/interior/template = /datum/map_template/interior
@@ -7,7 +17,7 @@
 	/// Invoked with (mob, interior, teleport) when a mob leaves
 	var/datum/callback/exit_callback
 	var/list/mob/occupants = list()
-	var/datum/turf_reservation/reservation
+	var/datum/turf_reservation/sub_level/reservation
 	var/list/turf/loaded_turfs = list()
 	var/area/this_area
 
@@ -17,14 +27,25 @@
 	src.exit_callback = exit_callback
 	ADD_TRAIT(container, TRAIT_HAS_INTERIOR, REF(src))
 	RegisterSignal(container, COMSIG_QDELETING, PROC_REF(handle_container_del))
+	GLOB.vehicle_interiors += src
 	INVOKE_ASYNC(src, PROC_REF(init_map))
 
 /datum/interior/proc/init_map()
 	var/datum/map_template/map = new template
-	reservation = SSmapping.request_turf_block_reservation(map.width + INTERIOR_BUFFER_TILES * 2, map.height + INTERIOR_BUFFER_TILES * 2)
+	// The allocator refuses while another allocation is in progress, so wait our turn
+	for(var/attempt in 1 to 50)
+		reservation = SSsub_levels.create_sub_level(map.width + INTERIOR_BUFFER_TILES * 2, map.height + INTERIOR_BUFFER_TILES * 2, "[container] interior")
+		if(reservation)
+			break
+		stoplag()
 	if(!reservation)
-		CRASH("Could not reserve space for [type]")
-	var/turf/corner = reservation.bottom_left_turfs[1]
+		CRASH("Could not allocate a sub-level for [type]")
+	while(!reservation.materialize_step())
+		stoplag()
+	if(QDELETED(src))
+		release_reservation()
+		return
+	var/turf/corner = reservation.get_inner_bottom_left_turf()
 	var/turf/load_loc = locate(corner.x + INTERIOR_BUFFER_TILES, corner.y + INTERIOR_BUFFER_TILES, corner.z)
 	var/list/bounds = map.load(load_loc)
 	if(!bounds)
@@ -43,14 +64,20 @@
 	return
 
 /datum/interior/Destroy(force)
+	GLOB.vehicle_interiors -= src
 	eject_all()
 	REMOVE_TRAIT(container, TRAIT_HAS_INTERIOR, REF(src))
 	exit_callback = null
 	this_area = null
 	loaded_turfs = null
-	QDEL_NULL(reservation)
+	release_reservation()
 	container = null
 	return ..()
+
+/datum/interior/proc/release_reservation()
+	if(reservation)
+		SSsub_levels.delete_sub_level(reservation.id)
+	reservation = null
 
 /datum/interior/proc/connect_atoms()
 	for(var/turf/tile as anything in loaded_turfs)
