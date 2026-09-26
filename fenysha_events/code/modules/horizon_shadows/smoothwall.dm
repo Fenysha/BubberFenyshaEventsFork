@@ -5,23 +5,21 @@
 	//A list of paths only that each turf should tile with
 	var/list/tiles_with
 
-/atom/proc/relativewall() //atom because it should be useable both for walls, false walls, doors, windows, etc
-	var/junction = 0 //flag used for icon_state
-	var/turf/turf_check //The turf we are checking
-	var/first_iterator //iterator
-	var/second_iterator //second iterator
-	var/third_iterator //third iterator (I know, that's a lot, but I'm trying to make this modular, so bear with me)
+/atom/proc/relativewall()
+	var/junction = 0
+	var/turf/turf_check
 
-	for(first_iterator in GLOB.cardinals) //For all cardinal dir turfs
+	for(var/first_iterator in GLOB.cardinals)
 		turf_check = get_step(src, first_iterator)
 		if(!istype(turf_check))
 			continue
-		for(second_iterator in tiles_with) //And for all types that we tile with
+
+		for(var/second_iterator in tiles_with)
 			if(istype(turf_check, second_iterator))
 				junction |= first_iterator
 				break
 
-			for(third_iterator in turf_check)
+			for(var/atom/third_iterator in turf_check)
 				if(istype(third_iterator, second_iterator))
 					junction |= first_iterator
 					break
@@ -29,24 +27,36 @@
 	handle_icon_junction(junction)
 
 /atom/proc/relativewall_neighbours()
-	var/turf/turf_check //The turf we are checking
-	var/first_iterator //iterator
-	var/second_iterator //second iterator
-	var/atom/third_iterator //third iterator (I know, that's a lot, but I'm trying to make this modular, so bear with me)
+	var/turf/turf_check
 
-	for(first_iterator in GLOB.cardinals) //For all cardinal dir turfs
+	for(var/first_iterator in GLOB.cardinals)
 		turf_check = get_step(src, first_iterator)
 		if(!istype(turf_check))
 			continue
-		for(second_iterator in tiles_with) //And for all types that we tile with
+
+		for(var/second_iterator in tiles_with)
 			if(istype(turf_check, second_iterator))
-				turf_check.relativewall() //If we tile this type, junction it
+				if(turf_check.tiles_with)
+					turf_check.relativewall()
 				break
 
-			for(third_iterator in turf_check)
+			for(var/atom/third_iterator in turf_check)
 				if(istype(third_iterator, second_iterator))
-					third_iterator.relativewall() //get_dir to first_iterator, since third_iterator is something inside the turf turf_check
+					if(third_iterator.tiles_with)
+						third_iterator.relativewall()
 					break
+
+
+/atom/movable/atom_shadow/relativewall_neighbours()
+	for(var/direction in GLOB.cardinals)
+		var/turf/turf_check = get_step(src, direction)
+		if(!turf_check)
+			continue
+
+		for(var/atom/movable/atom_shadow/shadow in turf_check)
+			if(!QDELETED(shadow))
+				shadow.relativewall()
+
 
 /atom/proc/handle_icon_junction(junction)
 	return

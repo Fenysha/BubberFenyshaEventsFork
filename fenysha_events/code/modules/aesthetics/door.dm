@@ -9,13 +9,10 @@
 		/obj/structure/window/reinforced/tinted/fulltile
 	)
 
-/obj/machinery/door/poddoor/Initialize(mapload)
+/obj/machinery/door/post_machine_initialize()
 	. = ..()
 	update_dir()
-
-/obj/machinery/door/airlock/Initialize(mapload)
-	. = ..()
-	update_dir()
+	update_icon()
 
 // Additional check for auto-rotation
 /obj/machinery/door/proc/find_list_object_in_dir(search_dir)
@@ -35,19 +32,27 @@
 /obj/machinery/door/proc/update_dir()
 	var/horizontal = find_list_object_in_dir(WEST) + find_list_object_in_dir(EAST)
 	var/vertical = find_list_object_in_dir(NORTH) + find_list_object_in_dir(SOUTH)
+
+	var/new_dir
 	if(horizontal > vertical)
-		setDir(2)
+		new_dir = SOUTH
 	else
-		setDir(4)
+		new_dir = EAST
+
+	if(dir != new_dir)
+		setDir(new_dir)
 
 // Mechanism for turning the gateway with a key
 /obj/machinery/door/airlock/proc/airlock_dir_change(mob/user, obj/item/wrench, new_dir, time = 40)
 	if(wrench.tool_behaviour != TOOL_WRENCH)
 		return CANT_UNFASTEN
+
 	if(time)
 		to_chat(user, span_notice("You begin changing [src]'s direction..."))
+
 	if(!wrench.use_tool(src, user, time))
 		return FAILED_UNFASTEN
+
 	wrench.play_tool_sound(src, 50)
 	setDir(new_dir)
 
