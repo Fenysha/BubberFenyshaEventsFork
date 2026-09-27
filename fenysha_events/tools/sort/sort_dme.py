@@ -138,23 +138,22 @@ if __name__ == '__main__':
     if args.all:
         base = Path(__file__).resolve().parents[2]
         files = [base / '_fenysha_events.dme', base / '_fenysha_events_premodular.dme']
-        any_changed = False
+        sorted_files = []
         for f in files:
             if not f.exists():
-                print(f'Skipping missing file: {f}')
                 continue
             changed = sort_dme_file(f)
-            any_changed = any_changed or changed
-            print(f'Sorted: {f}' if changed else f'Already sorted: {f}')
-        raise SystemExit(0)
-
-    file_path = Path(args.file).resolve()
-
-    if not file_path.exists():
-        raise FileNotFoundError(f'File not found: {file_path}')
-
-    changed = sort_dme_file(file_path)
-    if changed:
-        print(f'Sorted: {file_path}')
+            if changed:
+                sorted_files.append(str(f.relative_to(base)))
+        if sorted_files:
+            print(f"Sorted: {', '.join(sorted_files)}")
+        exit(0)
     else:
-        print(f'Already sorted or no sortable include block found: {file_path}')
+        file_path = Path(args.file).resolve()
+
+        if not file_path.exists():
+            raise FileNotFoundError(f'File not found: {file_path}')
+
+        changed = sort_dme_file(file_path)
+        if changed:
+            print(f'Sorted: {file_path.name}')
