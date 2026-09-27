@@ -326,3 +326,23 @@ GLOBAL_LIST_INIT(rimworld_sheet_recipes, list(
 	resistance_flags = FLAMMABLE
 	force = 0
 	throwforce = 0
+
+
+/obj/item/rock_chunk
+	name = "Rock chunk"
+	desc = "Heavy rock chunk."
+	w_class = WEIGHT_CLASS_BULKY
+	throw_range = 0
+
+	icon_state = "stone_chunk1"
+	base_icon_state = "stone_chunk"
+
+	icon = 'fenysha_events/icons/items/rimworld_materials.dmi'
+	/// Material this chunk is made from. Should be STONY category
+	var/datum/material/rimworld_material/material
+
+
+/obj/item/rock_chunk/Initialize(mapload)
+	. = ..()
+	icon_state = "[base_icon_state][rand(1, 2)]"
+	AddComponent(/datum/component/two_handed, require_twohands=TRUE)

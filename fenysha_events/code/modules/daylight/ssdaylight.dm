@@ -698,6 +698,9 @@ SUBSYSTEM_DEF(daylight)
 	if(isnull(holder))
 		return
 	clear_daylight_wash(changed)
+
+	if(changed.has_roof())
+		return
 	var/area/turf_area = changed.loc
 	if(istype(turf_area, /area/rimworld))
 		var/area/rimworld/loading_area = turf_area
