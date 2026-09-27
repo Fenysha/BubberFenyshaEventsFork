@@ -582,7 +582,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 			if(
 				processed >= RW_SUBLEVEL_PLACE_BUDGET \
-				|| TICK_CHECK \
+				|| (!ignore_lag && TICK_CHECK) \
 				|| cancel_requested
 			)
 				if(cancel_requested)

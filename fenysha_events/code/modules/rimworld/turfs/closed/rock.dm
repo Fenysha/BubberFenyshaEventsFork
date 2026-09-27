@@ -136,15 +136,15 @@
 
 
 
-/turf/closed/rw_wall/rock/attack_hand(mob/user, list/modifiers)
-	. = ..()
-	if(.)
-		return
-	try_mine(user, null)
+/turf/closed/rw_wall/rock/hand_interaction(mob/user, list/modifiers)
+	if(user.do_after_count())
+		return TRUE
 
+	INVOKE_ASYNC(src, PROC_REF(try_mine), user, null)
+	return TRUE
 
 /turf/closed/rw_wall/rock/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
-	if(user.combat_mode)
+	if(user.combat_mode || user.do_after_count())
 		return ..()
 
 	if(tool.tool_behaviour == TOOL_MINING || tool.tool_behaviour == TOOL_CROWBAR || tool.tool_behaviour == TOOL_WRENCH)

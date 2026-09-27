@@ -253,7 +253,7 @@
 
 /turf/closed/rw_wall/attack_hand(mob/user, list/modifiers)
 	. = ..()
-	if(.)
+	if(hand_interaction(user, modifiers))
 		return
 
 	user.changeNext_move(CLICK_CD_MELEE)
@@ -261,6 +261,8 @@
 	playsound(src, 'sound/items/weapons/genhit.ogg', 25, TRUE)
 	add_fingerprint(user)
 
+/turf/closed/rw_wall/proc/hand_interaction(mob/user, list/modifiers)
+	return FALSE
 
 /turf/closed/rw_wall/attack_hand_secondary(mob/user, list/modifiers)
 	if(!user || !ishuman(user))

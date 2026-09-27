@@ -1,0 +1,12 @@
+#define FLORA_GROWS					(1 << 0)
+#define FLORA_PRODUCES_PRODUCT		(1 << 1)
+#define FLORA_PRODUCT_REGROW		(1 << 2)
+
+
+
+#define PLANT_GROW_STAGE_SEED		"1"
+#define PLANT_GROW_STAGE_SPROUT		"2"
+#define PLANT_GROW_STAGE_YOUNG		"3"
+#define PLANT_GROW_STAGE_MATURE		"4"
+
+#define PLANT_GROW_STAGE_MAX		 4
