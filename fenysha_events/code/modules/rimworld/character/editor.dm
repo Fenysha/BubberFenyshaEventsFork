@@ -640,7 +640,7 @@
 			var/delta = text2num(params["delta"]) || 0
 			var/current = skills[skill_id] || 0
 			var/wanted = clamp(current + delta, RW_SKILL_MIN, RW_SKILL_MANUAL_MAX)
-			if(wanted > current && !can_afford((wanted - current) * RW_SKILL_LEVEL_COST))
+			if(wanted > current && !can_afford(rw_skill_character_cost(wanted) - rw_skill_character_cost(current)))
 				return TRUE
 			skills[skill_id] = wanted
 			save_character()

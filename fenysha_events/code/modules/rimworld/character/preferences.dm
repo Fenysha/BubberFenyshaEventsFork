@@ -263,10 +263,26 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 /datum/rimworld_preferences/proc/get_skill_level(skill_id)
 	return clamp((skills[skill_id] || 0) + get_skill_bonus(skill_id), RW_SKILL_MIN, RW_SKILL_MAX)
 
+/datum/rimworld_preferences/proc/get_skill_point_cost(skill_id, level = null)
+	if(isnull(level))
+		level = skills[skill_id] || 0
+
+	return rw_skill_character_cost(level)
+
+/datum/rimworld_preferences/proc/get_skill_upgrade_cost(skill_id, target_level)
+	var/current_level = skills[skill_id] || 0
+	var/new_level = clamp(
+		round(text2num(target_level) || 0),
+		RW_SKILL_MIN,
+		RW_SKILL_MANUAL_MAX
+	)
+
+	return rw_skill_character_cost(new_level) - rw_skill_character_cost(current_level)
+
 /datum/rimworld_preferences/proc/points_spent()
 	. = 0
 	for(var/skill_id in skills)
-		. += (skills[skill_id] || 0) * RW_SKILL_LEVEL_COST
+		. += rw_skill_character_cost(skills[skill_id] || 0)
 	for(var/trait_id in traits)
 		var/datum/rw_trait/trait = GLOB.all_rw_traits[trait_id]
 		. += trait?.cost || 0
