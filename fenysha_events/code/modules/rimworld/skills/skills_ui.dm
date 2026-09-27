@@ -196,4 +196,8 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(edit_skills, R_NONE, "Edit skills", /atom)
 			skills.set_skill(skill_id, RW_SKILL_MIN)
 			. = TRUE
 
+		if("cycle_passion")
+			skills.cycle_passion(skill_id)
+			. = TRUE
+
 	return

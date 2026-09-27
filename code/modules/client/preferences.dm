@@ -154,6 +154,10 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	save_character(TRUE) //let's save this new random character so it doesn't keep generating new ones. // BUBBER EDIT
 
 /datum/preferences/ui_interact(mob/user, datum/tgui/ui)
+	if(current_window == PREFERENCE_TAB_CHARACTER_PREFERENCES)
+		user?.client?.open_colonist_editor()
+		return
+
 	// There used to be code here that readded the preview view if you "rejoined"
 	// I'm making the assumption that ui close will be called whenever a user logs out, or loses a window
 	// If this isn't the case, kill me and restore the code, thanks

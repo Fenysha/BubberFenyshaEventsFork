@@ -2,12 +2,14 @@ import { useBackend } from 'tgui/backend';
 import {
   Box,
   Button,
+  Icon,
   NumberInput,
   ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
 import { Window } from 'tgui/layouts';
+import '../Styles/SkillPanel.scss';
 
 type SkillRow = {
   id: string;
@@ -26,6 +28,7 @@ type SkillRow = {
   progressPercent: number;
   maxLevel: number;
   maxed: boolean;
+  passion: number;
 };
 
 type Data = {
@@ -85,6 +88,13 @@ function SkillCard(props: {
     <Section
       title={
         <Stack align="center">
+          <Stack.Item>
+            <PassionFlames
+              passion={skill.passion}
+              disabled={!isAdmin}
+              onClick={() => act('cycle_passion', { id: skill.id })}
+            />
+          </Stack.Item>
           <Stack.Item grow>
             <span>{skill.name}</span>{' '}
             <Box inline color="label">
@@ -210,5 +220,30 @@ function SkillCard(props: {
         </Stack>
       )}
     </Section>
+  );
+}
+
+function PassionFlames(props: {
+  passion: number;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  const count = Math.max(0, Math.min(2, props.passion || 0));
+  return (
+    <Button
+      compact
+      className="SkillPanel__passion"
+      disabled={props.disabled}
+      tooltip="Passion"
+      onClick={props.onClick}
+    >
+      {Array.from({ length: count }, (_, index) => (
+        <Icon
+          key={index}
+          name="fire"
+          className="SkillPanel__passionFlame"
+        />
+      ))}
+    </Button>
   );
 };

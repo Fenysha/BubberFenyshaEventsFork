@@ -7,6 +7,7 @@ export type RwProfile = {
   empty: boolean;
   role?: string;
   portrait?: string | null;
+  lost?: boolean;
 };
 
 export type RwSpeciesPerk = {
@@ -86,6 +87,8 @@ export type RwNamedDef = {
   id: string;
   name: string;
   desc: string;
+  textGood?: string;
+  textBad?: string;
   grants?: RwStoryGrant[];
 };
 
@@ -93,6 +96,8 @@ export type RwPricedDef = {
   id: string;
   name: string;
   desc: string;
+  textGood?: string;
+  textBad?: string;
   cost: number;
   positive?: boolean;
 };
@@ -234,4 +239,5 @@ export type RimworldCharacterEditorData = {
   budgetSpent: number;
   budgetRemaining: number;
   skills: RwSkillRow[];
+  slotLost?: boolean;
 };

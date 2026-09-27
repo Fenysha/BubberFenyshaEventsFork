@@ -1,4 +1,4 @@
-import { memo, type ReactNode, useEffect, useState } from 'react';
+import { memo, type ReactNode, useEffect, useRef, useState } from 'react';
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
 import {
@@ -8,6 +8,7 @@ import {
   ColorBox,
   Dropdown,
   Floating,
+  Icon,
   Input,
   NumberInput,
   ProgressBar,
@@ -39,7 +40,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'ideology', label: 'Ideology' },
 ];
 
-const PASSION_MARK = ['○', '◐', '●'];
+const MAX_TRAITS = 3;
 
 const CLOTHING_DEFAULTS: Record<string, string> = {
   hairstyle: 'Bald',
@@ -147,9 +148,47 @@ export const RimworldCharacterEditor = () => {
   const [tab, setTab] = useState<TabId>('persona');
   const prefCatalog = usePrefCatalog();
 
+  useEffect(() => {
+    if (!data.slotLost) {
+      return;
+    }
+    const blockKeys = (event: KeyboardEvent) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const inLockedPane = !!target?.closest(
+        '.RimworldCharacterEditor__lockPane',
+      );
+      if (event.key === 'Tab' || inLockedPane) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (inLockedPane) {
+          target?.blur();
+        }
+      }
+    };
+    const blurLocked = () => {
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLElement &&
+        active.closest('.RimworldCharacterEditor__lockPane')
+      ) {
+        active.blur();
+      }
+    };
+    document.addEventListener('keydown', blockKeys, true);
+    document.addEventListener('keyup', blockKeys, true);
+    blurLocked();
+    const timer = window.setInterval(blurLocked, 200);
+    return () => {
+      document.removeEventListener('keydown', blockKeys, true);
+      document.removeEventListener('keyup', blockKeys, true);
+      window.clearInterval(timer);
+    };
+  }, [data.slotLost]);
+
   return (
     <Window title="Prepare Colonist" width={1320} height={760} theme="tartarus">
       <Window.Content className="RimworldCharacterEditor" altDrag={false}>
+        <div className="RimworldCharacterEditor__frame">
         <Stack fill vertical>
           <Stack.Item className="RimworldCharacterEditor__tabBar">
             {TABS.map((entry) => (
@@ -163,14 +202,31 @@ export const RimworldCharacterEditor = () => {
             ))}
           </Stack.Item>
           <Stack.Item grow className="RimworldCharacterEditor__main">
+            {!!data.slotLost && (
+              <div className="RimworldCharacterEditor__lost">
+                <div className="RimworldCharacterEditor__lostWord">Deceased</div>
+                <div className="RimworldCharacterEditor__lostLine">
+                  Персонаж утерян и будет недоступен до конца текущего раунда.
+                </div>
+              </div>
+            )}
             <Stack fill>
               <Stack.Item className="RimworldCharacterEditor__colony">
                 <ColonyList />
               </Stack.Item>
               <Stack.Item className="RimworldCharacterEditor__preview">
-                <PawnIdentity prefCatalog={prefCatalog} />
+                <div
+                  className="RimworldCharacterEditor__lockPane"
+                  {...(data.slotLost ? { inert: '' } : {})}
+                >
+                  <PawnIdentity prefCatalog={prefCatalog} />
+                </div>
               </Stack.Item>
               <Stack.Item grow className="RimworldCharacterEditor__tabBody">
+                <div
+                  className="RimworldCharacterEditor__lockPane"
+                  {...(data.slotLost ? { inert: '' } : {})}
+                >
                 {tab === 'biology' && <BiologyTab />}
                 {tab === 'persona' && <PersonaTab />}
                 {tab === 'features' && <FeaturesTab />}
@@ -180,6 +236,7 @@ export const RimworldCharacterEditor = () => {
                     Ideology is not implemented yet.
                   </Box>
                 )}
+                </div>
               </Stack.Item>
             </Stack>
           </Stack.Item>
@@ -201,6 +258,7 @@ export const RimworldCharacterEditor = () => {
             </Stack>
           </Stack.Item>
         </Stack>
+        </div>
       </Window.Content>
     </Window>
   );
@@ -248,6 +306,7 @@ function ColonyList() {
             profile.slot === data.activeSlot &&
               'RimworldCharacterEditor__slot--selected',
             profile.empty && 'RimworldCharacterEditor__slot--empty',
+            profile.lost && 'RimworldCharacterEditor__slot--lost',
           ])}
           onClick={() => act('change_slot', { slot: profile.slot })}
         >
@@ -1472,6 +1531,8 @@ const TRAIT_PLACEHOLDERS = Array.from({ length: 12 }, (_, index) => {
     id: 'trait_placeholder_' + number,
     name: 'Trait Placeholder ' + number,
     desc: 'Placeholder trait. Replace this entry.',
+    textGood: 'Placeholder benefit. Replace text_good.',
+    textBad: 'Placeholder drawback. Replace text_bad.',
     cost: positive ? number * 100 : -(number - 8) * 100,
     positive,
   };
@@ -1734,6 +1795,8 @@ function StoryGrants(props: { grants: StoryGrant[] }) {
 function StoryOption(props: {
   name: string;
   desc?: string;
+  textGood?: string;
+  textBad?: string;
   grants: StoryGrant[];
 }) {
   return (
@@ -1746,6 +1809,12 @@ function StoryOption(props: {
           {props.desc}
         </div>
       )}
+      {!!props.textGood && (
+        <div className="RimworldCharacterEditor__storyGood">{props.textGood}</div>
+      )}
+      {!!props.textBad && (
+        <div className="RimworldCharacterEditor__storyBad">{props.textBad}</div>
+      )}
       <StoryGrants grants={props.grants} />
     </div>
   );
@@ -1754,6 +1823,8 @@ function StoryOption(props: {
 function ChoiceCard(props: {
   name: string;
   desc?: string;
+  textGood?: string;
+  textBad?: string;
   selected: boolean;
   cost?: number;
   positive?: boolean;
@@ -1789,7 +1860,38 @@ function ChoiceCard(props: {
           {props.desc}
         </div>
       )}
+      {!!props.textGood && (
+        <div className="RimworldCharacterEditor__storyGood">{props.textGood}</div>
+      )}
+      {!!props.textBad && (
+        <div className="RimworldCharacterEditor__storyBad">{props.textBad}</div>
+      )}
     </button>
+  );
+}
+
+function PassionFlames(props: {
+  passion: number;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  const count = Math.max(0, Math.min(2, props.passion));
+  return (
+    <Button
+      compact
+      className="RimworldCharacterEditor__passion"
+      disabled={props.disabled}
+      tooltip="Passion"
+      onClick={props.onClick}
+    >
+      {Array.from({ length: count }, (_, index) => (
+        <Icon
+          key={index}
+          name="fire"
+          className="RimworldCharacterEditor__passionFlame"
+        />
+      ))}
+    </Button>
   );
 }
 
@@ -1805,13 +1907,10 @@ function PreviewSkillRow(props: {
 
   return (
     <div className="RimworldCharacterEditor__skillRow">
-      <Button
-        compact
-        tooltip="Passion"
+      <PassionFlames
+        passion={passion}
         onClick={() => setPassion((current) => (current + 1) % 3)}
-      >
-        {PASSION_MARK[passion] || '○'}
-      </Button>
+      />
       <Box className="RimworldCharacterEditor__skillName">{props.name}</Box>
       <div className="RimworldCharacterEditor__skillBar">
         <div
@@ -1840,6 +1939,124 @@ function PreviewSkillRow(props: {
   );
 }
 
+function SearchDropdown(props: {
+  label: string;
+  options: Array<{
+    value: string;
+    name: string;
+    desc?: string;
+    textGood?: string;
+    textBad?: string;
+    grants: StoryGrant[];
+  }>;
+  onSelected: (value: string) => void;
+}) {
+  const menu = useRef<{ close: () => void } | null>(null);
+  const [query, setQuery] = useState('');
+  const needle = query.trim().toLowerCase();
+  const visible = props.options.filter((option) => {
+    if (!needle) {
+      return true;
+    }
+    const haystack = [
+      option.name,
+      option.desc,
+      option.textGood,
+      option.textBad,
+      ...option.grants.map((grant) => `${grant.amount} ${grant.skill}`),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(needle);
+  });
+
+  return (
+    <Floating
+      ref={menu}
+      placement="bottom-start"
+      contentClasses="RimworldCharacterEditor__searchMenu"
+      content={
+        <div className="RimworldCharacterEditor__searchPanel">
+          <Input
+            autoFocus
+            fluid
+            alwaysUpdate
+            placeholder="Search"
+            value={query}
+            onChange={setQuery}
+          />
+          <div className="RimworldCharacterEditor__searchList">
+            {visible.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className="RimworldCharacterEditor__searchEntry"
+                onClick={() => {
+                  props.onSelected(option.value);
+                  setQuery('');
+                  menu.current?.close();
+                }}
+              >
+                <StoryOption
+                  name={option.name}
+                  desc={option.desc}
+                  textGood={option.textGood}
+                  textBad={option.textBad}
+                  grants={option.grants}
+                />
+              </button>
+            ))}
+            {!visible.length && (
+              <div className="RimworldCharacterEditor__searchEmpty">
+                No options
+              </div>
+            )}
+          </div>
+        </div>
+      }
+    >
+      <Button fluid>{props.label}</Button>
+    </Floating>
+  );
+}
+
+function flavorLine(id: string, value: string | undefined, fallback: string) {
+  if (value) {
+    return value;
+  }
+  if (id.startsWith('vis_') || id.startsWith('trait_placeholder_')) {
+    return fallback;
+  }
+  return '';
+}
+
+function storyChoice(story: {
+  id: string;
+  name: string;
+  desc?: string;
+  textGood?: string;
+  textBad?: string;
+  grants?: StoryGrant[];
+}) {
+  return {
+    value: story.id,
+    name: story.name,
+    desc: story.desc,
+    textGood: flavorLine(
+      story.id,
+      story.textGood,
+      'Placeholder benefit. Replace text_good.',
+    ),
+    textBad: flavorLine(
+      story.id,
+      story.textBad,
+      'Placeholder drawback. Replace text_bad.',
+    ),
+    grants: storyGrants(story),
+  };
+}
+
 function FeaturesTab() {
   const { act, data } = useBackend<RimworldCharacterEditorData>();
   const [visualChildhood, setVisualChildhood] = useState<string | null>(null);
@@ -1861,6 +2078,33 @@ function FeaturesTab() {
   const realChildhoods = new Set((data.childhoods || []).map((row) => row.id));
   const realAdulthoods = new Set((data.adulthoods || []).map((row) => row.id));
   const realTraits = new Set((data.traitDefs || []).map((row) => row.id));
+  const pickedTraits = traits.filter((trait) =>
+    realTraits.has(trait.id)
+      ? data.traits.includes(trait.id)
+      : visualTraits.includes(trait.id),
+  );
+  const openTraits = traits.filter(
+    (trait) => !pickedTraits.some((picked) => picked.id === trait.id),
+  );
+  const addTrait = (id: string) => {
+    if (pickedTraits.length >= MAX_TRAITS) {
+      return;
+    }
+    if (realTraits.has(id)) {
+      act('toggle_trait', { id });
+      return;
+    }
+    setVisualTraits((current) =>
+      current.includes(id) ? current : [...current, id],
+    );
+  };
+  const removeTrait = (id: string) => {
+    if (realTraits.has(id)) {
+      act('toggle_trait', { id });
+      return;
+    }
+    setVisualTraits((current) => current.filter((traitId) => traitId !== id));
+  };
   const realSkillNames = new Set((data.skillDefs || []).map((row) => row.name));
   const orderedSkills = [
     ...(data.skillDefs || []).map((skill) => ({
@@ -1890,23 +2134,10 @@ function FeaturesTab() {
     <div className="RimworldCharacterEditor__featureBoard">
       <div className="RimworldCharacterEditor__featureLeft">
         <Box className="RimworldCharacterEditor__sectionTitle">Childhood</Box>
-        <Dropdown
-          width="100%"
-          menuWidth={22}
-          selected={childhoodId}
-          displayText={childhood?.name || 'Select'}
-          options={childhoods.map((story) => ({
-            value: story.id,
-            displayText: (
-              <StoryOption
-                name={story.name}
-                desc={story.desc}
-                grants={storyGrants(story)}
-              />
-            ),
-          }))}
-          onSelected={(value) => {
-            const id = String(value);
+        <SearchDropdown
+          label={childhood?.name || 'Select'}
+          options={childhoods.map(storyChoice)}
+          onSelected={(id) => {
             if (realChildhoods.has(id)) {
               setVisualChildhood(null);
               act('set_childhood', { id });
@@ -1916,33 +2147,31 @@ function FeaturesTab() {
           }}
         />
         <div className="RimworldCharacterEditor__storySummary">
-          {!!childhood?.desc && (
-            <Box className="RimworldCharacterEditor__storyBlurb">
-              {childhood.desc}
-            </Box>
+          {!!childhood && (
+            <StoryOption
+              name={childhood.name}
+              desc={childhood.desc}
+              textGood={flavorLine(
+                childhood.id,
+                childhood.textGood,
+                'Placeholder benefit. Replace text_good.',
+              )}
+              textBad={flavorLine(
+                childhood.id,
+                childhood.textBad,
+                'Placeholder drawback. Replace text_bad.',
+              )}
+              grants={storyGrants(childhood)}
+            />
           )}
-          <StoryGrants grants={storyGrants(childhood)} />
         </div>
         <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
           Adulthood
         </Box>
-        <Dropdown
-          width="100%"
-          menuWidth={22}
-          selected={adulthoodId}
-          displayText={adulthood?.name || 'Select'}
-          options={adulthoods.map((story) => ({
-            value: story.id,
-            displayText: (
-              <StoryOption
-                name={story.name}
-                desc={story.desc}
-                grants={storyGrants(story)}
-              />
-            ),
-          }))}
-          onSelected={(value) => {
-            const id = String(value);
+        <SearchDropdown
+          label={adulthood?.name || 'Select'}
+          options={adulthoods.map(storyChoice)}
+          onSelected={(id) => {
             if (realAdulthoods.has(id)) {
               setVisualAdulthood(null);
               act('set_adulthood', { id });
@@ -1952,44 +2181,84 @@ function FeaturesTab() {
           }}
         />
         <div className="RimworldCharacterEditor__storySummary">
-          {!!adulthood?.desc && (
-            <Box className="RimworldCharacterEditor__storyBlurb">
-              {adulthood.desc}
-            </Box>
+          {!!adulthood && (
+            <StoryOption
+              name={adulthood.name}
+              desc={adulthood.desc}
+              textGood={flavorLine(
+                adulthood.id,
+                adulthood.textGood,
+                'Placeholder benefit. Replace text_good.',
+              )}
+              textBad={flavorLine(
+                adulthood.id,
+                adulthood.textBad,
+                'Placeholder drawback. Replace text_bad.',
+              )}
+              grants={storyGrants(adulthood)}
+            />
           )}
-          <StoryGrants grants={storyGrants(adulthood)} />
         </div>
         <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
           Traits
         </Box>
         <div className="RimworldCharacterEditor__featureTraits">
           <div className="RimworldCharacterEditor__choiceList">
-            {traits.map((trait) => {
-              const selected = realTraits.has(trait.id)
-                ? data.traits.includes(trait.id)
-                : visualTraits.includes(trait.id);
-              return (
+            {pickedTraits.map((trait) => (
+              <div
+                key={trait.id}
+                className="RimworldCharacterEditor__traitPicked"
+              >
                 <ChoiceCard
-                  key={trait.id}
                   name={trait.name}
                   desc={trait.desc}
+                  textGood={flavorLine(
+                    trait.id,
+                    trait.textGood,
+                    'Placeholder benefit. Replace text_good.',
+                  )}
+                  textBad={flavorLine(
+                    trait.id,
+                    trait.textBad,
+                    'Placeholder drawback. Replace text_bad.',
+                  )}
                   cost={trait.cost}
                   positive={trait.positive}
-                  selected={selected}
-                  onClick={() => {
-                    if (realTraits.has(trait.id)) {
-                      act('toggle_trait', { id: trait.id });
-                      return;
-                    }
-                    setVisualTraits((current) =>
-                      current.includes(trait.id)
-                        ? current.filter((id) => id !== trait.id)
-                        : [...current, trait.id],
-                    );
-                  }}
+                  selected
+                  onClick={() => removeTrait(trait.id)}
                 />
-              );
-            })}
+                <Button
+                  compact
+                  icon="times"
+                  tooltip="Remove"
+                  onClick={() => removeTrait(trait.id)}
+                />
+              </div>
+            ))}
+            {pickedTraits.length < MAX_TRAITS && (
+              <SearchDropdown
+                label="+ Add trait"
+                options={openTraits.map((trait) => ({
+                  value: trait.id,
+                  name: trait.name,
+                  desc: `${trait.desc} (${
+                    trait.cost > 0 ? `+${trait.cost}` : trait.cost
+                  })`,
+                  textGood: flavorLine(
+                    trait.id,
+                    trait.textGood,
+                    'Placeholder benefit. Replace text_good.',
+                  ),
+                  textBad: flavorLine(
+                    trait.id,
+                    trait.textBad,
+                    'Placeholder drawback. Replace text_bad.',
+                  ),
+                  grants: [],
+                }))}
+                onSelected={addTrait}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -2363,14 +2632,10 @@ function SkillRow(props: { skill: RwSkillDef; row?: RwSkillRow }) {
 
   return (
     <div className="RimworldCharacterEditor__skillRow">
-      <Button
-        compact
-        disabled={!skill.editable}
-        tooltip="Passion"
+      <PassionFlames
+        passion={passion}
         onClick={() => act('cycle_passion', { id: skill.id })}
-      >
-        {PASSION_MARK[passion] || '○'}
-      </Button>
+      />
       <Box
         className="RimworldCharacterEditor__skillName"
         color={skill.editable ? undefined : 'label'}

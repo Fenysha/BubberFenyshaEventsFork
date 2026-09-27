@@ -48,7 +48,10 @@
 	if(skill_comp)
 		skill_comp.set_levels(final_skills)
 	else
-		target.AddComponent(/datum/component/rw_skills, final_skills)
+		skill_comp = target.AddComponent(/datum/component/rw_skills, final_skills)
+	skill_comp?.set_passions(passions)
+	if(!visuals_only && !istype(target, /mob/living/carbon/human/dummy) && parent?.ckey)
+		target.AddComponent(/datum/component/rw_colonist, parent.ckey, default_slot)
 	for(var/item_id in loadout)
 		var/datum/rw_loadout_item/item = GLOB.all_rw_loadout[item_id]
 		if(item)

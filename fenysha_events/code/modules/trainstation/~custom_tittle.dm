@@ -238,7 +238,7 @@ img.bg {
 
 		dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];observe=1'>OBSERVE</a>"}
 		dat += {"
-			<a class="menu_button" href='byond://?src=[text_ref(user)];character_setup=1'>SETUP CHARACTER</a>
+			<a class="menu_button" href='byond://?src=[text_ref(user)];character_setup=1'>PREPARE COLONIST</a>
 			<a class="menu_button" href='byond://?src=[text_ref(user)];game_options=1'>GAME OPTIONS</a>
 			<a id="be_antag" class="menu_button" href='byond://?src=[text_ref(user)];toggle_antag=1'>[user.client.prefs.read_preference(/datum/preference/toggle/be_antag) ? "<span class='checked'>☑</span> BE ANTAGONIST" : "<span class='unchecked'>☒</span> BE ANTAGONIST"]</a>
 		"}

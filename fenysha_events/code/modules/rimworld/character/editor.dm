@@ -235,6 +235,8 @@
 			"id" = story.id,
 			"name" = story.name,
 			"desc" = story.desc,
+			"textGood" = story.text_good || "",
+			"textBad" = story.text_bad || "",
 			"grants" = grants,
 		)
 		if(story.slot == RW_BACKSTORY_CHILDHOOD)
@@ -251,6 +253,8 @@
 			"id" = trait.id,
 			"name" = trait.name,
 			"desc" = trait.desc,
+			"textGood" = trait.text_good || "",
+			"textBad" = trait.text_bad || "",
 			"cost" = trait.cost,
 			"positive" = trait.positive,
 		))
@@ -380,12 +384,16 @@
 			"passion" = passions[skill_id] || RW_PASSION_NONE,
 		))
 	data["skills"] = skill_rows
+	refresh_slot_loss()
+	data["slotLost"] = slot_is_lost(default_slot)
 	return data
 
 /datum/rimworld_preferences/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
 	if(.)
 		return
+	if(slot_is_lost(default_slot) && action != "change_slot")
+		return TRUE
 	if(action == "rotate")
 		preview_dir = turn(preview_dir, params["left"] ? 90 : -90)
 		if(preview_dummy && !QDELETED(preview_dummy))
@@ -652,6 +660,8 @@
 				return TRUE
 			if(trait_id in traits)
 				traits -= trait_id
+			else if(length(traits) >= RW_TRAIT_MAX)
+				return TRUE
 			else if(can_afford(trait.cost))
 				traits += trait_id
 			save_character()

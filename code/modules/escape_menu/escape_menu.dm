@@ -207,9 +207,7 @@ GAME_VERB_HIDDEN(/client, reset_held_keys_verb, "Reset Held Keys")
 		if("closed")
 			STOP_PROCESSING(SSescape_menu, src)
 		if("character")
-			client?.prefs.current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
-			client?.prefs.update_static_data(client?.mob)
-			client?.prefs.ui_interact(client?.mob)
+			client?.open_colonist_editor()
 		if("settings")
 			client?.prefs.current_window = PREFERENCE_TAB_GAME_PREFERENCES
 			client?.prefs.update_static_data(client?.mob)
