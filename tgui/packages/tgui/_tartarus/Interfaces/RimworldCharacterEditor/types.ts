@@ -33,6 +33,7 @@ export type RwSkillDef = {
   name: string;
   desc: string;
   editable: boolean;
+  sortOrder?: number;
 };
 
 export type RwSkillRow = {
@@ -76,10 +77,16 @@ export type RwXenogeneDef = {
   option?: RwXenogeneOption | null;
 };
 
+export type RwStoryGrant = {
+  skill: string;
+  amount: number;
+};
+
 export type RwNamedDef = {
   id: string;
   name: string;
   desc: string;
+  grants?: RwStoryGrant[];
 };
 
 export type RwPricedDef = {
