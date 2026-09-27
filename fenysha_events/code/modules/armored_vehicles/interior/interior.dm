@@ -1,4 +1,5 @@
-#define INTERIOR_BUFFER_TILES 1
+/// Empty space around the room, so nothing else in the sub-level shows behind a window view
+#define INTERIOR_BUFFER_TILES 7
 
 GLOBAL_LIST_EMPTY(vehicle_interiors)
 

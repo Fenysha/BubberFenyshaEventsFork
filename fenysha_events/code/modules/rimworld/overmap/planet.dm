@@ -50,6 +50,10 @@
 /datum/rimworld_planet_object/settlement/proc/set_population(value)
 	data["population"] = max(0, value)
 
+/datum/rimworld_planet_object/settlement/proc/is_player_settlement()
+	var/datum/rw_faction/faction = SSfactions.get_faction(data["faction"])
+	return faction?.player_faction
+
 /**
  * Sets the settlement faction.
  */
@@ -389,9 +393,11 @@
 
 	generation_revision++
 	GLOB.rimworld_planet_noise_revision = generation_revision
+	// Before registering assets: this also writes the roads layer, which the bake draws
+	generate_settlements()
+	bake_surface()
 	var/datum/asset/simple/rimworld_planet_layers/asset = get_asset_datum(/datum/asset/simple/rimworld_planet_layers)
 	asset.register_for_planet(src)
-	generate_settlements()
 	log_world("[name] planetary parameters ready in [(REALTIMEOFDAY - start_time) / 10]s. Generated [length(generated_layers)] planet layers.")
 	return TRUE
 
@@ -460,7 +466,7 @@
 /datum/rimworld_planet/proc/generate_roads(list/settlement_points)
 	var/list/settlements_json = list()
 	for(var/list/point in settlement_points)
-		settlements_json += list(list("x" = point["x"], "y" = point["y"]))
+		settlements_json += list(list("x" = point["x"], "y" = point["y"], "tier" = point["tier"] || RW_ROAD_DIRT))
 
 	var/list/config = list(
 		"seed" = seed,
@@ -484,19 +490,73 @@
 	if(!decoded || decoded["status"] != "ok")
 		return FALSE
 
-	var/list/layer = decoded["layer"]
-	if(layer && layer["name"] && layer["path"])
-		generated_layers[layer["name"]] = TRUE
-		layer_files[layer["name"]] = layer["path"]
-		cell_cache = list()
+	for(var/layer_key in list("layer", "types_layer"))
+		var/list/layer = decoded[layer_key]
+		if(layer && layer["name"] && layer["path"])
+			generated_layers[layer["name"]] = TRUE
+			layer_files[layer["name"]] = layer["path"]
+	cell_cache = list()
 
-	log_world("[name] generated roads: [decoded["edges"]] segments, [decoded["road_tiles"]] tiles.")
+	log_world("[name] generated roads: [decoded["edges"]] segments, [decoded["road_tiles"]] tiles, [decoded["networks"]] networks, [decoded["skipped_settlements"]] settlements skipped.")
 	return TRUE
+
+/// Pre-renders the planet view's textures; without them clients fall back to baking their own.
+/datum/rimworld_planet/proc/bake_surface()
+	var/list/config = list(
+		"seed" = seed,
+		"terrain_seed" = terrain_seed,
+		"frequency" = grid_frequency,
+		"output_dir" = "data/rimworld_planets/[seed]",
+	)
+	var/result = rustg_tp_planet_bake_surface(json_encode(config))
+	if(!result || findtext(result, "ERROR:") == 1)
+		log_world("[name] surface bake failed: [result]")
+		return FALSE
+
+	var/list/decoded
+	try
+		decoded = json_decode(result)
+	catch
+		log_world("[name] surface bake returned invalid JSON.")
+		return FALSE
+	if(!decoded || decoded["status"] != "ok")
+		return FALSE
+
+	generated_layers["surface_color"] = TRUE
+	layer_files["surface_color"] = decoded["color"]
+	generated_layers["surface_decor"] = TRUE
+	layer_files["surface_decor"] = decoded["decor"]
+	return TRUE
+
+/// Overland route as list(list(x, y), ...) from start to end inclusive, or null when there is none.
+/datum/rimworld_planet/proc/find_path(from_x, from_y, to_x, to_y, use_roads = TRUE)
+	var/list/config = list(
+		"seed" = seed,
+		"frequency" = grid_frequency,
+		"output_dir" = "data/rimworld_planets/[seed]",
+		"from" = list(from_x, from_y),
+		"to" = list(to_x, to_y),
+		"use_roads" = !!use_roads,
+	)
+	var/result = rustg_tp_planet_find_path(json_encode(config))
+	if(!result || findtext(result, "ERROR:") == 1)
+		log_world("[name] path [from_x],[from_y] -> [to_x],[to_y] failed: [result]")
+		return null
+	var/list/decoded = json_decode(result)
+	if(decoded["status"] != "ok")
+		return null
+	return decoded["path"]
 
 /datum/rimworld_planet/proc/get_road_mask(x, y)
 	if(!is_valid_coordinate(x, y))
 		return 0
 	return get_layer_value("roads", x, y) || 0
+
+/// RW_ROAD_* grade of the road on this tile; meaningless where has_road() is false
+/datum/rimworld_planet/proc/get_road_type(x, y)
+	if(!is_valid_coordinate(x, y))
+		return RW_ROAD_DIRT
+	return get_layer_value("road_types", x, y) || RW_ROAD_DIRT
 
 /datum/rimworld_planet/proc/has_road(x, y)
 	return get_road_mask(x, y) != 0
@@ -579,46 +639,6 @@
 	return RW_CLIMATE_LOW
 
 /**
- * Returns a small latitude-based climate offset.
- */
-/datum/rimworld_planet/proc/get_latitude_offset(x, y, heat = null, humidity = null, elevation = null)
-	var/h = isnull(heat) ? get_heat_level(x, y) : heat
-	var/hm = isnull(humidity) ? get_humidity_level(x, y) : humidity
-	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
-
-	var/list/lat_lon = get_tile_lat_lon(x, y)
-	var/base_lat = (lat_lon[1] + 90) / 180
-	var/polar_fade = sin(base_lat * 180)
-	var/climate_offset = 0.0
-
-	if(h == RW_CLIMATE_HIGH)
-		climate_offset += 0.08
-	else if(h == RW_CLIMATE_LOW)
-		climate_offset -= 0.08
-
-	if(hm == RW_CLIMATE_HIGH)
-		climate_offset -= 0.04
-	else if(hm == RW_CLIMATE_LOW)
-		climate_offset += 0.04
-
-	if(e == RW_ELEVATION_MOUNTAIN || e == RW_ELEVATION_HIGHLAND)
-		climate_offset -= 0.07
-	else if(e == RW_ELEVATION_SNOW)
-		climate_offset -= 0.12
-
-	var/s = seed % 10000
-	// Longitude/latitude on a 2048 x 1024 scale, so the wave stays continuous across diamonds
-	var/wave_x = (lat_lon[2] + 180) * (2048 / 360)
-	var/wave_y = (lat_lon[1] + 90) * (1024 / 180)
-	// %% keeps the fraction; % truncates to integers and drifts from tgui's generator
-	var/angle1 = ((wave_x * 0.35 + wave_y * 0.15 + s) %% 360)
-	var/angle2 = ((wave_x * 0.85 - wave_y * 0.45 + s * 1.3) %% 360)
-	var/angle3 = ((wave_x * 1.7 + wave_y * 1.1 + s * 2.1) %% 360)
-	var/wave = ((sin(angle1) * 0.06) + (cos(angle2) * 0.04) + (sin(angle3) * 0.02)) * polar_fade
-
-	return climate_offset + wave
-
-/**
  * Returns latitude in degrees (-90 .. 90).
  */
 /datum/rimworld_planet/proc/get_latitude(x, y)
@@ -627,304 +647,58 @@
 	return get_tile_lat_lon(x, y)[1]
 
 /**
- * Returns the surface material at the given coordinates.
+ * A tile's climate as Rust's model computes it (tp_planet_climate.rs, the only copy of it):
+ * material, temperature, precipitation, rainfall, snowfall, water_availability, biome, sub_biome.
  */
-/datum/rimworld_planet/proc/get_material(x, y, elevation = null)
-	if(!is_valid_coordinate(x, y))
-		return RW_MATERIAL_NONE
+/datum/rimworld_planet/proc/get_tile_climate(x, y)
+	if(!is_valid_coordinate(x, y) || !maps_generated())
+		return null
+	var/cache_key = "climate:[x]:[y]"
+	var/list/climate = cell_cache[cache_key]
+	if(climate)
+		return climate
+	var/result = rustg_tp_planet_tile_info("data/rimworld_planets/[seed]", seed, x, y)
+	if(!result || findtext(result, "ERROR:") == 1)
+		log_world("[name] tile climate lookup failed at [x],[y]: [result]")
+		return null
+	climate = json_decode(result)
+	cell_cache[cache_key] = climate
+	return climate
 
-	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
-	if(e == RW_ELEVATION_OCEAN)
-		return RW_MATERIAL_NONE
+/datum/rimworld_planet/proc/get_material(x, y)
+	var/list/climate = get_tile_climate(x, y)
+	return climate ? climate["material"] : RW_MATERIAL_NONE
 
-	var/geo = get_geology_value(x, y)
-	switch(geo)
-		if(0, 1)
-			return RW_MATERIAL_GRANITE
-		if(2)
-			return RW_MATERIAL_LIMESTONE
-		if(3)
-			return RW_MATERIAL_SANDSTONE
-		if(4)
-			return RW_MATERIAL_SLATE
-		if(5)
-			return RW_MATERIAL_MARBLE
-		if(6)
-			return RW_MATERIAL_OBSIDIAN
-	return RW_MATERIAL_GRANITE
+/// Normalized temperature, 0-1
+/datum/rimworld_planet/proc/get_temperature(x, y)
+	var/list/climate = get_tile_climate(x, y)
+	return climate ? climate["temperature"] : 0
 
-/**
- * Returns the raw geology value (0-6) at the given coordinates.
- */
-/datum/rimworld_planet/proc/get_geology_value(x, y)
-	if(!is_valid_coordinate(x, y))
-		return 0
-	var/value = get_layer_value("geology", x, y)
-	if(isnull(value))
-		return 0
-	return value
+/// Normalized precipitation, 0-1
+/datum/rimworld_planet/proc/get_precipitation(x, y)
+	var/list/climate = get_tile_climate(x, y)
+	return climate ? climate["precipitation"] : 0
 
-/**
- * Returns a temperature modifier based on material.
- */
-/datum/rimworld_planet/proc/get_material_temperature_modifier(material)
-	switch(material)
-		if(RW_MATERIAL_GRANITE)
-			return -0.005
-		if(RW_MATERIAL_LIMESTONE)
-			return 0
-		if(RW_MATERIAL_SANDSTONE)
-			return 0.012
-		if(RW_MATERIAL_SLATE)
-			return -0.008
-		if(RW_MATERIAL_MARBLE)
-			return 0.008
-		if(RW_MATERIAL_OBSIDIAN)
-			return 0.018
-		if(RW_MATERIAL_JADE)
-			return 0.004
-	return 0
+/datum/rimworld_planet/proc/get_rainfall(x, y)
+	var/list/climate = get_tile_climate(x, y)
+	return climate ? climate["rainfall"] : 0
 
-/**
- * Returns normalized temperature (0-1) at the given coordinates.
- */
-/datum/rimworld_planet/proc/get_temperature(x, y, heat_level = null, elevation = null, material = null)
-	if(!is_valid_coordinate(x, y))
-		return 0
+/datum/rimworld_planet/proc/get_snowfall(x, y)
+	var/list/climate = get_tile_climate(x, y)
+	return climate ? climate["snowfall"] : 0
 
-	var/heat = heat_level
-	if(isnull(heat))
-		heat = get_heat_level(x, y)
+/// Water availability, 0-1
+/datum/rimworld_planet/proc/get_water_availability(x, y)
+	var/list/climate = get_tile_climate(x, y)
+	return climate ? climate["water_availability"] : 0
 
-	var/e = elevation
-	if(isnull(e))
-		e = get_elevation_level(x, y)
+/datum/rimworld_planet/proc/get_biome(x, y)
+	var/list/climate = get_tile_climate(x, y)
+	return climate ? climate["biome"] : RW_BIOME_OCEAN
 
-	var/m = material
-	if(isnull(m))
-		m = get_material(x, y, e)
-
-	var/latitude_offset = get_latitude_offset(x, y, heat)
-	var/base_lat = (get_latitude(x, y) + 90) / 180
-	var/normalized_latitude = clamp(base_lat + latitude_offset, 0, 1)
-	var/latitude_distance = abs(normalized_latitude - 0.5) * 2.0
-	var/latitude_temperature = (max(0, 1.0 - latitude_distance) ** 1.8)
-
-	var/heat_modifier = -0.15
-	if(heat == RW_CLIMATE_MEDIUM)
-		heat_modifier = 0.05
-	else if(heat == RW_CLIMATE_HIGH)
-		heat_modifier = 0.22
-
-	var/elevation_modifier = 0.0
-	switch(e)
-		if(RW_ELEVATION_HIGHLAND)
-			elevation_modifier = -0.10
-		if(RW_ELEVATION_MOUNTAIN)
-			elevation_modifier = -0.22
-		if(RW_ELEVATION_SNOW)
-			elevation_modifier = -0.35
-
-	var/material_modifier = get_material_temperature_modifier(m)
-	var/temperature = (latitude_temperature * 0.60) + ((heat_modifier + 0.15) * 0.25) + ((elevation_modifier + 0.35) * 0.15) + material_modifier
-	return clamp(temperature, 0, 1)
-
-/**
- * Returns the precipitation noise category (low/medium/high).
- */
-/datum/rimworld_planet/proc/get_precipitation_noise_category(x, y)
-	if(!is_valid_coordinate(x, y))
-		return RW_PRECIPITATION_CATEGORY_LOW
-
-	var/value = get_layer_value("precipitation", x, y)
-	if(isnull(value))
-		return RW_PRECIPITATION_CATEGORY_LOW
-
-	switch(value)
-		if(0)
-			return RW_PRECIPITATION_CATEGORY_LOW
-		if(1)
-			return RW_PRECIPITATION_CATEGORY_MEDIUM
-		if(2)
-			return RW_PRECIPITATION_CATEGORY_HIGH
-	return RW_PRECIPITATION_CATEGORY_LOW
-
-/**
- * Returns the base precipitation value for a category.
- */
-/datum/rimworld_planet/proc/get_precipitation_base(category)
-	switch(category)
-		if(RW_PRECIPITATION_CATEGORY_HIGH)
-			return 0.78
-		if(RW_PRECIPITATION_CATEGORY_MEDIUM)
-			return 0.50
-	return 0.20
-
-/**
- * Returns normalized precipitation (0-1) at the given coordinates.
- */
-/datum/rimworld_planet/proc/get_precipitation(x, y, temperature = null, humidity = null, elevation = null)
-	if(!is_valid_coordinate(x, y))
-		return 0
-
-	var/t = isnull(temperature) ? get_temperature(x, y) : temperature
-	var/hm = isnull(humidity) ? get_humidity_level(x, y) : humidity
-	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
-
-	var/category = get_precipitation_noise_category(x, y)
-	var/precipitation = get_precipitation_base(category)
-
-	if(hm == RW_CLIMATE_HIGH)
-		precipitation += 0.06
-	else if(hm == RW_CLIMATE_LOW)
-		precipitation -= 0.05
-
-	var/latitude = abs(get_latitude(x, y)) / 90
-	precipitation += ((1 - latitude) * 0.08) - (latitude * 0.05)
-	precipitation += (t - 0.5) * 0.10
-
-	if(e == RW_ELEVATION_HIGHLAND)
-		precipitation += 0.025
-	else if(e == RW_ELEVATION_MOUNTAIN)
-		precipitation += 0.055
-
-	return clamp(precipitation, 0, 1)
-
-/**
- * Returns rainfall amount (precipitation that falls as rain).
- */
-/datum/rimworld_planet/proc/get_rainfall(x, y, temperature = null, precipitation = null)
-	var/t = isnull(temperature) ? get_temperature(x, y) : temperature
-	var/p = isnull(precipitation) ? get_precipitation(x, y) : precipitation
-	var/rain_factor = clamp((t - 0.20) / 0.18, 0, 1)
-	return p * rain_factor
-
-/**
- * Returns snowfall amount (precipitation that falls as snow).
- */
-/datum/rimworld_planet/proc/get_snowfall(x, y, temperature = null, precipitation = null)
-	var/t = isnull(temperature) ? get_temperature(x, y) : temperature
-	var/p = isnull(precipitation) ? get_precipitation(x, y, t) : precipitation
-	return max(0, p - get_rainfall(x, y, t, p))
-
-/**
- * Returns water availability (0-1) at the given coordinates.
- */
-/datum/rimworld_planet/proc/get_water_availability(x, y, precipitation = null, elevation = null)
-	var/p = isnull(precipitation) ? get_precipitation(x, y) : precipitation
-	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
-
-	var/value = p * 0.78
-	if(e == RW_ELEVATION_LOWLAND)
-		value += 0.08
-	else if(e == RW_ELEVATION_HIGHLAND)
-		value += 0.03
-	else if(e == RW_ELEVATION_MOUNTAIN)
-		value -= 0.04
-
-	return clamp(value, 0, 1)
-
-/**
- * Returns the sub-biome at the given coordinates.
- */
-/datum/rimworld_planet/proc/get_sub_biome(x, y, biome = null, elevation = null, precipitation = null, temperature = null)
-	if(!is_valid_coordinate(x, y))
-		return RW_SUBBIOME_PLAINS
-
-	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
-	var/b = isnull(biome) ? get_biome(x, y) : biome
-	var/p = isnull(precipitation) ? get_precipitation(x, y, temperature, null, e) : precipitation
-	var/t = isnull(temperature) ? get_temperature(x, y, null, e) : temperature
-
-	if(e == RW_ELEVATION_OCEAN)
-		if(b == RW_BIOME_SEA_ICE)
-			return RW_SUBBIOME_FROZEN_OCEAN
-		return RW_SUBBIOME_DEEP_OCEAN
-	if(b == RW_BIOME_SEA_ICE || b == RW_BIOME_SNOW)
-		return RW_SUBBIOME_SNOWFIELDS
-	if(e == RW_ELEVATION_COAST || b == RW_BIOME_BEACH || b == RW_BIOME_COAST)
-		return RW_SUBBIOME_SHORE
-	if(e == RW_ELEVATION_MOUNTAIN || b == RW_BIOME_MOUNTAINS)
-		return RW_SUBBIOME_ROCKY_HILLS
-	if(e == RW_ELEVATION_HIGHLAND)
-		if(b == RW_BIOME_TEMPERATE_FOREST || b == RW_BIOME_TROPICAL_FOREST || b == RW_BIOME_RAINFOREST || b == RW_BIOME_TAIGA)
-			return RW_SUBBIOME_FOREST_HILLS
-		return RW_SUBBIOME_HILLS
-	if(e == RW_ELEVATION_LOWLAND && p >= 0.72 && t > 0.24)
-		return RW_SUBBIOME_MARSH
-	if(b == RW_BIOME_TEMPERATE_FOREST || b == RW_BIOME_TROPICAL_FOREST || b == RW_BIOME_RAINFOREST || b == RW_BIOME_TAIGA)
-		return RW_SUBBIOME_FOREST
-	if(b == RW_BIOME_TUNDRA)
-		return RW_SUBBIOME_TUNDRA_PLAINS
-	return RW_SUBBIOME_PLAINS
-
-/**
- * Returns the biome at the given coordinates.
- */
-/datum/rimworld_planet/proc/get_biome(x, y, elevation = null, heat = null, humidity = null)
-	if(!is_valid_coordinate(x, y))
-		return RW_BIOME_OCEAN
-
-	var/e = isnull(elevation) ? get_elevation_level(x, y) : elevation
-	var/h = isnull(heat) ? get_heat_level(x, y) : heat
-	var/hm = isnull(humidity) ? get_humidity_level(x, y) : humidity
-	var/material = get_material(x, y, e)
-	var/temperature = get_temperature(x, y, h, e, material)
-	var/latitude_offset = get_latitude_offset(x, y, h, hm, e)
-	var/base_lat = (get_latitude(x, y) + 90) / 180
-	var/normalized_latitude = clamp(base_lat + latitude_offset, 0, 1)
-	var/polar_distance = abs((normalized_latitude - 0.5) * 2.0)
-
-	if(polar_distance >= 0.82)
-		if(e == RW_ELEVATION_OCEAN || e == RW_ELEVATION_COAST)
-			return RW_BIOME_SEA_ICE
-		return RW_BIOME_SNOW
-
-	if(polar_distance >= 0.70)
-		var/polar_temperature = temperature
-		var/polar_strength = (polar_distance - 0.70) / 0.12
-		polar_strength = clamp(polar_strength, 0, 1)
-		polar_temperature = polar_temperature * (1.0 - polar_strength)
-		if(e == RW_ELEVATION_OCEAN || e == RW_ELEVATION_COAST)
-			if(polar_temperature <= 0.24)
-				return RW_BIOME_SEA_ICE
-		else
-			if(polar_temperature <= 0.22 || e == RW_ELEVATION_SNOW)
-				return RW_BIOME_SNOW
-
-	if(e == RW_ELEVATION_OCEAN)
-		if(temperature <= 0.14)
-			return RW_BIOME_SEA_ICE
-		return RW_BIOME_OCEAN
-
-	if(e == RW_ELEVATION_COAST)
-		if(temperature <= 0.10)
-			return RW_BIOME_SEA_ICE
-		if(temperature >= 0.45 && hm == RW_CLIMATE_LOW)
-			return RW_BIOME_BEACH
-		return RW_BIOME_COAST
-
-	if(temperature <= 0.10 || e == RW_ELEVATION_SNOW)
-		return RW_BIOME_SNOW
-	if(temperature <= 0.20 && e == RW_ELEVATION_MOUNTAIN)
-		return RW_BIOME_SNOW
-	if(e == RW_ELEVATION_MOUNTAIN)
-		return RW_BIOME_MOUNTAINS
-	if(temperature < 0.30)
-		if(hm == RW_CLIMATE_HIGH)
-			return RW_BIOME_TAIGA
-		return RW_BIOME_TUNDRA
-	if(temperature < 0.55)
-		if(hm == RW_CLIMATE_HIGH)
-			return RW_BIOME_TEMPERATE_FOREST
-		if(hm == RW_CLIMATE_MEDIUM)
-			return RW_BIOME_GRASSLAND
-		return RW_BIOME_SAVANNA
-	if(hm == RW_CLIMATE_HIGH)
-		return RW_BIOME_RAINFOREST
-	if(hm == RW_CLIMATE_MEDIUM)
-		return RW_BIOME_TROPICAL_FOREST
-	return RW_BIOME_DESERT
+/datum/rimworld_planet/proc/get_sub_biome(x, y)
+	var/list/climate = get_tile_climate(x, y)
+	return climate ? climate["sub_biome"] : RW_SUBBIOME_PLAINS
 
 /**
  * Returns a full data packet for a single tile.
@@ -941,32 +715,24 @@
 		"mapsLoaded" = maps_generated(),
 	)
 
-	if(maps_generated())
-		var/elevation = get_elevation_level(x, y)
-		var/heat = get_heat_level(x, y)
-		var/humidity = get_humidity_level(x, y)
-		var/material = get_material(x, y, elevation)
-		var/temperature = get_temperature(x, y, heat, elevation, material)
-		var/precipitation = get_precipitation(x, y, temperature, humidity, elevation)
-		var/biome = get_biome(x, y, elevation, heat, humidity)
-		var/sub_biome = get_sub_biome(x, y, biome, elevation, precipitation, temperature)
-
-		tile["elevation"] = elevation
-		tile["heat"] = heat
-		tile["humidity"] = humidity
-		tile["material"] = material
+	var/list/climate = get_tile_climate(x, y)
+	if(climate)
+		tile["elevation"] = get_elevation_level(x, y)
+		tile["heat"] = get_heat_level(x, y)
+		tile["humidity"] = get_humidity_level(x, y)
+		tile["material"] = climate["material"]
 		tile["latitude"] = get_latitude(x, y)
-		tile["temperature"] = temperature
+		tile["temperature"] = climate["temperature"]
 		tile["isDaylight"] = is_daylight(x, y)
 		tile["sunIntensity"] = get_sun_intensity(x, y)
 		tile["season"] = get_season(x, y)
 		tile["solarAngle"] = get_solar_angle(x, y)
-		tile["precipitation"] = precipitation
-		tile["rainfall"] = get_rainfall(x, y, temperature, precipitation)
-		tile["snowfall"] = get_snowfall(x, y, temperature, precipitation)
-		tile["waterAvailability"] = get_water_availability(x, y, precipitation, elevation)
-		tile["biome"] = biome
-		tile["subBiome"] = sub_biome
+		tile["precipitation"] = climate["precipitation"]
+		tile["rainfall"] = climate["rainfall"]
+		tile["snowfall"] = climate["snowfall"]
+		tile["waterAvailability"] = climate["water_availability"]
+		tile["biome"] = climate["biome"]
+		tile["subBiome"] = climate["sub_biome"]
 		tile["river"] = has_river(x, y)
 
 	return tile
@@ -1049,8 +815,9 @@
 			continue
 		if(object.object_type != RW_OBJECT_TYPE_SETTLEMENT)
 			continue
+		var/datum/rimworld_planet_object/settlement/settlement = object
 		// Player settlements stay dynamic
-		if(object.data["faction"] == "player")
+		if(settlement.is_player_settlement())
 			continue
 		result += list(object.get_data())
 	return result
@@ -1068,7 +835,8 @@
 		if(object.object_type == RW_OBJECT_TYPE_ROAD)
 			continue
 		if(object.object_type == RW_OBJECT_TYPE_SETTLEMENT)
-			if(object.data["faction"] != "player")
+			var/datum/rimworld_planet_object/settlement/settlement = object
+			if(!settlement.is_player_settlement())
 				continue
 		result += list(object.get_data())
 	return result

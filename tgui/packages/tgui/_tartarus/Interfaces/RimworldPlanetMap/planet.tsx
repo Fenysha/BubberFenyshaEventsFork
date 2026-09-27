@@ -5,9 +5,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { loadCameraState, saveCameraState } from './camera';
 import { PLANET_RADIUS } from './generation/constants';
-import { PlanetGenerator } from './generation/generator';
 import { HEX_SHADER_DATA, type HexGrid } from './generation/hexGrid';
-import type { PlanetMapData, PlanetObject, PlanetTile } from './types';
+import type { PlanetMapData, PlanetObject } from './types';
 import { getPlanetMapIdentity } from './types';
 import {
   PLANET_ATMOSPHERE_COLOR,
@@ -31,7 +30,8 @@ import {
 } from './visual/decorAtlas';
 import { buildPlanetGeometry, type LodLevel } from './visual/geometry';
 import {
-  buildPlanetTextures,
+  formatBytes,
+  loadBakedPlanetTextures,
   type PlanetTextures,
 } from './visual/planetTexture';
 
@@ -50,7 +50,6 @@ import {
 export type CellInteraction = {
   x: number;
   y: number;
-  tile: PlanetTile;
   object?: PlanetObject;
   shift: boolean;
   ctrl: boolean;
@@ -67,7 +66,7 @@ type PlanetProps = {
   centerOnPlayerRequest?: number;
   showAtmosphere?: boolean;
   showClouds?: boolean;
-  onTileClick?: (x: number, y: number, tile: PlanetTile) => void;
+  onTileClick?: (x: number, y: number) => void;
   onObjectClick?: (object: PlanetObject) => void;
   onTileDoubleClick?: (cell: CellInteraction) => void;
   onTileRightClick?: (cell: CellInteraction) => void;
@@ -78,7 +77,6 @@ type PlanetRuntime = {
   objectGroup: THREE.Group;
   selection: THREE.Group;
   playerMarker: THREE.Group;
-  generator: PlanetGenerator;
   surface: THREE.Mesh;
   planetGroup: THREE.Group;
   planetTexture: THREE.CanvasTexture | THREE.DataTexture;
@@ -516,7 +514,6 @@ export const Planet = ({
       return;
     }
 
-    const generator = new PlanetGenerator(data);
     const grid = gridFor(data);
 
     const scene = new THREE.Scene();
@@ -551,6 +548,8 @@ export const Planet = ({
     controls.minDistance = PLANET_RADIUS * 1.08;
     controls.maxDistance = 13;
     controls.rotateSpeed = 0.55;
+    // Middle drag pans (handlePanMove below); the wheel still zooms
+    controls.mouseButtons.MIDDLE = null;
 
     loadCameraState(camera, controls);
     controls.target.set(0, 0, 0);
@@ -685,8 +684,6 @@ export const Planet = ({
     surface.name = 'PlanetSurface';
     planetGroup.add(surface);
 
-    let animFrameId: number | null = null;
-
     getDecorAtlas()
       .then((atlas) => {
         if (isMounted && surfaceMaterial.uniforms.decorAtlas) {
@@ -696,54 +693,43 @@ export const Planet = ({
       .catch((error) => console.warn('[Planet] Decor atlas failed:', error));
 
     if (cachedTextures) {
+      // eslint-disable-next-line no-console
+      console.info(
+        `[Planet] Surface textures from memory, ${formatBytes(cachedTextures.bytes)} (${mapIdentity})`,
+      );
       setIsLoading(false);
     } else {
       setIsLoading(true);
 
-      const buildTextureWhenReady = () => {
-        if (generator.isReady()) {
-          try {
-            const textures = buildPlanetTextures(data, generator);
-
-            if (textureCache.size >= MAX_TEXTURE_CACHE_SIZE) {
-              const firstKey = textureCache.keys().next().value;
-              if (firstKey) {
-                const evicted = textureCache.get(firstKey);
-                evicted?.color.dispose();
-                evicted?.decor.dispose();
-                textureCache.delete(firstKey);
-              }
-            }
-            textureCache.set(mapIdentity, textures);
-
-            if (surfaceMaterial.uniforms.planetMap) {
-              surfaceMaterial.uniforms.planetMap.value = textures.color;
-            }
-            if (surfaceMaterial.uniforms.decorMap) {
-              surfaceMaterial.uniforms.decorMap.value = textures.decor;
-            }
-          } catch (error) {
-            console.error('[Planet] Texture generation error:', error);
-          } finally {
-            if (isMounted) {
-              setIsLoading(false);
-            }
-            animFrameId = null;
+      const applyTextures = (textures: PlanetTextures) => {
+        if (textureCache.size >= MAX_TEXTURE_CACHE_SIZE) {
+          const firstKey = textureCache.keys().next().value;
+          if (firstKey) {
+            const evicted = textureCache.get(firstKey);
+            evicted?.color.dispose();
+            evicted?.decor.dispose();
+            textureCache.delete(firstKey);
           }
-        } else if (generator.getState() === 'error') {
-          console.error(
-            '[Planet] Planet generator error:',
-            generator.getError(),
-          );
-          if (isMounted) {
-            setIsLoading(false);
-          }
-          animFrameId = null;
-        } else {
-          animFrameId = requestAnimationFrame(buildTextureWhenReady);
+        }
+        textureCache.set(mapIdentity, textures);
+
+        if (surfaceMaterial.uniforms.planetMap) {
+          surfaceMaterial.uniforms.planetMap.value = textures.color;
+        }
+        if (surfaceMaterial.uniforms.decorMap) {
+          surfaceMaterial.uniforms.decorMap.value = textures.decor;
         }
       };
-      animFrameId = requestAnimationFrame(buildTextureWhenReady);
+
+      loadBakedPlanetTextures(data).then((baked) => {
+        if (!isMounted) {
+          return;
+        }
+        if (baked) {
+          applyTextures(baked);
+        }
+        setIsLoading(false);
+      });
     }
 
     const atmosphereMaterial = new THREE.ShaderMaterial({
@@ -838,7 +824,6 @@ export const Planet = ({
       objectGroup,
       selection,
       playerMarker,
-      generator,
       surface,
       planetGroup,
       planetTexture: initialTexture,
@@ -885,6 +870,50 @@ export const Planet = ({
       }
     };
 
+    // Middle drag: the ground under the cursor follows it, by orbiting the camera like WASD does
+    let panPointer: number | null = null;
+    let panLastX = 0;
+    let panLastY = 0;
+    const handlePanDown = (event: PointerEvent) => {
+      if (event.button !== 1) {
+        return;
+      }
+      event.preventDefault(); // no autoscroll
+      panPointer = event.pointerId;
+      panLastX = event.clientX;
+      panLastY = event.clientY;
+      renderer.domElement.setPointerCapture(event.pointerId);
+    };
+    const handlePanMove = (event: PointerEvent) => {
+      if (event.pointerId !== panPointer) {
+        return;
+      }
+      const dx = event.clientX - panLastX;
+      const dy = event.clientY - panLastY;
+      panLastX = event.clientX;
+      panLastY = event.clientY;
+      const altitude = Math.max(controls.getDistance() - PLANET_RADIUS, 0.02);
+      // Radians of planet surface per screen pixel, at the point below the camera
+      const perPixel =
+        (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * altitude) /
+        (renderer.domElement.clientHeight * PLANET_RADIUS);
+      const orbit = new THREE.Spherical().setFromVector3(
+        camera.position.clone().sub(controls.target),
+      );
+      orbit.phi -= dy * perPixel;
+      orbit.theta -= (dx * perPixel) / Math.max(Math.sin(orbit.phi), 0.15);
+      orbit.phi = THREE.MathUtils.clamp(orbit.phi, 0.05, Math.PI - 0.05);
+      camera.position.setFromSpherical(orbit).add(controls.target);
+      controls.update();
+    };
+    const handlePanUp = (event: PointerEvent) => {
+      if (event.pointerId !== panPointer) {
+        return;
+      }
+      panPointer = null;
+      renderer.domElement.releasePointerCapture(event.pointerId);
+    };
+
     /** The object or surface cell under the cursor, 1-based. */
     const pickAt = (event: MouseEvent): CellInteraction | null => {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -907,7 +936,6 @@ export const Planet = ({
           return {
             x: object.x,
             y: object.y,
-            tile: generator.getTile(object.x, object.y),
             object,
             ...modifiers,
           };
@@ -922,7 +950,7 @@ export const Planet = ({
       planetGroup.worldToLocal(point);
 
       const { x, y } = vectorToTile(grid, point);
-      return { x, y, tile: generator.getTile(x, y), ...modifiers };
+      return { x, y, ...modifiers };
     };
 
     const handleClick = (event: MouseEvent) => {
@@ -937,7 +965,7 @@ export const Planet = ({
       if (cell.object) {
         callbacksRef.current.onObjectClick?.(cell.object);
       }
-      callbacksRef.current.onTileClick?.(cell.x, cell.y, cell.tile);
+      callbacksRef.current.onTileClick?.(cell.x, cell.y);
     };
 
     const handleDoubleClick = (event: MouseEvent) => {
@@ -963,6 +991,10 @@ export const Planet = ({
 
     renderer.domElement.addEventListener('pointerdown', handlePointerDown);
     renderer.domElement.addEventListener('pointermove', handlePointerMove);
+    renderer.domElement.addEventListener('pointerdown', handlePanDown);
+    renderer.domElement.addEventListener('pointermove', handlePanMove);
+    renderer.domElement.addEventListener('pointerup', handlePanUp);
+    renderer.domElement.addEventListener('pointercancel', handlePanUp);
     renderer.domElement.addEventListener('click', handleClick);
     renderer.domElement.addEventListener('dblclick', handleDoubleClick);
     renderer.domElement.addEventListener('contextmenu', handleContextMenu);
@@ -1186,15 +1218,15 @@ export const Planet = ({
       isMounted = false;
       saveCameraState(camera, controls);
 
-      if (animFrameId !== null) {
-        cancelAnimationFrame(animFrameId);
-      }
-
       runtimeRef.current = null;
       cancelAnimationFrame(frame);
 
       window.removeEventListener('resize', resize);
       renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
+      renderer.domElement.removeEventListener('pointerdown', handlePanDown);
+      renderer.domElement.removeEventListener('pointermove', handlePanMove);
+      renderer.domElement.removeEventListener('pointerup', handlePanUp);
+      renderer.domElement.removeEventListener('pointercancel', handlePanUp);
       renderer.domElement.removeEventListener('pointermove', handlePointerMove);
       renderer.domElement.removeEventListener('click', handleClick);
       renderer.domElement.removeEventListener('dblclick', handleDoubleClick);

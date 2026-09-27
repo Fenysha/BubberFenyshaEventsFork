@@ -1,38 +1,22 @@
 import * as THREE from 'three';
+import { resolveAsset } from 'tgui/assets';
 
-import { BIOME_COLORS } from '../generation/constants';
-import type { PlanetGenerator } from '../generation/generator';
 import type { PlanetMapData } from '../types';
 import { gridFor } from './coordinates';
-import { iconFrame, resolveTileIcon } from './PlanetIcons';
-
-const stableVariation = (x: number, y: number, seed: number): number => {
-  const value =
-    Math.sin(x * 127.1 + y * 311.7 + seed * 0.01337) * 43758.5453123;
-  const normalized = value - Math.floor(value);
-  return 0.94 + normalized * 0.08;
-};
 
 export type PlanetTextures = {
   /** Biome colour, one texel per tile: texel (x - 1, y - 1) is tile (x, y) */
-  color: THREE.DataTexture;
-  /** Same layout. R: decor atlas frame + 1 (0 for none). G: river mask. B, A: free. */
-  decor: THREE.DataTexture;
+  color: THREE.Texture;
+  /** Same layout. R: decor atlas frame + 1 (0 for none) in the low six bits, road grade in the top two. G: river mask. B: road mask. */
+  decor: THREE.Texture;
+  /** Size of the two PNGs they were decoded from */
+  bytes: number;
 };
 
-const tileTexture = (
-  pixels: Uint8Array,
-  width: number,
-  height: number,
+const setupTileTexture = <T extends THREE.Texture>(
+  texture: T,
   srgb: boolean,
-): THREE.DataTexture => {
-  const texture = new THREE.DataTexture(
-    pixels,
-    width,
-    height,
-    THREE.RGBAFormat,
-    THREE.UnsignedByteType,
-  );
+): T => {
   if (srgb) {
     texture.colorSpace = THREE.SRGBColorSpace;
   }
@@ -46,45 +30,58 @@ const tileTexture = (
   return texture;
 };
 
-/**
- * Evaluates every tile once and bakes both per-tile textures. The surface shader finds the
- * tile under each fragment and reads its texels directly.
- */
-export const buildPlanetTextures = (
-  data: PlanetMapData,
-  generator: PlanetGenerator,
-): PlanetTextures => {
-  const grid = gridFor(data);
-  const width = grid.width;
-  const height = grid.height;
-  const color = new Uint8Array(width * height * 4);
-  const decor = new Uint8Array(width * height * 4);
-  const tint = new THREE.Color();
-
-  for (let y = 1; y <= height; y++) {
-    for (let x = 1; x <= width; x++) {
-      if (!grid.isValid(x, y)) {
-        continue;
-      }
-      const tile = generator.getTile(x, y);
-      tint.set(BIOME_COLORS[tile.biome] ?? 0xff00ff);
-      tint.convertLinearToSRGB();
-      tint.multiplyScalar(stableVariation(x, y, data.terrainSeed));
-
-      const index = ((y - 1) * width + (x - 1)) * 4;
-      color[index] = Math.round(THREE.MathUtils.clamp(tint.r, 0, 1) * 255);
-      color[index + 1] = Math.round(THREE.MathUtils.clamp(tint.g, 0, 1) * 255);
-      color[index + 2] = Math.round(THREE.MathUtils.clamp(tint.b, 0, 1) * 255);
-      color[index + 3] = 255;
-
-      decor[index] =
-        iconFrame(resolveTileIcon(tile, x, y, data.terrainSeed ?? 0)) + 1;
-      decor[index + 1] = generator.getRiverMask(x, y);
-    }
+const loadBakedTexture = async (
+  name: string,
+  width: number,
+  height: number,
+  srgb: boolean,
+): Promise<{ texture: THREE.Texture; bytes: number }> => {
+  const response = await fetch(resolveAsset(`rimworld_planet_${name}.png`));
+  if (!response.ok) {
+    throw new Error(`${name}: ${response.status} ${response.statusText}`);
   }
-
+  const blob = await response.blob();
+  // Raw bytes: the decor channels are bitmasks, not colours
+  const bitmap = await createImageBitmap(blob, {
+    premultiplyAlpha: 'none',
+    colorSpaceConversion: 'none',
+    imageOrientation: 'none',
+  });
+  if (bitmap.width !== width || bitmap.height !== height) {
+    bitmap.close();
+    throw new Error(
+      `${name}: ${bitmap.width}x${bitmap.height}, expected ${width}x${height}`,
+    );
+  }
   return {
-    color: tileTexture(color, width, height, true),
-    decor: tileTexture(decor, width, height, false),
+    texture: setupTileTexture(new THREE.Texture(bitmap), srgb),
+    bytes: blob.size,
   };
+};
+
+export const formatBytes = (bytes: number): string =>
+  `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+
+/** The server's baked textures (tp_planet_bake_surface), or null when it has none. */
+export const loadBakedPlanetTextures = async (
+  data: PlanetMapData,
+): Promise<PlanetTextures | null> => {
+  const grid = gridFor(data);
+  const started = performance.now();
+  try {
+    const [color, decor] = await Promise.all([
+      loadBakedTexture('surface_color', grid.width, grid.height, true),
+      loadBakedTexture('surface_decor', grid.width, grid.height, false),
+    ]);
+    const bytes = color.bytes + decor.bytes;
+    // eslint-disable-next-line no-console
+    console.info(
+      `[Planet] Surface textures loaded from assets in ${Math.round(performance.now() - started)} ms (colour ${formatBytes(color.bytes)} + decor ${formatBytes(decor.bytes)} = ${formatBytes(bytes)})`,
+    );
+    return { color: color.texture, decor: decor.texture, bytes };
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('[Planet] Could not load the baked surface:', error);
+    return null;
+  }
 };

@@ -421,7 +421,8 @@
  *         output_dir: string
  *             Same three values passed to tp_planet_generate() for this
  *             planet — must point at the same directory its layers were
- *             written to, or this call fails.
+ *             written to, or this call fails. seed also drives the
+ *             candidate sampling below.
  *
  *         plan: array of objects, each:
  *
@@ -439,9 +440,10 @@
  *                 get_settlement_candidates(min_score=...) argument).
  *
  *             max_candidates: usize (optional, default 300)
- *                 Top-k cap per kind, kept via a bounded min-heap — memory
- *                 use never exceeds max_candidates regardless of how many
- *                 tiles clear min_score.
+ *                 Sample size per kind. Candidates are a seeded random
+ *                 sample of every tile that clears min_score, weighted
+ *                 towards higher scores, so they spread over the whole
+ *                 planet instead of piling into the single best climate.
  *
  * Output on success:
  *
@@ -458,8 +460,8 @@
  *             }
  *         }
  *
- *     Each kind's list is sorted best-score-first and capped at that entry's
- *     max_candidates. A kind with no plan entry is simply absent from the
+ *     Each kind's list is in sampled order (walk it front to back) and capped
+ *     at that entry's max_candidates. A kind with no plan entry is simply absent from the
  *     result.
  *
  * On failure:
@@ -488,8 +490,9 @@
 
 /**
  * Builds a road network connecting the given settlements: a minimum
- * spanning tree decides which pairs get a direct road, then A* (terrain-
- * aware — oceans are impassable, mountains/snow are expensive, reusing an
+ * spanning tree per landmass decides which pairs get a direct road (so
+ * every settlement is joined to the others on its landmass), then A* (terrain-
+ * aware — water (ocean, shallows, sea ice) is impassable, rivers are only crossed, mountains/snow are expensive, reusing an
  * already-built segment is cheap so branches merge into a shared trunk)
  * finds the actual tile path for each MST edge.
  *
@@ -512,6 +515,11 @@
  *                 dropped (see skipped_settlements in the response) rather
  *                 than failing the whole call.
  *
+ *             tier: RW_ROAD_DIRT .. RW_ROAD_ASPHALT (optional, default dirt)
+ *                 Best road the settlement builds. A road takes the lesser tier
+ *                 of its two ends; stretches two or more routes share are
+ *                 upgraded one grade, up to RW_ROAD_HIGHWAY.
+ *
  * Output on success:
  *
  *     JSON string:
@@ -524,14 +532,21 @@
  *                 "bits_per_cell": 6,
  *                 "bytes": <number>
  *             },
+ *             "types_layer": {
+ *                 "name": "road_types",
+ *                 "path": "<file path>",
+ *                 "bits_per_cell": 2,
+ *                 "bytes": <number>
+ *             },
  *             "edges": <number>,
  *             "road_tiles": <number>,
- *             "skipped_settlements": <number>
+ *             "skipped_settlements": <number>,
+ *             "networks": <number>
  *         }
  *
- *     "edges" is how many MST connections actually got a buildable land
- *     path (an edge whose two settlements are on ocean-separated landmasses
- *     is silently skipped, not an error). "road_tiles" is how many tiles
+ *     "edges" is how many MST connections got a land path. "networks" is
+ *     how many separate landmasses hold settlements; they get no road
+ *     between them. "road_tiles" is how many tiles
  *     ended up with a nonzero road bitmask.
  *
  *     Read the layer exactly like rivers:
@@ -552,6 +567,64 @@
 		return "ERROR: config_json must be a non-empty string"
 
 	return rustg_raw_tp_planet_generate_roads(config_json)
+
+/**
+ * The climate model's values for one tile (tp_planet_climate.rs, the only copy of that model),
+ * read from the layers in output_dir.
+ *
+ * Output on success:
+ *     { "status": "ok", "material", "latitude", "temperature", "precipitation",
+ *       "rainfall", "snowfall", "water_availability", "biome", "sub_biome" }
+ *
+ *     material, biome and sub_biome are RW_MATERIAL_* / RW_BIOME_* / RW_SUBBIOME_*
+ *     values; the numbers are 0-1 except latitude, in degrees.
+ *
+ * On failure:
+ *     ERROR: <description>
+ */
+#define rustg_tp_planet_tile_info(output_dir, seed, x, y) \
+	RUSTG_CALL(RUST_UTILS, "tp_planet_tile_info")(output_dir, "[seed]", "[x]", "[y]")
+
+/**
+ * Cheapest overland route between two tiles, by the rules roads follow: water impassable,
+ * rivers only crossed, mountains expensive, existing roads cheap (unless use_roads is false).
+ * Either end may be on water.
+ *
+ * Input: { seed, frequency, output_dir, from: [x, y], to: [x, y], use_roads (default true) }
+ *
+ * Output on success:
+ *     { "status": "ok", "path": [[x, y], ...], "cost": <number> }, from and to included
+ *     { "status": "no_path", "path": [], "cost": 0 } when they share no landmass
+ *
+ * On failure:
+ *     ERROR: <description>
+ */
+#define rustg_tp_planet_find_path(config_json) \
+	RUSTG_CALL(RUST_UTILS, "tp_planet_find_path")(config_json)
+
+#define rustg_raw_tp_planet_bake_surface(config_json) \
+	RUSTG_CALL(RUST_UTILS, "tp_planet_bake_surface")(config_json)
+
+/**
+ * Bakes the planet view's textures from the layers in output_dir (roads
+ * included when present), so clients don't evaluate every tile themselves.
+ *
+ * Input: { seed, terrain_seed, frequency, output_dir }
+ *
+ * Output on success:
+ *     { "status": "ok", "color": "<png path>", "decor": "<png path>" }
+ *
+ *     Both are RGBA, one texel per tile. color: biome colour. decor: R decor
+ *     atlas frame + 1, G river mask, B road mask.
+ *
+ * On failure:
+ *     ERROR: <description>
+ */
+/proc/rustg_tp_planet_bake_surface(config_json)
+	if(!istext(config_json) || !length(config_json))
+		return "ERROR: config_json must be a non-empty string"
+
+	return rustg_raw_tp_planet_bake_surface(config_json)
 
 
 

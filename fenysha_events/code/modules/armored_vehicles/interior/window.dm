@@ -1,8 +1,8 @@
 /**
- * Viewport for vehicle interiors. Place it on a wall tile and set dir to the way it should look, in the interior's frame.
- * It shows the real turf just outside the hull at normal scale, rotated to match the vehicle's heading.
- * Windows placed side by side along a wall show neighbouring outside turfs, so a row of them reads as one strip.
- * Outside floors draw below walls, so the wall tile under it is hidden at runtime and redrawn around a glazed hole.
+ * Viewport for vehicle interiors, working like a mirage border. Place it on a wall tile and set dir to the side it looks out of.
+ * The glass shows the turf just outside the hull on that side, and the turfs beyond are drawn past it,
+ * the same way the map edge shows what lies across the border. It refreshes whenever the vehicle moves.
+ * Outside floors draw below walls, so the wall tile is hidden at runtime and redrawn around a glazed hole.
  */
 /obj/structure/vehicle_window
 	name = "viewport"
@@ -17,33 +17,49 @@
 	/// Wall art drawn around the glass; defaults to whatever the turf underneath looks like
 	var/frame_icon
 	var/frame_state
-	/// Hide the turf underneath so outside floors aren't covered by it
-	var/hide_turf = TRUE
+	/// How many tiles past the glass the view reaches
+	var/view_range = 6
+	/// How many tiles either side of the glass the view spreads
+	var/view_spread = 4
 	var/turf/hidden_turf
+	var/hidden_turf_opacity
 	var/obj/vehicle/sealed/armored/owner
 	var/datum/interior/owner_interior
-	var/atom/movable/vehicle_viewport/viewport
+	/// Shows the turf right outside the hull, on the glass itself
+	var/atom/movable/vehicle_viewport/glass_holder
+	/// Shows everything past it
+	var/atom/movable/vehicle_viewport/beyond_holder
 
 /obj/structure/vehicle_window/Initialize(mapload)
 	. = ..()
-	viewport = new
-	vis_contents += viewport
+	AddElement(/datum/element/simple_rotation, ROTATION_IGNORE_ANCHORED)
+	glass_holder = new
+	beyond_holder = new
+	vis_contents += list(glass_holder, beyond_holder)
 	var/turf/host = loc
 	if(isturf(host))
 		frame_icon ||= host.icon
 		frame_state ||= host.icon_state
-		if(hide_turf)
-			hidden_turf = host
-			host.alpha = 0
+		hidden_turf = host
+		hidden_turf_opacity = host.opacity
+		host.alpha = 0
+		host.set_opacity(FALSE)
 	update_appearance(UPDATE_OVERLAYS)
+	// Spawned after the interior loaded, so it missed the usual linking
+	if(!mapload)
+		var/datum/interior/inside = get_vehicle_interior(get_turf(src))
+		if(inside)
+			link_interior(inside)
 
 /obj/structure/vehicle_window/Destroy()
 	unlink()
+	vis_contents.Cut()
+	QDEL_NULL(glass_holder)
+	QDEL_NULL(beyond_holder)
 	if(hidden_turf)
 		hidden_turf.alpha = initial(hidden_turf.alpha)
+		hidden_turf.set_opacity(hidden_turf_opacity)
 		hidden_turf = null
-	vis_contents.Cut()
-	QDEL_NULL(viewport)
 	return ..()
 
 /obj/structure/vehicle_window/setDir(newdir)
@@ -85,7 +101,8 @@
 	clear_view()
 
 /obj/structure/vehicle_window/proc/clear_view()
-	viewport?.vis_contents.Cut()
+	glass_holder?.vis_contents.Cut()
+	beyond_holder?.vis_contents.Cut()
 
 /obj/structure/vehicle_window/proc/on_owner_changed(datum/source)
 	SIGNAL_HANDLER
@@ -96,27 +113,35 @@
 	var/turf/vehicle_turf = get_turf(owner)
 	if(!vehicle_turf)
 		return
-	// Degrees the vehicle is turned clockwise relative to the interior's forward
-	var/datum/interior/armored/armored_interior = owner_interior
-	var/interior_forward = istype(armored_interior) ? armored_interior.forward_dir : EAST
-	var/rotation = dir2angle(owner.dir) - dir2angle(interior_forward)
-	var/world_dir = turn(dir, -rotation)
+	var/list/forward = dir2offset(dir)
+	var/list/sideways = dir2offset(turn(dir, 90))
 
-	// Keep the view in line with where the viewport sits along its wall
+	// The glass shows the turf just outside the hull, in line with where the window sits along its wall
 	var/list/interior_center = get_interior_center()
-	var/list/offset = rotate_offset(x - interior_center[1], y - interior_center[2], rotation)
-	var/list/forward = dir2offset(world_dir)
-	var/list/sideways = dir2offset(turn(world_dir, 90))
-	var/lateral = round(offset[1] * sideways[1] + offset[2] * sideways[2], 1)
-
-	var/distance = get_hull_extent(world_dir) + 1
-	var/turf/outside = locate(vehicle_turf.x + forward[1] * distance + sideways[1] * lateral, vehicle_turf.y + forward[2] * distance + sideways[2] * lateral, vehicle_turf.z)
-	if(!outside)
+	var/lateral = round((x - interior_center[1]) * sideways[1] + (y - interior_center[2]) * sideways[2], 1)
+	var/distance = get_hull_extent(dir) + 1
+	var/glass_x = vehicle_turf.x + forward[1] * distance + sideways[1] * lateral
+	var/glass_y = vehicle_turf.y + forward[2] * distance + sideways[2] * lateral
+	var/turf/glass_turf = locate(glass_x, glass_y, vehicle_turf.z)
+	if(!glass_turf)
 		return
-	viewport.vis_contents += outside
-	var/matrix/view_transform = matrix()
-	view_transform.Turn(-rotation)
-	viewport.transform = view_transform
+	glass_holder.vis_contents += glass_turf
+
+	// Everything past the glass, drawn as one block like a mirage border
+	var/corner_one_x = glass_x + forward[1] - sideways[1] * view_spread
+	var/corner_one_y = glass_y + forward[2] - sideways[2] * view_spread
+	var/corner_two_x = glass_x + forward[1] * view_range + sideways[1] * view_spread
+	var/corner_two_y = glass_y + forward[2] * view_range + sideways[2] * view_spread
+	var/min_x = clamp(min(corner_one_x, corner_two_x), 1, world.maxx)
+	var/min_y = clamp(min(corner_one_y, corner_two_y), 1, world.maxy)
+	var/max_x = clamp(max(corner_one_x, corner_two_x), 1, world.maxx)
+	var/max_y = clamp(max(corner_one_y, corner_two_y), 1, world.maxy)
+	if(min_x > max_x || min_y > max_y)
+		return
+	beyond_holder.vis_contents += block(min_x, min_y, vehicle_turf.z, max_x, max_y, vehicle_turf.z)
+	// The block's bottom left turf is drawn on the holder, so shift it to where it sits relative to the glass
+	beyond_holder.pixel_x = (min_x - glass_x) * ICON_SIZE_X
+	beyond_holder.pixel_y = (min_y - glass_y) * ICON_SIZE_Y
 
 /obj/structure/vehicle_window/proc/get_interior_center()
 	var/list/turfs = owner_interior?.loaded_turfs
@@ -126,12 +151,6 @@
 	var/turf/last = turfs[length(turfs)]
 	return list((first.x + last.x) / 2, (first.y + last.y) / 2)
 
-/// Rotates an x/y offset clockwise by the given degrees
-/obj/structure/vehicle_window/proc/rotate_offset(offset_x, offset_y, degrees)
-	var/rotated_x = offset_x * cos(degrees) + offset_y * sin(degrees)
-	var/rotated_y = offset_y * cos(degrees) - offset_x * sin(degrees)
-	return list(rotated_x, rotated_y)
-
 /// How many tiles the hull reaches past the vehicle's own turf in a world direction
 /obj/structure/vehicle_window/proc/get_hull_extent(world_dir)
 	var/obj/hitbox/hitbox = owner.hitbox
@@ -140,11 +159,16 @@
 	var/along_length = (world_dir & (NORTH|SOUTH)) ? hitbox.bound_height : hitbox.bound_width
 	return max(round(along_length / ICON_SIZE_ALL / 2), 1)
 
+INITIALIZE_IMMEDIATE(/atom/movable/vehicle_viewport)
+/// Like a mirage border holder: draws real turfs from elsewhere
 /atom/movable/vehicle_viewport
 	name = "outside"
 	anchored = TRUE
 	appearance_flags = PIXEL_SCALE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+
+/atom/movable/vehicle_viewport/forceMove(atom/destination)
+	return FALSE
 
 /// Swaps your view to the outside of the vehicle until you move, resist or look away
 /obj/structure/periscope

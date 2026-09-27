@@ -43,13 +43,13 @@ uniform float faceUpper[20];
 uniform vec3 sunDirection;
 uniform vec3 nightColor;
 uniform float planetRadius;
-// Decor icons: per-tile atlas frame (+1) in decorMap.r, frames packed in decorAtlas
+// Decor icons: per-tile atlas frame (+1) in decorMap.r low six bits (top two: road grade), frames packed in decorAtlas
 uniform sampler2D decorMap;
 uniform sampler2D decorAtlas;
 uniform vec2 atlasGrid;
 uniform float decorOpacity;
 uniform float decorLod;
-// River half-width, in tile spacings
+// River half-width, in tile spacings; roads use a fraction of it
 uniform float riverWidth;
 
 // Lattice steps to a tile's neighbours, in its own diamond's frame: river mask bit b follows
@@ -193,6 +193,39 @@ vec3 findTile(vec3 dir, out vec3 center) {
   return vec3(tile, inset);
 }
 
+// Distance from p (tile-local east/north) to the segments running from the tile centre to the
+// midpoint towards each neighbour set in mask. The neighbour draws the other half to the same
+// midpoint, so the line runs on across the edge.
+float distanceToLinks(int mask, vec3 tileCenter, vec3 east, vec3 north, vec2 p, int tx, int ty) {
+  int n = int(gridN + 0.5);
+  int diamond = (tx - 1) / n;
+  float i = float(tx - 1 - diamond * n);
+  float best = 1e9;
+  for (int bit = 0; bit < 6; bit++) {
+    if (((mask >> bit) & 1) == 0) {
+      continue;
+    }
+    vec3 neighbour;
+    if (ty == n + 1) {
+      // A pole's bits are its five spokes
+      if (bit > 4) {
+        continue;
+      }
+      neighbour = tx == 1
+        ? normalize(flatPoint(bit, 1.0, 0.0))
+        : normalize(flatPoint(5 + bit, float(n) - 1.0, float(n)));
+    } else {
+      vec2 step = NEIGHBOUR_OFFSETS[bit];
+      neighbour = normalize(flatPoint(diamond, i + step.x, float(ty) + step.y));
+    }
+    vec3 toMid = normalize(tileCenter + neighbour) - tileCenter;
+    vec2 m = vec2(dot(toMid, east), dot(toMid, north));
+    float t = clamp(dot(p, m) / dot(m, m), 0.0, 1.0);
+    best = min(best, length(p - m * t));
+  }
+  return best;
+}
+
 void main() {
   // The mesh is flat triangles that sag inside the sphere, so the fragment's own direction is
   // off by up to a good fraction of a cell. Where this ray meets the true sphere is where the
@@ -219,7 +252,9 @@ void main() {
 
   // Decor icon, drawn north-up in a square about a cell wide around the tile centre. The
   // neighbouring cells own the fragments past each edge, so it's clipped to the hex.
-  float frame = floor(texture2D(decorMap, planetUv).r * 255.0 + 0.5) - 1.0;
+  // Red: low six bits decor atlas frame + 1 (0 for none), top two bits road grade
+  int decorRed = int(texture2D(decorMap, planetUv).r * 255.0 + 0.5);
+  float frame = float(decorRed & 63) - 1.0;
   if (frame >= 0.0 && decorOpacity > 0.0) {
     const float DECOR_SPAN = 1.15;
     vec3 east = cross(tileCenter, vec3(0.0, 1.0, 0.0));
@@ -242,48 +277,46 @@ void main() {
     }
   }
 
-  // Rivers: from the tile centre to the midpoint towards each connected neighbour. The
-  // neighbour draws the other half to the same midpoint, so the line runs on across the edge.
-  int riverMask = int(texture2D(decorMap, planetUv).g * 255.0 + 0.5);
-  if (riverMask > 0) {
+  // Rivers first, so a road crossing one reads as a bridge
+  vec4 links = texture2D(decorMap, planetUv);
+  int riverMask = int(links.g * 255.0 + 0.5);
+  int roadMask = int(links.b * 255.0 + 0.5);
+  if (riverMask > 0 || roadMask > 0) {
     vec3 east = cross(tileCenter, vec3(0.0, 1.0, 0.0));
     east = dot(east, east) < 1e-10 ? vec3(0.0, 0.0, 1.0) : normalize(east);
     vec3 north = cross(east, tileCenter);
     vec3 fromCenter = surfaceDirection - tileCenter;
     vec2 p = vec2(dot(fromCenter, east), dot(fromCenter, north));
-
-    int n = int(gridN + 0.5);
     int tx = int(found.x + 0.5);
     int ty = int(found.y + 0.5);
-    int diamond = (tx - 1) / n;
-    float i = float(tx - 1 - diamond * n);
-    float distanceToRiver = 1e9;
-    for (int bit = 0; bit < 6; bit++) {
-      if (((riverMask >> bit) & 1) == 0) {
-        continue;
-      }
-      vec3 neighbour;
-      if (ty == n + 1) {
-        // A pole's bits are its five spokes
-        if (bit > 4) {
-          continue;
-        }
-        neighbour = tx == 1
-          ? normalize(flatPoint(bit, 1.0, 0.0))
-          : normalize(flatPoint(5 + bit, float(n) - 1.0, float(n)));
-      } else {
-        vec2 step = NEIGHBOUR_OFFSETS[bit];
-        neighbour = normalize(flatPoint(diamond, i + step.x, float(ty) + step.y));
-      }
-      vec3 toMid = normalize(tileCenter + neighbour) - tileCenter;
-      vec2 m = vec2(dot(toMid, east), dot(toMid, north));
-      float t = clamp(dot(p, m) / dot(m, m), 0.0, 1.0);
-      distanceToRiver = min(distanceToRiver, length(p - m * t));
+
+    if (riverMask > 0) {
+      float halfWidth = tileSpacing * riverWidth;
+      float distanceToRiver = distanceToLinks(riverMask, tileCenter, east, north, p, tx, ty);
+      float river = 1.0 - smoothstep(halfWidth * 0.75, halfWidth, distanceToRiver);
+      const vec3 RIVER_COLOR = vec3(0.07, 0.2, 0.42);
+      baseColor = mix(baseColor, RIVER_COLOR, river);
     }
-    float halfWidth = tileSpacing * riverWidth;
-    float river = 1.0 - smoothstep(halfWidth * 0.75, halfWidth, distanceToRiver);
-    const vec3 RIVER_COLOR = vec3(0.07, 0.2, 0.42);
-    baseColor = mix(baseColor, RIVER_COLOR, river);
+    if (roadMask > 0) {
+      // Dirt path, stone road, asphalt road, asphalt highway with a centre line
+      int grade = decorRed >> 6;
+      const vec3 ROAD_COLORS[4] = vec3[4](
+        vec3(0.45, 0.33, 0.2),
+        vec3(0.56, 0.54, 0.5),
+        vec3(0.2, 0.2, 0.22),
+        vec3(0.15, 0.15, 0.17)
+      );
+      const float ROAD_WIDTHS[4] = float[4](0.6, 0.75, 0.85, 1.2);
+      float halfWidth = tileSpacing * riverWidth * ROAD_WIDTHS[grade];
+      float distanceToRoad = distanceToLinks(roadMask, tileCenter, east, north, p, tx, ty);
+      float road = 1.0 - smoothstep(halfWidth * 0.7, halfWidth, distanceToRoad);
+      baseColor = mix(baseColor, ROAD_COLORS[grade], road);
+      if (grade == 3) {
+        const vec3 LANE_COLOR = vec3(0.85, 0.7, 0.2);
+        float lane = 1.0 - smoothstep(halfWidth * 0.12, halfWidth * 0.2, distanceToRoad);
+        baseColor = mix(baseColor, LANE_COLOR, lane);
+      }
+    }
   }
 
   vec3 normal = normalize(vWorldNormal);

@@ -8,8 +8,8 @@
 		list("kind" = RW_SETTLEMENT_PIRATE, "faction" = RW_FACTION_PIRATES, "weight" = 0.14, "min_score" = 0.35, "settlement_type" = "camp"),
 		list("kind" = RW_SETTLEMENT_MECHANOID, "faction" = RW_FACTION_MECHANOIDS, "weight" = 0.08, "min_score" = 0.40, "settlement_type" = "complex"),
 		list("kind" = RW_SETTLEMENT_INSECTOID, "faction" = RW_FACTION_INSECTOIDS, "weight" = 0.10, "min_score" = 0.38, "settlement_type" = "hive"),
-		list("kind" = RW_SETTLEMENT_ANCIENT, "faction" = RW_FACTION_ANCIENTS_NEUTRAL, "weight" = 0.02, "min_score" = 0.35, "settlement_type" = "ruin"),
-		list("kind" = RW_SETTLEMENT_ANCIENT, "faction" = RW_FACTION_ANCIENTS_HOSTILE, "weight" = 0.02, "min_score" = 0.35, "settlement_type" = "ruin"),
+		list("kind" = RW_SETTLEMENT_ANCIENT, "faction" = RW_FACTION_ANCIENTS_NEUTRAL, "weight" = 0.02, "min_score" = 0.35, "settlement_type" = RW_SETTLEMENT_TYPE_RUINS),
+		list("kind" = RW_SETTLEMENT_ANCIENT, "faction" = RW_FACTION_ANCIENTS_HOSTILE, "weight" = 0.02, "min_score" = 0.35, "settlement_type" = RW_SETTLEMENT_TYPE_RUINS),
 	)
 
 /datum/rimworld_planet/proc/query_settlement_candidates(list/plan)
@@ -103,7 +103,7 @@
 		var/datum/rimworld_planet_object/settlement/existing = settlements[id]
 		if(!existing)
 			continue
-		if(existing.data["faction"] == "player")
+		if(existing.is_player_settlement())
 			continue
 		remove_object(id)
 
@@ -116,18 +116,21 @@
 		log_world("[name] generate_settlements aborted: no candidates from Rust.")
 		return FALSE
 
+	var/list/targets = get_settlement_targets(plan, base_count)
 	var/list/occupied = list()
-	var/min_distance = 3.0
+	// Roughly half the spacing base_count settlements would have spread evenly over the land
+	var/tile_count = 10 * grid_frequency * grid_frequency + 2
+	var/min_distance = max(3, sqrt(tile_count * RW_SETTLEMENT_LAND_FRACTION / max(base_count, 1)) * 0.5)
 	var/total_placed = 0
 	var/list/placed_points = list()
 
-	for(var/entry in plan)
+	for(var/plan_index in 1 to length(plan))
+		var/list/entry = plan[plan_index]
 		var/kind = entry["kind"]
 		var/faction_id = entry["faction"]
-		var/weight = entry["weight"]
 		var/settlement_type = entry["settlement_type"]
 
-		var/target = max(0, round(base_count * weight))
+		var/target = targets[plan_index]
 		if(target <= 0)
 			continue
 
@@ -171,12 +174,44 @@
 			occupied[key] = TRUE
 			placed++
 			total_placed++
-			placed_points += list(list("x" = cx, "y" = cy))
+			placed_points += list(list("x" = cx, "y" = cy, "tier" = get_road_tier(kind)))
 
-	log_world("[name] generated [total_placed] settlements (slider_population = [slider_population], base_count = [base_count]).")
+	log_world("[name] generated [total_placed] settlements (slider_population = [slider_population], base_count = [base_count], min_distance = [round(min_distance)]).")
 
 	generate_roads(placed_points)
 	return TRUE
+
+/// Best road a settlement of this kind builds; a road takes the lesser of its two ends
+/datum/rimworld_planet/proc/get_road_tier(kind)
+	switch(kind)
+		if(RW_SETTLEMENT_OUTLANDER)
+			return RW_ROAD_ASPHALT
+		if(RW_SETTLEMENT_ROUGH_OUTLANDER)
+			return RW_ROAD_STONE
+	return RW_ROAD_DIRT
+
+/// Splits base_count across the plan by weight (largest remainder), so small weights still get their share.
+/datum/rimworld_planet/proc/get_settlement_targets(list/plan, base_count)
+	var/total_weight = 0
+	for(var/list/entry as anything in plan)
+		total_weight += entry["weight"]
+	var/list/targets = list()
+	var/list/remainders = list()
+	var/assigned = 0
+	for(var/list/entry as anything in plan)
+		var/exact = total_weight ? base_count * entry["weight"] / total_weight : 0
+		targets += floor(exact)
+		remainders += exact - floor(exact)
+		assigned += floor(exact)
+	while(assigned < base_count)
+		var/best = 1
+		for(var/index in 2 to length(remainders))
+			if(remainders[index] > remainders[best])
+				best = index
+		targets[best]++
+		remainders[best] = -1
+		assigned++
+	return targets
 
 
 /datum/rimworld_planet/proc/generate_settlement_name(faction_id)

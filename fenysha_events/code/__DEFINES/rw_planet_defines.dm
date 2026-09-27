@@ -8,6 +8,14 @@
 #define RW_PLANET_GENERATOR_VERSION 7
 /// Hex grid frequency n: 10n^2 + 2 tiles, about 2050 around the equator
 #define RW_PLANET_GRID_FREQUENCY 366
+/// Rough share of the planet settlements can use; only sets their minimum spacing
+#define RW_SETTLEMENT_LAND_FRACTION 0.3
+
+/// Road grades, as the road_types layer stores them
+#define RW_ROAD_DIRT 0
+#define RW_ROAD_STONE 1
+#define RW_ROAD_ASPHALT 2
+#define RW_ROAD_HIGHWAY 3
 
 #define RW_PLANET_CELL_TOWN "map_town"
 #define RW_PLANET_CELL_TOWN_OTHER "map_town_other"
@@ -123,10 +131,6 @@
 #define RW_PRECIPITATION_LOW "low"
 #define RW_PRECIPITATION_MEDIUM "medium"
 #define RW_PRECIPITATION_HIGH "high"
-
-#define RW_PRECIPITATION_CATEGORY_HIGH 0.78
-#define RW_PRECIPITATION_CATEGORY_MEDIUM 0.50
-#define RW_PRECIPITATION_CATEGORY_LOW 0.20
 
 
 /**

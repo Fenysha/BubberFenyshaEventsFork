@@ -3,33 +3,6 @@ import type * as THREE from 'three';
 
 export type PlanetViewType = 'admin' | 'caravan' | 'overview' | 'settlement';
 
-export const selectedPlanetTileToPlanetTile = (
-  tile: SelectedPlanetTile | PlanetTile | null | undefined,
-): PlanetTile | null => {
-  if (!tile) {
-    return null;
-  }
-
-  return {
-    x: tile.x,
-    y: tile.y,
-    biome: tile.biome ?? 'Unknown',
-    subBiome: tile.subBiome ?? 'plains',
-    material: tile.material ?? 'none',
-    latitude: tile.latitude ?? 0,
-    temperature: tile.temperature ?? 0,
-    heat: tile.heat ?? '0',
-    humidity: tile.humidity ?? '0',
-    precipitation: tile.precipitation ?? 0,
-    rainfall: tile.rainfall ?? 0,
-    snowfall: tile.snowfall ?? 0,
-    waterAvailability: tile.waterAvailability ?? 0,
-    elevation: tile.elevation ?? '0',
-    river: Boolean(tile.river),
-    objects: 'objects' in tile ? tile.objects : [],
-  };
-};
-
 export type PlanetMapData = {
   name: string;
   seed: number;
@@ -158,34 +131,6 @@ export interface PlanetCellData {
   localHeight: number;
 }
 
-export type PlanetTile = {
-  x?: number;
-  y?: number;
-
-  biome: string;
-  subBiome: string;
-  material: string;
-
-  latitude: number;
-  temperature: number;
-  heat: string;
-  humidity: string;
-
-  precipitation: number;
-  rainfall: number;
-  snowfall: number;
-  waterAvailability: number;
-
-  season?: string;
-  isDaylight?: boolean;
-  sunIntensity?: number;
-
-  elevation: string;
-  /** A river runs through this tile */
-  river?: boolean;
-  objects?: PlanetObject[];
-};
-
 export type SelectedPlanetTile = {
   x: number;
   y: number;
@@ -236,11 +181,6 @@ export type PlanetObject = {
 export type PlanetGeometry = {
   surfaceGeometry: THREE.BufferGeometry;
   boundaryGeometry: THREE.BufferGeometry;
-};
-
-export type PlanetCallbacks = {
-  onTileClick?: (x: number, y: number, tile: PlanetTile) => void;
-  onObjectClick?: (object: PlanetObject) => void;
 };
 
 export const getPlanetMapIdentity = (data: PlanetMapData): string =>

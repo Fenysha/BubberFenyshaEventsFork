@@ -1,9 +1,9 @@
 import { Box, Icon, LabeledList, Section } from 'tgui-core/components';
 
-import type { PlanetTile, SelectedPlanetTile } from '../types';
+import type { SelectedPlanetTile } from '../types';
 
 type TileDetailsProps = {
-  tile?: PlanetTile | SelectedPlanetTile | null;
+  tile?: SelectedPlanetTile | null;
   title?: string;
 };
 

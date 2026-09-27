@@ -4,7 +4,7 @@ import { Button, Stack } from 'tgui-core/components';
 
 import { FullscreenWindow } from '../../layouts/FullscreenWindow';
 import { type CellInteraction, Planet } from './planet';
-import type { PlanetMapData, PlanetTile } from './types';
+import type { PlanetMapData } from './types';
 
 import { AdminPanel } from './views/AdminPanel';
 import { CaravanPanel } from './views/CaravanPanel';
@@ -15,7 +15,10 @@ import { TileDetails } from './views/TileDetails';
 export const RimworldPlanetMap = () => {
   const { data, act } = useBackend<PlanetMapData>();
 
-  const [localTile, setLocalTile] = useState<PlanetTile | null>(null);
+  const [clickedTile, setClickedTile] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [isPlanetLoading, setIsPlanetLoading] = useState(true);
 
@@ -46,14 +49,8 @@ export const RimworldPlanetMap = () => {
     };
   }, [act]);
 
-  const handleTileClick = (x: number, y: number, tile: PlanetTile) => {
-    const selectedTile: PlanetTile = {
-      ...tile,
-      x,
-      y,
-    };
-
-    setLocalTile(selectedTile);
+  const handleTileClick = (x: number, y: number) => {
+    setClickedTile({ x, y });
     act('select_tile', {
       x,
       y,
@@ -65,10 +62,6 @@ export const RimworldPlanetMap = () => {
     act(action, {
       x: cell.x,
       y: cell.y,
-      biome: cell.tile.biome,
-      subBiome: cell.tile.subBiome,
-      elevation: cell.tile.elevation,
-      material: cell.tile.material,
       objectId: cell.object?.id ?? null,
       shift: cell.shift,
       ctrl: cell.ctrl,
@@ -88,45 +81,17 @@ export const RimworldPlanetMap = () => {
   };
 
   const viewType = data.viewType || 'overview';
-  const activeTile: PlanetTile | null = (() => {
-    if (localTile && data.selectedTile) {
-      return {
-        ...localTile,
-        ...data.selectedTile,
-        river: Boolean(data.selectedTile.river ?? localTile.river),
-      };
-    }
+  // Tile details come from DM, which reads Rust's climate model; until they arrive for a fresh
+  // click, only the coordinates are known
+  const serverTile = data.selectedTile;
+  const activeTile =
+    clickedTile &&
+    (serverTile?.x !== clickedTile.x || serverTile?.y !== clickedTile.y)
+      ? { ...clickedTile, objects: [] }
+      : serverTile;
 
-    if (localTile) {
-      return localTile;
-    }
-
-    if (data.selectedTile) {
-      return {
-        x: data.selectedTile.x,
-        y: data.selectedTile.y,
-        biome: data.selectedTile.biome ?? 'Unknown',
-        subBiome: data.selectedTile.subBiome ?? 'plains',
-        material: data.selectedTile.material ?? 'none',
-        latitude: data.selectedTile.latitude ?? 0,
-        temperature: data.selectedTile.temperature ?? 0,
-        heat: data.selectedTile.heat ?? '0',
-        humidity: data.selectedTile.humidity ?? '0',
-        precipitation: data.selectedTile.precipitation ?? 0,
-        rainfall: data.selectedTile.rainfall ?? 0,
-        snowfall: data.selectedTile.snowfall ?? 0,
-        waterAvailability: data.selectedTile.waterAvailability ?? 0,
-        elevation: data.selectedTile.elevation ?? '0',
-        river: Boolean(data.selectedTile.river),
-        objects: data.selectedTile.objects ?? [],
-      };
-    }
-
-    return null;
-  })();
-
-  const selectedX = localTile?.x ?? data.selectedTile?.x;
-  const selectedY = localTile?.y ?? data.selectedTile?.y;
+  const selectedX = clickedTile?.x ?? data.selectedTile?.x;
+  const selectedY = clickedTile?.y ?? data.selectedTile?.y;
 
   return (
     <FullscreenWindow theme="tartarus">

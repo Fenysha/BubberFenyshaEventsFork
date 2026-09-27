@@ -408,6 +408,9 @@
 	if(open_turf_type_cave)
 		note_stamp_turf(open_turf_type_cave, turf_meta, seen)
 	note_stamp_turf(/turf/open/rimworld/dirt/mud, turf_meta, seen)
+	note_stamp_turf(/turf/open/rimworld/dirt/road, turf_meta, seen)
+	note_stamp_turf(/turf/open/rimworld/stone_road, turf_meta, seen)
+	note_stamp_turf(/turf/open/rimworld/asphalt_road, turf_meta, seen)
 
 	return list(
 		"height_modifier" = height_modifier * get_subbiome_height_modifier(sub_biome_key),
@@ -417,6 +420,7 @@
 		"cave_turf" = open_turf_type_cave ? "[open_turf_type_cave]" : "",
 		"fallback_open" = "[open_turf_type]",
 		"mud_path" = "/turf/open/rimworld/dirt/mud",
+		"road_path" = "[/turf/open/rimworld/dirt/road]",
 		"fallback_closed" = "[closed_turf_type]",
 		"open_bands" = encode_stamp_bands(open_band_thresholds, open_band_turfs, turf_meta, seen),
 		"open_transition_bands" = encode_stamp_bands(open_transition_thresholds, open_transition_turfs, turf_meta, seen),
@@ -530,6 +534,9 @@
 		else if(ispath(path, /turf/open/rimworld/dirt))
 			var/turf/open/rimworld/dirt/dirt = path
 			variants = initial(dirt.variant_amount) + 1
+		else if(ispath(path, /turf/open/rimworld/stone_road))
+			var/turf/open/rimworld/stone_road/stone = path
+			variants = initial(stone.variant_amount) + 1
 	if(ispath(path, /turf/open/rimworld/rock) || ispath(path, /turf/closed/rw_wall/rock))
 		rock = 1
 	if(ispath(path, /turf/open/water))
@@ -538,6 +545,9 @@
 		var/turf/closed/closed_sample = path
 		if(initial(closed_sample.smoothing_flags) & SMOOTH_BITMASK)
 			smooth = 1
+	// 2: joins only more of itself, so the kerbs follow the road's own edge
+	if(ispath(path, /turf/open/rimworld/asphalt_road))
+		smooth = 2
 	turf_meta += list(list(
 		"path" = key,
 		"nature" = nature,

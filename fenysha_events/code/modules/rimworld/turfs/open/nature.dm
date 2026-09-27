@@ -92,6 +92,37 @@
 	desc = "Wet earth along the water. Grass does not take here."
 	baseturfs = /turf/open/rimworld/dirt/mud
 
+/turf/open/rimworld/dirt/road
+	name = "dirt road"
+	desc = "Packed earth, worn flat by travellers."
+	baseturfs = /turf/open/rimworld/dirt/road
+	slowdown = 0
+
+/turf/open/rimworld/stone_road
+	name = "stone road"
+	desc = "Cobbles set into the ground, built to last."
+	icon = 'fenysha_events/icons/turf/floors/nature/cobblestone.dmi'
+	icon_state = "0"
+	baseturfs = /turf/open/rimworld/stone_road
+	edge_priority = 6
+	rw_turf_flags = SUPPORTS_MOBS
+	var/variant_amount = 4
+
+/turf/open/rimworld/stone_road/Initialize(mapload)
+	if(!stamp_visual)
+		icon_state = "[rand(0, variant_amount)]"
+	. = ..()
+
+/// Its sub-level stamp picks the smoothing junction, which draws the kerbs along its edges
+/turf/open/rimworld/asphalt_road
+	name = "asphalt road"
+	desc = "A paved road. Someone out here still has the means to lay one."
+	icon = 'fenysha_events/icons/turf/asphalt.dmi'
+	icon_state = "roof-0"
+	base_icon_state = "roof"
+	baseturfs = /turf/open/rimworld/asphalt_road
+	rw_turf_flags = SUPPORTS_MOBS
+
 /turf/open/rimworld/dirt/Initialize(mapload)
 	if(!stamp_visual)
 		icon_state = "[rand(0, variant_amount)]"

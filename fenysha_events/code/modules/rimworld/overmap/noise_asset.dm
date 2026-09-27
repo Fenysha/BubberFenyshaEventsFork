@@ -1,7 +1,8 @@
 GLOBAL_VAR(rimworld_planet_noise_revision)
 
 /**
- * Registers generated planet layer binaries as client assets.
+ * Registers the planet view's baked textures (tp_planet_bake_surface) as client assets. Clients
+ * draw only these; the raw layers stay server-side.
  * One asset set per planet seed + revision.
  */
 /datum/asset/simple/rimworld_planet_layers
@@ -27,8 +28,7 @@ GLOBAL_VAR(rimworld_planet_noise_revision)
 
 
 /**
- * Registers the planet's layer files (terrain, climate, geology and rivers) as assets.
- * Returns TRUE on success.
+ * Registers the planet's baked surface textures as assets. Returns TRUE on success.
  */
 /datum/asset/simple/rimworld_planet_layers/proc/register_for_planet(datum/rimworld_planet/planet)
 	if(!planet)
@@ -43,23 +43,14 @@ GLOBAL_VAR(rimworld_planet_noise_revision)
 		log_asset("ERROR: Planet layers not generated yet for seed [planet.seed]")
 		return FALSE
 
-	var/list/layer_names = list(
-		"elevation",
-		"heat",
-		"humidity",
-		"precipitation",
-		"geology",
-		"rivers"
-	)
-
-	for(var/layer_name in layer_names)
+	for(var/layer_name in list("surface_color", "surface_decor"))
 		var/file_path = planet.get_layer_file(layer_name)
 		if(!file_path || !rustg_file_exists(file_path))
 			log_asset("ERROR: Missing planet layer file [layer_name] at [file_path]")
 			unregister()
 			return FALSE
 
-		var/asset_name = "rimworld_planet_[layer_name].bin"
+		var/asset_name = "rimworld_planet_[layer_name].png"
 		var/datum/asset_cache_item/ACI = SSassets.transport.register_asset(asset_name, file_path)
 		if(!ACI)
 			log_asset("ERROR: Failed to register [asset_name]")
@@ -101,7 +92,7 @@ GLOBAL_VAR(rimworld_planet_noise_revision)
 	if(!length(assets))
 		return null
 
-	var/asset_name = "rimworld_planet_[layer_name].bin"
+	var/asset_name = "rimworld_planet_[layer_name].png"
 	if(cached_urls)
 		return cached_urls[asset_name]
 

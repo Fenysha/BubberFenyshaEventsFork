@@ -53,6 +53,10 @@
 
 	/// The planet tile's hex ring: list(list("elevation", "bearing"), ...), bearing clockwise from north
 	var/list/hex_neighbourhood
+	/// Bearings of the neighbours the planetary road runs to
+	var/list/road_bearings
+	/// This tile's road grade, RW_ROAD_*
+	var/road_grade = RW_ROAD_DIRT
 
 	var/generate_caves = TRUE
 
@@ -119,10 +123,17 @@
 		return FALSE
 
 	hex_neighbourhood = list()
+	road_bearings = list()
+	road_grade = planet.get_road_type(planet_x, planet_y)
+	var/list/road_links = list()
+	for(var/list/linked as anything in planet.get_road_connections(planet_x, planet_y))
+		road_links["[linked[1]],[linked[2]]"] = TRUE
 	for(var/list/neighbour as anything in planet.get_neighbor_ring(planet_x, planet_y))
 		// Locals, not neighbour["x"] inline: quotes nested in an embedded expression break DM's parser
 		var/neighbour_x = neighbour["x"]
 		var/neighbour_y = neighbour["y"]
+		if(road_links["[neighbour_x],[neighbour_y]"])
+			road_bearings += neighbour["bearing"]
 		var/elevation_text = planet.get_elevation_level(neighbour_x, neighbour_y)
 		var/value = text2num("[elevation_text]")
 		if(isnull(value))
@@ -138,36 +149,11 @@
 	return TRUE
 
 
-/datum/map_generator/sub_level/proc/get_target_biome(
-	elevation = null,
-	heat = null,
-	humidity = null,
-	biome = null
-)
+/datum/map_generator/sub_level/proc/get_target_biome(biome = null)
 	if(!planet)
 		return null
 
-	var/macro_elevation = isnull(elevation) \
-		? planet.get_elevation_level(planet_x, planet_y) \
-		: elevation
-
-	var/macro_heat = isnull(heat) \
-		? planet.get_heat_level(planet_x, planet_y) \
-		: heat
-
-	var/macro_humidity = isnull(humidity) \
-		? planet.get_humidity_level(planet_x, planet_y) \
-		: humidity
-
-	var/macro_biome = isnull(biome) \
-		? planet.get_biome(
-			planet_x,
-			planet_y,
-			macro_elevation,
-			macro_heat,
-			macro_humidity
-		) \
-		: biome
+	var/macro_biome = isnull(biome) ? planet.get_biome(planet_x, planet_y) : biome
 
 	var/biome_type = planet.get_possible_biomes()[macro_biome]
 
@@ -241,35 +227,8 @@
 	/*
 	 * Resolve the macro planetary context once.
 	 */
-	var/macro_elevation = planet.get_elevation_level(
-		planet_x,
-		planet_y
-	)
-
-	var/macro_heat = planet.get_heat_level(
-		planet_x,
-		planet_y
-	)
-
-	var/macro_humidity = planet.get_humidity_level(
-		planet_x,
-		planet_y
-	)
-
-	var/macro_biome = planet.get_biome(
-		planet_x,
-		planet_y,
-		macro_elevation,
-		macro_heat,
-		macro_humidity
-	)
-
-	target_biome = get_target_biome(
-		macro_elevation,
-		macro_heat,
-		macro_humidity,
-		macro_biome
-	)
+	var/macro_biome = planet.get_biome(planet_x, planet_y)
+	target_biome = get_target_biome(macro_biome)
 
 	if(!target_biome)
 		log_world(
@@ -283,12 +242,7 @@
 	 * This is deliberately the sub-biome of the current macro tile,
 	 * not one of the neighbouring tiles.
 	 */
-	sub_biome = planet.get_sub_biome(
-		planet_x,
-		planet_y,
-		macro_biome,
-		macro_elevation
-	)
+	sub_biome = planet.get_sub_biome(planet_x, planet_y)
 
 	if(!sub_biome)
 		sub_biome = RW_SUBBIOME_PLAINS
@@ -316,6 +270,8 @@
 		"biome" = macro_biome,
 		"sub_biome" = sub_biome,
 		"has_river" = has_river,
+		"road_bearings" = road_bearings || list(),
+		"road_half_width" = get_road_half_width(),
 
 		"local_seed" = 0,
 		"density_bias" = 0.0,
@@ -513,12 +469,31 @@
 	return idx
 
 
+/// Turf a road of this tile's grade is laid with
+/datum/map_generator/sub_level/proc/get_road_turf()
+	switch(road_grade)
+		if(RW_ROAD_STONE)
+			return /turf/open/rimworld/stone_road
+		if(RW_ROAD_ASPHALT, RW_ROAD_HIGHWAY)
+			return /turf/open/rimworld/asphalt_road
+	return /turf/open/rimworld/dirt/road
+
+/// Tiles either side of the road's centre line; highways are the same asphalt, wider
+/datum/map_generator/sub_level/proc/get_road_half_width()
+	switch(road_grade)
+		if(RW_ROAD_ASPHALT)
+			return 1.5
+		if(RW_ROAD_HIGHWAY)
+			return 2.5
+	return 1
+
 /datum/map_generator/sub_level/proc/stamp_config(list/rules)
 	stamp_hemisphere = "north"
 	if(cell?.planet && cell.planet.get_latitude(cell.x, cell.y) < 0)
 		stamp_hemisphere = "south"
 	if(!islist(rules) || !SSrimworld_planetmap)
 		return rules
+	rules["road_path"] = "[get_road_turf()]"
 	var/season = SSrimworld_planetmap.get_season_for_hemisphere(stamp_hemisphere)
 	switch(season)
 		if(RW_SEASON_SPRING)
@@ -706,7 +681,7 @@
 /datum/map_generator/sub_level/proc/apply_stamp_junction(turf/new_turf, index)
 	if(!islist(stamp_junctions) || index > length(stamp_junctions))
 		return
-	if(!istype(new_turf, /turf/closed))
+	if(!istype(new_turf, /turf/closed) && !istype(new_turf, /turf/open/rimworld/asphalt_road))
 		return
 	var/junction = stamp_junctions[index]
 	if(!isnum(junction))
