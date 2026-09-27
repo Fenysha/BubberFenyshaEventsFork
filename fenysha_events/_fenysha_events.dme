@@ -248,6 +248,7 @@
 #include "code\modules\rimworld\skills\helpers.dm"
 #include "code\modules\rimworld\skills\ranged.dm"
 #include "code\modules\rimworld\skills\skills.dm"
+#include "code\modules\rimworld\skills\skills_ui.dm"
 #include "code\modules\rimworld\structure\nature.dm"
 #include "code\modules\rimworld\sub_levels\_SSsublevels.dm"
 #include "code\modules\rimworld\sub_levels\map_spatial_node.dm"

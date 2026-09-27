@@ -152,12 +152,10 @@
 		return FALSE
 
 	var/speed = mine_speed
-	var/skill_mod = 1
+	var/skill_mod = RW_GET_SKILL(user, RW_SKILL_MINING)
 
 	if(tool)
-		// Инструмент ускоряет
-		speed = tool.toolspeed * (mine_speed * 0.4)
-		// Можно добавить skill check
+		speed = tool.toolspeed * (mine_speed * 0.4 + 1)
 	else
 		speed = mine_speed * 2.5
 		to_chat(user, span_notice("You start clawing at the [name] with your bare hands..."))
