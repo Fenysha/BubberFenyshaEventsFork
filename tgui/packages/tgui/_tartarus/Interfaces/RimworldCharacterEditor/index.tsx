@@ -1329,65 +1329,737 @@ function PersonaTab() {
   );
 }
 
-function FeaturesTab() {
-  const { act, data } = useBackend<RimworldCharacterEditorData>();
-  const skillById = new Map(data.skills.map((row) => [row.id, row]));
+const VISUAL_CHILDHOODS = [
+  {
+    id: 'vis_cave',
+    name: 'Caveworld Tender',
+    desc: 'Raised in the dark, learning which mushrooms are food.',
+  },
+  {
+    id: 'vis_urchin',
+    name: 'Urbworld Urchin',
+    desc: 'Grew up in alleys, picking pockets and scrap.',
+  },
+  {
+    id: 'vis_vassal',
+    name: 'Medieval Vassal',
+    desc: 'A castle childhood of chores, hymns, and swords.',
+  },
+  {
+    id: 'vis_vat',
+    name: 'Vatgrown',
+    desc: 'Decanted with a manual and no parents.',
+  },
+  {
+    id: 'vis_tribe',
+    name: 'Tribe Child',
+    desc: 'Learned stories, bows, and the names of stars.',
+  },
+  {
+    id: 'vis_industrial',
+    name: 'Industrial Brat',
+    desc: 'Factory smoke, shift bells, and stolen tools.',
+  },
+  {
+    id: 'vis_starship',
+    name: 'Starship Youth',
+    desc: 'Corridors for a playground, gravity for a toy.',
+  },
+  {
+    id: 'vis_farm',
+    name: 'Farmhand',
+    desc: 'Dawns, livestock, and a long walk to school.',
+  },
+  {
+    id: 'vis_shelter',
+    name: 'Shelter Kid',
+    desc: 'Moved whenever the raids got close.',
+  },
+  {
+    id: 'vis_stellarch',
+    name: 'Stellarch Heir',
+    desc: 'Tutors, banquets, and very careful manners.',
+  },
+  {
+    id: 'vis_waster',
+    name: 'Waster Child',
+    desc: 'Toxins, masks, and a talent for not dying.',
+  },
+  {
+    id: 'vis_prodigy',
+    name: 'Musical Prodigy',
+    desc: 'Practiced until the neighbors gave up.',
+  },
+];
+
+const VISUAL_ADULTHOODS = [
+  {
+    id: 'vis_miner',
+    name: 'Miner',
+    desc: 'Years underground, following the ore.',
+  },
+  {
+    id: 'vis_chef',
+    name: 'Chef',
+    desc: 'Kept a kitchen running on whatever came in.',
+  },
+  {
+    id: 'vis_surgeon',
+    name: 'Surgeon',
+    desc: 'Steady hands and a shortage of anesthetic.',
+  },
+  {
+    id: 'vis_researcher',
+    name: 'Researcher',
+    desc: 'Labs, notes, and arguments about theory.',
+  },
+  {
+    id: 'vis_soldier',
+    name: 'Soldier',
+    desc: 'Followed orders until the unit broke apart.',
+  },
+  {
+    id: 'vis_painter',
+    name: 'Painter',
+    desc: 'Sold pictures of places people missed.',
+  },
+  {
+    id: 'vis_farmer',
+    name: 'Crop Farmer',
+    desc: 'One bad season away from leaving.',
+  },
+  {
+    id: 'vis_sheriff',
+    name: 'Sheriff',
+    desc: 'Kept a small town quieter than it wanted.',
+  },
+  {
+    id: 'vis_pirate',
+    name: 'Pirate',
+    desc: 'Boarding actions and very short contracts.',
+  },
+  {
+    id: 'vis_priest',
+    name: 'Priest',
+    desc: 'Preached, buried, and kept the books.',
+  },
+  {
+    id: 'vis_machinist',
+    name: 'Machinist',
+    desc: 'Built the machines that built everything else.',
+  },
+  {
+    id: 'vis_trader',
+    name: 'Caravan Trader',
+    desc: 'Knew every price and most of the roads.',
+  },
+  {
+    id: 'vis_janitor',
+    name: 'Janitor',
+    desc: 'Saw the station from the side nobody cleans.',
+  },
+  {
+    id: 'vis_arch',
+    name: 'Archaeologist',
+    desc: 'Opened ruins that were better left shut.',
+  },
+];
+
+const TRAIT_PLACEHOLDERS = Array.from({ length: 12 }, (_, index) => {
+  const number = index + 1;
+  const positive = number <= 8;
+  return {
+    id: 'trait_placeholder_' + number,
+    name: 'Trait Placeholder ' + number,
+    desc: 'Placeholder trait. Replace this entry.',
+    cost: positive ? number * 100 : -(number - 8) * 100,
+    positive,
+  };
+});
+
+const VISUAL_SKILLS = [
+  { id: 'vis_melee', name: 'Melee', level: 8, passion: 2, sortOrder: 2 },
+  {
+    id: 'vis_construction',
+    name: 'Construction',
+    level: 4,
+    passion: 1,
+    sortOrder: 3,
+  },
+  { id: 'vis_mining', name: 'Mining', level: 6, passion: 0, sortOrder: 4 },
+  { id: 'vis_cooking', name: 'Cooking', level: 5, passion: 1, sortOrder: 5 },
+  { id: 'vis_plants', name: 'Plants', level: 3, passion: 0, sortOrder: 6 },
+  { id: 'vis_animals', name: 'Animals', level: 2, passion: 1, sortOrder: 7 },
+  {
+    id: 'vis_crafting',
+    name: 'Crafting',
+    level: 10,
+    passion: 2,
+    sortOrder: 8,
+  },
+  { id: 'vis_artistic', name: 'Artistic', level: 7, passion: 2, sortOrder: 9 },
+  { id: 'vis_medical', name: 'Medical', level: 9, passion: 1, sortOrder: 10 },
+  { id: 'vis_social', name: 'Social', level: 1, passion: 0, sortOrder: 11 },
+  {
+    id: 'vis_intellectual',
+    name: 'Intellectual',
+    level: 8,
+    passion: 2,
+    sortOrder: 12,
+  },
+];
+
+const VISUAL_LOADOUT = [
+  {
+    id: 'vis_rifle',
+    name: 'Bolt-Action Rifle',
+    desc: 'A reliable long gun and a box of rounds.',
+    cost: 250,
+  },
+  {
+    id: 'vis_pistol',
+    name: 'Autopistol',
+    desc: 'Sidearm for when the rifle is empty.',
+    cost: 120,
+  },
+  {
+    id: 'vis_knife',
+    name: 'Knife',
+    desc: 'Short blade. Useful for more than fighting.',
+    cost: 40,
+  },
+  {
+    id: 'vis_helmet',
+    name: 'Simple Helmet',
+    desc: 'Keeps rocks and glances off the skull.',
+    cost: 80,
+  },
+  {
+    id: 'vis_vest',
+    name: 'Flak Vest',
+    desc: 'Light armor over the ribs.',
+    cost: 160,
+  },
+  {
+    id: 'vis_medkit',
+    name: 'Medicine',
+    desc: 'A pouch of real medicine, not herbal.',
+    cost: 180,
+  },
+  {
+    id: 'vis_herbal',
+    name: 'Herbal Medicine',
+    desc: 'Enough to stop a bleed in the field.',
+    cost: 60,
+  },
+  {
+    id: 'vis_meal',
+    name: 'Packaged Meals',
+    desc: 'Food that survives a bad week.',
+    cost: 50,
+  },
+  {
+    id: 'vis_pemmican',
+    name: 'Pemmican',
+    desc: 'Dense rations for a long walk.',
+    cost: 40,
+  },
+  {
+    id: 'vis_bedroll',
+    name: 'Bedroll',
+    desc: 'Somewhere to sleep that is not the floor.',
+    cost: 30,
+  },
+  {
+    id: 'vis_components',
+    name: 'Components',
+    desc: 'Spare parts for the first machines.',
+    cost: 140,
+  },
+  {
+    id: 'vis_steel',
+    name: 'Steel',
+    desc: 'A stack of metal to start building.',
+    cost: 70,
+  },
+  {
+    id: 'vis_wood',
+    name: 'Wood',
+    desc: 'Planks, if the map has no trees.',
+    cost: 30,
+  },
+  {
+    id: 'vis_silver',
+    name: 'Silver',
+    desc: 'Starting money for traders.',
+    cost: 100,
+  },
+  {
+    id: 'vis_bow',
+    name: 'Recurve Bow',
+    desc: 'Quiet, and it does not need bullets.',
+    cost: 90,
+  },
+  {
+    id: 'vis_spear',
+    name: 'Spear',
+    desc: 'A long stick with a point.',
+    cost: 35,
+  },
+  {
+    id: 'vis_duster',
+    name: 'Duster',
+    desc: 'Coat against weather and light hits.',
+    cost: 110,
+  },
+  {
+    id: 'vis_radio',
+    name: 'Radio',
+    desc: 'A way to hear who else is out there.',
+    cost: 75,
+  },
+];
+
+function onlyNew<T extends { id: string }>(real: T[], extra: T[]) {
+  const ids = new Set(real.map((row) => row.id));
+  return extra.filter((row) => !ids.has(row.id));
+}
+
+type StoryGrant = { skill: string; amount: number };
+
+const STORY_GRANTS: Record<string, StoryGrant[]> = {
+  vis_cave: [
+    { skill: 'Plants', amount: 2 },
+    { skill: 'Animals', amount: 1 },
+  ],
+  vis_urchin: [
+    { skill: 'Social', amount: 2 },
+    { skill: 'Melee', amount: 1 },
+  ],
+  vis_vassal: [
+    { skill: 'Melee', amount: 2 },
+    { skill: 'Social', amount: 1 },
+  ],
+  vis_vat: [{ skill: 'Intellectual', amount: 3 }],
+  vis_tribe: [
+    { skill: 'Plants', amount: 2 },
+    { skill: 'Shooting', amount: 1 },
+  ],
+  vis_industrial: [
+    { skill: 'Crafting', amount: 2 },
+    { skill: 'Construction', amount: 1 },
+  ],
+  vis_starship: [
+    { skill: 'Intellectual', amount: 1 },
+    { skill: 'Construction', amount: 2 },
+  ],
+  vis_farm: [
+    { skill: 'Plants', amount: 3 },
+    { skill: 'Animals', amount: 2 },
+  ],
+  vis_shelter: [{ skill: 'Construction', amount: 2 }],
+  vis_stellarch: [{ skill: 'Social', amount: 3 }],
+  vis_waster: [
+    { skill: 'Mining', amount: 1 },
+    { skill: 'Medical', amount: 1 },
+  ],
+  vis_prodigy: [{ skill: 'Artistic', amount: 4 }],
+  vis_miner: [
+    { skill: 'Mining', amount: 5 },
+    { skill: 'Construction', amount: 1 },
+  ],
+  vis_chef: [{ skill: 'Cooking', amount: 6 }],
+  vis_surgeon: [{ skill: 'Medical', amount: 6 }],
+  vis_researcher: [{ skill: 'Intellectual', amount: 6 }],
+  vis_soldier: [
+    { skill: 'Shooting', amount: 4 },
+    { skill: 'Melee', amount: 2 },
+  ],
+  vis_painter: [{ skill: 'Artistic', amount: 6 }],
+  vis_farmer: [{ skill: 'Plants', amount: 6 }],
+  vis_sheriff: [
+    { skill: 'Shooting', amount: 3 },
+    { skill: 'Social', amount: 3 },
+  ],
+  vis_pirate: [
+    { skill: 'Melee', amount: 3 },
+    { skill: 'Shooting', amount: 2 },
+  ],
+  vis_priest: [{ skill: 'Social', amount: 5 }],
+  vis_machinist: [
+    { skill: 'Crafting', amount: 5 },
+    { skill: 'Construction', amount: 2 },
+  ],
+  vis_trader: [{ skill: 'Social', amount: 5 }],
+  vis_janitor: [{ skill: 'Construction', amount: 2 }],
+  vis_arch: [{ skill: 'Intellectual', amount: 4 }],
+};
+
+function storyGrants(story?: {
+  id: string;
+  grants?: StoryGrant[];
+}): StoryGrant[] {
+  if (!story) {
+    return [];
+  }
+  if (story.grants?.length) {
+    return story.grants;
+  }
+  return STORY_GRANTS[story.id] || [];
+}
+
+function StoryGrants(props: { grants: StoryGrant[] }) {
+  if (!props.grants.length) {
+    return null;
+  }
+  return (
+    <div className="RimworldCharacterEditor__storyGrants">
+      {props.grants.map((grant) => (
+        <span
+          key={`${grant.skill}-${grant.amount}`}
+          className={classes([
+            'RimworldCharacterEditor__storyGrant',
+            grant.amount < 0
+              ? 'RimworldCharacterEditor__choiceCost--neg'
+              : 'RimworldCharacterEditor__choiceCost--pos',
+          ])}
+        >
+          {grant.amount > 0 ? `+${grant.amount}` : grant.amount} {grant.skill}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function StoryOption(props: {
+  name: string;
+  desc?: string;
+  grants: StoryGrant[];
+}) {
+  return (
+    <div className="RimworldCharacterEditor__storyOption">
+      <div className="RimworldCharacterEditor__storyOptionName">
+        {props.name}
+      </div>
+      {!!props.desc && (
+        <div className="RimworldCharacterEditor__storyOptionDesc">
+          {props.desc}
+        </div>
+      )}
+      <StoryGrants grants={props.grants} />
+    </div>
+  );
+}
+
+function ChoiceCard(props: {
+  name: string;
+  desc?: string;
+  selected: boolean;
+  cost?: number;
+  positive?: boolean;
+  onClick: () => void;
+}) {
+  const costClass =
+    props.positive === false || (props.cost || 0) < 0
+      ? 'RimworldCharacterEditor__choiceCost--neg'
+      : 'RimworldCharacterEditor__choiceCost--pos';
+  const costLabel =
+    typeof props.cost === 'number'
+      ? props.cost > 0
+        ? `+${props.cost}`
+        : `${props.cost}`
+      : null;
 
   return (
-    <Stack fill className="RimworldCharacterEditor__persona">
-      <Stack.Item basis="240px" className="RimworldCharacterEditor__scrollPane">
+    <button
+      type="button"
+      title={props.desc}
+      className={classes([
+        'RimworldCharacterEditor__choiceCard',
+        props.selected && 'RimworldCharacterEditor__choiceCard--on',
+      ])}
+      onClick={props.onClick}
+    >
+      <div className="RimworldCharacterEditor__choiceCardName">
+        <span>{props.name}</span>
+        {costLabel && <span className={costClass}>{costLabel}</span>}
+      </div>
+      {!!props.desc && (
+        <div className="RimworldCharacterEditor__choiceCardDesc">
+          {props.desc}
+        </div>
+      )}
+    </button>
+  );
+}
+
+function PreviewSkillRow(props: {
+  name: string;
+  level: number;
+  passion: number;
+  skillMax: number;
+}) {
+  const [level, setLevel] = useState(props.level);
+  const [passion, setPassion] = useState(props.passion);
+  const fill = (level / Math.max(props.skillMax, 1)) * 100;
+
+  return (
+    <div className="RimworldCharacterEditor__skillRow">
+      <Button
+        compact
+        tooltip="Passion"
+        onClick={() => setPassion((current) => (current + 1) % 3)}
+      >
+        {PASSION_MARK[passion] || '○'}
+      </Button>
+      <Box className="RimworldCharacterEditor__skillName">{props.name}</Box>
+      <div className="RimworldCharacterEditor__skillBar">
+        <div
+          className="RimworldCharacterEditor__skillBarFill"
+          style={{ width: `${fill}%` }}
+        />
+      </div>
+      <Button
+        compact
+        disabled={level <= 0}
+        onClick={() => setLevel((current) => Math.max(0, current - 1))}
+      >
+        −
+      </Button>
+      <Box width="28px" textAlign="center">
+        {level}
+      </Box>
+      <Button
+        compact
+        disabled={level >= 10}
+        onClick={() => setLevel((current) => Math.min(10, current + 1))}
+      >
+        +
+      </Button>
+    </div>
+  );
+}
+
+function FeaturesTab() {
+  const { act, data } = useBackend<RimworldCharacterEditorData>();
+  const [visualChildhood, setVisualChildhood] = useState<string | null>(null);
+  const [visualAdulthood, setVisualAdulthood] = useState<string | null>(null);
+  const [visualTraits, setVisualTraits] = useState<string[]>([]);
+  const skillById = new Map(data.skills.map((row) => [row.id, row]));
+  const childhoods = [
+    ...(data.childhoods || []),
+    ...onlyNew(data.childhoods || [], VISUAL_CHILDHOODS),
+  ];
+  const adulthoods = [
+    ...(data.adulthoods || []),
+    ...onlyNew(data.adulthoods || [], VISUAL_ADULTHOODS),
+  ];
+  const traits = [
+    ...(data.traitDefs || []),
+    ...onlyNew(data.traitDefs || [], TRAIT_PLACEHOLDERS),
+  ];
+  const realChildhoods = new Set((data.childhoods || []).map((row) => row.id));
+  const realAdulthoods = new Set((data.adulthoods || []).map((row) => row.id));
+  const realTraits = new Set((data.traitDefs || []).map((row) => row.id));
+  const realSkillNames = new Set((data.skillDefs || []).map((row) => row.name));
+  const orderedSkills = [
+    ...(data.skillDefs || []).map((skill) => ({
+      id: skill.id,
+      name: skill.name,
+      level: 0,
+      passion: 0,
+      sortOrder:
+        skill.sortOrder ??
+        (skill.id === 'ranged' || skill.name === 'Shooting' ? 1 : 100),
+      real: skill,
+    })),
+    ...VISUAL_SKILLS.filter((skill) => !realSkillNames.has(skill.name)).map(
+      (skill) => ({
+        ...skill,
+        real: undefined as RwSkillDef | undefined,
+      }),
+    ),
+  ].sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const childhoodId = visualChildhood || data.childhood;
+  const adulthoodId = visualAdulthood || data.adulthood;
+  const childhood = childhoods.find((story) => story.id === childhoodId);
+  const adulthood = adulthoods.find((story) => story.id === adulthoodId);
+
+  return (
+    <div className="RimworldCharacterEditor__featureBoard">
+      <div className="RimworldCharacterEditor__featureLeft">
         <Box className="RimworldCharacterEditor__sectionTitle">Childhood</Box>
-        {data.childhoods.map((story) => (
-          <Button
-            key={story.id}
-            fluid
-            selected={story.id === data.childhood}
-            tooltip={story.desc}
-            onClick={() => act('set_childhood', { id: story.id })}
-          >
-            {story.name}
-          </Button>
-        ))}
+        <Dropdown
+          width="100%"
+          menuWidth={22}
+          selected={childhoodId}
+          displayText={childhood?.name || 'Select'}
+          options={childhoods.map((story) => ({
+            value: story.id,
+            displayText: (
+              <StoryOption
+                name={story.name}
+                desc={story.desc}
+                grants={storyGrants(story)}
+              />
+            ),
+          }))}
+          onSelected={(value) => {
+            const id = String(value);
+            if (realChildhoods.has(id)) {
+              setVisualChildhood(null);
+              act('set_childhood', { id });
+              return;
+            }
+            setVisualChildhood(id);
+          }}
+        />
+        <div className="RimworldCharacterEditor__storySummary">
+          {!!childhood?.desc && (
+            <Box className="RimworldCharacterEditor__storyBlurb">
+              {childhood.desc}
+            </Box>
+          )}
+          <StoryGrants grants={storyGrants(childhood)} />
+        </div>
         <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
           Adulthood
         </Box>
-        {data.adulthoods.map((story) => (
-          <Button
-            key={story.id}
-            fluid
-            selected={story.id === data.adulthood}
-            tooltip={story.desc}
-            onClick={() => act('set_adulthood', { id: story.id })}
-          >
-            {story.name}
-          </Button>
-        ))}
+        <Dropdown
+          width="100%"
+          menuWidth={22}
+          selected={adulthoodId}
+          displayText={adulthood?.name || 'Select'}
+          options={adulthoods.map((story) => ({
+            value: story.id,
+            displayText: (
+              <StoryOption
+                name={story.name}
+                desc={story.desc}
+                grants={storyGrants(story)}
+              />
+            ),
+          }))}
+          onSelected={(value) => {
+            const id = String(value);
+            if (realAdulthoods.has(id)) {
+              setVisualAdulthood(null);
+              act('set_adulthood', { id });
+              return;
+            }
+            setVisualAdulthood(id);
+          }}
+        />
+        <div className="RimworldCharacterEditor__storySummary">
+          {!!adulthood?.desc && (
+            <Box className="RimworldCharacterEditor__storyBlurb">
+              {adulthood.desc}
+            </Box>
+          )}
+          <StoryGrants grants={storyGrants(adulthood)} />
+        </div>
         <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
           Traits
         </Box>
-        {data.traitDefs.map((trait) => (
-          <Button
-            key={trait.id}
-            fluid
-            selected={data.traits.includes(trait.id)}
-            tooltip={`${trait.desc} (${trait.cost})`}
-            onClick={() => act('toggle_trait', { id: trait.id })}
-          >
-            {trait.name} ({trait.cost})
-          </Button>
-        ))}
-      </Stack.Item>
-      <Stack.Item grow className="RimworldCharacterEditor__scrollPane">
+        <div className="RimworldCharacterEditor__featureTraits">
+          <div className="RimworldCharacterEditor__choiceList">
+            {traits.map((trait) => {
+              const selected = realTraits.has(trait.id)
+                ? data.traits.includes(trait.id)
+                : visualTraits.includes(trait.id);
+              return (
+                <ChoiceCard
+                  key={trait.id}
+                  name={trait.name}
+                  desc={trait.desc}
+                  cost={trait.cost}
+                  positive={trait.positive}
+                  selected={selected}
+                  onClick={() => {
+                    if (realTraits.has(trait.id)) {
+                      act('toggle_trait', { id: trait.id });
+                      return;
+                    }
+                    setVisualTraits((current) =>
+                      current.includes(trait.id)
+                        ? current.filter((id) => id !== trait.id)
+                        : [...current, trait.id],
+                    );
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="RimworldCharacterEditor__featurePane RimworldCharacterEditor__featureSkills">
         <Box className="RimworldCharacterEditor__sectionTitle">Skills</Box>
-        {data.skillDefs.map((skill) => (
-          <SkillRow
-            key={skill.id}
-            skill={skill}
-            row={skillById.get(skill.id)}
-          />
-        ))}
-      </Stack.Item>
-    </Stack>
+        <div className="RimworldCharacterEditor__skillList">
+        {orderedSkills.map((skill) =>
+          skill.real ? (
+            <SkillRow
+              key={skill.id}
+              skill={skill.real}
+              row={skillById.get(skill.id)}
+            />
+          ) : (
+            <PreviewSkillRow
+              key={skill.id}
+              name={skill.name}
+              level={skill.level}
+              passion={skill.passion}
+              skillMax={data.skillMax || 20}
+            />
+          ),
+        )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PossessionsTab() {
+  const { act, data } = useBackend<RimworldCharacterEditorData>();
+  const [visualLoadout, setVisualLoadout] = useState<string[]>([]);
+  const items = [
+    ...(data.loadoutDefs || []),
+    ...onlyNew(data.loadoutDefs || [], VISUAL_LOADOUT),
+  ];
+  const realIds = new Set((data.loadoutDefs || []).map((item) => item.id));
+
+  return (
+    <div className="RimworldCharacterEditor__loadoutBoard">
+      <Box className="RimworldCharacterEditor__sectionTitle">Loadout</Box>
+      <div className="RimworldCharacterEditor__loadoutGrid">
+        {items.map((item) => {
+          const selected = realIds.has(item.id)
+            ? data.loadout.includes(item.id)
+            : visualLoadout.includes(item.id);
+          return (
+            <ChoiceCard
+              key={item.id}
+              name={item.name}
+              desc={item.desc}
+              cost={item.cost}
+              positive
+              selected={selected}
+              onClick={() => {
+                if (realIds.has(item.id)) {
+                  act('toggle_loadout', { id: item.id });
+                  return;
+                }
+                setVisualLoadout((current) =>
+                  current.includes(item.id)
+                    ? current.filter((id) => id !== item.id)
+                    : [...current, item.id],
+                );
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -1699,7 +2371,10 @@ function SkillRow(props: { skill: RwSkillDef; row?: RwSkillRow }) {
       >
         {PASSION_MARK[passion] || '○'}
       </Button>
-      <Box width="110px" color={skill.editable ? undefined : 'label'}>
+      <Box
+        className="RimworldCharacterEditor__skillName"
+        color={skill.editable ? undefined : 'label'}
+      >
         {skill.name}
       </Box>
       <div className="RimworldCharacterEditor__skillBar">
@@ -1730,25 +2405,5 @@ function SkillRow(props: { skill: RwSkillDef; row?: RwSkillRow }) {
         +
       </Button>
     </div>
-  );
-}
-
-function PossessionsTab() {
-  const { act, data } = useBackend<RimworldCharacterEditorData>();
-  return (
-    <>
-      <Box className="RimworldCharacterEditor__sectionTitle">Loadout</Box>
-      {data.loadoutDefs.map((item) => (
-        <Button
-          key={item.id}
-          fluid
-          selected={data.loadout.includes(item.id)}
-          tooltip={item.desc}
-          onClick={() => act('toggle_loadout', { id: item.id })}
-        >
-          {item.name} ({item.cost})
-        </Button>
-      ))}
-    </>
   );
 }
