@@ -14,6 +14,7 @@
 	base_icon_state = "mountain_wall"
 
 	transform = MAP_SWITCH(TRANSLATE_MATRIX(-4, -4), matrix())
+	can_repair = FALSE
 	max_integrity = 600
 
 	/// How long it takes to complete one mine step with tools
@@ -22,6 +23,12 @@
 	var/mine_steps = 3
 	/// Current progress
 	var/mine_progress = 0
+
+	/// Mining skill level at which mining uses the base duration.
+	var/mine_ideal_skill = 10
+
+	/// Skill XP awarded for every successfully completed mining step.
+	var/mine_skill_points = 5
 
 	/// Should this rock give stone chunk on mine
 	var/give_stone_chunk = TRUE
@@ -152,7 +159,6 @@
 		return FALSE
 
 	var/speed = mine_speed
-	var/skill_mod = RW_GET_SKILL(user, RW_SKILL_MINING)
 
 	if(tool)
 		speed = tool.toolspeed * (mine_speed * 0.4 + 1)
@@ -165,17 +171,25 @@
 		span_notice("You start mining [src]...")
 	)
 
-	if(!do_after(user, speed, src))
+	if(!rw_do_after(
+		user,
+		speed,
+		src,
+		RW_SKILL_MINING,
+		mine_ideal_skill,
+		1 SECONDS,
+		mine_skill_points
+	))
 		return FALSE
 
 	mine_progress++
 
 	playsound(src, 'sound/effects/break_stone.ogg', 50, TRUE)
-
 	if(mine_progress < mine_steps)
-		to_chat(user, span_notice("You chip away at the rock. ([mine_progress]/[mine_steps])"))
+		to_chat(user, span_notice("You chip away at the rock."))
+
 		take_brute_damage(max_integrity * 0.15, user, tool)
-		return TRUE
+		return try_mine(user, tool)
 
 	finish_mine(user, tool)
 	return TRUE

@@ -54,12 +54,59 @@
 	/// Prevents the wall from taking damage after destruction has started.
 	var/destroying = FALSE
 
+	/// Whether this wall can be repaired.
+	var/can_repair = TRUE
+	/// Integrity restored by one successful repair.
+	var/repair_amount = 25
+	/// Base repair time at the ideal Construction level.
+	var/repair_time = 5 SECONDS
+	/// Absolute minimum repair time.
+	var/repair_minimum_time = 2 SECONDS
+	/// Construction level at which repair takes exactly repair_time.
+	var/repair_ideal_skill = 10
+	/// Minimum Construction required to repair this wall.
+	var/repair_required_skill = 0
+	/// Construction XP awarded after one successful repair.
+	var/repair_skill_points = 1
+	/// Required resources for one repair.
+	var/list/repair_resources = list(
+		/obj/item/stack/sheet/iron = 1,
+	)
+
+	var/list/break_sounds = list(
+		'fenysha_events/sounds/effects/rimworld/rw_debris_rock_1.ogg',
+		'fenysha_events/sounds/effects/rimworld/rw_debris_rock_2.ogg',
+		'fenysha_events/sounds/effects/rimworld/rw_debris_rock_3.ogg',
+		'fenysha_events/sounds/effects/rimworld/rw_debris_rock_4.ogg',
+	)
+
 	COOLDOWN_DECLARE(damage_number_cd)
 
 
 /turf/closed/rw_wall/Initialize(mapload)
 	. = ..()
 	register_context()
+
+
+/turf/closed/rw_wall/examine(mob/user)
+	. = ..()
+
+	if(can_repair && get_integrity() < max_integrity)
+		. += span_notice("Right-click this wall while not in combat mode to repair it.")
+		if(repair_required_skill > 0)
+			. += span_notice("Requires Construction [repair_required_skill].")
+		if(islist(repair_resources))
+			var/list/resource_text = list()
+
+			for(var/resource_type in repair_resources)
+				var/obj/item/resource = resource_type
+				var/required_amount = repair_resources[resource_type]
+
+				resource_text += "[required_amount] [initial(resource.name)]"
+
+			if(length(resource_text))
+				. += span_notice("Repair requires [english_list(resource_text)].")
+
 
 
 /turf/closed/rw_wall/AfterChange(flags, oldType)
@@ -198,6 +245,7 @@
 /turf/closed/rw_wall/proc/break_wall(devastated = FALSE, explode = FALSE)
 	SHOULD_CALL_PARENT(TRUE)
 
+	playsound(src, pick(break_sounds), 100, TRUE)
 	visible_message(span_warning("The [name] crumbles!"))
 	ScrapeAway()
 	QUEUE_SMOOTH_NEIGHBORS(src)
@@ -212,6 +260,19 @@
 	to_chat(user, span_notice("You push the wall but nothing happens!"))
 	playsound(src, 'sound/items/weapons/genhit.ogg', 25, TRUE)
 	add_fingerprint(user)
+
+
+/turf/closed/rw_wall/attack_hand_secondary(mob/user, list/modifiers)
+	if(!user || !ishuman(user))
+		return SECONDARY_ATTACK_CONTINUE_CHAIN
+
+	var/mob/living/carbon/human/H = user
+	if(H.combat_mode)
+		return SECONDARY_ATTACK_CONTINUE_CHAIN
+
+	add_fingerprint(user)
+	start_repair(user)
+	return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
 
 
 /turf/closed/rw_wall/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
@@ -268,6 +329,204 @@
 			hitting_projectile.firer,
 			hitting_projectile,
 		)
+
+
+/turf/closed/rw_wall/proc/has_repair_resource(
+	mob/living/user,
+	resource_type,
+	required_amount
+)
+	if(!user || !ispath(resource_type) || required_amount <= 0)
+		return FALSE
+
+	var/remaining = required_amount
+
+	for(var/obj/item/item as anything in user.get_all_contents())
+		if(!istype(item, resource_type))
+			continue
+
+		if(istype(item, /obj/item/stack))
+			var/obj/item/stack/stack = item
+			remaining -= stack.amount
+		else
+			remaining--
+
+		if(remaining <= 0)
+			return TRUE
+
+	return FALSE
+
+
+/turf/closed/rw_wall/proc/consume_repair_resources(mob/living/user)
+	if(!user)
+		return FALSE
+
+	if(!islist(repair_resources))
+		return TRUE
+
+	// Validate the complete payment first.
+	for(var/resource_type in repair_resources)
+		var/required_amount = repair_resources[resource_type]
+
+		if(!has_repair_resource(
+			user,
+			resource_type,
+			required_amount
+		))
+			return FALSE
+
+	// Consume it.
+	for(var/resource_type in repair_resources)
+		var/remaining = repair_resources[resource_type]
+
+		for(var/obj/item/item as anything in user.get_all_contents())
+			if(!istype(item, resource_type))
+				continue
+
+			if(istype(item, /obj/item/stack))
+				var/obj/item/stack/stack = item
+				var/take = min(stack.amount, remaining)
+
+				if(take > 0)
+					stack.use(take)
+					remaining -= take
+			else
+				qdel(item)
+				remaining--
+
+			if(remaining <= 0)
+				break
+
+		if(remaining > 0)
+			return FALSE
+
+	return TRUE
+
+
+/**
+ * Check every resource required to repair the wall.
+ */
+/turf/closed/rw_wall/proc/check_repair_resources(mob/living/user)
+	if(!user)
+		return FALSE
+
+	if(!islist(repair_resources))
+		return TRUE
+
+	for(var/resource_type in repair_resources)
+		var/required_amount = repair_resources[resource_type]
+
+		if(!has_repair_resource(
+			user,
+			resource_type,
+			required_amount
+		))
+
+			return FALSE
+
+	return TRUE
+
+
+
+/turf/closed/rw_wall/proc/check_repair(mob/living/user)
+	if(!can_repair)
+		return FALSE
+
+	if(!user || QDELETED(user))
+		return FALSE
+
+	if(destroying)
+		return FALSE
+
+	if(get_integrity() >= max_integrity)
+		return FALSE
+
+	if(!RW_HAS_SKILL(user, RW_SKILL_CONSTRUCTION, repair_required_skill))
+		to_chat(user, span_warning("You need Construction [repair_required_skill] to repair this wall."))
+		return FALSE
+
+	if(!check_repair_resources(user))
+		to_chat(user, span_warning("You do not have the resources required to repair the [name]."))
+		return FALSE
+
+	return TRUE
+
+
+/datum/looping_sound/wall_repair
+	mid_sounds = 'fenysha_events/sounds/effects/rimworld/rw_welp_loop.ogg'
+	mid_length = 2 SECONDS
+
+
+/turf/closed/rw_wall/proc/start_repair(mob/living/user)
+	if(!check_repair(user))
+		return FALSE
+
+	playsound(src, 'fenysha_events/sounds/effects/rimworld/rw_weld_start.ogg', 100, TRUE)
+	var/datum/looping_sound/wall_repair/repair_sound = new(src)
+	user.visible_message(
+		span_notice("[user] starts repairing [src]."),
+		span_notice("You start repairing [src].")
+	)
+	repair_sound.start()
+	while(TRUE)
+		// Wall may have been fully repaired by something else.
+		if(get_integrity() >= max_integrity)
+			break
+
+		// Re-check skill, state and resources before every repair step.
+		if(!check_repair(user))
+			break
+
+		if(!rw_do_after(
+			user,
+			repair_time,
+			src,
+			RW_SKILL_CONSTRUCTION,
+			repair_ideal_skill,
+			repair_minimum_time,
+			0
+		))
+			break
+
+		// Re-check again after the timed action.
+		if(!check_repair(user))
+			break
+
+		if(!consume_repair_resources(user))
+			break
+
+		var/current_integrity = get_integrity()
+
+		if(current_integrity >= max_integrity)
+			break
+
+		var/repair_value = min(
+			repair_amount,
+			max_integrity - current_integrity
+		)
+
+		if(repair_value <= 0)
+			break
+
+		if(!heal_wall(repair_value))
+			break
+
+		update_damage_effects()
+
+		if(repair_skill_points > 0)
+			rw_train_skill(
+				user,
+				RW_SKILL_CONSTRUCTION,
+				repair_skill_points
+			)
+
+		user.visible_message(
+			span_notice("[user] repairs [src]."),
+			span_notice("You repair [src] for [repair_value] integrity.")
+		)
+
+	qdel(repair_sound)
+	return get_integrity() >= max_integrity
 
 
 /turf/closed/rw_wall/wrench_act(mob/living/user, obj/item/tool)
