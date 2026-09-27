@@ -15,6 +15,8 @@
 	id = "colony_child"
 	name = "Colony Child"
 	desc = "Grew up on a rimworld colony."
+	text_good = "You grew up holding a gun."
+	text_bad = "You do not know the world past the walls."
 	skill_bonuses = list(RW_SKILL_RANGED = 1)
 
 /datum/rw_backstory/adulthood/none
@@ -26,4 +28,6 @@
 	id = "hunter"
 	name = "Hunter"
 	desc = "Lived by the rifle."
+	text_good = "You shoot better."
+	text_bad = "That will not help you up close."
 	skill_bonuses = list(RW_SKILL_RANGED = 2)

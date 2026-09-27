@@ -492,8 +492,8 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	observer.client = user.client
 	observer.set_ghost_appearance()
 
-	if(observer.client && observer.client.prefs)
-		observer.real_name = observer.client.prefs.read_preference(/datum/preference/name/real_name)
+	if(observer.client?.rw_prefs)
+		observer.real_name = observer.client.rw_prefs.real_name
 		observer.name = observer.real_name
 		observer.client.init_verbs()
 		observer.persistent_client.time_of_death = world.time

@@ -198,6 +198,7 @@
 #include "code\modules\quicker_spawn\observer.dm"
 #include "code\modules\rimworld\character\apply.dm"
 #include "code\modules\rimworld\character\client.dm"
+#include "code\modules\rimworld\character\colonist.dm"
 #include "code\modules\rimworld\character\editor.dm"
 #include "code\modules\rimworld\character\pref_bridge.dm"
 #include "code\modules\rimworld\character\preferences.dm"

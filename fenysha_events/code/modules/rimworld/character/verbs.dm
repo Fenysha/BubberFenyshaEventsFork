@@ -1,7 +1,10 @@
 GAME_VERB_DESC(/client, open_rimworld_character_editor, "Prepare Colonist", "Open the Rimworld character editor.", "OOC")
+	open_colonist_editor()
+
+/client/proc/open_colonist_editor()
 	if(!rw_prefs)
 		rw_prefs = new /datum/rimworld_preferences(src)
-	rw_prefs.ui_interact(usr)
+	rw_prefs.ui_interact(mob)
 
 GAME_VERB_DESC(/client, apply_rimworld_character, "Apply Rimworld Character", "Apply the active Rimworld colonist prefs to your current human mob.", "OOC")
 	if(!rw_prefs)

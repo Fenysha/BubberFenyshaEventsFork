@@ -3,6 +3,11 @@
   letter-spacing: 0.02em;
 }
 
+.RimworldCharacterEditor__frame {
+  position: relative;
+  height: 100%;
+}
+
 .RimworldCharacterEditor__colony {
   background: var(--tartarus-panel);
   border-right: 1px solid var(--tartarus-border);
@@ -36,6 +41,26 @@
 
 .RimworldCharacterEditor__slot--empty {
   opacity: 0.5;
+}
+
+.RimworldCharacterEditor__slot--lost {
+  border-color: #8a2a2a;
+  cursor: pointer;
+}
+
+.RimworldCharacterEditor__slot--lost::after {
+  content: 'Deceased';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.78);
+  color: #f2f2f2;
+  font-size: 18px;
+  letter-spacing: 0.04em;
 }
 
 .RimworldCharacterEditor__slotPortrait {
@@ -519,13 +544,42 @@
 
 .RimworldCharacterEditor__skillRow {
   display: grid;
-  grid-template-columns: 36px 118px minmax(72px, 1fr) 32px 36px 32px;
+  grid-template-columns: 44px 118px minmax(72px, 1fr) 32px 36px 32px;
   align-items: center;
   column-gap: 8px;
   flex: 1 1 0;
   min-height: 36px;
   padding: 6px 0;
   border-bottom: 1px solid var(--tartarus-border);
+}
+
+.RimworldCharacterEditor__passion {
+  width: 40px;
+  min-height: 22px;
+  padding: 0 !important;
+}
+
+.RimworldCharacterEditor__passion .Button__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 18px;
+}
+
+.RimworldCharacterEditor__passionFlame {
+  color: #e67e22;
+  font-size: 13px;
+}
+
+.RimworldCharacterEditor__traitPicked {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.RimworldCharacterEditor__traitPicked .RimworldCharacterEditor__choiceCard {
+  flex: 1;
 }
 
 .RimworldCharacterEditor__skillName {
@@ -581,6 +635,84 @@
   font-size: 11px;
 }
 
+.RimworldCharacterEditor__storyGood,
+.RimworldCharacterEditor__storyBad {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.RimworldCharacterEditor__storyGood {
+  color: #6ecf6e;
+}
+
+.RimworldCharacterEditor__storyBad {
+  color: #d07070;
+}
+
+.RimworldCharacterEditor__searchPanel {
+  width: 320px;
+  padding: 6px;
+  background: #101010;
+  border: 1px solid #666;
+}
+
+.RimworldCharacterEditor__searchList {
+  max-height: 280px;
+  margin-top: 6px;
+  overflow: auto;
+}
+
+.RimworldCharacterEditor__searchEntry {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 1px solid #2a2a2a;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.RimworldCharacterEditor__searchEntry:hover {
+  background: #1c1c1c;
+}
+
+.RimworldCharacterEditor__searchEmpty {
+  padding: 8px;
+  color: #9a9a9a;
+}
+
+.RimworldCharacterEditor__lost {
+  position: absolute;
+  z-index: 20;
+  inset: 0 0 0 196px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.78);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.RimworldCharacterEditor__lostWord {
+  color: #f2f2f2;
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+}
+
+.RimworldCharacterEditor__lostLine {
+  max-width: 560px;
+  color: #c8c8c8;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
 .Dropdown__menu--entry:has(.RimworldCharacterEditor__storyOption) {
   height: auto;
   white-space: normal;
@@ -607,6 +739,12 @@
 }
 
 .RimworldCharacterEditor__main {
+  position: relative;
+  min-height: 0;
+}
+
+.RimworldCharacterEditor__lockPane {
+  height: 100%;
   min-height: 0;
 }
 

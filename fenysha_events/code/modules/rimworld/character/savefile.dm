@@ -226,6 +226,7 @@
 				"empty" = FALSE,
 				"role" = backstory_display_name(adulthood_id),
 				"portrait" = portrait_cache["[index]"],
+				"lost" = slot_is_lost(index),
 			))
 			continue
 		var/list/data
@@ -241,6 +242,7 @@
 				"empty" = TRUE,
 				"role" = "",
 				"portrait" = null,
+				"lost" = slot_is_lost(index),
 			))
 			continue
 		var/saved_first = data["first_name"]
@@ -263,5 +265,6 @@
 			"empty" = FALSE,
 			"role" = backstory_display_name(data["adulthood"]),
 			"portrait" = portrait_cache["[index]"],
+			"lost" = slot_is_lost(index),
 		))
 	return profiles

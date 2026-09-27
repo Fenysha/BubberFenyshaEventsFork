@@ -8,7 +8,7 @@
 	if(!istype(lobby_mob) || !lobby_mob.title_screen_is_ready)
 		return
 
-	SStitle.update_character_name(lobby_mob, read_preference(/datum/preference/name/real_name))
+	SStitle.update_character_name(lobby_mob, parent?.rw_prefs?.real_name || "Colonist")
 	parent << output(read_preference(/datum/preference/toggle/be_antag), "title_browser:toggle_antag")
 
 /// Gated per direction, since a server may allow one and not the other.

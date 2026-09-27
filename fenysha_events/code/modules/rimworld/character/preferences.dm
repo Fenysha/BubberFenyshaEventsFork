@@ -31,6 +31,11 @@
 	var/list/passions
 	var/list/traits
 	var/list/loadout
+	/// Slot number (as text) -> round token that killed this character. Not saved.
+	var/list/lost_slots
+	/// Body spawned from these prefs this round. Not saved.
+	var/datum/weakref/spawned_body
+	var/spawned_slot
 	var/datum/preferences/rimworld_bridge/pref_bridge
 
 GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt"))
@@ -44,6 +49,7 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	passions = list()
 	traits = list()
 	loadout = list()
+	lost_slots = list()
 	portrait_cache = list()
 	ensure_pref_bridge()
 	reset_to_defaults()
@@ -257,37 +263,16 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 /datum/rimworld_preferences/proc/get_skill_level(skill_id)
 	return clamp((skills[skill_id] || 0) + get_skill_bonus(skill_id), RW_SKILL_MIN, RW_SKILL_MAX)
 
-
-/datum/rimworld_preferences/proc/get_skill_point_cost(skill_id, level = null)
-	if(isnull(level))
-		level = skills[skill_id] || 0
-
-	return rw_skill_character_cost(level)
-
-
-/datum/rimworld_preferences/proc/get_skill_upgrade_cost(skill_id, target_level)
-	var/current_level = skills[skill_id] || 0
-	var/new_level = clamp(
-		round(text2num(target_level) || 0),
-		RW_SKILL_MIN,
-		RW_SKILL_MANUAL_MAX
-	)
-
-	return rw_skill_character_cost(new_level) - rw_skill_character_cost(current_level)
-
-
 /datum/rimworld_preferences/proc/points_spent()
 	. = 0
-
 	for(var/skill_id in skills)
-		. += rw_skill_character_cost(skills[skill_id] || 0)
+		. += (skills[skill_id] || 0) * RW_SKILL_LEVEL_COST
 	for(var/trait_id in traits)
 		var/datum/rw_trait/trait = GLOB.all_rw_traits[trait_id]
 		. += trait?.cost || 0
 	for(var/item_id in loadout)
 		var/datum/rw_loadout_item/item = GLOB.all_rw_loadout[item_id]
 		. += item?.cost || 0
-
 	var/datum/species/proto = GLOB.species_prototypes[rw_species()]
 	var/list/innate = proto?.rw_innate_xenogenes
 	if(!islist(innate))
@@ -295,13 +280,10 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	for(var/gene_id in xenogenes)
 		if(gene_id in innate)
 			continue
-
 		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
 		if(!gene)
 			continue
-
 		. += gene.point_cost
-
 		if(islist(xenogene_inheritable) && (gene_id in xenogene_inheritable))
 			. += gene.inheritable_cost
 
@@ -376,3 +358,39 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	default_slot = saved_slot
 	if(filled_any)
 		deserialize_character(saved_current)
+
+/datum/rimworld_preferences/proc/current_round_token()
+	if(GLOB.round_id)
+		return "id:[GLOB.round_id]"
+	if(SSticker?.round_start_time)
+		return "start:[SSticker.round_start_time]"
+	return "lobby"
+
+/datum/rimworld_preferences/proc/remember_spawned_body(mob/living/body, slot)
+	if(!istype(body) || !slot)
+		return
+	spawned_body = WEAKREF(body)
+	spawned_slot = slot
+
+/datum/rimworld_preferences/proc/refresh_slot_loss()
+	if(!spawned_slot)
+		return
+	var/mob/living/body = spawned_body?.resolve()
+	if(!body || body.stat != DEAD)
+		return
+	mark_slot_lost(spawned_slot)
+
+/datum/rimworld_preferences/proc/mark_slot_lost(slot)
+	if(!slot)
+		return
+	if(!lost_slots)
+		lost_slots = list()
+	lost_slots["[slot]"] = current_round_token()
+
+/datum/rimworld_preferences/proc/slot_is_lost(slot)
+	if(!slot || !lost_slots)
+		return FALSE
+	var/marked = lost_slots["[slot]"]
+	if(!marked)
+		return FALSE
+	return marked == current_round_token()

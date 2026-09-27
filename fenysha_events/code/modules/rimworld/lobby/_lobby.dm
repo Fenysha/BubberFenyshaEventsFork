@@ -356,7 +356,6 @@
 
 		dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];observe=1'>Observer</a>"}
 		dat += {"
-			<a class="menu_button" href='byond://?src=[text_ref(user)];character_setup=1'>Edit character</a>
 			<a class="menu_button" href='byond://?src=[text_ref(user)];rimworld_character_setup=1'>Prepare colonist</a>
 			<a class="menu_button" href='byond://?src=[text_ref(user)];game_options=1'>Options</a>
 		"}
@@ -370,7 +369,7 @@
 		dat += {"
 			<div class="character_display">
 				CURRENT CHARACTER:<br>
-				<span id="character_slot" class="character_name">[uppertext(user.client.prefs.read_preference(/datum/preference/name/real_name))]</span>
+				<span id="character_slot" class="character_name">[uppertext(user.client.rw_prefs?.real_name || "Colonist")]</span>
 			</div>
 		"}
 		dat += "</div>"

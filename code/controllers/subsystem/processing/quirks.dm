@@ -132,6 +132,8 @@ PROCESSING_SUBSYSTEM_DEF(quirks)
 		hardcore_quirks[quirk_type] += hardcore_value
 
 /datum/controller/subsystem/processing/quirks/proc/AssignQuirks(mob/living/user, client/applied_client)
+	if(applied_client?.rw_prefs)
+		return
 	var/badquirk = FALSE
 	for(var/quirk_name in applied_client.prefs.all_quirks)
 		var/datum/quirk/quirk_type = quirks[quirk_name]
