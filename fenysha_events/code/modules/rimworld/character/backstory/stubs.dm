@@ -14,7 +14,7 @@
 /datum/rw_backstory/childhood/colony_child
 	id = "colony_child"
 	name = "Colony Child"
-	desc = "Grew up on a rimworld colony. +1 Shooting."
+	desc = "Grew up on a rimworld colony."
 	skill_bonuses = list(RW_SKILL_RANGED = 1)
 
 /datum/rw_backstory/adulthood/none
@@ -25,5 +25,5 @@
 /datum/rw_backstory/adulthood/hunter
 	id = "hunter"
 	name = "Hunter"
-	desc = "Lived by the rifle. +2 Shooting."
+	desc = "Lived by the rifle."
 	skill_bonuses = list(RW_SKILL_RANGED = 2)

@@ -181,7 +181,9 @@
 			"name" = skill.name,
 			"desc" = skill.desc,
 			"editable" = skill.editable,
+			"sortOrder" = skill.sort_order,
 		))
+	sortTim(skill_data, GLOBAL_PROC_REF(cmp_rw_skill_ui_order), associative = FALSE)
 	data["skillDefs"] = skill_data
 
 	var/list/gene_data = list()
@@ -218,10 +220,22 @@
 	var/list/adulthoods = list()
 	for(var/story_id in GLOB.all_rw_backstories)
 		var/datum/rw_backstory/story = GLOB.all_rw_backstories[story_id]
+		var/list/grants = list()
+		if(islist(story.skill_bonuses))
+			for(var/skill_id in story.skill_bonuses)
+				var/amount = story.skill_bonuses[skill_id]
+				if(!amount)
+					continue
+				var/datum/rw_skill/bonus_skill = GLOB.all_rw_skills[skill_id]
+				grants += list(list(
+					"skill" = bonus_skill?.name || "[skill_id]",
+					"amount" = amount,
+				))
 		var/list/entry = list(
 			"id" = story.id,
 			"name" = story.name,
 			"desc" = story.desc,
+			"grants" = grants,
 		)
 		if(story.slot == RW_BACKSTORY_CHILDHOOD)
 			childhoods += list(entry)
