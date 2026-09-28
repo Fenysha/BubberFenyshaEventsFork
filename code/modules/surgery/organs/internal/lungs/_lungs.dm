@@ -233,6 +233,7 @@
 		treat_as -= packet
 		return
 
+#if defined(OLD_COMBAT_SYSTEM)
 /// Handles oxygen breathing. Always called by things that need o2, no matter what
 /obj/item/organ/lungs/proc/breathe_oxygen(mob/living/carbon/breather, datum/gas_mixture/breath, o2_pp, old_o2_pp)
 	if(o2_pp < safe_oxygen_min && !HAS_TRAIT(breather, TRAIT_NO_BREATHLESS_DAMAGE))
@@ -254,6 +255,7 @@
 	// Heal mob if not in crit.
 	if(breather.stat == STABLE && breather.get_oxy_loss())
 		breather.adjust_oxy_loss(-5)
+#endif
 
 /// Maximum Oxygen effects. "Too much O2!"
 /obj/item/organ/lungs/proc/too_much_oxygen(mob/living/carbon/breather, datum/gas_mixture/breath, o2_pp, old_o2_pp)
@@ -719,6 +721,7 @@
 		breath_out.moles[exchange_id] += volume
 	return volume
 
+#if defined(OLD_COMBAT_SYSTEM)
 /// Applies suffocation side-effects to a given Human, scaling based on ratio of required pressure VS "true" pressure.
 /// If pressure is greater than 0, the return value will represent the amount of gas successfully breathed.
 /obj/item/organ/lungs/proc/handle_suffocation(mob/living/carbon/human/suffocator = null, breath_pp = 0, safe_breath_min = 0, mole_count = 0)
@@ -746,6 +749,7 @@
 	if(oxy_damage_dealt > 0)
 		suffocator.apply_damage(oxy_damage_dealt, OXY)
 	return .
+#endif
 
 /obj/item/organ/lungs/proc/handle_breath_temperature(datum/gas_mixture/breath, mob/living/carbon/human/breather) // called by human/life, handles temperatures
 	var/breath_temperature = breath.temperature
@@ -831,6 +835,7 @@
 
 	QDEL_IN(holder, breath_particle.lifespan)
 
+#if defined(OLD_COMBAT_SYSTEM)
 /obj/item/organ/lungs/on_life(seconds_per_tick)
 	. = ..()
 	if(failed && !(organ_flags & ORGAN_FAILING))
@@ -843,6 +848,7 @@
 	if(organ_flags & ORGAN_FAILING && !IS_UNCONSCIOUS_OR_CRIT(owner))
 		owner.visible_message(span_danger("[owner] grabs [owner.p_their()] throat, struggling for breath!"), span_userdanger("You suddenly feel like you can't breathe!"))
 		failed = TRUE
+#endif
 
 /obj/item/organ/lungs/get_availability(datum/species/owner_species, mob/living/owner_mob)
 	return owner_species.mutantlungs

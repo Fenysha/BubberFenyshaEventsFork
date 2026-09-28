@@ -1,15 +1,55 @@
+#ifndef OLD_COMBAT_SYSTEM
+
 /mob/living/carbon
-	/// Все активные /datum/injury на всех конечностях этого моба
+	/// All active /datum/injury instances affecting this mob's bodyparts.
 	var/list/all_injuries
 
-	/// Текущая суммарная боль (0 - PAIN_MAX)
+	/// Current total pain level, from 0 to PAIN_MAX.
 	var/pain = 0
-	/// Текущий уровень болевого шока (0 - SHOCK_MAX)
+	/// Current pain-induced shock level, from 0 to SHOCK_MAX.
 	var/shock = 0
-	/// Текущий уровень сознания (0 - CONSCIOUSNESS_MAX)
+	/// Current consciousness level, from 0 to CONSCIOUSNESS_MAX.
 	var/consciousness = CONSCIOUSNESS_MAX
 
-	/// Кэшированная суммарная скорость кровопотери со всех конечностей
+	/// Persistent pain caused by existing injuries and other sustained sources.
+	var/pain_base = 0
+	/// Temporary pain impulse from recent damage or other acute events.
+	var/acute_pain = 0
+	/// Persistent shock level accumulated from injuries, blood loss, and other sources.
+	var/shock_base = 0
+	/// Temporary loss of consciousness caused by recent impacts or other acute events.
+	var/consciousness_stun = 0
+
+	/// Multipliers applied when calculating the final medical state.
+	var/pain_mod = 1.0
+	var/shock_mod = 1.0
+	var/consciousness_mod = 1.0
+
+	/// Maximum allowed values after medical modifiers are applied.
+	var/pain_limit = PAIN_MAX
+	var/shock_limit = SHOCK_MAX
+
+	/// Recovery-rate multipliers for shock and temporary consciousness loss.
+	var/shock_recovery_mod = 1.0
+	var/consciousness_recovery_mod = 1.0
+
+	/// Active sources modifying pain, shock, consciousness, or their recovery.
+	var/list/pain_modifiers
+	var/list/shock_modifiers
+	var/list/consciousness_modifiers
+	var/list/shock_recovery_modifiers
+	var/list/consciousness_recovery_modifiers
+
+	/// Active sources modifying the maximum pain and shock limits.
+	var/list/pain_limit_modifiers
+	var/list/shock_limit_modifiers
+
+	/// Current systemic blood pressure.
+	var/blood_pressure = BP_NORMAL
+	/// Current blood oxygenation level, represented as a percentage.
+	var/blood_oxygenation = 100
+
+	/// Cached total blood loss rate from all active injuries.
 	var/total_bleed_rate = 0
 
 	var/datum/health_ui/health_ui
@@ -32,3 +72,5 @@
 	if(!health_ui)
 		health_ui = new(src)
 	health_ui.ui_interact(user)
+
+#endif

@@ -72,6 +72,7 @@
 		addtimer(CALLBACK(src, PROC_REF(stop_if_unowned)), 8 SECONDS)
 		return TRUE
 
+#if defined(OLD_COMBAT_SYSTEM)
 /obj/item/organ/heart/proc/Stop()
 	if(!beating)
 		return FALSE
@@ -89,6 +90,7 @@
 	beating = TRUE
 	update_appearance()
 	return TRUE
+#endif
 
 /obj/item/organ/heart/OnEatFrom(eater, feeder)
 	. = ..()
@@ -118,6 +120,7 @@
 	// Always show if the guy needs a heart (so its status can be monitored)
 	return ..() || owner.needs_heart()
 
+#if defined(OLD_COMBAT_SYSTEM)
 /obj/item/organ/heart/on_life(seconds_per_tick)
 	. = ..()
 
@@ -151,6 +154,7 @@
 	else if(beat != BEAT_NONE)
 		owner.stop_sound_channel(CHANNEL_HEARTBEAT)
 		beat = BEAT_NONE
+#endif
 
 /obj/item/organ/heart/get_availability(datum/species/owner_species, mob/living/owner_mob)
 	return owner_species.mutantheart

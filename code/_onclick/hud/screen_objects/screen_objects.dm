@@ -887,7 +887,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen) // I hate this place
 /atom/movable/screen/healthdoll/Click()
 	if (iscarbon(usr))
 		var/mob/living/carbon/C = usr
-		C.check_self_for_injuries()
+		C.open_health_ui(C)
 
 /atom/movable/screen/healthdoll/proc/update_body_zones()
 	return

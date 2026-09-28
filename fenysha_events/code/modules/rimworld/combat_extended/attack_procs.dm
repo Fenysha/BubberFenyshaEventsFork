@@ -193,7 +193,7 @@
 	if(proj.fired_from)
 		SEND_SIGNAL(proj.fired_from, COMSIG_PROJECTILE_POST_HIT_LIVING, src, def_zone, armor_check)
 	SEND_SIGNAL(proj, COMSIG_PROJECTILE_SELF_POST_HIT_LIVING, src, def_zone, armor_check)
-
+	return damage_dealt
 
 /**
  * Thrown items: same rule — no percent blocked on apply_damage.

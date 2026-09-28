@@ -4,3 +4,4 @@
 
 /obj/item/organ/proc/on_external_damage(amount, list/packet, damage_source)
 	return
+

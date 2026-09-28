@@ -424,7 +424,7 @@
 	else
 		remove_movespeed_modifier(/datum/movespeed_modifier/carbon_crawling)
 
-
+#if defined(OLD_COMBAT_SYSTEM)
 //Updates the mob's health from bodyparts and mob damage variables
 /mob/living/carbon/updatehealth()
 	if(HAS_TRAIT(src, TRAIT_GODMODE))
@@ -449,6 +449,7 @@
 	else
 		remove_movespeed_modifier(/datum/movespeed_modifier/carbon_softcrit)
 	SEND_SIGNAL(src, COMSIG_LIVING_HEALTH_UPDATE)
+#endif
 
 /mob/living/carbon/update_sight()
 	if(!client)
@@ -546,6 +547,7 @@
 		cure_blind(EYES_COVERED)
 		clear_fullscreen("tint", 0 SECONDS)
 
+#if defined(OLD_COMBAT_SYSTEM)
 //this handles hud updates
 /mob/living/carbon/update_damage_hud()
 
@@ -640,6 +642,7 @@
 		overlay_fullscreen("brute", /atom/movable/screen/fullscreen/brute, severity)
 	else
 		clear_fullscreen("brute")
+#endif
 
 /mob/living/carbon/update_health_hud(shown_health_amount)
 	if(!client || !hud_used)
@@ -676,7 +679,7 @@
 		else if(health > HEALTH_THRESHOLD_NEARDEATH)
 			REMOVE_TRAIT(src, TRAIT_SIXTHSENSE, "near-death")
 
-
+#if defined(OLD_COMBAT_SYSTEM)
 /mob/living/carbon/update_stat()
 	if(HAS_TRAIT(src, TRAIT_GODMODE))
 		return
@@ -694,7 +697,7 @@
 	update_health_hud()
 	update_stamina_hud()
 	med_hud_set_status()
-
+#endif
 
 //called when we get cuffed/uncuffed
 /mob/living/carbon/proc/update_handcuffed()

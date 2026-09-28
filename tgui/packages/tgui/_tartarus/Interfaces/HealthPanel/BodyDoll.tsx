@@ -12,15 +12,6 @@ type Props = {
   onSelect: (zone: string) => void;
 };
 
-const ZONES = [
-  { id: 'head', label: 'Head' },
-  { id: 'chest', label: 'Chest' },
-  { id: 'l_arm', label: 'L Arm' },
-  { id: 'r_arm', label: 'R Arm' },
-  { id: 'l_leg', label: 'L Leg' },
-  { id: 'r_leg', label: 'R Leg' },
-] as const;
-
 export const BodyDoll = (props: Props) => {
   const { bodyparts, organs, selectedZone, onSelect } = props;
 
@@ -28,7 +19,6 @@ export const BodyDoll = (props: Props) => {
     <Stack vertical fill align="center">
       <Stack.Item>
         <Box className="HealthPanel__doll">
-          {/* Schematic layout */}
           <div className="HealthPanel__doll-row">
             <ZoneButton
               zone="head"
@@ -75,6 +65,10 @@ export const BodyDoll = (props: Props) => {
       </Stack.Item>
 
       <Stack.Item>
+        <Box bold>Vital organs</Box>
+      </Stack.Item>
+
+      <Stack.Item>
         <Stack>
           <Stack.Item>
             <OrganIcon
@@ -114,18 +108,25 @@ const ZoneButton = (props: {
 }) => {
   const { zone, data, selected, onSelect } = props;
   const missing = !data?.present;
-  const damaged =
-    data && (data.brute > 0 || data.burn > 0 || data.injuries.length > 0);
+  const injured =
+    !!data && (data.brute > 0 || data.burn > 0 || data.injuries.length > 0);
+  const bleeding = !!data && data.bleed_rate > 0;
 
   return (
     <Button
       className="HealthPanel__zone"
       selected={selected}
-      color={missing ? 'bad' : damaged ? 'average' : 'good'}
+      color={missing ? 'bad' : bleeding ? 'bad' : injured ? 'average' : 'good'}
       onClick={() => onSelect(zone)}
     >
       {data?.name ?? zone}
-      {missing && ' (missing)'}
+      {missing
+        ? ' · missing'
+        : bleeding
+          ? ' · bleeding'
+          : data?.disabled
+            ? ' · disabled'
+            : ''}
     </Button>
   );
 };
@@ -137,19 +138,35 @@ const OrganIcon = (props: {
   onClick: () => void;
 }) => {
   const { label, data, selected, onClick } = props;
+  const heartCritical =
+    label === 'Heart' &&
+    (data.state === 'stopped' || data.rhythm === 'asystole');
+  const brainCritical = label === 'Brain' && (data.oxygen ?? 100) < 30;
+  const lungCritical = label === 'Lungs' && !(data.functional ?? false);
+  const critical =
+    !data.present ||
+    data.failing ||
+    heartCritical ||
+    brainCritical ||
+    lungCritical;
+  const warning = !critical && data.health < 50;
+
   return (
     <Button
       selected={selected}
-      color={
-        !data.present || data.failing
-          ? 'bad'
-          : data.health < 50
-            ? 'average'
-            : 'good'
-      }
+      color={critical ? 'bad' : warning ? 'average' : 'good'}
       onClick={onClick}
     >
       {label}
+      {label === 'Heart' && data.rate !== undefined
+        ? ` · ${data.rate} bpm`
+        : ''}
+      {label === 'Brain' && data.oxygen !== undefined
+        ? ` · O₂ ${Math.round(data.oxygen)}%`
+        : ''}
+      {label === 'Lungs' && data.oxygenation !== undefined
+        ? ` · O₂ ${Math.round(data.oxygenation)}%`
+        : ''}
     </Button>
   );
 };
