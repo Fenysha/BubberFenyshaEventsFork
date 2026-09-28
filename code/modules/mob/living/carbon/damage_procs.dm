@@ -1,3 +1,4 @@
+#if defined(OLD_COMBAT_SYSTEM)
 /mob/living/carbon/apply_damage(
 	damage = 0,
 	damagetype = BRUTE,
@@ -28,6 +29,7 @@
 		damageoverlaytemp += .
 
 	return .
+#endif
 
 /mob/living/carbon/human/get_damage_mod(damage_type)
 	if (!dna?.species?.damage_modifier)

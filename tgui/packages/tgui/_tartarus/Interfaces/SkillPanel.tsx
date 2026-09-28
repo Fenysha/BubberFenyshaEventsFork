@@ -1,4 +1,5 @@
 import { useBackend } from 'tgui/backend';
+import { Window } from 'tgui/layouts';
 import {
   Box,
   Button,
@@ -8,7 +9,7 @@ import {
   Section,
   Stack,
 } from 'tgui-core/components';
-import { Window } from 'tgui/layouts';
+// @ts-expect-error
 import '../Styles/SkillPanel.scss';
 
 type SkillRow = {
@@ -60,8 +61,7 @@ export const SkillPanel = () => {
           }
         >
           <Box color="label">
-            Skill titles run from <b>Unskilled</b> to{' '}
-            <b>Planetary Master</b>.
+            Skill titles run from <b>Unskilled</b> to <b>Planetary Master</b>.
           </Box>
         </Section>
 
@@ -134,9 +134,7 @@ function SkillCard(props: {
               icon="minus"
               tooltip="Decrease level"
               disabled={skill.level <= 0}
-              onClick={() =>
-                act('adjust_level', { id: skill.id, delta: -1 })
-              }
+              onClick={() => act('adjust_level', { id: skill.id, delta: -1 })}
             />
           </Stack.Item>
 
@@ -147,9 +145,7 @@ function SkillCard(props: {
               minValue={0}
               maxValue={skill.maxLevel}
               step={1}
-              onChange={(value) =>
-                act('set_level', { id: skill.id, value })
-              }
+              onChange={(value) => act('set_level', { id: skill.id, value })}
             />
           </Stack.Item>
 
@@ -158,45 +154,35 @@ function SkillCard(props: {
               icon="plus"
               tooltip="Increase level"
               disabled={skill.level >= skill.maxLevel}
-              onClick={() =>
-                act('adjust_level', { id: skill.id, delta: 1 })
-              }
+              onClick={() => act('adjust_level', { id: skill.id, delta: 1 })}
             />
           </Stack.Item>
 
           <Stack.Item>
             <Button
               content="+1 XP"
-              onClick={() =>
-                act('add_points', { id: skill.id, amount: 1 })
-              }
+              onClick={() => act('add_points', { id: skill.id, amount: 1 })}
             />
           </Stack.Item>
 
           <Stack.Item>
             <Button
               content="+10 XP"
-              onClick={() =>
-                act('add_points', { id: skill.id, amount: 10 })
-              }
+              onClick={() => act('add_points', { id: skill.id, amount: 10 })}
             />
           </Stack.Item>
 
           <Stack.Item>
             <Button
               content="+100 XP"
-              onClick={() =>
-                act('add_points', { id: skill.id, amount: 100 })
-              }
+              onClick={() => act('add_points', { id: skill.id, amount: 100 })}
             />
           </Stack.Item>
 
           <Stack.Item>
             <Button
               content="+1000 XP"
-              onClick={() =>
-                act('add_points', { id: skill.id, amount: 1000 })
-              }
+              onClick={() => act('add_points', { id: skill.id, amount: 1000 })}
             />
           </Stack.Item>
 
@@ -238,12 +224,8 @@ function PassionFlames(props: {
       onClick={props.onClick}
     >
       {Array.from({ length: count }, (_, index) => (
-        <Icon
-          key={index}
-          name="fire"
-          className="SkillPanel__passionFlame"
-        />
+        <Icon key={index} name="fire" className="SkillPanel__passionFlame" />
       ))}
     </Button>
   );
-};
+}

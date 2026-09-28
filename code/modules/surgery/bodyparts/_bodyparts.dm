@@ -299,11 +299,19 @@
 	if(owner && !QDELETED(owner))
 		forced_removal(special = FALSE, dismembered = TRUE, move_to_floor = FALSE)
 		update_owner(null)
+#if defined(OLD_COMBAT_SYSTEM)
 	for(var/wound in wounds)
 		qdel(wound) // wounds is a lazylist, and each wound removes itself from it on deletion.
 	if(length(wounds))
 		stack_trace("[type] qdeleted with [length(wounds)] uncleared wounds")
 		wounds.Cut()
+#else
+	for(var/datum/injury/injury as anything in injuries)
+		qdel(injury) // injuries is a lazylist, and each injury removes itself from it on deletion.
+	if(length(injuries))
+		stack_trace("[type] qdeleted with [length(injuries)] uncleared injuries")
+		injuries.Cut()
+#endif
 
 	owner = null
 
@@ -368,10 +376,17 @@
 	if(burn_dam > DAMAGE_PRECISION)
 		. += span_warning("This limb has [burn_dam > 30 ? "severe" : "minor"] burns.")
 
+#if defined(OLD_COMBAT_SYSTEM)
 	for(var/datum/wound/wound as anything in wounds)
 		var/wound_desc = wound.get_limb_examine_description()
 		if(wound_desc)
 			. += wound_desc
+#else
+	for(var/datum/injury/injury as anything in injuries)
+		var/injury_desc = injury.get_examine_text(user)
+		if(injury_desc)
+			. += injury_desc
+#endif
 
 	var/surgery_examine = get_surgery_examine()
 	if(surgery_examine)
@@ -442,10 +457,17 @@
 		if(feeling)
 			check_list += "\t[feeling]"
 
+#if defined(OLD_COMBAT_SYSTEM)
 	for(var/datum/wound/wound as anything in wounds)
 		var/wound_desc = wound.get_self_check_description(adept_organ_feeler)
 		if(wound_desc)
 			check_list += "\t[wound_desc]"
+#else
+	for(var/datum/injury/injury as anything in injuries)
+		var/injury_desc = injury.get_self_examine_text(adept_organ_feeler)
+		if(injury_desc)
+			check_list += "\t[injury_desc]"
+#endif
 
 	var/surgery_check = get_surgery_self_check()
 	if(surgery_check)
@@ -502,10 +524,13 @@
 	if(!LIMB_HAS_VESSELS(src))
 		reported_state &= ~VESSELLESS_SURGERY_STATES
 
+#if defined(OLD_COMBAT_SYSTEM)
 	// hide surgical states applied by wounds if the limb isn't being operated on, to keep it simple
 	if(!HAS_TRAIT(src, TRAIT_READY_TO_OPERATE))
 		for(var/datum/wound/wound as anything in wounds)
 			reported_state &= ~wound.surgery_states
+#endif
+	// injuries пока не накладывают surgery states
 
 	return reported_state
 
@@ -686,6 +711,7 @@
 
 	update_icon_dropped()
 
+#if defined(OLD_COMBAT_SYSTEM)
 /**
  * #receive_damage
  *
@@ -810,6 +836,7 @@
 		if(updating_health)
 			owner.updatehealth()
 	return update_bodypart_damage_state()
+#endif
 
 /// Assigns our bio_status to ANATOMY_EXTERIOR or/and ANATOMY_INTERIOR. Used to determine if we as a whole have a interior or exterior biostate, or both.
 /obj/item/bodypart/proc/set_bio_state_status()
@@ -842,6 +869,7 @@
 
 	return (exterior_ready_to_dismember && interior_ready_to_dismember)
 
+#if defined(OLD_COMBAT_SYSTEM)
 /// Returns TRUE if our total percent damage is more or equal to our dismemberable percentage, but FALSE if a wound can cause us to be dismembered.
 /obj/item/bodypart/proc/dismemberable_by_total_damage()
 	update_wound_theory()
@@ -855,6 +883,7 @@
 			return TRUE
 
 	return FALSE
+#endif
 
 /// Updates our "can be theoretically dismembered by wounds" variables by iterating through all wound static data.
 /obj/item/bodypart/proc/update_wound_theory()
@@ -1017,6 +1046,12 @@
 
 	owner = null
 
+#if !defined(OLD_COMBAT_SYSTEM)
+	for(var/datum/injury/injury as anything in injuries)
+		LAZYREMOVE(old_owner.all_injuries, injury)
+		injury.owner = null
+#endif
+
 	if(LAZYLEN(bodypart_traits))
 		old_owner.remove_traits(bodypart_traits, bodypart_trait_source)
 
@@ -1037,6 +1072,12 @@
 	SHOULD_CALL_PARENT(TRUE)
 
 	owner = new_owner
+
+#if !defined(OLD_COMBAT_SYSTEM)
+	for(var/datum/injury/injury as anything in injuries)
+		injury.owner = new_owner
+		LAZYADD(new_owner.all_injuries, injury)
+#endif
 
 	if(LAZYLEN(bodypart_traits))
 		owner.add_traits(bodypart_traits, bodypart_trait_source)
@@ -1744,6 +1785,7 @@
 		if(!embeddies.get_embed().is_harmless())
 			cached_bleed_rate += 0.25
 
+#if defined(OLD_COMBAT_SYSTEM)
 	for(var/datum/wound/iter_wound as anything in wounds)
 		cached_bleed_rate += iter_wound.blood_flow
 		if (!(iter_wound.surgery_states & SURGERY_VESSELS_UNCLAMPED) || !surgery_bloodloss)
@@ -1752,6 +1794,10 @@
 		// Not -surgery_bloodloss as this way clamping the vessels reduces the overall bleeding
 		cached_bleed_rate -= UNCLAMPED_VESSELS_BLEEDING
 		surgery_bloodloss = 0
+#else
+	for(var/datum/injury/injury as anything in injuries)
+		cached_bleed_rate += injury.get_bleed_rate()
+#endif
 
 	if(owner.body_position == LYING_DOWN)
 		cached_bleed_rate *= 0.75

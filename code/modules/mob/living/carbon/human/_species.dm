@@ -758,6 +758,7 @@ GLOBAL_LIST_EMPTY(features_by_species)
 		log_combat(user, target, "shaken")
 	return TRUE
 
+#if defined(OLD_COMBAT_SYSTEM)
 ///This proc handles punching damage. IMPORTANT: Our owner is the TARGET and not the USER in this proc. For whatever reason...
 /datum/species/proc/harm(mob/living/carbon/human/user, mob/living/carbon/human/target, datum/martial_art/attacker_style)
 	if(HAS_TRAIT(user, TRAIT_PACIFISM) && !attacker_style?.pacifist_style)
@@ -937,6 +938,7 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	var/effective_armor = max(armor_block, UNARMED_COMBO_HIT_HEALTH_BASE) - limb_accuracy
 	if(staggered && target_brute_and_burn >= clamp(effective_armor, 0, 200))
 		stagger_combo(user, target, atk_verb, limb_accuracy, armor_block)
+#endif
 
 /// Handles the stagger combo effect of our punch. Follows the same logic as the above proc, target is our owner, user is our attacker.
 /datum/species/proc/stagger_combo(mob/living/carbon/human/user, mob/living/carbon/human/target, atk_verb = "hit", limb_accuracy = 0, armor_block = 0)
@@ -996,6 +998,7 @@ GLOBAL_LIST_EMPTY(features_by_species)
 		return FALSE
 	user.disarm(target)
 
+#if defined(OLD_COMBAT_SYSTEM)
 /datum/species/proc/spec_attack_hand(mob/living/carbon/human/owner, mob/living/carbon/human/target, datum/martial_art/attacker_style, modifiers)
 	if(!istype(owner))
 		return
@@ -1022,7 +1025,7 @@ GLOBAL_LIST_EMPTY(features_by_species)
 		harm(owner, target, attacker_style)
 	else
 		help(owner, target, attacker_style)
-
+#endif
 //////////////////////////
 // ENVIRONMENT HANDLERS //
 //////////////////////////

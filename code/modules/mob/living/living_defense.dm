@@ -147,6 +147,7 @@
 	if(proj.is_hostile_projectile())
 		apply_projectile_effects(proj, def_zone, blocked)
 
+#if defined(OLD_COMBAT_SYSTEM)
 /mob/living/proc/apply_projectile_effects(obj/projectile/proj, def_zone, armor_check)
 	var/damage_dealt = apply_damage(
 		damage = proj.damage,
@@ -188,6 +189,7 @@
 	if(proj.fired_from)
 		SEND_SIGNAL(proj.fired_from, COMSIG_PROJECTILE_POST_HIT_LIVING, src, def_zone, armor_check)
 	SEND_SIGNAL(proj, COMSIG_PROJECTILE_SELF_POST_HIT_LIVING, src, def_zone, armor_check)
+#endif
 
 /mob/living/proc/create_projectile_hit_effects(obj/projectile/proj, def_zone, blocked)
 	if (proj.damage_type != BRUTE)
@@ -240,6 +242,7 @@
 	else
 		SEND_SOUND(src, sound('sound/misc/ui_toggleoffcombat.ogg', volume = 25)) //Slightly modified version of the above
 
+#if defined(OLD_COMBAT_SYSTEM)
 /mob/living/hitby(atom/movable/AM, skipcatch, hitpush = TRUE, blocked = FALSE, datum/thrownthing/throwingdatum)
 	if(!isitem(AM))
 		// Filled with made up numbers for non-items.
@@ -301,6 +304,7 @@
 		hitpush = FALSE
 
 	return ..()
+#endif
 
 /mob/living/proc/log_hit_combat(mob/thrown_by, obj/item/thrown_item)
 	if(thrown_by)
@@ -426,6 +430,7 @@
 	user.set_pull_offsets(src, user.grab_state)
 	return TRUE
 
+#if defined(OLD_COMBAT_SYSTEM)
 /mob/living/attack_animal(mob/living/simple_animal/user, list/modifiers)
 	. = ..()
 	if(.)
@@ -481,6 +486,7 @@
 	)
 	log_combat(user, src, "attacked")
 	return damage_done
+#endif
 
 /mob/living/attack_hand(mob/living/carbon/human/user, list/modifiers)
 	. = ..()

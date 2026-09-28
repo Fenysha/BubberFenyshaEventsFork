@@ -152,8 +152,4 @@
 /proc/populate_interaction_instances()
 	return
 
-/// ERP pain tracking lives in the lewd items module, which NOERP builds do not compile.
-/mob/living/proc/adjust_pain(change_amount = 0)
-	return
-
 #endif

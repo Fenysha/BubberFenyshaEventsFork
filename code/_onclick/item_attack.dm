@@ -316,6 +316,7 @@
 	stack_trace("areas are NOT supposed to have attacked_by() called on them!")
 	return ATTACK_FAILED
 
+#if defined(OLD_COMBAT_SYSTEM)
 /mob/living/attacked_by(obj/item/attacking_item, mob/living/user, list/modifiers, list/attack_modifiers)
 
 	var/targeting = check_zone(user.zone_selected)
@@ -375,7 +376,7 @@
 	attack_effects(damage_done, targeting, armor_block, attacking_item, user)
 
 	return damage_done
-
+#endif
 /**
  * Called when we take damage, used to cause effects such as a blood splatter.
  *
@@ -415,6 +416,7 @@
 
 	return ..()
 
+#if defined(OLD_COMBAT_SYSTEM)
 /mob/living/carbon/human/attack_effects(damage_done, hit_zone, armor_block, obj/item/attacking_item, mob/living/attacker)
 	. = ..()
 	switch(hit_zone)
@@ -461,7 +463,7 @@
 	// Triggers force say events
 	if(damage_done > 10 || (damage_done >= 5 && prob(33)))
 		force_say()
-
+#endif
 /**
  * Last proc in the [/obj/item/proc/melee_attack_chain].
  * Returns a bitfield containing AFTERATTACK_PROCESSED_ITEM if the user is likely intending to use this item on another item.

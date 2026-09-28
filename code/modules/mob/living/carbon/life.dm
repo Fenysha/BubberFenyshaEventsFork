@@ -1,3 +1,4 @@
+#if defined(OLD_COMBAT_SYSTEM)
 /mob/living/carbon/Life(seconds_per_tick = SSMOBS_DT)
 	if(HAS_TRAIT(src, TRAIT_NO_TRANSFORM))
 		return
@@ -36,6 +37,7 @@
 
 	if(stat != DEAD)
 		return TRUE
+#endif
 
 ///////////////
 // BREATHING //

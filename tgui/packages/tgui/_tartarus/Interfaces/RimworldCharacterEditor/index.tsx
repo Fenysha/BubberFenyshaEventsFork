@@ -20,6 +20,7 @@ import {
 import { fetchRetry } from 'tgui-core/http';
 import { classes } from 'tgui-core/react';
 import { Window } from '../../../layouts';
+// @ts-expect-error
 import '../../Styles/RimworldCharacterEditor.scss';
 import type {
   RimworldCharacterEditorData,
@@ -189,75 +190,77 @@ export const RimworldCharacterEditor = () => {
     <Window title="Prepare Colonist" width={1320} height={760} theme="tartarus">
       <Window.Content className="RimworldCharacterEditor" altDrag={false}>
         <div className="RimworldCharacterEditor__frame">
-        <Stack fill vertical>
-          <Stack.Item className="RimworldCharacterEditor__tabBar">
-            {TABS.map((entry) => (
-              <Button
-                key={entry.id}
-                selected={tab === entry.id}
-                onClick={() => setTab(entry.id)}
-              >
-                {entry.label}
-              </Button>
-            ))}
-          </Stack.Item>
-          <Stack.Item grow className="RimworldCharacterEditor__main">
-            {!!data.slotLost && (
-              <div className="RimworldCharacterEditor__lost">
-                <div className="RimworldCharacterEditor__lostWord">Deceased</div>
-                <div className="RimworldCharacterEditor__lostLine">
-                  Персонаж утерян и будет недоступен до конца текущего раунда.
-                </div>
-              </div>
-            )}
-            <Stack fill>
-              <Stack.Item className="RimworldCharacterEditor__colony">
-                <ColonyList />
-              </Stack.Item>
-              <Stack.Item className="RimworldCharacterEditor__preview">
-                <div
-                  className="RimworldCharacterEditor__lockPane"
-                  {...(data.slotLost ? { inert: '' } : {})}
+          <Stack fill vertical>
+            <Stack.Item className="RimworldCharacterEditor__tabBar">
+              {TABS.map((entry) => (
+                <Button
+                  key={entry.id}
+                  selected={tab === entry.id}
+                  onClick={() => setTab(entry.id)}
                 >
-                  <PawnIdentity prefCatalog={prefCatalog} />
+                  {entry.label}
+                </Button>
+              ))}
+            </Stack.Item>
+            <Stack.Item grow className="RimworldCharacterEditor__main">
+              {!!data.slotLost && (
+                <div className="RimworldCharacterEditor__lost">
+                  <div className="RimworldCharacterEditor__lostWord">
+                    Deceased
+                  </div>
+                  <div className="RimworldCharacterEditor__lostLine">
+                    Персонаж утерян и будет недоступен до конца текущего раунда.
+                  </div>
                 </div>
-              </Stack.Item>
-              <Stack.Item grow className="RimworldCharacterEditor__tabBody">
-                <div
-                  className="RimworldCharacterEditor__lockPane"
-                  {...(data.slotLost ? { inert: '' } : {})}
-                >
-                {tab === 'biology' && <BiologyTab />}
-                {tab === 'persona' && <PersonaTab />}
-                {tab === 'features' && <FeaturesTab />}
-                {tab === 'possessions' && <PossessionsTab />}
-                {tab === 'ideology' && (
-                  <Box color="label" p={2}>
-                    Ideology is not implemented yet.
+              )}
+              <Stack fill>
+                <Stack.Item className="RimworldCharacterEditor__colony">
+                  <ColonyList />
+                </Stack.Item>
+                <Stack.Item className="RimworldCharacterEditor__preview">
+                  <div
+                    className="RimworldCharacterEditor__lockPane"
+                    {...(data.slotLost ? { inert: '' } : {})}
+                  >
+                    <PawnIdentity prefCatalog={prefCatalog} />
+                  </div>
+                </Stack.Item>
+                <Stack.Item grow className="RimworldCharacterEditor__tabBody">
+                  <div
+                    className="RimworldCharacterEditor__lockPane"
+                    {...(data.slotLost ? { inert: '' } : {})}
+                  >
+                    {tab === 'biology' && <BiologyTab />}
+                    {tab === 'persona' && <PersonaTab />}
+                    {tab === 'features' && <FeaturesTab />}
+                    {tab === 'possessions' && <PossessionsTab />}
+                    {tab === 'ideology' && (
+                      <Box color="label" p={2}>
+                        Ideology is not implemented yet.
+                      </Box>
+                    )}
+                  </div>
+                </Stack.Item>
+              </Stack>
+            </Stack.Item>
+            <Stack.Item className="RimworldCharacterEditor__budget">
+              <Stack align="center">
+                <Stack.Item>
+                  <Box className="RimworldCharacterEditor__sectionTitle">
+                    Budget
                   </Box>
-                )}
-                </div>
-              </Stack.Item>
-            </Stack>
-          </Stack.Item>
-          <Stack.Item className="RimworldCharacterEditor__budget">
-            <Stack align="center">
-              <Stack.Item>
-                <Box className="RimworldCharacterEditor__sectionTitle">
-                  Budget
-                </Box>
-              </Stack.Item>
-              <Stack.Item grow>
-                <ProgressBar
-                  value={data.budgetRemaining}
-                  maxValue={data.budgetMax}
-                >
-                  {data.budgetRemaining} / {data.budgetMax}
-                </ProgressBar>
-              </Stack.Item>
-            </Stack>
-          </Stack.Item>
-        </Stack>
+                </Stack.Item>
+                <Stack.Item grow>
+                  <ProgressBar
+                    value={data.budgetRemaining}
+                    maxValue={data.budgetMax}
+                  >
+                    {data.budgetRemaining} / {data.budgetMax}
+                  </ProgressBar>
+                </Stack.Item>
+              </Stack>
+            </Stack.Item>
+          </Stack>
         </div>
       </Window.Content>
     </Window>
@@ -892,10 +895,7 @@ function conflictingGeneIds(
   });
 }
 
-function geneValueLabel(
-  gene: RwXenogeneDef,
-  values?: Record<string, unknown>,
-) {
+function geneValueLabel(gene: RwXenogeneDef, values?: Record<string, unknown>) {
   const raw = values?.[gene.id];
   if (gene.option?.kind === 'tricolor' && Array.isArray(raw)) {
     return raw.map((piece) => String(piece)).join(' ');
@@ -918,9 +918,7 @@ function GeneArt(props: { gene: RwXenogeneDef }) {
   if (gene.iconBgSrc || gene.iconSrc) {
     return (
       <span className="RimworldCharacterEditor__geneArt">
-        {!!gene.iconBgSrc && (
-          <img src={toPngSrc(gene.iconBgSrc)} alt="" />
-        )}
+        {!!gene.iconBgSrc && <img src={toPngSrc(gene.iconBgSrc)} alt="" />}
         {!!gene.iconSrc && <img src={toPngSrc(gene.iconSrc)} alt="" />}
       </span>
     );
@@ -934,9 +932,33 @@ function GeneArt(props: { gene: RwXenogeneDef }) {
       viewBox="0 0 32 32"
       aria-hidden
     >
-      <ellipse cx="16" cy="13" rx="11" ry="9" fill="#f4f7fb" stroke="#1c2430" strokeWidth="1.6" />
-      <ellipse cx="9" cy="21" rx="4.2" ry="8" fill="#f4f7fb" stroke="#1c2430" strokeWidth="1.6" />
-      <ellipse cx="23" cy="21" rx="4.2" ry="8" fill="#c5cedb" stroke="#1c2430" strokeWidth="1.6" />
+      <ellipse
+        cx="16"
+        cy="13"
+        rx="11"
+        ry="9"
+        fill="#f4f7fb"
+        stroke="#1c2430"
+        strokeWidth="1.6"
+      />
+      <ellipse
+        cx="9"
+        cy="21"
+        rx="4.2"
+        ry="8"
+        fill="#f4f7fb"
+        stroke="#1c2430"
+        strokeWidth="1.6"
+      />
+      <ellipse
+        cx="23"
+        cy="21"
+        rx="4.2"
+        ry="8"
+        fill="#c5cedb"
+        stroke="#1c2430"
+        strokeWidth="1.6"
+      />
     </svg>
   );
 }
@@ -1098,9 +1120,7 @@ function GeneInspector(props: {
   const { act, data } = useBackend<RimworldCharacterEditorData>();
   const { gene, innate, equipped } = props;
   if (!gene) {
-    return (
-      <Box color="label">Select a xenogene to see what it changes.</Box>
-    );
+    return <Box color="label">Select a xenogene to see what it changes.</Box>;
   }
   const effects = gene.effects?.length ? gene.effects : [gene.desc];
   const optionLabel = geneValueLabel(gene, data.xenogeneValues);
@@ -1175,10 +1195,7 @@ function RacePane() {
 
   return (
     <Stack fill>
-      <Stack.Item
-        basis="220px"
-        className="RimworldCharacterEditor__scrollPane"
-      >
+      <Stack.Item basis="220px" className="RimworldCharacterEditor__scrollPane">
         {(data.speciesDefs || []).map((species) => {
           const selected = species.path === data.speciesPath;
           const preview = genesFromIds(
@@ -1288,8 +1305,7 @@ function XenogenePane() {
     (gene) => !innateIds.includes(gene.id),
   );
   const available = data.xenogeneDefs.filter(
-    (gene) =>
-      !equippedIds.includes(gene.id) && !innateIds.includes(gene.id),
+    (gene) => !equippedIds.includes(gene.id) && !innateIds.includes(gene.id),
   );
   const allActive = [...fromRace, ...equipped];
 
@@ -1810,7 +1826,9 @@ function StoryOption(props: {
         </div>
       )}
       {!!props.textGood && (
-        <div className="RimworldCharacterEditor__storyGood">{props.textGood}</div>
+        <div className="RimworldCharacterEditor__storyGood">
+          {props.textGood}
+        </div>
       )}
       {!!props.textBad && (
         <div className="RimworldCharacterEditor__storyBad">{props.textBad}</div>
@@ -1861,7 +1879,9 @@ function ChoiceCard(props: {
         </div>
       )}
       {!!props.textGood && (
-        <div className="RimworldCharacterEditor__storyGood">{props.textGood}</div>
+        <div className="RimworldCharacterEditor__storyGood">
+          {props.textGood}
+        </div>
       )}
       {!!props.textBad && (
         <div className="RimworldCharacterEditor__storyBad">{props.textBad}</div>
@@ -2265,23 +2285,23 @@ function FeaturesTab() {
       <div className="RimworldCharacterEditor__featurePane RimworldCharacterEditor__featureSkills">
         <Box className="RimworldCharacterEditor__sectionTitle">Skills</Box>
         <div className="RimworldCharacterEditor__skillList">
-        {orderedSkills.map((skill) =>
-          skill.real ? (
-            <SkillRow
-              key={skill.id}
-              skill={skill.real}
-              row={skillById.get(skill.id)}
-            />
-          ) : (
-            <PreviewSkillRow
-              key={skill.id}
-              name={skill.name}
-              level={skill.level}
-              passion={skill.passion}
-              skillMax={data.skillMax || 20}
-            />
-          ),
-        )}
+          {orderedSkills.map((skill) =>
+            skill.real ? (
+              <SkillRow
+                key={skill.id}
+                skill={skill.real}
+                row={skillById.get(skill.id)}
+              />
+            ) : (
+              <PreviewSkillRow
+                key={skill.id}
+                name={skill.name}
+                level={skill.level}
+                passion={skill.passion}
+                skillMax={data.skillMax || 20}
+              />
+            ),
+          )}
         </div>
       </div>
     </div>
