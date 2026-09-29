@@ -1,83 +1,234 @@
 .HealthPanel {
   height: 100%;
+  position: relative;
+  overflow: hidden;
+
+  .HealthPanel__content {
+    position: relative;
+    z-index: 2;
+    min-height: 0;
+  }
+
+  .HealthPanel__state-gradient {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+
+    left: -30%;
+    right: -30%;
+    bottom: -52%;
+
+    height: 95%;
+    opacity: 0.3;
+
+    background: radial-gradient(
+      ellipse 68% 72% at 50% 100%,
+      hsl(var(--health-state-hue) 90% 55% / 0.5) 0%,
+      hsl(var(--health-state-hue) 85% 52% / 0.22) 34%,
+      transparent 75%
+    );
+  }
 
   &__stat {
-    margin-bottom: 6px;
+    margin-bottom: 3px;
 
     &-label {
-      font-size: 0.85em;
+      margin-bottom: 1px;
+      font-size: 0.78em;
       color: var(--color-label);
-      margin-bottom: 2px;
     }
   }
 
   &__lung {
-    text-align: center;
+    min-height: 52px;
     padding: 4px;
+
+    text-align: center;
+
     border: 1px solid var(--color-border);
     border-radius: 2px;
-    min-height: 52px;
   }
 
   &__cardiogram {
     position: relative;
+
     width: 100%;
     height: 100%;
     min-height: 110px;
+
+    overflow: hidden;
+
     background: #0a0e0a;
     border: 1px solid #1a3a1a;
     border-radius: 2px;
-    overflow: hidden;
 
     &-canvas {
+      display: block;
+
       width: 100%;
       height: 100%;
-      display: block;
     }
 
     &-label {
       position: absolute;
-      bottom: 4px;
       right: 6px;
+      bottom: 4px;
+
       font-size: 0.75em;
-      color: #3d7a3d;
-      text-transform: uppercase;
       letter-spacing: 0.05em;
+      text-transform: uppercase;
+
+      color: #3d7a3d;
     }
 
     &-alert {
       position: absolute;
       top: 4px;
       left: 6px;
+
       font-size: 0.8em;
-      color: #ff4444;
       font-weight: bold;
       text-transform: uppercase;
+
+      color: #ff4444;
+
       animation: HealthPanel__blink 1s step-end infinite;
     }
-  }
 
+    &--compact {
+      height: 86px;
+      min-height: 86px;
+
+      .HealthPanel__cardiogram-canvas {
+        height: 86px;
+      }
+    }
+  }
   &__doll {
+    position: relative;
+    width: 230px;
+    height: 300px;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 6px;
     padding: 12px;
+  }
 
-    &-row {
-      display: flex;
-      gap: 6px;
-      justify-content: center;
+  &__doll-part {
+    position: absolute;
+    display: block;
+    overflow: visible;
+    pointer-events: none;
+
+    &--missing {
+      opacity: 0.55;
     }
+  }
+
+  &__doll-hitbox {
+    position: absolute !important;
+    inset: 0 !important;
+
+    min-width: 0 !important;
+    min-height: 0 !important;
+
+    width: 100% !important;
+    height: 100% !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+
+    font-size: 0 !important;
+  }
+
+  &__doll-icon {
+    position: absolute;
+    inset: 0;
+
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    image-rendering: pixelated;
+    pointer-events: none;
+  }
+
+  &__doll-missing {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 2.2em;
+    font-weight: bold;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  &__doll-bleed {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+    background: #ff3f3f;
+    box-shadow: 0 0 8px rgba(255, 45, 45, 0.8);
+
+    pointer-events: none;
+  }
+
+  &__doll-disabled {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
+
+    text-align: center;
+    border-radius: 50%;
+
+    background: rgba(255, 120, 50, 0.9);
+    color: #fff;
+
+    font-size: 10px;
+    font-weight: bold;
+
+    pointer-events: none;
+  }
+
+  &__doll-organs {
+    gap: 4px;
+  }
+
+  &__doll-organ {
+    min-width: 0 !important;
+    padding: 2px 7px !important;
+    font-size: 0.78em;
   }
 
   &__zone {
     min-width: 72px;
+
     text-align: center;
   }
 
   &__injury {
-    padding: 4px 0;
+    margin-top: 5px;
+    padding: 5px 6px;
+
     border-bottom: 1px solid var(--color-border);
 
     &:last-child {

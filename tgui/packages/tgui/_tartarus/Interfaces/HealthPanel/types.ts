@@ -14,11 +14,27 @@ export type BodypartData = {
   zone: string;
   name: string;
   present: boolean;
-  brute: number;
-  burn: number;
+
+  structural_damage: number;
+  skin_damage: number;
+  structural_integrity: number;
+  skin_integrity: number;
+
   max_damage: number;
   disabled: boolean;
   bleed_rate: number;
+  icon?: string | null;
+
+  /**
+   * DMI state, for example:
+   * human_m_leg_r
+   */
+  iconState?: string | null;
+  iconSrc?: string | null;
+
+  sprite_id?: string;
+  limb_gender?: 'm' | 'f' | string;
+
   injuries: InjuryData[];
 };
 
@@ -117,13 +133,17 @@ export type HealthPanelData = {
     };
     bleed_rate: number;
   };
+
   cardiogram: CardiogramData;
   lungs: LungsData;
+
   bodyparts: Record<string, BodypartData>;
+
   organs: {
     brain: OrganData;
     heart: OrganData;
     lungs: OrganData;
   };
+
   can_see_full: boolean;
 };

@@ -9,6 +9,7 @@ type Props = {
   noise?: number;
   flatline?: number;
   paused?: boolean;
+  compact?: boolean;
 };
 
 const GRID_COLOR = 'rgba(30, 80, 30, 0.35)';
@@ -118,6 +119,7 @@ export const Cardiogram = (props: Props) => {
     noise = 0,
     flatline = 0,
     paused = false,
+    compact = false,
   } = props;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -240,7 +242,11 @@ export const Cardiogram = (props: Props) => {
   }, [rate, rhythm, strength, noise, flatline, paused]);
 
   return (
-    <div className="HealthPanel__cardiogram">
+    <div
+      className={`HealthPanel__cardiogram${
+        compact ? ' HealthPanel__cardiogram--compact' : ''
+      }`}
+    >
       <canvas ref={canvasRef} className="HealthPanel__cardiogram-canvas" />
       {alert && <div className="HealthPanel__cardiogram-alert">{alert}</div>}
       <div className="HealthPanel__cardiogram-label">{rhythmLabel(rhythm)}</div>

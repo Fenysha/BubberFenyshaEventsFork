@@ -1,5 +1,10 @@
+#ifndef OLD_COMBAT_SYSTEM
+
+#define HEALTH_PANEL_BODY_ICON 'fenysha_events/icons/ui/health_ui.dmi'
+
 /**
- * Health UI datum. Attached to a carbon, opens a detailed health panel.
+ * Health UI datum. Provides the compact physiological and anatomical
+ * representation consumed by tgui/interfaces/HealthPanel.
  */
 /datum/health_ui
 	var/mob/living/carbon/owner
@@ -38,8 +43,8 @@
 
 	data["cardiogram"] = get_cardiogram_data()
 	data["lungs"] = get_lungs_data()
-	data["bodyparts"] = get_bodyparts_data(user, can_see_full)
-	data["organs"] = get_special_organs_data(user, can_see_full)
+	data["bodyparts"] = get_bodyparts_data(user)
+	data["organs"] = get_special_organs_data(user)
 	data["can_see_full"] = can_see_full
 
 	return data
@@ -55,7 +60,7 @@
 
 /datum/health_ui/proc/get_heartbeat_data()
 	var/obj/item/organ/heart/heart = owner.get_organ_slot(ORGAN_SLOT_HEART)
-	if(!heart || owner.needs_heart() && !heart)
+	if(!heart)
 		return list(
 			"rate" = 0,
 			"rhythm" = "asystole",
@@ -184,7 +189,54 @@
 		"fluid_ratio" = clamp(lungs.fluid / LUNG_FLUID_MAX, 0, 1),
 	)
 
-/datum/health_ui/proc/get_bodyparts_data(mob/user, can_see_full)
+/datum/health_ui/proc/get_bodypart_icon_suffix(body_zone)
+	switch(body_zone)
+		if(BODY_ZONE_HEAD)
+			return "head"
+		if(BODY_ZONE_CHEST)
+			return "chest"
+		if(BODY_ZONE_L_ARM)
+			return "arm_l"
+		if(BODY_ZONE_R_ARM)
+			return "arm_r"
+		if(BODY_ZONE_L_LEG)
+			return "leg_l"
+		if(BODY_ZONE_R_LEG)
+			return "leg_r"
+	return body_zone
+
+/datum/health_ui/proc/get_bodypart_icon_state(obj/item/bodypart/BP)
+	if(!BP)
+		return null
+
+	var/limb_id = BP.limb_id || SPECIES_HUMAN
+	var/limb_gender = BP.limb_gender || "m"
+	var/suffix = get_bodypart_icon_suffix(BP.body_zone)
+
+	return "[limb_id]_[limb_gender]_[suffix]"
+
+/datum/health_ui/proc/get_bodypart_icon_src(obj/item/bodypart/BP)
+	if(!BP)
+		return null
+
+	var/icon_state = get_bodypart_icon_state(BP)
+	if(!icon_state)
+		return null
+
+	var/static/list/icon_cache = list()
+	if(icon_cache[icon_state])
+		return icon_cache[icon_state]
+
+	var/icon/body_icon = icon(HEALTH_PANEL_BODY_ICON, icon_state, SOUTH, 1)
+	if(!body_icon)
+		return null
+
+	var/icon_src = icon2base64(body_icon)
+	icon_cache[icon_state] = icon_src
+
+	return icon_src
+
+/datum/health_ui/proc/get_bodyparts_data(mob/user)
 	var/list/parts = list()
 	var/list/zones = list(
 		BODY_ZONE_HEAD,
@@ -197,15 +249,26 @@
 
 	for(var/zone in zones)
 		var/obj/item/bodypart/BP = owner.get_bodypart(zone)
+		var/icon_state = get_bodypart_icon_state(BP)
+
 		var/list/part_data = list(
 			"zone" = zone,
 			"name" = BP ? BP.plaintext_zone : zone,
 			"present" = !isnull(BP),
-			"brute" = BP ? BP.brute_dam : 0,
-			"burn" = BP ? BP.burn_dam : 0,
+			"structural_damage" = BP ? BP.brute_dam : 0,
+			"skin_damage" = BP ? BP.burn_dam : 0,
+			"structural_integrity" = BP ? BP.get_physical_integrity() * 100 : 0,
+			"skin_integrity" = BP ? BP.get_skin_integrity() * 100 : 0,
 			"max_damage" = BP ? BP.max_damage : 0,
 			"disabled" = BP ? BP.bodypart_disabled : TRUE,
 			"bleed_rate" = BP ? BP.cached_bleed_rate : 0,
+
+			"icon" = HEALTH_PANEL_BODY_ICON,
+			"iconState" = icon_state,
+			"iconSrc" = get_bodypart_icon_src(BP),
+
+			"sprite_id" = BP ? BP.limb_id : SPECIES_HUMAN,
+			"limb_gender" = BP ? BP.limb_gender : "m",
 			"injuries" = list(),
 		)
 
@@ -219,11 +282,12 @@
 
 	return parts
 
-/datum/health_ui/proc/get_special_organs_data(mob/user, can_see_full)
+/datum/health_ui/proc/get_special_organs_data(mob/user)
 	var/list/organs_data = list()
 
 	var/obj/item/organ/brain/brain = owner.get_organ_slot(ORGAN_SLOT_BRAIN)
 	var/brain_health = brain && brain.maxHealth > 0 ? clamp((brain.maxHealth - brain.damage) / brain.maxHealth * 100, 0, 100) : 0
+
 	organs_data["brain"] = list(
 		"present" = !isnull(brain),
 		"health" = brain_health,
@@ -236,6 +300,7 @@
 	var/obj/item/organ/heart/heart = owner.get_organ_slot(ORGAN_SLOT_HEART)
 	var/heart_health = heart && heart.maxHealth > 0 ? clamp((heart.maxHealth - heart.damage) / heart.maxHealth * 100, 0, 100) : 0
 	var/heartbeat = get_heartbeat_data()
+
 	organs_data["heart"] = list(
 		"present" = !isnull(heart),
 		"health" = heart_health,
@@ -253,6 +318,7 @@
 
 	var/obj/item/organ/lungs/lungs = owner.get_organ_slot(ORGAN_SLOT_LUNGS)
 	var/lung_health = lungs && lungs.maxHealth > 0 ? clamp((lungs.maxHealth - lungs.damage) / lungs.maxHealth * 100, 0, 100) : 0
+
 	organs_data["lungs"] = list(
 		"present" = !isnull(lungs),
 		"health" = lung_health,
@@ -264,3 +330,5 @@
 	)
 
 	return organs_data
+
+#endif

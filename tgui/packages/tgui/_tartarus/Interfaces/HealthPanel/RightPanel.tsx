@@ -57,8 +57,7 @@ export const RightPanel = (props: Props) => {
     selectedZone === 'heart' ||
     selectedZone === 'lungs'
   ) {
-    const organ = organs[selectedZone];
-    return <OrganStatus name={selectedZone} data={organ} />;
+    return <OrganStatus name={selectedZone} data={organs[selectedZone]} />;
   }
 
   const part = bodyparts[selectedZone];
@@ -73,57 +72,46 @@ export const RightPanel = (props: Props) => {
   return <LimbStatus data={part} />;
 };
 
-const LimbStatus = (props: { data: BodypartData }) => {
-  const { data } = props;
+const integrityColor = (value: number): 'good' | 'average' | 'bad' => {
+  if (value <= 25) return 'bad';
+  if (value <= 65) return 'average';
+  return 'good';
+};
 
+const LimbStatus = ({ data }: { data: BodypartData }) => {
   if (!data.present) {
     return (
       <Section title={data.name} fill>
         <Box color="bad" bold>
-          Missing
+          Absent
         </Box>
       </Section>
     );
   }
-
-  const damageRatio =
-    data.max_damage > 0
-      ? Math.min((data.brute + data.burn) / data.max_damage, 1)
-      : 0;
 
   return (
     <Section title={data.name} fill>
       <Stack vertical>
         <Stack.Item>
           <LabeledList>
-            <LabeledList.Item label="Brute" tooltip={TOOLTIPS.limbBrute}>
+            <LabeledList.Item label="Structure">
               <ProgressBar
-                value={data.brute / Math.max(data.max_damage, 1)}
-                color={damageColor(data.brute / Math.max(data.max_damage, 1))}
+                value={Math.max(
+                  0,
+                  Math.min(data.structural_integrity / 100, 1),
+                )}
+                color={integrityColor(data.structural_integrity)}
               >
-                {Math.round(data.brute)}
+                {Math.round(data.structural_integrity)}%
               </ProgressBar>
             </LabeledList.Item>
-            <LabeledList.Item label="Burn" tooltip={TOOLTIPS.limbBurn}>
+
+            <LabeledList.Item label="Skin">
               <ProgressBar
-                value={data.burn / Math.max(data.max_damage, 1)}
-                color={damageColor(data.burn / Math.max(data.max_damage, 1))}
+                value={Math.max(0, Math.min(data.skin_integrity / 100, 1))}
+                color={integrityColor(data.skin_integrity)}
               >
-                {Math.round(data.burn)}
-              </ProgressBar>
-            </LabeledList.Item>
-            <LabeledList.Item label="Integrity">
-              <ProgressBar
-                value={1 - damageRatio}
-                color={
-                  damageRatio > 0.7
-                    ? 'bad'
-                    : damageRatio > 0.35
-                      ? 'average'
-                      : 'good'
-                }
-              >
-                {Math.round((1 - damageRatio) * 100)}%
+                {Math.round(data.skin_integrity)}%
               </ProgressBar>
             </LabeledList.Item>
           </LabeledList>
@@ -131,20 +119,30 @@ const LimbStatus = (props: { data: BodypartData }) => {
 
         {(data.disabled || data.bleed_rate > 0) && (
           <Stack.Item>
-            {data.disabled && (
-              <Box color="bad" bold>
-                Disabled
-              </Box>
-            )}
-            {data.bleed_rate > 0 && (
-              <Box color="bad">Bleeding: {data.bleed_rate.toFixed(1)} /s</Box>
-            )}
+            <Stack>
+              {data.disabled && (
+                <Stack.Item grow>
+                  <Box color="bad" bold>
+                    Disabled
+                  </Box>
+                </Stack.Item>
+              )}
+              {data.bleed_rate > 0 && (
+                <Stack.Item grow>
+                  <Box color="bad">
+                    Bleeding: {data.bleed_rate.toFixed(1)}/s
+                  </Box>
+                </Stack.Item>
+              )}
+            </Stack>
           </Stack.Item>
         )}
 
         <Stack.Item>
-          <Box bold>Injuries</Box>
-          {data.injuries.length === 0 && <Box color="label">None</Box>}
+          <Box bold>Active injuries</Box>
+          {data.injuries.length === 0 && (
+            <Box color="label">No active injuries.</Box>
+          )}
           {data.injuries.map((injury) => (
             <InjuryEntry key={injury.id} injury={injury} />
           ))}
@@ -154,13 +152,10 @@ const LimbStatus = (props: { data: BodypartData }) => {
   );
 };
 
-const OrganStatus = (props: { name: string; data: OrganData }) => {
-  const { name, data } = props;
-  const title = name.charAt(0).toUpperCase() + name.slice(1);
-
+const OrganStatus = ({ name, data }: { name: string; data: OrganData }) => {
   if (!data.present) {
     return (
-      <Section title={title} fill>
+      <Section title={name} fill>
         <Box color="bad" bold>
           Missing
         </Box>
@@ -168,39 +163,38 @@ const OrganStatus = (props: { name: string; data: OrganData }) => {
     );
   }
 
-  if (name === 'heart') {
-    return <HeartStatus data={data} />;
-  }
-  if (name === 'brain') {
-    return <BrainStatus data={data} />;
-  }
+  if (name === 'heart') return <HeartStatus data={data} />;
+  if (name === 'brain') return <BrainStatus data={data} />;
   return <LungStatus data={data} />;
 };
 
+const OrganIntegrity = ({ value }: { value: number }) => (
+  <ProgressBar
+    value={Math.max(0, Math.min(value / 100, 1))}
+    color={integrityColor(value)}
+  >
+    {Math.round(value)}%
+  </ProgressBar>
+);
+
 const HeartStatus = ({ data }: { data: OrganData }) => {
+  const stopped = data.state === 'stopped' || data.state === 'missing';
+  const failing = data.state === 'failing';
   return (
     <Section title="Heart" fill>
       <Stack vertical>
         <Stack.Item>
-          <Box
-            bold
-            color={
-              data.state === 'stopped' || data.state === 'missing'
-                ? 'bad'
-                : data.state === 'failing' || (data.cardiac_output ?? 0) < 0.6
-                  ? 'average'
-                  : 'good'
-            }
-          >
+          <Box bold color={stopped ? 'bad' : failing ? 'average' : 'good'}>
             {data.state === 'cpr'
               ? 'CPR / assisted circulation'
-              : data.state === 'stopped'
+              : stopped
                 ? 'Cardiac arrest'
-                : data.state === 'failing'
+                : failing
                   ? 'Heart failing'
                   : 'Heart beating'}
           </Box>
         </Stack.Item>
+
         <Stack.Item>
           <LabeledList>
             <LabeledList.Item label="Rate">
@@ -224,22 +218,12 @@ const HeartStatus = ({ data }: { data: OrganData }) => {
                 {Math.round((data.cardiac_output ?? 0) * 100)}%
               </ProgressBar>
             </LabeledList.Item>
-            <LabeledList.Item label="Myocardium">
-              <ProgressBar
-                value={data.health / 100}
-                color={
-                  data.health < 30
-                    ? 'bad'
-                    : data.health < 70
-                      ? 'average'
-                      : 'good'
-                }
-              >
-                {Math.round(data.health)}%
-              </ProgressBar>
+            <LabeledList.Item label="Myocardial integrity">
+              <OrganIntegrity value={data.health} />
             </LabeledList.Item>
           </LabeledList>
         </Stack.Item>
+
         {data.cpr && (
           <Stack.Item>
             <Box color="average">
@@ -258,24 +242,14 @@ const HeartStatus = ({ data }: { data: OrganData }) => {
 const BrainStatus = ({ data }: { data: OrganData }) => {
   const oxygen = data.oxygen ?? 0;
   const perfusion = data.perfusion ?? 0;
+
   return (
     <Section title="Brain" fill>
       <Stack vertical>
         <Stack.Item>
           <LabeledList>
             <LabeledList.Item label="Integrity">
-              <ProgressBar
-                value={data.health / 100}
-                color={
-                  data.health < 30
-                    ? 'bad'
-                    : data.health < 70
-                      ? 'average'
-                      : 'good'
-                }
-              >
-                {Math.round(data.health)}%
-              </ProgressBar>
+              <OrganIntegrity value={data.health} />
             </LabeledList.Item>
             <LabeledList.Item label="Brain O₂" tooltip={TOOLTIPS.brainOxygen}>
               <ProgressBar
@@ -301,6 +275,7 @@ const BrainStatus = ({ data }: { data: OrganData }) => {
             </LabeledList.Item>
           </LabeledList>
         </Stack.Item>
+
         {data.failing && (
           <Stack.Item>
             <Box color="bad" bold>
@@ -308,6 +283,7 @@ const BrainStatus = ({ data }: { data: OrganData }) => {
             </Box>
           </Stack.Item>
         )}
+
         <Stack.Item>
           <Box color="label">{data.status}</Box>
         </Stack.Item>
@@ -319,24 +295,14 @@ const BrainStatus = ({ data }: { data: OrganData }) => {
 const LungStatus = ({ data }: { data: OrganData }) => {
   const ventilation = data.ventilation ?? 0;
   const fluid = data.fluid_ratio ?? 0;
+
   return (
     <Section title="Lungs" fill>
       <Stack vertical>
         <Stack.Item>
           <LabeledList>
             <LabeledList.Item label="Integrity">
-              <ProgressBar
-                value={data.health / 100}
-                color={
-                  data.health < 30
-                    ? 'bad'
-                    : data.health < 70
-                      ? 'average'
-                      : 'good'
-                }
-              >
-                {Math.round(data.health)}%
-              </ProgressBar>
+              <OrganIntegrity value={data.health} />
             </LabeledList.Item>
             <LabeledList.Item
               label="Ventilation"
@@ -379,6 +345,7 @@ const LungStatus = ({ data }: { data: OrganData }) => {
             </LabeledList.Item>
           </LabeledList>
         </Stack.Item>
+
         {data.failing && (
           <Stack.Item>
             <Box color="bad" bold>
@@ -386,6 +353,7 @@ const LungStatus = ({ data }: { data: OrganData }) => {
             </Box>
           </Stack.Item>
         )}
+
         <Stack.Item>
           <Box color="label">{data.status}</Box>
         </Stack.Item>
@@ -394,44 +362,37 @@ const LungStatus = ({ data }: { data: OrganData }) => {
   );
 };
 
-const damageColor = (ratio: number): 'good' | 'average' | 'bad' => {
-  if (ratio >= 0.5) return 'bad';
-  if (ratio >= 0.2) return 'average';
-  return 'good';
-};
-
-const InjuryEntry = (props: { injury: InjuryData }) => {
-  const { injury } = props;
-  return (
-    <Box className="HealthPanel__injury">
-      <Box bold>
-        {injury.name}{' '}
-        <Box as="span" color="label">
-          ({injury.severity_text})
-        </Box>
+const InjuryEntry = ({ injury }: { injury: InjuryData }) => (
+  <Box className="HealthPanel__injury">
+    <Box bold>
+      {injury.name}{' '}
+      <Box as="span" color="label">
+        ({injury.severity_text})
       </Box>
-      {injury.desc && (
-        <Box color="label" fontSize="0.9em">
-          {injury.desc}
-        </Box>
-      )}
-      <Stack>
-        {injury.bleed_rate > 0 && (
-          <Stack.Item grow>
-            <Box color="bad">Bleed: {injury.bleed_rate.toFixed(1)} /s</Box>
-          </Stack.Item>
-        )}
-        {injury.pain > 0 && (
-          <Stack.Item grow>
-            <Box color="average">Pain: {Math.round(injury.pain)}</Box>
-          </Stack.Item>
-        )}
-        {injury.disabling && (
-          <Stack.Item>
-            <Box color="bad">Disabling</Box>
-          </Stack.Item>
-        )}
-      </Stack>
     </Box>
-  );
-};
+
+    {injury.desc && (
+      <Box color="label" fontSize="0.9em">
+        {injury.desc}
+      </Box>
+    )}
+
+    <Stack>
+      {injury.bleed_rate > 0 && (
+        <Stack.Item grow>
+          <Box color="bad">Blood loss: {injury.bleed_rate.toFixed(1)}/s</Box>
+        </Stack.Item>
+      )}
+      {injury.pain > 0 && (
+        <Stack.Item grow>
+          <Box color="average">Pain: {Math.round(injury.pain)}</Box>
+        </Stack.Item>
+      )}
+      {injury.disabling && (
+        <Stack.Item>
+          <Box color="bad">Disabling</Box>
+        </Stack.Item>
+      )}
+    </Stack>
+  </Box>
+);

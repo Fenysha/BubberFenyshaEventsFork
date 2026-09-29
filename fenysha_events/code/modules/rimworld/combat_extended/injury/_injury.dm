@@ -786,6 +786,23 @@
 	pain_amount = 20
 	interaction_penalty = 2.0
 
+
+/datum/injury/cerebral_hemorrhage
+	name = "Cerebral Hemorrhage"
+	undiagnosed_name = "internal head bleeding"
+	desc = "Bleeding inside the skull is compressing and damaging the brain."
+	examine_desc = "is deteriorating from severe intracranial bleeding"
+	series = "cerebral_hemorrhage"
+	upgrade_path = null
+	severity = INJURY_SEVERITY_CRITICAL
+	visibility = INJURY_VISIBILITY_MEDICAL
+	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_PROGRESSING
+	bleed_rate = 1.8
+	pain_amount = 34
+	processes = TRUE
+	disabling = TRUE
+
+
 /datum/injury/jaw_fracture/can_apply_to(obj/item/bodypart/target_limb)
 	return target_limb.body_zone == BODY_ZONE_HEAD
 
