@@ -8,7 +8,6 @@
 
 #define SKIN_MAPWINDOW "mapwindow"
 #define SKIN_MAPWINDOW_MAP "[SKIN_MAPWINDOW].map"
-#define SKIN_MAPWINDOW_STATUS_BAR "[SKIN_MAPWINDOW].status_bar"
 
 #define SKIN_INFOWINDOW "info"
 #define SKIN_INFOWINDOW_CHILD "[SKIN_INFOWINDOW].info_child"

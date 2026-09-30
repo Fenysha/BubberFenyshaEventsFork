@@ -65,7 +65,6 @@ window "mapwindow"
 		anchor2 = -1,-1
 		saved-params = "pos;size;is-minimized;is-maximized"
 		is-pane = true
-		on-status = ".winset \"status_bar.text=[[*]]\" "
 	elem "map"
 		type = MAP
 		pos = 0,0
@@ -87,18 +86,6 @@ window "mapwindow"
 		is-visible = false
 		is-disabled = true
 		saved-params = ""
-	elem "status_bar"
-		type = LABEL
-		pos = 0,470
-		size = 128x10
-		anchor1 = 0,99
-		anchor2 = 20,100
-		text-color = #ffffff
-		background-color = #222222
-		border = line
-		saved-params = ""
-		text = ""
-		align = left
 	elem "escape_menu"
 		type = BROWSER
 		pos = 0,0

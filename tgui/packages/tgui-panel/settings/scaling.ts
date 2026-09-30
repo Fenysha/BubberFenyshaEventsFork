@@ -11,7 +11,6 @@ const ELEMENTS_TO_ADJUST = [
   'inputbuttons.mebutton',
   'inputbuttons.oocbutton',
   'inputbuttons.whisperbutton',
-  'mapwindow.status_bar',
 ];
 
 const DEFAULT_BUTTON_FONT_SIZE = 4;
