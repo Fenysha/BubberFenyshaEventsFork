@@ -1,5 +1,4 @@
 #ifndef OLD_COMBAT_SYSTEM
-
 /mob/living/carbon/Life(seconds_per_tick = SSMOBS_DT)
 	if(HAS_TRAIT(src, TRAIT_NO_TRANSFORM))
 		return
@@ -62,12 +61,9 @@
 		return TRUE
 
 
-#endif
-
-// ========================
-// PAIN / SHOCK / CONSCIOUSNESS
-// ========================
-
+/**
+ * Per-tick recovery of acute pain, shock, and stun, then full medical recalc.
+ */
 /mob/living/carbon/proc/process_medical_response(seconds_per_tick)
 	acute_pain = max(
 		acute_pain - ACUTE_PAIN_RECOVERY_RATE * seconds_per_tick,
@@ -84,10 +80,13 @@
 		0
 	)
 
-	recalculate_medical_state()
+	recalculate_medical_state(seconds_per_tick)
 
 
-/mob/living/carbon/proc/recalculate_medical_state()
+/**
+ * Rebuilds displayed pain/shock and eases consciousness toward its target.
+ */
+/mob/living/carbon/proc/recalculate_medical_state(seconds_per_tick = 1)
 	pain = clamp(
 		(pain_base + acute_pain) * pain_mod,
 		0,
@@ -100,50 +99,99 @@
 		shock_limit
 	)
 
-	update_consciousness_from_state()
+	update_consciousness_from_state(seconds_per_tick)
 
 
-/mob/living/carbon/proc/update_consciousness_from_state()
+/**
+ * Consciousness is derived in two layers:
+ *
+ * 1) A physiological CAP from brain O₂ and cerebral perfusion
+ *    (you cannot be more awake than the brain currently allows).
+ * 2) Soft LOSS from pain, shock, and stun impulses under that cap.
+ *
+ * The displayed value eases toward the target so hypoxia and hypoperfusion
+ * feel progressive instead of an instant blackout.
+ */
+/mob/living/carbon/proc/update_consciousness_from_state(seconds_per_tick = 1)
 	if(stat == DEAD)
 		consciousness = 0
 		return
 
-	var/consciousness_loss = 0
+	var/physio_cap = get_physiological_consciousness_cap()
+	var/soft_loss = get_consciousness_soft_loss()
 
-	// Severe pain begins impairing consciousness.
-	if(pain > PAIN_CRIT_THRESHOLD)
-		consciousness_loss += (pain - PAIN_CRIT_THRESHOLD) * 0.25
-
-	// Extremely high pain has an additional, stronger effect.
-	if(pain > PAIN_UNCONSCIOUS_THRESHOLD)
-		consciousness_loss += (pain - PAIN_UNCONSCIOUS_THRESHOLD) * 0.55
-
-	// Shock progressively reduces consciousness.
-	if(shock > SHOCK_MILD)
-		consciousness_loss += (shock - SHOCK_MILD) * 0.30
-
-	if(shock > SHOCK_SEVERE)
-		consciousness_loss += (shock - SHOCK_SEVERE) * 0.55
-
-	// Insufficient cerebral perfusion can cause syncope.
-	var/perfusion = get_brain_perfusion()
-	if(perfusion < PERFUSION_SYNCOPE)
-		consciousness_loss += (PERFUSION_SYNCOPE - perfusion) * 200
-
-	// Cerebral hypoxia directly impairs consciousness.
-	var/brain_o2 = get_brain_oxygen()
-	if(brain_o2 < BRAIN_O2_HYPOXIA)
-		consciousness_loss += (BRAIN_O2_HYPOXIA - brain_o2) * 2.2
-
-	consciousness_loss += consciousness_stun
-
-	consciousness = clamp(
-		CONSCIOUSNESS_MAX - consciousness_loss * consciousness_mod,
+	var/target = clamp(
+		physio_cap - soft_loss * consciousness_mod,
 		0,
 		CONSCIOUSNESS_MAX
 	)
 
+	var/delta = target - consciousness
+	var/max_step = (delta < 0 ? CONSCIOUSNESS_FALL_RATE : CONSCIOUSNESS_RISE_RATE) * seconds_per_tick
+	consciousness = clamp(
+		consciousness + clamp(delta, -max_step, max_step),
+		0,
+		CONSCIOUSNESS_MAX
+	)
+
+	if(consciousness > physio_cap)
+		consciousness = max(physio_cap, consciousness - CONSCIOUSNESS_FALL_RATE * seconds_per_tick)
+
 	apply_pain_effects()
+
+
+/**
+ * How awake the brain is *allowed* to be given O₂ and perfusion.
+ * This is a ceiling, not a subtraction — mild hypoxia limits peak
+ * alertness; deep hypoxia collapses the ceiling toward zero.
+ */
+/mob/living/carbon/proc/get_physiological_consciousness_cap()
+	var/cap = CONSCIOUSNESS_MAX
+
+
+	var/brain_o2 = get_brain_oxygen()
+	if(brain_o2 < BRAIN_O2_HYPOXIA)
+		var/o2_span = max(BRAIN_O2_HYPOXIA, 1)
+		var/o2_factor = clamp(brain_o2 / o2_span, 0, 1)
+		var/o2_cap = CONSCIOUSNESS_MAX * (o2_factor ** 1.4)
+		cap = min(cap, o2_cap)
+
+	var/perfusion = get_brain_perfusion()
+	if(perfusion < PERFUSION_SYNCOPE)
+		var/perf_cap = CONSCIOUSNESS_MAX * 0.55 * clamp(perfusion / max(PERFUSION_SYNCOPE, 0.01), 0, 1)
+		cap = min(cap, perf_cap)
+	else if(perfusion < 0.85)
+		var/t = (perfusion - PERFUSION_SYNCOPE) / max(0.85 - PERFUSION_SYNCOPE, 0.01)
+		var/perf_cap = CONSCIOUSNESS_MAX * (0.55 + 0.45 * clamp(t, 0, 1))
+		cap = min(cap, perf_cap)
+
+	return clamp(cap, 0, CONSCIOUSNESS_MAX)
+
+
+/**
+ * Pain / shock / stun contributions only.
+ * Brain O₂ and perfusion are handled as a physiological cap, not here.
+ */
+/mob/living/carbon/proc/get_consciousness_soft_loss()
+	var/loss = 0
+
+	// Severe pain begins impairing consciousness.
+	if(pain > PAIN_CRIT_THRESHOLD)
+		loss += (pain - PAIN_CRIT_THRESHOLD) * 0.20
+
+	// Extremely high pain has an additional, stronger effect.
+	if(pain > PAIN_UNCONSCIOUS_THRESHOLD)
+		loss += (pain - PAIN_UNCONSCIOUS_THRESHOLD) * 0.45
+
+	// Shock progressively reduces consciousness.
+	if(shock > SHOCK_MILD)
+		loss += (shock - SHOCK_MILD) * 0.25
+
+	if(shock > SHOCK_SEVERE)
+		loss += (shock - SHOCK_SEVERE) * 0.45
+
+	loss += consciousness_stun
+	return loss
 
 
 /**
@@ -201,7 +249,7 @@
 		add_or_update_variable_movespeed_modifier(
 			/datum/movespeed_modifier/pain,
 			multiplicative_slowdown = slowdown
-	)
+		)
 
 
 /**
@@ -294,3 +342,4 @@
 
 	. = total_bleed_rate
 	return .
+#endif

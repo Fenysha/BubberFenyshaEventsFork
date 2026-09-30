@@ -31,10 +31,8 @@
 	if(stat == DEAD)
 		return FALSE
 
-	// Heart attack stuff
-	handle_heart(seconds_per_tick)
 	// Handles liver failure effects, if we lack a liver
-	handle_liver(seconds_per_tick)
+	//handle_liver(seconds_per_tick)
 	return stat != DEAD
 
 /mob/living/carbon/human/calculate_affecting_pressure(pressure)
@@ -269,18 +267,6 @@
 		if(equip.clothing_flags & BLOCK_GAS_SMOKE_EFFECT)
 			return TRUE
 	return ..()
-
-/mob/living/carbon/human/proc/handle_heart(seconds_per_tick)
-	var/we_breath = !HAS_TRAIT_FROM(src, TRAIT_NOBREATH, SPECIES_TRAIT)
-
-	if(!undergoing_cardiac_arrest())
-		return
-
-	if(we_breath)
-		adjust_oxy_loss(4 * seconds_per_tick)
-		Unconscious(80)
-	// Tissues die without blood circulation
-	adjust_brute_loss(1 * seconds_per_tick)
 
 #undef THERMAL_PROTECTION_HEAD
 #undef THERMAL_PROTECTION_CHEST

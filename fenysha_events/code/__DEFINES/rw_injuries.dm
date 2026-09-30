@@ -83,6 +83,10 @@
 #define BRAIN_HYPOXIA_DAMAGE_MAX 1.0    // Maximum brain damage per second at 0% brain oxygen
 
 
+#define CONSCIOUSNESS_FALL_RATE  4		// How fast consciousness drops toward a worse target (points per second).
+#define CONSCIOUSNESS_RISE_RATE   2		/// How fast it recovers when the target improves.
+
+
 #define LUNG_FLUID_MAX 100
 #define LUNG_FLUID_SEVERE 60
 

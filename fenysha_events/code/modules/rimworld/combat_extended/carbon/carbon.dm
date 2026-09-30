@@ -31,7 +31,8 @@
 	recalculate_medical_state()
 
 /mob/living/carbon/proc/set_pain_modifier(source, multiplier)
-	if(isnull(source)) return
+	if(isnull(source))
+		return
 	LAZYSET(pain_modifiers, source, max(multiplier, 0))
 	recalculate_medical_modifiers()
 
@@ -40,7 +41,8 @@
 	recalculate_medical_modifiers()
 
 /mob/living/carbon/proc/set_shock_modifier(source, multiplier)
-	if(isnull(source)) return
+	if(isnull(source))
+		return
 	LAZYSET(shock_modifiers, source, max(multiplier, 0))
 	recalculate_medical_modifiers()
 
@@ -49,7 +51,8 @@
 	recalculate_medical_modifiers()
 
 /mob/living/carbon/proc/set_consciousness_modifier(source, multiplier)
-	if(isnull(source)) return
+	if(isnull(source))
+		return
 	LAZYSET(consciousness_modifiers, source, max(multiplier, 0))
 	recalculate_medical_modifiers()
 
@@ -58,7 +61,8 @@
 	recalculate_medical_modifiers()
 
 /mob/living/carbon/proc/set_shock_recovery_modifier(source, multiplier)
-	if(isnull(source)) return
+	if(isnull(source))
+		return
 	LAZYSET(shock_recovery_modifiers, source, max(multiplier, 0))
 	recalculate_medical_modifiers()
 
@@ -67,7 +71,8 @@
 	recalculate_medical_modifiers()
 
 /mob/living/carbon/proc/set_consciousness_recovery_modifier(source, multiplier)
-	if(isnull(source)) return
+	if(isnull(source))
+		return
 	LAZYSET(consciousness_recovery_modifiers, source, max(multiplier, 0))
 	recalculate_medical_modifiers()
 
@@ -76,7 +81,8 @@
 	recalculate_medical_modifiers()
 
 /mob/living/carbon/proc/set_pain_limit(source, limit)
-	if(isnull(source)) return
+	if(isnull(source))
+		return
 	LAZYSET(pain_limit_modifiers, source, max(limit, 0))
 	recalculate_medical_modifiers()
 
@@ -85,7 +91,8 @@
 	recalculate_medical_modifiers()
 
 /mob/living/carbon/proc/set_shock_limit(source, limit)
-	if(isnull(source)) return
+	if(isnull(source))
+		return
 	LAZYSET(shock_limit_modifiers, source, max(limit, 0))
 	recalculate_medical_modifiers()
 
@@ -107,17 +114,20 @@
 	set_pain(total)
 
 /mob/living/carbon/proc/apply_acute_pain(amount)
-	if(amount <= 0) return
+	if(amount <= 0)
+		return
 	acute_pain = clamp(acute_pain + amount, 0, PAIN_MAX * 2)
 	recalculate_medical_state()
 
 /mob/living/carbon/proc/apply_shock_impulse(amount, source = null)
-	if(amount <= 0) return
+	if(amount <= 0)
+		return
 	shock_base = clamp(shock_base + amount, 0, SHOCK_MAX * 2)
 	recalculate_medical_state()
 
 /mob/living/carbon/proc/apply_consciousness_impulse(amount, source = null)
-	if(amount <= 0) return
+	if(amount <= 0)
+		return
 	consciousness_stun = clamp(consciousness_stun + amount, 0, CONSCIOUSNESS_MAX * 2)
 	recalculate_medical_state()
 
@@ -425,16 +435,21 @@
 
 /**
  * Heal wounds flag also clears injuries.
+ * Resets medical base values so the next recalculate does not restore old state.
  */
 /mob/living/carbon/fully_heal(heal_flags = HEAL_ALL)
 	. = ..()
 
 	if(heal_flags & HEAL_WOUNDS)
-		for(var/datum/injury/injury as anything in all_injuries)
+		for(var/datum/injury/injury as anything in all_injuries.Copy())
 			injury.remove_from_limb()
 			qdel(injury)
 
 	if(heal_flags & HEAL_DAMAGE)
+		pain_base = 0
+		acute_pain = 0
+		shock_base = 0
+		consciousness_stun = 0
 		pain = 0
 		shock = 0
 		consciousness = CONSCIOUSNESS_MAX
@@ -444,18 +459,18 @@
 		update_stat()
 
 
-/// Доля нормального объёма крови, 0..1.2
+/// Fraction of normal blood volume, 0..1.2
 /mob/living/carbon/proc/get_blood_ratio()
 	return clamp(get_blood_volume() / BLOOD_VOLUME_NORMAL, 0, 1.2)
 
-/// Пульс (0, если сердце стоит или не нужно).
+/// Heart rate (0 if the heart is stopped or not required).
 /mob/living/carbon/proc/get_heart_rate()
 	var/obj/item/organ/heart/heart = get_organ_slot(ORGAN_SLOT_HEART)
 	if(!needs_heart())
 		return HEART_RATE_NORMAL
 	return heart ? heart.get_rate() : 0
 
-/// Кислород мозга (0, если мозга нет).
+/// Brain oxygen (0 if no brain).
 /mob/living/carbon/proc/get_brain_oxygen()
 	var/obj/item/organ/brain/brain = get_organ_slot(ORGAN_SLOT_BRAIN)
 	return brain ? brain.oxygen : 0
@@ -467,7 +482,7 @@
 		output = heart ? heart.get_cardiac_output() : 0
 	blood_pressure = round(BP_NORMAL * output * (get_blood_ratio() ** 1.5), 0.1)
 
-/// 0..1.2: насколько мозг снабжается кровью.
+/// 0..1.2: how well the brain is being supplied with blood.
 /mob/living/carbon/proc/get_brain_perfusion()
 	if(blood_pressure <= BP_PERFUSION_NONE)
 		return 0
