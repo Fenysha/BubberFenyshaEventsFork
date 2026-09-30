@@ -39,14 +39,94 @@
     }
   }
 
-  &__lung {
-    min-height: 52px;
-    padding: 4px;
+  &__lungs {
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
 
-    text-align: center;
-
-    border: 1px solid var(--color-border);
+  &__lungs-frame {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 3px 4px;
+    background: #0a0e0a;
+    border: 1px solid #1a3a1a;
     border-radius: 2px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  &__lungs-stage {
+    position: relative;
+    flex: 0 0 auto;
+    overflow: visible;
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+
+  &__lungs-icon {
+    object-fit: contain;
+    object-position: center center;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    -ms-interpolation-mode: nearest-neighbor;
+    filter: brightness(0) saturate(100%) invert(52%) sepia(88%) saturate(1165%)
+      hue-rotate(174deg) brightness(96%) contrast(96%);
+    z-index: 1;
+    pointer-events: none !important;
+  }
+
+  &__lungs-icon--fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    color: #3a7;
+    z-index: 1;
+  }
+
+  &__lungs-fluid {
+    pointer-events: none !important;
+    z-index: 2;
+    mix-blend-mode: multiply;
+    transition: background-size 0.35s ease;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  &__lungs-missing {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4em;
+    color: #a44;
+    z-index: 3;
+    background: rgba(10, 14, 10, 0.55);
+    pointer-events: none !important;
+  }
+
+  &__lungs-metrics {
+    width: 100%;
+    padding: 0 2px;
+  }
+
+  &__lungs-metric {
+    line-height: 1.15;
+  }
+
+  &__lungs-side-label {
+    font-size: 0.65em;
+    opacity: 0.65;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   &__cardiogram {
@@ -69,16 +149,48 @@
       height: 100%;
     }
 
+    &-hud {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      text-align: right;
+      font-family: monospace;
+      font-size: 0.72em;
+      line-height: 1.25;
+      color: rgba(180, 255, 180, 0.92);
+      pointer-events: none;
+      text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+      z-index: 2;
+    }
+
+    &-hud-label {
+      opacity: 0.65;
+      margin-right: 4px;
+    }
+
+    &-hud-value {
+      font-weight: bold;
+      font-size: 1.15em;
+    }
+
+    &-hud-unit {
+      opacity: 0.55;
+      margin-left: 2px;
+      font-size: 0.85em;
+    }
+
     &-label {
       position: absolute;
-      right: 6px;
+      left: 6px;
       bottom: 4px;
 
-      font-size: 0.75em;
+      font-size: 0.7em;
       letter-spacing: 0.05em;
       text-transform: uppercase;
 
       color: #3d7a3d;
+      pointer-events: none;
+      z-index: 2;
     }
 
     &-alert {
@@ -86,11 +198,14 @@
       top: 4px;
       left: 6px;
 
-      font-size: 0.8em;
+      font-size: 0.75em;
       font-weight: bold;
       text-transform: uppercase;
 
       color: #ff4444;
+      max-width: 52%;
+      pointer-events: none;
+      z-index: 2;
 
       animation: HealthPanel__blink 1s step-end infinite;
     }
@@ -104,6 +219,7 @@
       }
     }
   }
+
   &__doll {
     position: relative;
     width: 230px;
@@ -118,8 +234,10 @@
 
   &__doll-part {
     position: absolute;
-    display: block;
-    overflow: visible;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
     pointer-events: none;
 
     &--missing {
@@ -155,6 +273,8 @@
     width: 100%;
     height: 100%;
 
+    object-fit: contain;
+    object-position: center center;
     image-rendering: pixelated;
     pointer-events: none;
   }
@@ -219,26 +339,143 @@
     font-size: 0.78em;
   }
 
+  &__doll--shake-light {
+    animation: health-doll-shake-light 0.28s linear infinite;
+  }
+
+  &__doll--shake-medium {
+    animation: health-doll-shake-medium 0.2s linear infinite;
+  }
+
+  &__doll--shake-heavy {
+    animation: health-doll-shake-heavy 0.14s linear infinite;
+  }
+
   &__zone {
     min-width: 72px;
-
     text-align: center;
   }
 
   &__injury {
     margin-top: 5px;
     padding: 5px 6px;
-
     border-bottom: 1px solid var(--color-border);
 
     &:last-child {
       border-bottom: none;
     }
   }
+
+  &__injury-header {
+    width: 100%;
+  }
+
+  &__injury-toggle {
+    font-size: 0.75em;
+    color: var(--color-label);
+    cursor: pointer;
+    user-select: none;
+    margin-top: 2px;
+
+    &:hover {
+      color: var(--color-text);
+    }
+  }
+
+  &__injury-body {
+    margin-top: 4px;
+  }
+
+  &__treat-row {
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+
+  &__treat-btn {
+    min-width: 28px !important;
+    min-height: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    padding: 2px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__treat-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    pointer-events: none;
+  }
+
+  &__treat-fallback {
+    font-size: 0.65em;
+    line-height: 1.1;
+    text-align: center;
+  }
 }
 
 @keyframes HealthPanel__blink {
   50% {
     opacity: 0;
+  }
+}
+
+@keyframes health-doll-shake-light {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(0.6px, -0.4px);
+  }
+  50% {
+    transform: translate(-0.5px, 0.5px);
+  }
+  75% {
+    transform: translate(0.4px, 0.3px);
+  }
+}
+
+@keyframes health-doll-shake-medium {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(1.4px, -1px);
+  }
+  40% {
+    transform: translate(-1.2px, 1.1px);
+  }
+  60% {
+    transform: translate(1px, 0.8px);
+  }
+  80% {
+    transform: translate(-0.9px, -0.7px);
+  }
+}
+
+@keyframes health-doll-shake-heavy {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  15% {
+    transform: translate(2.2px, -1.6px);
+  }
+  30% {
+    transform: translate(-2px, 1.8px);
+  }
+  45% {
+    transform: translate(1.8px, 1.2px);
+  }
+  60% {
+    transform: translate(-1.6px, -1.4px);
+  }
+  75% {
+    transform: translate(1.4px, 0.9px);
   }
 }

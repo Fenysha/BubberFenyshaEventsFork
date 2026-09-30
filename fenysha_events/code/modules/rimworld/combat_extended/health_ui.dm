@@ -26,9 +26,37 @@
 /datum/health_ui/ui_state(mob/user)
 	return GLOB.conscious_state
 
+/**
+ * Viewer access level for medical data.
+ * 0 = none / public surface only
+ * 1 = self (owner examining themselves)
+ * 2 = medical (TRAIT_VIEW_FULL_HEALTH or scanner)
+ * 3 = full (ghosts, admin, always_full_health)
+ */
+/datum/health_ui/proc/get_viewer_access(mob/user)
+	/* we finish it later
+	if(!user)
+		return INJURY_VISIBILITY_NONE
+	if(isobserver(user) || isAdminObserver(user))
+		return INJURY_VISIBILITY_FULL
+	if(HAS_TRAIT(user, TRAIT_VIEW_FULL_HEALTH))
+		return INJURY_VISIBILITY_FULL
+	if(user == owner)
+		return INJURY_VISIBILITY_SELF
+	// Adjacent living with medical HUD / skill can be treated as medical later
+	*/
+	return INJURY_VISIBILITY_FULL
+
 /datum/health_ui/ui_data(mob/user)
 	var/list/data = list()
-	var/can_see_full = (user == owner) || HAS_TRAIT(user, TRAIT_VIEW_FULL_HEALTH)
+	var/viewer_access = get_viewer_access(user)
+	var/can_see_full = viewer_access >= INJURY_VISIBILITY_MEDICAL
+	var/can_treat = !isobserver(user) && isliving(user)
+
+	data["viewer_access"] = viewer_access
+	data["can_see_full"] = can_see_full
+	data["can_treat"] = can_treat
+	data["is_self"] = (user == owner)
 
 	data["parameters"] = list(
 		"consciousness" = clamp(owner.consciousness, 0, CONSCIOUSNESS_MAX),
@@ -43,9 +71,8 @@
 
 	data["cardiogram"] = get_cardiogram_data()
 	data["lungs"] = get_lungs_data()
-	data["bodyparts"] = get_bodyparts_data(user)
-	data["organs"] = get_special_organs_data(user)
-	data["can_see_full"] = can_see_full
+	data["bodyparts"] = get_bodyparts_data(user, viewer_access)
+	data["organs"] = get_special_organs_data(user, viewer_access)
 
 	return data
 
@@ -54,9 +81,62 @@
 	if(.)
 		return
 
+	var/mob/user = ui.user
+	if(!user || isobserver(user))
+		return FALSE
+
 	switch(action)
 		if("select_limb")
 			return TRUE
+
+		if("treat_injury")
+			return try_treat_injury(user, params["injury_id"], params["item_type"])
+
+	return FALSE
+
+/**
+ * Attempt to treat a specific injury with an item currently held by the user.
+ * item_type is a typepath string from the UI treat button.
+ */
+/datum/health_ui/proc/try_treat_injury(mob/living/user, injury_id, item_type_text)
+	if(!user || !injury_id || !item_type_text)
+		return FALSE
+	if(isobserver(user))
+		return FALSE
+
+	var/item_type = text2path(item_type_text)
+	if(!ispath(item_type))
+		return FALSE
+
+	var/datum/injury/target
+	for(var/datum/injury/injury as anything in owner.all_injuries)
+		if(injury.unique_id == injury_id)
+			target = injury
+			break
+
+	if(!target || !target.limb)
+		return FALSE
+
+	// Prefer active hand, then other hand
+	var/obj/item/tool
+	var/obj/item/active = user.get_active_held_item()
+	var/obj/item/inactive = user.get_inactive_held_item()
+
+	if(istype(active, item_type))
+		tool = active
+	else if(istype(inactive, item_type))
+		tool = inactive
+
+	if(!tool)
+		to_chat(user, span_warning("You need to hold the right tool in your hand."))
+		return FALSE
+
+	if(!target.item_can_treat(tool, user))
+		to_chat(user, span_warning("That will not help this injury."))
+		return FALSE
+
+	return target.try_treat(tool, user)
+
 
 /datum/health_ui/proc/get_heartbeat_data()
 	var/obj/item/organ/heart/heart = owner.get_organ_slot(ORGAN_SLOT_HEART)
@@ -71,7 +151,9 @@
 			"target_rate" = 0,
 			"state" = "missing",
 			"beating" = FALSE,
+			"fibrillating" = FALSE,
 			"cpr" = FALSE,
+			"preload" = 0,
 		)
 
 	var/rate = heart.get_rate()
@@ -80,24 +162,34 @@
 	var/stroke_efficiency = heart.get_stroke_efficiency(rate)
 	var/cardiac_output = heart.get_cardiac_output()
 	var/cpr = heart.cpr_until > world.time
-	var/state = "beating"
+	var/fibrillating = heart.fibrillating
+	var/preload = heart.get_preload_factor()
 
-	if(!heart.is_beating())
+	var/state = "beating"
+	if(fibrillating)
+		state = "fibrillating"
+	else if(!heart.is_beating())
 		state = cpr ? "cpr" : "stopped"
 	else if(heart.organ_flags & ORGAN_FAILING)
 		state = "failing"
 
+	var/strength = 0
+	if(!fibrillating)
+		strength = clamp(contractility * stroke_efficiency * preload, 0, 1)
+
 	return list(
 		"rate" = rate,
 		"rhythm" = rhythm,
-		"strength" = clamp(contractility * stroke_efficiency, 0, 1),
+		"strength" = strength,
 		"contractility" = clamp(contractility, 0, 1),
 		"stroke_efficiency" = clamp(stroke_efficiency, 0, 1),
 		"cardiac_output" = max(0, cardiac_output),
 		"target_rate" = round(heart.rate_target),
 		"state" = state,
 		"beating" = heart.is_beating(),
+		"fibrillating" = fibrillating,
 		"cpr" = cpr,
+		"preload" = clamp(preload, 0, 1),
 	)
 
 /datum/health_ui/proc/get_breathing_data()
@@ -148,6 +240,10 @@
 		if("asystole")
 			alert = "ASYSTOLE"
 			flatline = 1
+		if("ventricular_fibrillation")
+			alert = "VENTRICULAR FIBRILLATION"
+			noise = 0.35
+			flatline = 0
 		if("ventricular_tachycardia")
 			alert = "VENTRICULAR TACHYCARDIA"
 			noise = 0.08
@@ -159,6 +255,9 @@
 	if(heartbeat["state"] == "failing")
 		noise = max(noise, 0.08)
 
+	if(heartbeat["state"] == "fibrillating")
+		noise = max(noise, 0.35)
+
 	return list(
 		"rhythm" = rhythm,
 		"alert" = alert,
@@ -166,8 +265,20 @@
 		"flatline" = flatline,
 	)
 
+/datum/health_ui/proc/get_lungs_icon_src()
+	var/static/cached
+	if(cached)
+		return cached
+	var/icon/lungs_icon = icon(HEALTH_PANEL_BODY_ICON, "lungs", SOUTH, 1)
+	if(!lungs_icon)
+		return null
+	cached = icon2base64(lungs_icon)
+	return cached
+
 /datum/health_ui/proc/get_lungs_data()
 	var/obj/item/organ/lungs/lungs = owner.get_organ_slot(ORGAN_SLOT_LUNGS)
+	var/icon_src = get_lungs_icon_src()
+
 	if(!lungs)
 		return list(
 			"present" = FALSE,
@@ -177,6 +288,7 @@
 			"oxygenation" = clamp(owner.blood_oxygenation, 0, 100),
 			"fluid" = LUNG_FLUID_MAX,
 			"fluid_ratio" = 1,
+			"iconSrc" = icon_src,
 		)
 
 	return list(
@@ -187,6 +299,7 @@
 		"oxygenation" = clamp(owner.blood_oxygenation, 0, 100),
 		"fluid" = clamp(lungs.fluid, 0, LUNG_FLUID_MAX),
 		"fluid_ratio" = clamp(lungs.fluid / LUNG_FLUID_MAX, 0, 1),
+		"iconSrc" = icon_src,
 	)
 
 /datum/health_ui/proc/get_bodypart_icon_suffix(body_zone)
@@ -236,7 +349,61 @@
 
 	return icon_src
 
-/datum/health_ui/proc/get_bodyparts_data(mob/user)
+/**
+ * Cached base64 icons for treatment item typepaths.
+ * Key = typepath string, value = list(iconSrc, name)
+ */
+/datum/health_ui/proc/get_treatment_item_ui(typepath)
+	if(!ispath(typepath))
+		return null
+
+	var/static/list/treat_icon_cache = list()
+	var/key = "[typepath]"
+
+	if(treat_icon_cache[key])
+		return treat_icon_cache[key]
+
+	var/obj/item/sample = new typepath()
+	if(!sample)
+		return null
+
+	var/icon/I = icon(sample.icon, sample.icon_state, SOUTH, 1)
+	var/list/entry = list(
+		"type" = key,
+		"name" = sample.name,
+		"iconSrc" = I ? icon2base64(I) : null,
+	)
+	qdel(sample)
+
+	treat_icon_cache[key] = entry
+	return entry
+
+/**
+ * Builds the list of treatment option buttons for an injury.
+ */
+/datum/health_ui/proc/get_injury_treat_options(datum/injury/injury)
+	var/list/options = list()
+	if(!injury)
+		return options
+
+	if(length(injury.treatable_by))
+		for(var/typepath in injury.treatable_by)
+			var/list/entry = get_treatment_item_ui(typepath)
+			if(entry)
+				options += list(entry)
+
+	// Tool behaviours are harder to icon; skip pure tools unless they map to items
+	return options
+
+/datum/health_ui/proc/get_limb_injury_bleed_rate(obj/item/bodypart/BP)
+	if(!BP)
+		return 0
+	var/total = 0
+	for(var/datum/injury/injury as anything in BP.injuries)
+		total += injury.get_bleed_rate()
+	return total
+
+/datum/health_ui/proc/get_bodyparts_data(mob/user, viewer_access)
 	var/list/parts = list()
 	var/list/zones = list(
 		BODY_ZONE_HEAD,
@@ -261,7 +428,7 @@
 			"skin_integrity" = BP ? BP.get_skin_integrity() * 100 : 0,
 			"max_damage" = BP ? BP.max_damage : 0,
 			"disabled" = BP ? BP.bodypart_disabled : TRUE,
-			"bleed_rate" = BP ? BP.cached_bleed_rate : 0,
+			"bleed_rate" = BP ? get_limb_injury_bleed_rate(BP) : 0,
 
 			"icon" = HEALTH_PANEL_BODY_ICON,
 			"iconState" = icon_state,
@@ -276,13 +443,15 @@
 			for(var/datum/injury/injury as anything in BP.injuries)
 				if(!injury.can_be_seen_by(user))
 					continue
-				part_data["injuries"] += list(injury.get_ui_data())
+				var/list/injury_data = injury.get_ui_data()
+				injury_data["treat_options"] = get_injury_treat_options(injury)
+				part_data["injuries"] += list(injury_data)
 
 		parts[zone] = part_data
 
 	return parts
 
-/datum/health_ui/proc/get_special_organs_data(mob/user)
+/datum/health_ui/proc/get_special_organs_data(mob/user, viewer_access)
 	var/list/organs_data = list()
 
 	var/obj/item/organ/brain/brain = owner.get_organ_slot(ORGAN_SLOT_BRAIN)
@@ -306,6 +475,7 @@
 		"health" = heart_health,
 		"failing" = heart ? !!(heart.organ_flags & ORGAN_FAILING) : TRUE,
 		"beating" = heart ? heart.is_beating() : FALSE,
+		"fibrillating" = heartbeat["fibrillating"],
 		"status" = heart ? heart.get_status_text() : "Missing",
 		"state" = heartbeat["state"],
 		"rhythm" = heartbeat["rhythm"],
@@ -313,6 +483,7 @@
 		"contractility" = heartbeat["contractility"],
 		"stroke_efficiency" = heartbeat["stroke_efficiency"],
 		"cardiac_output" = heartbeat["cardiac_output"],
+		"preload" = heartbeat["preload"],
 		"cpr" = heartbeat["cpr"],
 	)
 

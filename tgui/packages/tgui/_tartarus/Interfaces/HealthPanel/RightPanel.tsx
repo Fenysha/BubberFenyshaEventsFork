@@ -1,12 +1,22 @@
+import { useState } from 'react';
+import { useBackend } from 'tgui/backend';
 import {
   Box,
+  Button,
   LabeledList,
   ProgressBar,
   Section,
   Stack,
 } from 'tgui-core/components';
 import { TOOLTIPS } from './tooltips';
-import type { BodypartData, InjuryData, OrganData, RhythmType } from './types';
+import type {
+  BodypartData,
+  HealthPanelData,
+  InjuryData,
+  OrganData,
+  RhythmType,
+  TreatOption,
+} from './types';
 
 type Props = {
   selectedZone: string | null;
@@ -18,7 +28,7 @@ type Props = {
   };
 };
 
-const rhythmLabel = (rhythm?: RhythmType) => {
+const rhythmLabel = (rhythm?: RhythmType | string) => {
   switch (rhythm) {
     case 'normal':
       return 'Sinus rhythm';
@@ -28,10 +38,11 @@ const rhythmLabel = (rhythm?: RhythmType) => {
       return 'Tachycardia';
     case 'ventricular_tachycardia':
       return 'Ventricular tachycardia';
+    case 'ventricular_fibrillation':
+    case 'fibrillation':
+      return 'Ventricular fibrillation';
     case 'asystole':
       return 'Asystole';
-    case 'fibrillation':
-      return 'Fibrillation';
     case 'arrhythmia':
       return 'Arrhythmia';
     case 'pvc':
@@ -41,8 +52,30 @@ const rhythmLabel = (rhythm?: RhythmType) => {
   }
 };
 
+const treatmentLabel = (quality?: number) => {
+  switch (quality) {
+    case 1:
+      return 'Poorly treated';
+    case 2:
+      return 'Treated';
+    case 3:
+      return 'Expertly treated';
+    default:
+      return 'Untreated';
+  }
+};
+
+function toPngSrc(value: string) {
+  if (value.startsWith('data:')) return value;
+  return `data:image/png;base64,${value}`;
+}
+
 export const RightPanel = (props: Props) => {
   const { selectedZone, bodyparts, organs } = props;
+  const { data } = useBackend<HealthPanelData>();
+  const canTreat = data.can_treat === true;
+  const canSeeFull = data.can_see_full === true;
+  const viewerAccess = data.viewer_access ?? 0;
 
   if (!selectedZone) {
     return (
@@ -57,7 +90,14 @@ export const RightPanel = (props: Props) => {
     selectedZone === 'heart' ||
     selectedZone === 'lungs'
   ) {
-    return <OrganStatus name={selectedZone} data={organs[selectedZone]} />;
+    return (
+      <OrganStatus
+        name={selectedZone}
+        data={organs[selectedZone]}
+        canSeeFull={canSeeFull}
+        viewerAccess={viewerAccess}
+      />
+    );
   }
 
   const part = bodyparts[selectedZone];
@@ -69,7 +109,14 @@ export const RightPanel = (props: Props) => {
     );
   }
 
-  return <LimbStatus data={part} />;
+  return (
+    <LimbStatus
+      data={part}
+      canTreat={canTreat}
+      canSeeFull={canSeeFull}
+      viewerAccess={viewerAccess}
+    />
+  );
 };
 
 const integrityColor = (value: number): 'good' | 'average' | 'bad' => {
@@ -78,7 +125,17 @@ const integrityColor = (value: number): 'good' | 'average' | 'bad' => {
   return 'good';
 };
 
-const LimbStatus = ({ data }: { data: BodypartData }) => {
+const LimbStatus = ({
+  data,
+  canTreat,
+  canSeeFull,
+  viewerAccess,
+}: {
+  data: BodypartData;
+  canTreat: boolean;
+  canSeeFull: boolean;
+  viewerAccess: number;
+}) => {
   if (!data.present) {
     return (
       <Section title={data.name} fill>
@@ -89,33 +146,37 @@ const LimbStatus = ({ data }: { data: BodypartData }) => {
     );
   }
 
+  const showIntegrity = viewerAccess >= 1 || canSeeFull;
+
   return (
     <Section title={data.name} fill>
       <Stack vertical>
-        <Stack.Item>
-          <LabeledList>
-            <LabeledList.Item label="Structure">
-              <ProgressBar
-                value={Math.max(
-                  0,
-                  Math.min(data.structural_integrity / 100, 1),
-                )}
-                color={integrityColor(data.structural_integrity)}
-              >
-                {Math.round(data.structural_integrity)}%
-              </ProgressBar>
-            </LabeledList.Item>
+        {showIntegrity && (
+          <Stack.Item>
+            <LabeledList>
+              <LabeledList.Item label="Structure">
+                <ProgressBar
+                  value={Math.max(
+                    0,
+                    Math.min(data.structural_integrity / 100, 1),
+                  )}
+                  color={integrityColor(data.structural_integrity)}
+                >
+                  {Math.round(data.structural_integrity)}%
+                </ProgressBar>
+              </LabeledList.Item>
 
-            <LabeledList.Item label="Skin">
-              <ProgressBar
-                value={Math.max(0, Math.min(data.skin_integrity / 100, 1))}
-                color={integrityColor(data.skin_integrity)}
-              >
-                {Math.round(data.skin_integrity)}%
-              </ProgressBar>
-            </LabeledList.Item>
-          </LabeledList>
-        </Stack.Item>
+              <LabeledList.Item label="Skin">
+                <ProgressBar
+                  value={Math.max(0, Math.min(data.skin_integrity / 100, 1))}
+                  color={integrityColor(data.skin_integrity)}
+                >
+                  {Math.round(data.skin_integrity)}%
+                </ProgressBar>
+              </LabeledList.Item>
+            </LabeledList>
+          </Stack.Item>
+        )}
 
         {(data.disabled || data.bleed_rate > 0) && (
           <Stack.Item>
@@ -141,10 +202,15 @@ const LimbStatus = ({ data }: { data: BodypartData }) => {
         <Stack.Item>
           <Box bold>Active injuries</Box>
           {data.injuries.length === 0 && (
-            <Box color="label">No active injuries.</Box>
+            <Box color="label">No visible injuries.</Box>
           )}
           {data.injuries.map((injury) => (
-            <InjuryEntry key={injury.id} injury={injury} />
+            <InjuryEntry
+              key={injury.id}
+              injury={injury}
+              canTreat={canTreat}
+              canSeeFull={canSeeFull}
+            />
           ))}
         </Stack.Item>
       </Stack>
@@ -152,13 +218,36 @@ const LimbStatus = ({ data }: { data: BodypartData }) => {
   );
 };
 
-const OrganStatus = ({ name, data }: { name: string; data: OrganData }) => {
+const OrganStatus = ({
+  name,
+  data,
+  canSeeFull,
+  viewerAccess,
+}: {
+  name: string;
+  data: OrganData;
+  canSeeFull: boolean;
+  viewerAccess: number;
+}) => {
   if (!data.present) {
     return (
       <Section title={name} fill>
         <Box color="bad" bold>
           Missing
         </Box>
+      </Section>
+    );
+  }
+
+  if (viewerAccess < 1 && !canSeeFull) {
+    return (
+      <Section title={name} fill>
+        <Box color="label">{data.status}</Box>
+        {data.failing && (
+          <Box color="bad" bold>
+            Appears compromised
+          </Box>
+        )}
       </Section>
     );
   }
@@ -178,20 +267,39 @@ const OrganIntegrity = ({ value }: { value: number }) => (
 );
 
 const HeartStatus = ({ data }: { data: OrganData }) => {
-  const stopped = data.state === 'stopped' || data.state === 'missing';
+  const fibrillating =
+    data.fibrillating ||
+    data.state === 'fibrillating' ||
+    data.rhythm === 'ventricular_fibrillation' ||
+    data.rhythm === 'fibrillation';
+  const stopped =
+    data.state === 'stopped' ||
+    data.state === 'missing' ||
+    data.rhythm === 'asystole';
   const failing = data.state === 'failing';
+
+  let statusText = 'Heart beating';
+  let statusColor: string = 'good';
+  if (data.state === 'cpr') {
+    statusText = 'CPR / assisted circulation';
+    statusColor = 'average';
+  } else if (fibrillating) {
+    statusText = 'Ventricular fibrillation';
+    statusColor = 'bad';
+  } else if (stopped) {
+    statusText = 'Cardiac arrest';
+    statusColor = 'bad';
+  } else if (failing) {
+    statusText = 'Heart failing';
+    statusColor = 'average';
+  }
+
   return (
     <Section title="Heart" fill>
       <Stack vertical>
         <Stack.Item>
-          <Box bold color={stopped ? 'bad' : failing ? 'average' : 'good'}>
-            {data.state === 'cpr'
-              ? 'CPR / assisted circulation'
-              : stopped
-                ? 'Cardiac arrest'
-                : failing
-                  ? 'Heart failing'
-                  : 'Heart beating'}
+          <Box bold color={statusColor}>
+            {statusText}
           </Box>
         </Stack.Item>
 
@@ -211,6 +319,11 @@ const HeartStatus = ({ data }: { data: OrganData }) => {
             <LabeledList.Item label="Stroke efficiency">
               <ProgressBar value={data.stroke_efficiency ?? 0}>
                 {Math.round((data.stroke_efficiency ?? 0) * 100)}%
+              </ProgressBar>
+            </LabeledList.Item>
+            <LabeledList.Item label="Preload">
+              <ProgressBar value={data.preload ?? 1}>
+                {Math.round((data.preload ?? 1) * 100)}%
               </ProgressBar>
             </LabeledList.Item>
             <LabeledList.Item label="Cardiac output">
@@ -362,37 +475,136 @@ const LungStatus = ({ data }: { data: OrganData }) => {
   );
 };
 
-const InjuryEntry = ({ injury }: { injury: InjuryData }) => (
-  <Box className="HealthPanel__injury">
-    <Box bold>
-      {injury.name}{' '}
-      <Box as="span" color="label">
-        ({injury.severity_text})
-      </Box>
-    </Box>
+const TreatButtons = ({
+  injuryId,
+  options,
+}: {
+  injuryId: string;
+  options: TreatOption[];
+}) => {
+  const { act } = useBackend<HealthPanelData>();
 
-    {injury.desc && (
-      <Box color="label" fontSize="0.9em">
-        {injury.desc}
-      </Box>
-    )}
+  if (!options.length) return null;
 
-    <Stack>
-      {injury.bleed_rate > 0 && (
-        <Stack.Item grow>
-          <Box color="bad">Blood loss: {injury.bleed_rate.toFixed(1)}/s</Box>
+  return (
+    <Stack className="HealthPanel__treat-row">
+      {options.map((opt) => (
+        <Stack.Item key={opt.type}>
+          <Button
+            className="HealthPanel__treat-btn"
+            tooltip={`Treat with ${opt.name}`}
+            onClick={() =>
+              act('treat_injury', {
+                injury_id: injuryId,
+                item_type: opt.type,
+              })
+            }
+          >
+            {opt.iconSrc ? (
+              <img
+                className="HealthPanel__treat-icon"
+                src={toPngSrc(opt.iconSrc)}
+                alt={opt.name}
+                draggable={false}
+              />
+            ) : (
+              <span className="HealthPanel__treat-fallback">{opt.name}</span>
+            )}
+          </Button>
         </Stack.Item>
-      )}
-      {injury.pain > 0 && (
-        <Stack.Item grow>
-          <Box color="average">Pain: {Math.round(injury.pain)}</Box>
-        </Stack.Item>
-      )}
-      {injury.disabling && (
-        <Stack.Item>
-          <Box color="bad">Disabling</Box>
-        </Stack.Item>
-      )}
+      ))}
     </Stack>
-  </Box>
-);
+  );
+};
+
+const InjuryEntry = ({
+  injury,
+  canTreat,
+  canSeeFull,
+}: {
+  injury: InjuryData;
+  canTreat: boolean;
+  canSeeFull: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+  const healing = injury.healing_progress ?? 0;
+  const treated = injury.treated || (injury.treatment_quality ?? 0) > 0;
+  const displayName =
+    canSeeFull || !injury.undiagnosed_name
+      ? injury.name
+      : injury.undiagnosed_name;
+
+  const treatOptions =
+    canTreat && injury.can_treat && injury.treat_options
+      ? injury.treat_options
+      : [];
+
+  return (
+    <Box className="HealthPanel__injury">
+      <Stack align="center" className="HealthPanel__injury-header">
+        <Stack.Item grow>
+          <Box bold>
+            {displayName}{' '}
+            <Box as="span" color="label">
+              ({injury.severity_text})
+            </Box>
+          </Box>
+        </Stack.Item>
+        {treatOptions.length > 0 && (
+          <Stack.Item>
+            <TreatButtons injuryId={injury.id} options={treatOptions} />
+          </Stack.Item>
+        )}
+      </Stack>
+
+      <Box
+        className="HealthPanel__injury-toggle"
+        onClick={() => setOpen(!open)}
+      >
+        {open ? '▾ details' : '▸ details'}
+      </Box>
+
+      {open && (
+        <Box className="HealthPanel__injury-body">
+          {injury.desc && (
+            <Box color="label" fontSize="0.9em">
+              {injury.desc}
+            </Box>
+          )}
+
+          <Stack>
+            {injury.bleed_rate > 0 && (
+              <Stack.Item grow>
+                <Box color="bad">
+                  Blood loss: {injury.bleed_rate.toFixed(1)}/s
+                </Box>
+              </Stack.Item>
+            )}
+            {injury.pain > 0 && (
+              <Stack.Item grow>
+                <Box color="average">Pain: {Math.round(injury.pain)}</Box>
+              </Stack.Item>
+            )}
+            {injury.disabling && (
+              <Stack.Item>
+                <Box color="bad">Disabling</Box>
+              </Stack.Item>
+            )}
+          </Stack>
+
+          <Box fontSize="0.85em" color="label">
+            {treatmentLabel(injury.treatment_quality)}
+            {healing > 0.05 && ` · healing ${Math.round(healing * 100)}%`}
+            {treated && healing <= 0.05 && ' · stabilizing'}
+          </Box>
+
+          {healing > 0.05 && (
+            <ProgressBar value={Math.max(0, Math.min(healing, 1))} color="good">
+              {Math.round(healing * 100)}%
+            </ProgressBar>
+          )}
+        </Box>
+      )}
+    </Box>
+  );
+};

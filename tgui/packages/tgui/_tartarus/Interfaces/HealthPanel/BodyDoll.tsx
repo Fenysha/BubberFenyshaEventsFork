@@ -12,6 +12,8 @@ type Props = {
   };
   selectedZone: string | null;
   onSelect: (zone: string) => void;
+  /** Current shock 0..SHOCK_MAX — drives whole-doll tremor */
+  shock?: number;
 };
 
 const SCALE = 2;
@@ -107,10 +109,6 @@ function toPngSrc(value: string) {
 
 /**
  * Creates a CSS path from the non-transparent pixels of a PNG.
- *
- * Each consecutive opaque pixel run in a row becomes a tiny rectangle.
- * The resulting path therefore follows the actual alpha mask instead
- * of the rectangular image bounds.
  */
 function buildAlphaClipPath(
   src: string,
@@ -271,6 +269,14 @@ const getSelectedOutlineColor = (
   }
 };
 
+/** Shock 0–100 → CSS animation intensity class */
+const shockClass = (shock = 0): string => {
+  if (shock >= 75) return 'HealthPanel__doll--shake-heavy';
+  if (shock >= 50) return 'HealthPanel__doll--shake-medium';
+  if (shock >= 25) return 'HealthPanel__doll--shake-light';
+  return '';
+};
+
 function BodypartArt(props: {
   data?: BodypartData;
   state: ReturnType<typeof getPartState>;
@@ -308,14 +314,18 @@ function BodypartArt(props: {
         filter: `${iconFilter} ${selectedFilter}`,
         width: '100%',
         height: '100%',
+        objectFit: 'contain',
+        objectPosition: 'center center',
+        imageRendering: 'pixelated',
         pointerEvents: 'none',
+        display: 'block',
       }}
     />
   );
 }
 
 export const BodyDoll = (props: Props) => {
-  const { bodyparts, organs, selectedZone, onSelect } = props;
+  const { bodyparts, organs, selectedZone, onSelect, shock = 0 } = props;
 
   const zones: BodyDollZone[] = [
     'head',
@@ -326,10 +336,12 @@ export const BodyDoll = (props: Props) => {
     'r_leg',
   ];
 
+  const shake = shockClass(shock);
+
   return (
     <Stack vertical fill align="center">
       <Stack.Item>
-        <Box className="HealthPanel__doll">
+        <Box className={['HealthPanel__doll', shake].filter(Boolean).join(' ')}>
           {zones.map((zone) => (
             <ZoneButton
               key={zone}
@@ -366,7 +378,10 @@ export const BodyDoll = (props: Props) => {
                 !organs.heart.present ||
                 organs.heart.state === 'stopped' ||
                 organs.heart.state === 'missing' ||
-                organs.heart.rhythm === 'asystole'
+                organs.heart.state === 'fibrillating' ||
+                organs.heart.fibrillating === true ||
+                organs.heart.rhythm === 'asystole' ||
+                organs.heart.rhythm === 'ventricular_fibrillation'
               }
             />
           </Stack.Item>
@@ -399,15 +414,13 @@ const ZoneButton = (props: {
   const state = getPartState(data);
 
   /**
-   * The whole visual bodypart is scaled by SCALE.
-   * Move the enlarged box back by half of its added size
-   * so that it remains centered on the original offset.
+   * Scale the visual slot, but keep the geometric center on the original
+   * offset so differently-sized DMI sprites still land on the silhouette.
    */
   const width = offset.width * SCALE;
   const height = offset.height * SCALE;
 
   const left = offset.x - (width - offset.width) / 2;
-
   const top = offset.y - (height - offset.height) / 2;
 
   const iconSrc = data?.iconSrc ? toPngSrc(data.iconSrc) : undefined;
@@ -431,6 +444,10 @@ const ZoneButton = (props: {
         width: `${width}px`,
         height: `${height}px`,
         pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
       }}
     >
       <Button

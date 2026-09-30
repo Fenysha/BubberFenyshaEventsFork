@@ -216,13 +216,158 @@
 		if(!IsUnconscious() && !HAS_TRAIT(src, TRAIT_KNOCKEDOUT))
 			set_stat(STABLE)
 
-	if(stat == SOFT_CRIT || stat == HARD_CRIT)
-		set_stat(STABLE)
-
 	update_damage_hud()
 	update_health_hud()
 	update_stamina_hud()
 	med_hud_set_status()
+
+
+/mob/living/carbon/update_blood_effects()
+	. = ..()
+
+	update_blood_pallor()
+	update_blood_colorgrade()
+
+
+/mob/living/carbon/proc/update_blood_pallor()
+	if(!CAN_HAVE_BLOOD(src))
+		set_blood_pallor(0)
+		return
+
+	var/blood_ratio = get_blood_ratio()
+
+	var/pallor = 0
+	if(blood_ratio < BLOOD_PALLOR_START)
+		pallor = clamp(
+			(BLOOD_PALLOR_START - blood_ratio) / (BLOOD_PALLOR_START - BLOOD_PALLOR_FULL),
+			0,
+			1
+		)
+
+	// Don't rebuild all bodypart overlays for microscopic changes.
+	pallor = round(pallor, 0.025)
+
+	if(abs(pallor - blood_pallor_visual) < 0.025)
+		return
+
+	blood_pallor_visual = pallor
+	set_blood_pallor(pallor)
+
+/mob/living/carbon/proc/set_blood_pallor(pallor)
+	for(var/obj/item/bodypart/bodypart as anything in get_bodyparts())
+		bodypart.remove_color_override(BLOOD_PALLOR_COLOR_PRIORITY)
+
+		// Static-colored bodyparts don't have a greyscale draw color
+		// that can safely be recolored through this mechanism.
+		if(!bodypart.should_draw_greyscale)
+			bodypart.update_limb()
+			continue
+
+		// Restore the original highest-priority color first.
+		bodypart.update_draw_color()
+
+		if(pallor <= 0)
+			bodypart.update_limb()
+			continue
+
+		var/base_color = bodypart.draw_color
+
+		if(!base_color)
+			base_color = COLOR_WHITE
+
+		var/pale_color = blend_color(
+			base_color,
+			rgb(255, 255, 255, round(pallor * 255))
+		)
+
+		bodypart.add_color_override(
+			pale_color,
+			BLOOD_PALLOR_COLOR_PRIORITY
+		)
+
+		bodypart.update_limb()
+
+
+/mob/living/carbon/proc/update_blood_colorgrade()
+	if(!hud_used)
+		return
+
+	if(!CAN_HAVE_BLOOD(src))
+		apply_blood_colorgrade(0)
+		return
+
+	var/blood_ratio = get_blood_ratio()
+
+	var/strength = 0
+	if(blood_ratio < BLOOD_COLORGRADE_START)
+		strength = clamp(
+			(BLOOD_COLORGRADE_START - blood_ratio) / (BLOOD_COLORGRADE_START - BLOOD_COLORGRADE_FULL),
+			0,
+			1
+		)
+
+	strength = round(strength, 0.025)
+
+	if(abs(strength - blood_colorgrade_visual) < 0.025)
+		return
+
+	blood_colorgrade_visual = strength
+	apply_blood_colorgrade(strength)
+
+
+/mob/living/carbon/proc/apply_blood_colorgrade(strength)
+	if(!hud_used)
+		return
+
+	var/list/masters = hud_used.get_true_plane_masters(RENDER_PLANE_MASTER)
+
+	for(var/atom/movable/screen/plane_master/rendering_plate/master as anything in masters)
+		if(strength <= 0)
+			master.remove_filter("blood_loss_colorgrade")
+			continue
+
+		/*
+		 * HSL color grading:
+		 *
+		 * - Hue is untouched.
+		 * - Saturation decreases as blood is lost.
+		 * - Lightness increases slightly.
+		 *
+		 * This pushes the screen toward white/grey without turning
+		 * red objects into neutral grey.
+		 */
+		var/saturation = 1 - (0.65 * strength)
+		var/lightness = 1 + (0.10 * strength)
+
+		var/matrix/matrix = list(
+			1, 0, 0,
+			0, saturation, 0,
+			0, 0, lightness,
+			0, 0, 0
+		)
+
+		master.add_filter("blood_loss_colorgrade", 10, color_matrix_filter(matrix, FILTER_COLOR_HSL))
+
+
+/mob/living/carbon/proc/append_blood_loss_examine(mob/user, list/examine_list)
+	if(!user || !CAN_HAVE_BLOOD(src))
+		return
+
+	var/blood_ratio = get_blood_ratio()
+
+	switch(blood_ratio)
+		if(BLOOD_PALLOR_START to INFINITY)
+			return
+
+		if(0.65 to BLOOD_PALLOR_START)
+			examine_list += span_warning("[p_They()] look pale.")
+		if(0.50 to 0.65)
+			examine_list += span_warning("[p_They()] look pale and clammy.")
+		if(0.35 to 0.50)
+			examine_list += span_danger("[p_They()] are extremely pale and visibly weakened.")
+		if(-INFINITY to 0.35)
+			examine_list += span_userdanger("[p_They()] are deathly pale, with almost no color left in [p_their()] skin.")
+
 
 /**
  * Damage HUD: pain/oxy focused; no softcrit vision ladder from health.
@@ -234,51 +379,49 @@
 	clear_fullscreen("crit")
 	clear_fullscreen("critvision")
 
+	var/total_consciousness = get_consciousness()
 	// Oxygen overlay — keep
-	if(oxyloss)
+	if(total_consciousness < 100)
 		var/severity = 0
-		switch(oxyloss)
-			if(10 to 20)
-				severity = 1
-			if(20 to 25)
-				severity = 2
-			if(25 to 30)
-				severity = 3
-			if(30 to 35)
-				severity = 4
-			if(35 to 40)
-				severity = 5
-			if(40 to 45)
-				severity = 6
-			if(45 to INFINITY)
+		switch(total_consciousness)
+			if(0 to 20)
 				severity = 7
-		overlay_fullscreen("oxy", /atom/movable/screen/fullscreen/oxy, severity)
+			if(20 to 30)
+				severity = 6
+			if(30 to 40)
+				severity = 5
+			if(40 to 50)
+				severity = 4
+			if(50 to 65)
+				severity = 3
+			if(65 to 80)
+				severity = 2
+			if(80 to INFINITY)
+				severity = 1
+		overlay_fullscreen("consciousness", /atom/movable/screen/fullscreen/oxy, severity)
 	else
-		clear_fullscreen("oxy")
+		clear_fullscreen("consciousness")
 
 	// Brute/burn + pain bleed into the same overlay channel
-	var/hurtdamage = get_brute_loss() + get_fire_loss() + damageoverlaytemp
-	if(isnum(pain))
-		hurtdamage += pain * 0.35
-
-	if(hurtdamage && !HAS_TRAIT(src, TRAIT_NO_DAMAGE_OVERLAY))
+	var/total_pain = get_pain()
+	if(total_pain)
 		var/severity = 0
-		switch(hurtdamage)
-			if(5 to 15)
+		switch(total_pain)
+			if(10 to 40)
 				severity = 1
-			if(15 to 30)
+			if(40 to 70)
 				severity = 2
-			if(30 to 45)
+			if(70 to 90)
 				severity = 3
-			if(45 to 70)
+			if(90 to 110)
 				severity = 4
-			if(70 to 85)
+			if(110 to 140)
 				severity = 5
-			if(85 to INFINITY)
+			if(140 to INFINITY)
 				severity = 6
-		overlay_fullscreen("brute", /atom/movable/screen/fullscreen/brute, severity)
+		overlay_fullscreen("pain", /atom/movable/screen/fullscreen/brute, severity)
 	else
-		clear_fullscreen("brute")
+		clear_fullscreen("pain")
 
 /**
  * Heal wounds flag also clears injuries.

@@ -2,7 +2,11 @@
  * /datum/injury
  *
  * Medical conditions applied to a /obj/item/bodypart.
- * Most combat consequences live here (bleed, pain, disable, damage mult), not in bruteloss/fireloss.
+ * Most combat consequences live here (bleed, pain, disable, damage mult),
+ *
+ * Injuries of the same series upgrade or absorb instead of stacking.
+ * Treatment reduces bleeding / pain and accelerates healing.
+ * Fully healed injuries remove themselves.
  */
 
 /datum/injury
@@ -46,6 +50,8 @@
 
 	var/disabling = FALSE
 
+	/// Associative list of item typepaths to treatment effectiveness.
+	/// Missing effectiveness defaults to INJURY_TREATMENT_EFFECTIVENESS_NORMAL.
 	var/list/treatable_by
 	var/list/treatable_tools
 	var/base_treat_time = 5 SECONDS
@@ -54,18 +60,40 @@
 	var/injury_source = "Unknown"
 	var/unique_id
 
+	/// INJURY_TREATMENT_NONE / POOR / ADEQUATE / EXCELLENT
+	var/treatment_quality = INJURY_TREATMENT_NONE
+
+	/// Healing progress from 0.0 to 1.0. Reaches 1.0 → injury is removed.
+	var/healing_progress = 0
+
+	/// Base healing rate per second toward 1.0.
+	/// 0 means the injury will not progress without treatment (unless SELF_HEALING).
+	var/base_healing_rate = 0
+
+	/// Multiplier applied to bleed_rate after successful treatment.
+	var/treated_bleed_mult = 1.0
+
+	/// Multiplier applied to base_healing_rate after successful treatment.
+	var/treated_heal_mult = 1.0
+
+	/// Multiplier applied to pain_amount after successful treatment.
+	var/treated_pain_mult = 1.0
+
+	/// Continuous treatment effectiveness provided by skill-based medicine.
+	/// 0 means the injury has not received skill-based medical treatment.
+	var/treatment_effectiveness = 0
+
+
 /datum/injury/New()
 	unique_id = REF(src)
 	return ..()
 
 /datum/injury/Destroy()
+	unregister_effects()
 	if(limb)
 		remove_from_limb()
 	return ..()
 
-// ============================================================
-// Apply / remove
-// ============================================================
 
 /**
  * Applies this injury to a limb, or upgrades an existing injury of the same series.
@@ -136,12 +164,20 @@
 
 /**
  * Mild intensify when hit again with same/lower severity (bleed/pain bump).
+ * Also slightly resets healing progress so repeated trauma delays recovery.
  */
 /datum/injury/proc/absorb_intensity(datum/injury/incoming)
 	if(incoming.bleed_rate > 0)
 		bleed_rate = min(bleed_rate + incoming.bleed_rate * 0.25, bleed_rate * 1.5 + 0.5)
 	if(incoming.pain_amount > 0)
 		pain_amount = min(pain_amount + incoming.pain_amount * 0.2, pain_amount * 1.35 + 5)
+
+	// Re-injury slows healing
+	if(healing_progress > 0)
+		healing_progress = max(healing_progress - 0.15, 0)
+
+	if(treatment_effectiveness > 0)
+		treatment_effectiveness = max(treatment_effectiveness - 0.10, 0)
 
 	if(limb?.owner)
 		limb.owner.apply_injury_response(incoming)
@@ -156,12 +192,21 @@
 	var/obj/item/bodypart/cached_limb = limb
 	var/mob/living/carbon/cached_owner = owner
 	var/old_source = injury_source
+	var/old_treatment = treatment_quality
+	var/old_treatment_effectiveness = treatment_effectiveness
+	var/old_healing = healing_progress
 
 	// Detach without scarring logic
 	remove_from_limb(replaced = TRUE)
 
 	var/datum/injury/upgraded = new upgrade_path()
 	upgraded.injury_source = istext(source) ? source : old_source
+	// Carry over partial treatment/healing so promotion does not fully reset care
+	upgraded.treatment_quality = old_treatment
+	upgraded.treatment_effectiveness = old_treatment_effectiveness * 0.5
+	upgraded.healing_progress = old_healing * 0.5
+	upgraded.on_treated(old_treatment, null) // re-apply multipliers for the new tier
+
 	// Force apply without series check recursion — series matches, limb empty of us
 	upgraded.limb = cached_limb
 	upgraded.owner = cached_owner
@@ -205,6 +250,18 @@
 	if(!silent)
 		show_application_message()
 
+	// Self-healing injuries start processing immediately
+	if((injury_flags & INJURY_FLAG_SELF_HEALING) && base_healing_rate > 0)
+		processes = TRUE
+
+	// Internal bleeders drain blood in process_internal_bleeding(), so they must always process
+	if(is_internal_bleeder())
+		processes = TRUE
+
+	register_effects()
+	if(!silent)
+		on_applied_effects(attack_direction)
+
 /datum/injury/proc/get_initial_shock()
 	if(initial_shock > 0)
 		return initial_shock
@@ -237,6 +294,7 @@
 		return
 
 	UnregisterSignal(limb, COMSIG_QDELETING)
+	unregister_effects(replaced)
 
 	if(disabling)
 		limb.remove_traits(list(TRAIT_PARALYSIS, TRAIT_DISABLED_BY_INJURY), unique_id)
@@ -262,8 +320,51 @@
 	owner = null
 	qdel(src)
 
+
 /datum/injury/proc/handle_process(seconds_per_tick)
-	return
+	process_healing(seconds_per_tick)
+	if(QDELETED(src) || !owner)
+		return
+	process_internal_bleeding(seconds_per_tick)
+	if(owner.stat != DEAD)
+		process_effects(seconds_per_tick)
+
+/**
+ * Advances healing progress. When progress reaches 1.0 the injury is removed.
+ */
+/datum/injury/proc/process_healing(seconds_per_tick)
+	if(healing_progress >= 1)
+		return
+
+	var/rate = base_healing_rate
+
+	if(treatment_effectiveness > 0)
+		rate *= get_healing_treatment_multiplier()
+	else if(treatment_quality == INJURY_TREATMENT_NONE)
+		// Untreated: only self-healing injuries progress
+		if(!(injury_flags & INJURY_FLAG_SELF_HEALING))
+			return
+	else
+		rate *= treated_heal_mult
+
+	if(rate <= 0)
+		return
+
+	healing_progress = min(healing_progress + rate * seconds_per_tick, 1)
+
+	if(healing_progress >= 1)
+		on_healed()
+
+/**
+ * Called when healing_progress reaches 1.0. Removes the injury.
+ */
+/datum/injury/proc/on_healed()
+	if(owner)
+		to_chat(owner, span_notice("Your [name] has fully healed."))
+	remove_from_limb()
+	qdel(src)
+
+
 
 /datum/injury/proc/get_bleed_pressure_response()
 	if(istype(src, /datum/injury/arterial_bleed))
@@ -281,11 +382,16 @@
 		return 0.05
 	return 0.08
 
+/**
+ * Effective bleed rate after pressure, pulse and treatment modifiers.
+ */
 /datum/injury/proc/get_bleed_rate()
 	if(bleed_rate <= 0)
 		return 0
 	if(!owner || HAS_TRAIT(owner, TRAIT_GODMODE))
-		return bleed_rate
+		if(treatment_effectiveness > 0)
+			return bleed_rate * get_bleed_treatment_multiplier()
+		return bleed_rate * (treatment_quality > INJURY_TREATMENT_NONE ? treated_bleed_mult : 1)
 
 	var/bp_ratio = clamp(owner.blood_pressure / BP_NORMAL, 0, 2)
 	var/hr_ratio = clamp(owner.get_heart_rate() / HEART_RATE_NORMAL, 0, 2)
@@ -302,36 +408,205 @@
 	var/pulse_factor = 1 + ((hr_ratio - 1) * pulse_response)
 	pulse_factor = clamp(pulse_factor, 0.70, 1.35)
 
-	return bleed_rate * pressure_factor * pulse_factor
+	var/result = bleed_rate * pressure_factor * pulse_factor
 
+	if(treatment_effectiveness > 0)
+		result *= get_bleed_treatment_multiplier()
+	else if(treatment_quality > INJURY_TREATMENT_NONE)
+		result *= treated_bleed_mult
+
+	return result
+
+/**
+ * Effective pain after treatment multiplier.
+ */
 /datum/injury/proc/get_pain()
-	return pain_amount
+	var/result = pain_amount
+	if(treatment_effectiveness > 0)
+		result *= get_pain_treatment_multiplier()
+	else if(treatment_quality > INJURY_TREATMENT_NONE)
+		result *= treated_pain_mult
+	return result
+
+/**
+ * Returns the bleeding multiplier produced by continuous skill-based treatment.
+ * Higher treatment effectiveness means less active bleeding.
+ */
+/datum/injury/proc/get_bleed_treatment_multiplier()
+	return clamp(1 - (treatment_effectiveness * 0.75), 0.10, 1.0)
+
+/**
+ * Returns the healing multiplier produced by continuous skill-based treatment.
+ * This deliberately scales continuously instead of using only treatment tiers.
+ */
+/datum/injury/proc/get_healing_treatment_multiplier()
+	return 1 + (treatment_effectiveness * 2.0)
+
+/**
+ * Returns the pain multiplier produced by continuous skill-based treatment.
+ */
+/datum/injury/proc/get_pain_treatment_multiplier()
+	return clamp(1 - (treatment_effectiveness * 0.50), 0.20, 1.0)
+
+/**
+ * Returns TRUE if skill-based medicine can still improve this injury.
+ */
+/datum/injury/proc/can_be_treated_by_medicine(effectiveness)
+	if(effectiveness <= 0)
+		return FALSE
+	if(treatment_effectiveness >= effectiveness)
+		return FALSE
+	return TRUE
+
+/**
+ * Applies continuous treatment directly to this injury.
+ *
+ * Unlike the legacy item treatment path, this does not collapse the result
+ * into a discrete quality tier. The medicine effectiveness and the user's
+ * Medical skill determine the actual treatment strength.
+ */
+/datum/injury/proc/treat_with_medicine(mob/living/user, effectiveness)
+	if(!can_be_treated_by_medicine(effectiveness))
+		return FALSE
+
+	treatment_effectiveness = max(treatment_effectiveness, effectiveness)
+
+	// Keep the existing treatment-quality field useful for old UI and systems.
+	var/new_quality = INJURY_TREATMENT_POOR
+	if(effectiveness >= INJURY_TREATMENT_EFFECTIVENESS_EXCELLENT)
+		new_quality = INJURY_TREATMENT_EXCELLENT
+	else if(effectiveness >= INJURY_TREATMENT_EFFECTIVENESS_ADEQUATE)
+		new_quality = INJURY_TREATMENT_ADEQUATE
+
+	if(new_quality > treatment_quality)
+		treatment_quality = new_quality
+
+	// Use the normal treatment hook so healing processing is enabled.
+	on_treated(treatment_quality, user)
+	processes = TRUE
+
+	if(owner && !HAS_TRAIT(owner, TRAIT_GODMODE) && user)
+		to_chat(owner, span_notice("The treatment improves the condition of your [name]."))
+
+	limb?.update_injuries()
+	return TRUE
 
 /datum/injury/proc/get_damage_multiplier()
 	return damage_multiplier
 
-// ============================================================
-// Treatment
-// ============================================================
 
 /datum/injury/proc/try_treat(obj/item/tool, mob/living/user)
 	if(!item_can_treat(tool, user))
 		return FALSE
 	return treat(tool, user)
 
+/datum/injury/proc/get_item_treatment_effectiveness(obj/item/tool)
+	if(!tool)
+		return 0
+
+	if(length(treatable_tools) && (tool.tool_behaviour in treatable_tools))
+		return INJURY_TREATMENT_EFFECTIVENESS_NORMAL
+
+	if(!length(treatable_by))
+		return 0
+
+	for(var/typepath in treatable_by)
+		if(!istype(tool, typepath))
+			continue
+
+		var/effectiveness = treatable_by[typepath]
+		if(isnull(effectiveness))
+			return INJURY_TREATMENT_EFFECTIVENESS_NORMAL
+
+		return max(0, effectiveness)
+
+	return 0
+
 /datum/injury/proc/item_can_treat(obj/item/tool, mob/user)
-	if(tool.tool_behaviour in treatable_tools)
-		return TRUE
-	if(is_type_in_list(tool, treatable_by))
-		return TRUE
-	return FALSE
+	if(treatment_quality >= INJURY_TREATMENT_EXCELLENT)
+		return FALSE
+	return get_item_treatment_effectiveness(tool) > 0
 
+/**
+ * Default treatment implementation.
+ * Subtypes may override for special behaviour (surgery steps, etc.).
+ */
 /datum/injury/proc/treat(obj/item/tool, mob/user)
+	if(!can_be_treated_by(tool, user))
+		return FALSE
+
+	var/quality = resolve_treatment_quality(tool, user)
+
+	if(!do_after(user, base_treat_time, target = owner || user))
+		return FALSE
+
+	if(apply_treatment(quality, user))
+		if(isstack(tool))
+			var/obj/item/stack/stack_tool = tool
+			stack_tool.use(1)
+		return TRUE
 	return FALSE
 
-// ============================================================
-// UI / examine
-// ============================================================
+/datum/injury/proc/can_be_treated_by(obj/item/tool, mob/user)
+	return item_can_treat(tool, user)
+
+/**
+ * Determines treatment quality from tool and (optionally) user skill.
+ * Override or extend later for skill-based quality.
+ */
+/datum/injury/proc/resolve_treatment_quality(obj/item/tool, mob/user)
+	var/effectiveness = get_item_treatment_effectiveness(tool)
+	if(effectiveness >= INJURY_TREATMENT_EFFECTIVENESS_EXCELLENT)
+		return INJURY_TREATMENT_EXCELLENT
+	if(effectiveness >= INJURY_TREATMENT_EFFECTIVENESS_ADEQUATE)
+		return INJURY_TREATMENT_ADEQUATE
+	if(effectiveness >= INJURY_TREATMENT_EFFECTIVENESS_POOR)
+		return INJURY_TREATMENT_POOR
+	return INJURY_TREATMENT_NONE
+
+/**
+ * Applies treatment of the given quality. Improves multipliers and enables healing.
+ * Returns TRUE if quality was actually improved.
+ */
+/datum/injury/proc/apply_treatment(quality = INJURY_TREATMENT_ADEQUATE, mob/user)
+	if(quality <= treatment_quality)
+		return FALSE
+
+	treatment_quality = quality
+	on_treated(quality, user)
+	limb?.update_injuries()
+	return TRUE
+
+/**
+ * Sets bleed/heal/pain multipliers according to treatment quality
+ * and ensures the injury is processed for healing.
+ */
+/datum/injury/proc/on_treated(quality, mob/user)
+	switch(quality)
+		if(INJURY_TREATMENT_POOR)
+			treated_bleed_mult = 0.55
+			treated_heal_mult  = 1.4
+			treated_pain_mult  = 0.85
+		if(INJURY_TREATMENT_ADEQUATE)
+			treated_bleed_mult = 0.25
+			treated_heal_mult  = 2.2
+			treated_pain_mult  = 0.65
+		if(INJURY_TREATMENT_EXCELLENT)
+			treated_bleed_mult = 0.08
+			treated_heal_mult  = 3.5
+			treated_pain_mult  = 0.45
+		else
+			treated_bleed_mult = 1.0
+			treated_heal_mult  = 1.0
+			treated_pain_mult  = 1.0
+
+	// Treatment enables healing processing
+	if(base_healing_rate > 0 || (injury_flags & INJURY_FLAG_SELF_HEALING))
+		processes = TRUE
+
+	if(owner && !HAS_TRAIT(owner, TRAIT_GODMODE) && user)
+		to_chat(owner, span_notice("The treatment eases the pain of your [name]."))
+
 
 /datum/injury/proc/get_ui_data()
 	return list(
@@ -345,8 +620,12 @@
 		"bleed_rate" = get_bleed_rate(),
 		"pain" = get_pain(),
 		"disabling" = disabling,
-		"can_treat" = !!(treatable_by || treatable_tools),
+		"can_treat" = !!(treatable_by || treatable_tools) && treatment_quality < INJURY_TREATMENT_EXCELLENT,
 		"series" = series,
+		"treatment_quality" = treatment_quality,
+		"treatment_effectiveness" = treatment_effectiveness,
+		"healing_progress" = healing_progress,
+		"treated" = treatment_quality > INJURY_TREATMENT_NONE,
 	)
 
 /datum/injury/proc/severity_text()
@@ -363,6 +642,18 @@
 			return "Loss"
 	return "Unknown"
 
+/datum/injury/proc/treatment_text()
+	switch(treatment_quality)
+		if(INJURY_TREATMENT_NONE)
+			return "Untreated"
+		if(INJURY_TREATMENT_POOR)
+			return "Poorly treated"
+		if(INJURY_TREATMENT_ADEQUATE)
+			return "Treated"
+		if(INJURY_TREATMENT_EXCELLENT)
+			return "Expertly treated"
+	return "Unknown"
+
 /datum/injury/proc/get_examine_text(mob/user)
 	if(!owner || !limb)
 		return null
@@ -370,7 +661,12 @@
 
 /datum/injury/proc/get_self_examine_text(self_aware = FALSE)
 	var/shown_name = (self_aware || !undiagnosed_name) ? name : undiagnosed_name
-	return "It's suffering from [shown_name]."
+	var/status = ""
+	if(treatment_quality > INJURY_TREATMENT_NONE)
+		status = " ([treatment_text()])"
+	if(healing_progress > 0.05)
+		status += " — healing ([round(healing_progress * 100)]%)"
+	return "It's suffering from [shown_name][status]."
 
 /datum/injury/proc/get_scanner_data(mob/user)
 	return list(
@@ -378,9 +674,17 @@
 		"severity" = severity_text(),
 		"description" = desc,
 		"treatment" = get_treatment_text(),
+		"treatment_quality" = treatment_text(),
+		"healing_progress" = round(healing_progress * 100),
+		"bleed_rate" = get_bleed_rate(),
+		"pain" = get_pain(),
 	)
 
 /datum/injury/proc/get_treatment_text()
+	if(treatment_quality >= INJURY_TREATMENT_EXCELLENT)
+		return "Already optimally treated."
+	if(treatable_by || treatable_tools)
+		return "Can be treated with appropriate medical supplies."
 	return "See a doctor."
 
 /datum/injury/proc/show_application_message()
@@ -407,545 +711,4 @@
 
 /datum/injury/proc/occur_text()
 	return "is injured"
-
-
-
-/datum/injury/laceration
-	name = "Laceration"
-	undiagnosed_name = "deep cut"
-	desc = "A deep cut through skin and muscle."
-	examine_desc = "has a deep laceration"
-	series = "laceration"
-	upgrade_path = /datum/injury/laceration/severe
-	severity = INJURY_SEVERITY_MODERATE
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL
-	bleed_rate = 0.6
-	pain_amount = 12
-	damage_multiplier = 1.1
-
-/datum/injury/laceration/severe
-	name = "Severe Laceration"
-	undiagnosed_name = "gaping wound"
-	desc = "A severe laceration with significant tissue damage."
-	examine_desc = "has a gaping laceration"
-	upgrade_path = /datum/injury/laceration/critical
-	severity = INJURY_SEVERITY_SEVERE
-	bleed_rate = 1.4
-	pain_amount = 22
-	damage_multiplier = 1.25
-
-/datum/injury/laceration/critical
-	name = "Critical Laceration"
-	undiagnosed_name = "horrific gash"
-	desc = "A critical laceration exposing deeper structures."
-	examine_desc = "is torn open"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	bleed_rate = 2.8
-	pain_amount = 35
-	damage_multiplier = 1.4
-	dismemberment_weight = 3.0
-	disabling = TRUE
-
-// --- Contusion series ---
-/datum/injury/contusion
-	name = "Contusion"
-	undiagnosed_name = "bruise"
-	desc = "A deep bruise with damaged underlying tissue."
-	examine_desc = "is heavily bruised"
-	series = "contusion"
-	upgrade_path = /datum/injury/contusion/severe
-	severity = INJURY_SEVERITY_MODERATE
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_PAINFUL
-	pain_amount = 8
-	damage_multiplier = 1.05
-
-/datum/injury/contusion/severe
-	name = "Severe Contusion"
-	undiagnosed_name = "massive bruise"
-	desc = "A severe contusion with significant internal bleeding into the tissue."
-	examine_desc = "is massively bruised and swollen"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_SEVERE
-	pain_amount = 18
-	damage_multiplier = 1.15
-
-// --- Dislocation ---
-/datum/injury/dislocation
-	name = "Dislocation"
-	undiagnosed_name = "dislocated joint"
-	desc = "The joint has been forced out of its socket."
-	examine_desc = "is dislocated"
-	series = "dislocation"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_SEVERE
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_PAINFUL | INJURY_FLAG_DISABLING | INJURY_FLAG_ACCEPTS_SPLINT
-	pain_amount = 25
-	disabling = TRUE
-	interaction_penalty = 2.5
-	limp_slowdown = 4
-	limp_chance = 80
-
-/datum/injury/dislocation/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone in list(BODY_ZONE_L_ARM, BODY_ZONE_R_ARM, BODY_ZONE_L_LEG, BODY_ZONE_R_LEG)
-
-// --- Skin damage series ---
-/datum/injury/skin_damage
-	name = "Skin Damage"
-	undiagnosed_name = "damaged skin"
-	desc = "The skin is badly damaged and no longer provides proper protection."
-	examine_desc = "has badly damaged skin"
-	series = "skin_damage"
-	upgrade_path = /datum/injury/skin_damage/severe
-	severity = INJURY_SEVERITY_MODERATE
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_ACCEPTS_GAUZE
-	pain_amount = 6
-	damage_multiplier = 1.2
-
-/datum/injury/skin_damage/severe
-	name = "Severe Skin Damage"
-	undiagnosed_name = "ruined skin"
-	desc = "Large areas of skin are destroyed or hanging in flaps."
-	examine_desc = "has ruined skin hanging in flaps"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_SEVERE
-	pain_amount = 14
-	damage_multiplier = 1.35
-
-// --- Nerve damage series ---
-/datum/injury/nerve_damage
-	name = "Nerve Damage"
-	undiagnosed_name = "nerve damage"
-	desc = "Significant damage to the peripheral nerves."
-	examine_desc = "has damaged nerves"
-	series = "nerve_damage"
-	upgrade_path = /datum/injury/nerve_damage/critical
-	severity = INJURY_SEVERITY_SEVERE
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_PAINFUL
-	pain_amount = 20
-	interaction_penalty = 1.8
-	limp_slowdown = 2
-	limp_chance = 40
-
-/datum/injury/nerve_damage/critical
-	name = "Critical Nerve Damage"
-	undiagnosed_name = "destroyed nerves"
-	desc = "The nerves are critically damaged or severed."
-	examine_desc = "has critically damaged nerves"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	pain_amount = 30
-	disabling = TRUE
-	interaction_penalty = 3.0
-
-// --- Arterial bleed ---
-/datum/injury/arterial_bleed
-	name = "Arterial Bleeding"
-	undiagnosed_name = "spurting blood"
-	desc = "An artery has been damaged. Blood is spurting under pressure."
-	examine_desc = "is spurting arterial blood"
-	series = "arterial_bleed"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_PROGRESSING
-	bleed_rate = 3.5
-	pain_amount = 28
-	processes = TRUE
-
-/datum/injury/arterial_bleed/handle_process(seconds_per_tick)
-	if(bleed_rate > 0.5)
-		bleed_rate = min(bleed_rate + 0.05 * seconds_per_tick, 5.0)
-
-// --- Venous bleed ---
-/datum/injury/venous_bleed
-	name = "Venous Bleeding"
-	undiagnosed_name = "steady bleeding"
-	desc = "A vein has been damaged. Blood flows steadily."
-	examine_desc = "is bleeding steadily"
-	series = "venous_bleed"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_SEVERE
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE
-	bleed_rate = 1.2
-	pain_amount = 10
-
-// --- Burn series ---
-/datum/injury/burn
-	name = "Burn"
-	undiagnosed_name = "burn"
-	desc = "Thermal damage to the skin and underlying tissue."
-	examine_desc = "is burned"
-	series = "burn"
-	upgrade_path = /datum/injury/burn/severe
-	severity = INJURY_SEVERITY_MODERATE
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE
-	pain_amount = 15
-	damage_multiplier = 1.15
-
-/datum/injury/burn/severe
-	name = "Severe Burn"
-	undiagnosed_name = "severe burn"
-	desc = "Deep thermal damage. Skin is charred and blistered."
-	examine_desc = "has severe burns"
-	upgrade_path = /datum/injury/burn/critical
-	severity = INJURY_SEVERITY_SEVERE
-	pain_amount = 28
-	damage_multiplier = 1.3
-
-/datum/injury/burn/critical
-	name = "Critical Burn"
-	undiagnosed_name = "charred flesh"
-	desc = "Full-thickness burn. Tissue is destroyed down to muscle and bone."
-	examine_desc = "is charred black"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	pain_amount = 40
-	damage_multiplier = 1.5
-	disabling = TRUE
-
-// --- Fracture series ---
-/datum/injury/fracture
-	name = "Fracture"
-	undiagnosed_name = "broken bone"
-	desc = "A bone has been fractured."
-	examine_desc = "has a broken bone"
-	series = "fracture"
-	upgrade_path = /datum/injury/fracture/compound
-	severity = INJURY_SEVERITY_SEVERE
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_SPLINT
-	pain_amount = 22
-	interaction_penalty = 1.6
-	limp_slowdown = 3
-	limp_chance = 60
-
-/datum/injury/fracture/compound
-	name = "Compound Fracture"
-	undiagnosed_name = "bone sticking out"
-	desc = "A compound fracture. Bone has pierced through the skin."
-	examine_desc = "has a bone protruding through the skin"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_SPLINT
-	bleed_rate = 0.9
-	pain_amount = 35
-	dismemberment_weight = 3.5
-	disabling = TRUE
-
-// --- Puncture ---
-/datum/injury/puncture
-	name = "Puncture Wound"
-	undiagnosed_name = "puncture"
-	desc = "A deep puncture wound."
-	examine_desc = "has a puncture wound"
-	series = "puncture"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_MODERATE
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE
-	bleed_rate = 0.8
-	pain_amount = 14
-
-// --- Avulsion ---
-/datum/injury/avulsion
-	name = "Avulsion"
-	undiagnosed_name = "torn flesh"
-	desc = "A large section of soft tissue has been torn away."
-	examine_desc = "has a large section of flesh torn away"
-	series = "avulsion"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE
-	bleed_rate = 2.2
-	pain_amount = 38
-	damage_multiplier = 1.45
-	dismemberment_weight = 4.0
-	disabling = TRUE
-
-
-// ============================================================
-// HEAD
-// ============================================================
-
-/datum/injury/concussion
-	name = "Concussion"
-	undiagnosed_name = "head trauma"
-	desc = "A concussion. Disorientation, nausea, and impaired coordination."
-	examine_desc = "looks dazed from a head injury"
-	series = "concussion"
-	upgrade_path = /datum/injury/concussion/severe
-	severity = INJURY_SEVERITY_MODERATE
-	visibility = INJURY_VISIBILITY_MEDICAL
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_PAINFUL
-	pain_amount = 16
-	processes = TRUE
-
-/datum/injury/concussion/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_HEAD
-
-/datum/injury/concussion/on_apply(silent = FALSE, attack_direction = null)
-	. = ..()
-	if(owner)
-		owner.adjust_confusion_up_to(8 SECONDS, 20 SECONDS)
-		owner.adjust_eye_blur_up_to(6 SECONDS, 15 SECONDS)
-
-/datum/injury/concussion/severe
-	name = "Severe Concussion"
-	undiagnosed_name = "severe head trauma"
-	desc = "Severe concussion. Vomiting, blackouts, and lasting neurological symptoms."
-	examine_desc = "is clearly suffering from severe head trauma"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_SEVERE
-	pain_amount = 28
-
-/datum/injury/concussion/severe/on_apply(silent = FALSE, attack_direction = null)
-	. = ..()
-	if(owner)
-		owner.adjust_confusion_up_to(20 SECONDS, 40 SECONDS)
-		owner.adjust_eye_blur_up_to(15 SECONDS, 30 SECONDS)
-		if(prob(40))
-			owner.vomit(VOMIT_CATEGORY_DEFAULT, lost_nutrition = 15)
-
-/datum/injury/skull_fracture
-	name = "Skull Fracture"
-	undiagnosed_name = "cracked skull"
-	desc = "A fracture of the cranial bone. High risk of brain injury."
-	examine_desc = "has a visibly deformed or cracked skull"
-	series = "skull_fracture"
-	upgrade_path = /datum/injury/skull_fracture/depressed
-	severity = INJURY_SEVERITY_SEVERE
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_PAINFUL
-	pain_amount = 32
-	damage_multiplier = 1.2
-
-/datum/injury/skull_fracture/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_HEAD
-
-/datum/injury/skull_fracture/depressed
-	name = "Depressed Skull Fracture"
-	undiagnosed_name = "caved-in skull"
-	desc = "Bone fragments driven inward toward the brain. Life-threatening."
-	examine_desc = "has a caved-in section of skull"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	pain_amount = 45
-	disabling = TRUE
-	damage_multiplier = 1.35
-
-/datum/injury/facial_trauma
-	name = "Facial Trauma"
-	undiagnosed_name = "ruined face"
-	desc = "Severe soft-tissue and bone damage to the face."
-	examine_desc = "has a horribly injured face"
-	series = "facial_trauma"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_SEVERE
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE
-	bleed_rate = 1.0
-	pain_amount = 24
-
-/datum/injury/facial_trauma/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_HEAD
-
-/datum/injury/facial_trauma/on_apply(silent = FALSE, attack_direction = null)
-	. = ..()
-	if(limb)
-		ADD_TRAIT(limb, TRAIT_DISFIGURED, unique_id)
-
-/datum/injury/facial_trauma/on_remove(replaced = FALSE)
-	if(limb)
-		REMOVE_TRAIT(limb, TRAIT_DISFIGURED, unique_id)
-
-/datum/injury/eye_trauma
-	name = "Eye Trauma"
-	undiagnosed_name = "injured eye"
-	desc = "Trauma to the eye or orbit. Vision is compromised."
-	examine_desc = "has a badly injured eye"
-	series = "eye_trauma"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_SEVERE
-	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_PAINFUL
-	pain_amount = 22
-	visibility = INJURY_VISIBILITY_FULL
-
-/datum/injury/eye_trauma/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_HEAD
-
-/datum/injury/eye_trauma/on_apply(silent = FALSE, attack_direction = null)
-	. = ..()
-	if(owner)
-		owner.adjust_eye_blur_up_to(30 SECONDS, 60 SECONDS)
-
-/datum/injury/jaw_fracture
-	name = "Jaw Fracture"
-	undiagnosed_name = "broken jaw"
-	desc = "The mandible is fractured. Speech and eating are severely impaired."
-	examine_desc = "has a broken jaw"
-	series = "jaw_fracture"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_SEVERE
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_SPLINT
-	pain_amount = 20
-	interaction_penalty = 2.0
-
-
-/datum/injury/cerebral_hemorrhage
-	name = "Cerebral Hemorrhage"
-	undiagnosed_name = "internal head bleeding"
-	desc = "Bleeding inside the skull is compressing and damaging the brain."
-	examine_desc = "is deteriorating from severe intracranial bleeding"
-	series = "cerebral_hemorrhage"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	visibility = INJURY_VISIBILITY_MEDICAL
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_PROGRESSING
-	bleed_rate = 1.8
-	pain_amount = 34
-	processes = TRUE
-	disabling = TRUE
-
-
-/datum/injury/jaw_fracture/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_HEAD
-
-/datum/injury/rib_fracture
-	name = "Rib Fracture"
-	undiagnosed_name = "broken ribs"
-	desc = "One or more ribs are fractured. Breathing is painful."
-	examine_desc = "has broken ribs"
-	series = "rib_fracture"
-	upgrade_path = /datum/injury/rib_fracture/flail
-	severity = INJURY_SEVERITY_SEVERE
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_PAINFUL
-	pain_amount = 20
-	interaction_penalty = 1.3
-
-/datum/injury/rib_fracture/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_CHEST
-
-/datum/injury/rib_fracture/flail
-	name = "Flail Chest"
-	undiagnosed_name = "caved-in chest"
-	desc = "Multiple rib fractures with paradoxical chest wall motion. Respiratory failure risk."
-	examine_desc = "has a section of chest wall moving independently"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	pain_amount = 40
-	disabling = TRUE
-	processes = TRUE
-
-/datum/injury/rib_fracture/flail/handle_process(seconds_per_tick)
-	if(owner && owner.stat != DEAD)
-		owner.adjust_oxy_loss(0.4 * seconds_per_tick)
-
-/datum/injury/pneumothorax
-	name = "Pneumothorax"
-	undiagnosed_name = "collapsed lung"
-	desc = "Air in the pleural cavity collapsing the lung. Breathing is shallow and painful."
-	examine_desc = "is struggling to breathe with a collapsed lung"
-	series = "pneumothorax"
-	upgrade_path = /datum/injury/pneumothorax/tension
-	severity = INJURY_SEVERITY_SEVERE
-	visibility = INJURY_VISIBILITY_MEDICAL
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_PAINFUL | INJURY_FLAG_PROGRESSING
-	pain_amount = 18
-	processes = TRUE
-
-/datum/injury/pneumothorax/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_CHEST
-
-/datum/injury/pneumothorax/handle_process(seconds_per_tick)
-	if(owner && owner.stat != DEAD)
-		owner.adjust_oxy_loss(0.6 * seconds_per_tick)
-
-/datum/injury/pneumothorax/tension
-	name = "Tension Pneumothorax"
-	undiagnosed_name = "crushing chest pressure"
-	desc = "Tension pneumothorax. Pressure shifts the mediastinum; rapid death without decompression."
-	examine_desc = "is cyanotic and gasping with a rigid chest"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	pain_amount = 30
-	disabling = TRUE
-
-/datum/injury/pneumothorax/tension/handle_process(seconds_per_tick)
-	if(owner && owner.stat != DEAD)
-		owner.adjust_oxy_loss(1.8 * seconds_per_tick)
-		if(prob(8 * seconds_per_tick))
-			owner.emote("gasp")
-
-/datum/injury/hemothorax
-	name = "Hemothorax"
-	undiagnosed_name = "blood-filled chest"
-	desc = "Blood filling the pleural space. Compromises breathing and circulating volume."
-	examine_desc = "has a chest full of blood"
-	series = "hemothorax"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	visibility = INJURY_VISIBILITY_MEDICAL
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_PROGRESSING
-	bleed_rate = 1.5
-	pain_amount = 22
-	processes = TRUE
-
-/datum/injury/hemothorax/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_CHEST
-
-/datum/injury/hemothorax/handle_process(seconds_per_tick)
-	if(owner && owner.stat != DEAD)
-		owner.adjust_oxy_loss(0.5 * seconds_per_tick)
-
-/datum/injury/internal_bleeding
-	name = "Internal Bleeding"
-	undiagnosed_name = "internal injury"
-	desc = "Bleeding into a body cavity. No external wound may be visible."
-	examine_desc = "is pale and deteriorating from internal bleeding"
-	series = "internal_bleeding"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_SEVERE
-	visibility = INJURY_VISIBILITY_MEDICAL
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_PROGRESSING
-	bleed_rate = 1.0
-	pain_amount = 14
-	processes = TRUE
-
-/datum/injury/internal_bleeding/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_CHEST
-
-/datum/injury/cardiac_trauma
-	name = "Cardiac Trauma"
-	undiagnosed_name = "chest trauma"
-	desc = "Blunt or penetrating trauma to the heart region. Arrhythmia and arrest risk."
-	examine_desc = "has catastrophic trauma over the heart"
-	series = "cardiac_trauma"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	visibility = INJURY_VISIBILITY_MEDICAL
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_PAINFUL | INJURY_FLAG_PROGRESSING
-	pain_amount = 40
-	disabling = TRUE
-	processes = TRUE
-
-/datum/injury/cardiac_trauma/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_CHEST
-
-/datum/injury/cardiac_trauma/handle_process(seconds_per_tick)
-	if(!owner || owner.stat == DEAD)
-		return
-	if(prob(6 * seconds_per_tick) && owner.can_heartattack())
-		owner.set_heartattack(TRUE)
-
-/datum/injury/spleen_rupture
-	name = "Ruptured Spleen"
-	undiagnosed_name = "abdominal bleeding"
-	desc = "The spleen is ruptured. Rapid internal blood loss."
-	examine_desc = "is rigid and tender across the upper abdomen"
-	series = "spleen_rupture"
-	upgrade_path = null
-	severity = INJURY_SEVERITY_CRITICAL
-	visibility = INJURY_VISIBILITY_MEDICAL
-	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL
-	bleed_rate = 2.0
-	pain_amount = 26
-
-/datum/injury/spleen_rupture/can_apply_to(obj/item/bodypart/target_limb)
-	return target_limb.body_zone == BODY_ZONE_CHEST
 

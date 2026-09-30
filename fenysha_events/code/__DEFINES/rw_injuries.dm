@@ -13,6 +13,9 @@
 #define INJURY_FLAG_PAINFUL         (1<<6)
 #define INJURY_FLAG_DISABLING       (1<<7)
 #define INJURY_FLAG_PROGRESSING     (1<<8)
+#define INJURY_FLAG_SELF_HEALING    (1<<9)
+#define INJURY_FLAG_TREATED         (1<<10)
+
 
 #define INJURY_TYPE_LACERATION      "laceration"       // Cut
 #define INJURY_TYPE_CONTUSION       "contusion"        // Bruise
@@ -120,6 +123,18 @@
 #define INJURY_HEAD_CONSCIOUSNESS_MULT 2.0
 
 
+#define INJURY_TREATMENT_NONE       0
+#define INJURY_TREATMENT_POOR       1
+#define INJURY_TREATMENT_ADEQUATE   2
+#define INJURY_TREATMENT_EXCELLENT  3
+
+
+#define INJURY_TREATMENT_EFFECTIVENESS_POOR 0.50
+#define INJURY_TREATMENT_EFFECTIVENESS_ADEQUATE 0.75
+#define INJURY_TREATMENT_EFFECTIVENESS_NORMAL 1.0
+#define INJURY_TREATMENT_EFFECTIVENESS_EXCELLENT 1.25
+
+
 // Visibility levels for injuries and medical data
 
 #define INJURY_VISIBILITY_NONE          0   // Never shown
@@ -135,3 +150,26 @@
 
 #define MAX_INJURIES_PER_LIMB 8
 #define MAX_INJURY_DAMAGE_MULTIPLIER 2.5
+
+
+/// Blood volume ratio at which visual blood-loss effects begin.
+#define BLOOD_PALLOR_START 0.80
+
+/// Blood volume ratio at which pallor reaches maximum.
+#define BLOOD_PALLOR_FULL 0.35
+
+/// Priority above normal bodypart color overrides.
+#define BLOOD_PALLOR_COLOR_PRIORITY 60
+
+/// Blood-loss screen grading begins here.
+#define BLOOD_COLORGRADE_START 0.80
+
+/// Maximum screen grading is reached here.
+#define BLOOD_COLORGRADE_FULL 0.35
+
+
+#define INJURY_MESSAGE_COOLDOWN (6 SECONDS)
+#define INJURY_SOUND_BONE_CRACK pick('sound/effects/wounds/crack1.ogg', 'sound/effects/wounds/crack2.ogg')
+#define INJURY_SOUND_BLOOD pick('sound/effects/wounds/blood1.ogg', 'sound/effects/wounds/blood2.ogg', 'sound/effects/wounds/blood3.ogg')
+#define INJURY_SOUND_PIERCE pick('sound/effects/wounds/pierce1.ogg', 'sound/effects/wounds/pierce2.ogg', 'sound/effects/wounds/pierce3.ogg')
+#define INJURY_SOUND_SIZZLE pick('sound/effects/wounds/sizzle1.ogg', 'sound/effects/wounds/sizzle2.ogg')

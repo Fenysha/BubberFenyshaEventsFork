@@ -44,9 +44,18 @@ export const HealthPanel = () => {
     '--health-state-hue': stateHue,
   } as CSSProperties;
 
+  const hb = data.parameters.heartbeat;
+
   const heartStopped =
-    data.parameters.heartbeat.state === 'stopped' ||
-    data.parameters.heartbeat.state === 'missing';
+    hb.state === 'stopped' ||
+    hb.state === 'missing' ||
+    hb.rhythm === 'asystole';
+
+  const heartFibrillating =
+    hb.fibrillating ||
+    hb.state === 'fibrillating' ||
+    hb.rhythm === 'ventricular_fibrillation' ||
+    hb.rhythm === 'fibrillation';
 
   const brainCritical =
     !data.organs.brain.present ||
@@ -57,23 +66,25 @@ export const HealthPanel = () => {
 
   const patientStatus = heartStopped
     ? 'Cardiac arrest'
-    : brainCritical
-      ? 'Critical cerebral injury'
-      : bleeding
-        ? 'Major hemorrhage'
-        : data.parameters.consciousness <= 15
-          ? 'Unresponsive'
-          : data.parameters.shock >= 75
-            ? 'Critical shock'
-            : data.parameters.breathing.oxygenation < 60
-              ? 'Severe hypoxia'
-              : 'Stable';
+    : heartFibrillating
+      ? 'Ventricular fibrillation'
+      : brainCritical
+        ? 'Critical cerebral injury'
+        : bleeding
+          ? 'Major hemorrhage'
+          : data.parameters.consciousness <= 15
+            ? 'Unresponsive'
+            : data.parameters.shock >= 75
+              ? 'Critical shock'
+              : data.parameters.breathing.oxygenation < 60
+                ? 'Severe hypoxia'
+                : 'Stable';
 
   const patientColor =
     stateScore < 0.25 ? 'bad' : stateScore < 0.6 ? 'average' : 'good';
 
   return (
-    <Window title="Physiological Status" width={900} height={580}>
+    <Window title="Physiological Status" width={900} height={600}>
       <Window.Content fitted className="HealthPanel">
         <div
           className="HealthPanel__state-gradient"
@@ -118,6 +129,7 @@ export const HealthPanel = () => {
                     organs={data.organs}
                     selectedZone={selectedZone}
                     onSelect={setSelectedZone}
+                    shock={data.parameters.shock}
                   />
                 </Section>
               </Stack.Item>

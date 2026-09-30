@@ -149,6 +149,7 @@
 	bloodiest_wound?.adjust_blood_flow(-1 * abs(amount_to_heal))
 	return !!bloodiest_wound
 
+#if defined(OLD_COMBAT_SYSTEM)
 // Takes care blood loss and regeneration
 /mob/living/carbon/human/handle_blood(seconds_per_tick)
 	// Under these circumstances blood handling is not necessary
@@ -259,6 +260,7 @@
 		// At roughly half blood this equals to 3 oxyloss per tick. At 90% blood it's close to 0.5
 		var/rounded_oxyloss = round(0.01 * (BLOOD_VOLUME_NORMAL - modified_blood_volume), 0.25) * seconds_per_tick
 		adjust_oxy_loss(rounded_oxyloss, updating_health = TRUE)
+#endif
 
 /// Has each bodypart update its bleed/wound overlay icon states
 /mob/living/carbon/proc/update_bodypart_bleed_overlays()
@@ -284,6 +286,7 @@
 /mob/living/proc/get_bleed_rate()
 	return 0
 
+#if defined(OLD_COMBAT_SYSTEM)
 /mob/living/carbon/get_bleed_rate()
 	if(HAS_TRAIT(src, TRAIT_GODMODE) || !can_bleed())
 		return 0
@@ -291,6 +294,7 @@
 	. = 0
 	for(var/obj/item/bodypart/bodypart as anything in get_bodyparts())
 		. += bodypart.cached_bleed_rate
+#endif
 
 /mob/living/carbon/human/get_bleed_rate()
 	return ..() * physiology.bleed_mod

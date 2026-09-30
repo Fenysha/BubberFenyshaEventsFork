@@ -3,9 +3,9 @@ export const TOOLTIPS = {
     'Current level of wakefulness and awareness. Severe hypoperfusion, hypoxia, shock, or pain can drive it toward unconsciousness.',
   pain: 'Current acute and injury-derived pain. Persistent pain contributes to shock and impaired consciousness.',
   shock:
-    'Systemic physiological stress caused by pain, hemorrhage, and poor circulation. Higher values impair consciousness and recovery.',
+    'Systemic physiological stress caused by pain, hemorrhage, and poor circulation. Higher values impair consciousness and recovery. Shown as tremor on the body map.',
   heartbeat:
-    'Current pulse and rhythm. Cardiac output depends on heart rate, myocardial contractility, and stroke efficiency.',
+    'Current pulse and rhythm. Cardiac output depends on heart rate, myocardial contractility, stroke efficiency, and preload.',
   cardiacOutput:
     'Relative cardiac output. It determines how effectively the heart supplies systemic circulation.',
   bloodPressure:
@@ -22,9 +22,9 @@ export const TOOLTIPS = {
   bleedRate:
     'Current blood loss per second from active injuries. Arterial bleeding is strongly affected by blood pressure and cardiac pulse.',
   lungFluid:
-    'Fluid accumulation in the lungs. Higher levels reduce effective ventilation and oxygen exchange.',
+    'Fluid accumulation in the lungs. Higher levels reduce effective ventilation and oxygen exchange. Shown as a rising fill on the lung icon.',
   cardiogram:
-    'Live ECG-style trace generated from the current heart rhythm. A flatline represents asystole.',
+    'Live ECG-style trace generated from the current heart rhythm. Flatline is asystole; chaotic noise is ventricular fibrillation.',
 
   bodyDoll: 'Select a body part or organ to inspect its current condition.',
   limbMissing: 'This body part is absent.',
@@ -41,7 +41,7 @@ export const TOOLTIPS = {
   brainOxygen:
     'Current oxygen reserve of the brain. Persistent severe hypoxia causes irreversible brain damage.',
   organHeart:
-    'The heart determines pulse, cardiac output, and systemic blood pressure. Failure or asystole rapidly eliminates cerebral perfusion.',
+    'The heart determines pulse, cardiac output, and systemic blood pressure. Failure, fibrillation, or asystole rapidly eliminates cerebral perfusion.',
   organLungs:
     'The lungs determine ventilation and blood oxygenation. Damage or fluid accumulation reduces oxygen delivery.',
   organFailing:
@@ -51,6 +51,7 @@ export const TOOLTIPS = {
   injuryList: 'Active medical conditions affecting the selected body part.',
   injuryDisabling: 'This injury prevents normal use of the body part.',
   injuryBleed: 'Blood loss currently contributed by this injury.',
+  injuryTreatment: 'Treatment quality and healing progress for this injury.',
 
   close: 'Close the health panel.',
   selectHint:

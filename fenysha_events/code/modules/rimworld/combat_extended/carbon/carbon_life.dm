@@ -183,14 +183,14 @@
 	var/slowdown = 0
 
 	if(pain >= PAIN_CRIT_THRESHOLD)
-		slowdown += 0.6
+		slowdown += 1.2
 	else if(pain >= PAIN_SHOCK_THRESHOLD)
-		slowdown += 0.3
+		slowdown += 0.6
 
 	if(consciousness <= CONSCIOUSNESS_HEAVY)
-		slowdown += 0.8
+		slowdown += 1.6
 	else if(consciousness <= CONSCIOUSNESS_IMPAIRED)
-		slowdown += 0.4
+		slowdown += 0.8
 
 	if(shock >= SHOCK_SEVERE)
 		slowdown += 0.5
@@ -213,6 +213,10 @@
 	total_bleed_rate = 0
 
 	for(var/datum/injury/injury as anything in all_injuries)
+		// Internal bleeding drains blood in injury.process_internal_bleeding().
+		// Counting it here would make handle_blood() drip it onto the floor.
+		if(injury.is_internal_bleeder())
+			continue
 		total_bleed_rate += injury.get_bleed_rate()
 
 	if(abs(old_bleed - total_bleed_rate) > 0.3)
@@ -282,3 +286,11 @@
 
 /mob/living/carbon/proc/update_injury_hud()
 	return
+
+
+/mob/living/carbon/get_bleed_rate()
+	if(HAS_TRAIT(src, TRAIT_GODMODE) || !can_bleed())
+		return 0
+
+	. = total_bleed_rate
+	return .

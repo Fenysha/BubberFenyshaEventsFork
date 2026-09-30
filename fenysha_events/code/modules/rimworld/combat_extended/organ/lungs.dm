@@ -3,6 +3,10 @@
 /obj/item/organ/lungs
 	/// Amount of fluid in the lungs, from 0 to LUNG_FLUID_MAX.
 	var/fluid = 0
+	/// Part of `fluid` that is blood (haemothorax). Never larger than `fluid`.
+	var/blood_fluid = 0
+	/// Ventilation multipliers from injuries (pneumothorax, flail chest...), keyed by source.
+	var/list/ventilation_modifiers
 
 
 /// Returns ventilation efficiency from 0 to 1.
@@ -16,7 +20,7 @@
 	var/health_factor = clamp((maxHealth - damage) / maxHealth, 0, 1)
 	var/fluid_factor = 1 - clamp(fluid / LUNG_FLUID_MAX, 0, 1)
 
-	return health_factor * fluid_factor
+	return health_factor * fluid_factor * get_ventilation_modifier()
 
 
 /// Returns the effective pressure multiplier for inhalation.
@@ -25,8 +29,41 @@
 	return received_pressure_mult * max(get_ventilation(), 0.05)
 
 
-/obj/item/organ/lungs/proc/add_fluid(amount)
+/obj/item/organ/lungs/proc/set_ventilation_modifier(source, multiplier)
+	LAZYSET(ventilation_modifiers, source, clamp(multiplier, 0, 1))
+
+/obj/item/organ/lungs/proc/remove_ventilation_modifier(source)
+	LAZYREMOVE(ventilation_modifiers, source)
+
+/// Combined multiplier of every injury currently restricting ventilation.
+/obj/item/organ/lungs/proc/get_ventilation_modifier()
+	. = 1
+	for(var/source in ventilation_modifiers)
+		. *= ventilation_modifiers[source]
+
+/// Amount of the lung fluid that is blood.
+/obj/item/organ/lungs/proc/get_blood_fluid()
+	return min(blood_fluid, fluid)
+
+/// Adds (or, when negative, removes) lung fluid. Blood is tracked separately so it can be coughed up.
+/obj/item/organ/lungs/proc/add_fluid(amount, is_blood = FALSE)
+	var/old_fluid = fluid
+	blood_fluid = min(blood_fluid, fluid)
 	fluid = clamp(fluid + amount, 0, LUNG_FLUID_MAX)
+	if(is_blood && amount > 0)
+		blood_fluid += fluid - old_fluid
+	else if(amount < 0 && old_fluid > 0)
+		// Resorption / drainage takes blood and other fluid out proportionally.
+		blood_fluid *= fluid / old_fluid
+	blood_fluid = clamp(blood_fluid, 0, fluid)
+
+/// Cough: drags fluid out of the lungs, and if it is blood, sprays it.
+/obj/item/organ/lungs/proc/cough_up_fluid()
+	owner.emote("cough")
+	if(get_blood_fluid() < 5 || !prob(65))
+		return
+	owner.ce_cough_blood()
+	add_fluid(-2)
 
 
 /**
@@ -44,11 +81,11 @@
 
 	// Severe fluid accumulation causes coughing.
 	if(fluid > LUNG_FLUID_SEVERE && SPT_PROB(6, seconds_per_tick))
-		owner.emote("cough")
+		cough_up_fluid()
 
 	// Completely flooded lungs can cause audible choking and gurgling.
 	if(fluid >= LUNG_FLUID_MAX && SPT_PROB(3, seconds_per_tick))
-		owner.visible_message(span_danger("[owner] gurgles, choking on fluid!"))
+		owner.visible_message(span_danger(get_blood_fluid() >= fluid * 0.5 ? "[owner] gurgles, choking on [owner.p_their()] own blood!" : "[owner] gurgles, choking on fluid!"))
 
 
 /obj/item/organ/lungs/proc/update_blood_oxygenation(seconds_per_tick)

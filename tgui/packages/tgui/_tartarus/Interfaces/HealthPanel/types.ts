@@ -1,13 +1,27 @@
+export type TreatOption = {
+  type: string;
+  name: string;
+  iconSrc?: string | null;
+};
+
 export type InjuryData = {
   id: string;
   name: string;
+  undiagnosed_name?: string;
   severity: number;
   severity_text: string;
   desc?: string;
+  examine_desc?: string;
   bleed_rate: number;
   pain: number;
   disabling: boolean;
   can_treat?: boolean;
+  series?: string;
+  treatment_quality?: number;
+  treatment_effectiveness?: number;
+  healing_progress?: number;
+  treated?: boolean;
+  treat_options?: TreatOption[];
 };
 
 export type BodypartData = {
@@ -25,10 +39,6 @@ export type BodypartData = {
   bleed_rate: number;
   icon?: string | null;
 
-  /**
-   * DMI state, for example:
-   * human_m_leg_r
-   */
   iconState?: string | null;
   iconSrc?: string | null;
 
@@ -45,6 +55,7 @@ export type OrganData = {
   functional?: boolean;
   status: string;
   beating?: boolean;
+  fibrillating?: boolean;
   oxygen?: number;
   perfusion?: number;
   state?: HeartState;
@@ -53,6 +64,7 @@ export type OrganData = {
   contractility?: number;
   stroke_efficiency?: number;
   cardiac_output?: number;
+  preload?: number;
   cpr?: boolean;
   ventilation?: number;
   fluid_ratio?: number;
@@ -65,11 +77,18 @@ export type RhythmType =
   | 'tachycardia'
   | 'arrhythmia'
   | 'fibrillation'
+  | 'ventricular_fibrillation'
   | 'asystole'
   | 'ventricular_tachycardia'
   | 'pvc';
 
-export type HeartState = 'missing' | 'beating' | 'failing' | 'stopped' | 'cpr';
+export type HeartState =
+  | 'missing'
+  | 'beating'
+  | 'failing'
+  | 'stopped'
+  | 'cpr'
+  | 'fibrillating';
 
 export type HeartbeatData = {
   rate: number;
@@ -81,11 +100,13 @@ export type HeartbeatData = {
   target_rate: number;
   state: HeartState;
   beating: boolean;
+  fibrillating: boolean;
   cpr: boolean;
+  preload: number;
 };
 
 export type CardiogramData = {
-  rhythm: RhythmType;
+  rhythm: RhythmType | string;
   alert: string | null;
   noise?: number;
   flatline?: number;
@@ -116,7 +137,10 @@ export type LungsData = {
   oxygenation: number;
   fluid: number;
   fluid_ratio: number;
+  iconSrc?: string | null;
 };
+
+export type ViewerAccess = 0 | 1 | 2 | 3;
 
 export type HealthPanelData = {
   parameters: {
@@ -145,5 +169,9 @@ export type HealthPanelData = {
     lungs: OrganData;
   };
 
+  viewer_access: ViewerAccess;
   can_see_full: boolean;
+  /** False for ghosts — hide treat buttons */
+  can_treat: boolean;
+  is_self: boolean;
 };

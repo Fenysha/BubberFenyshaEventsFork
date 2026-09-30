@@ -8,13 +8,13 @@ type Props = {
   alert?: string | null;
   noise?: number;
   flatline?: number;
+  /** 0 = healthy green, 1 = critical red */
+  criticality?: number;
+  cardiacOutput?: number;
   paused?: boolean;
   compact?: boolean;
 };
 
-const GRID_COLOR = 'rgba(30, 80, 30, 0.35)';
-const TRACE_COLOR = '#33ff66';
-const TRACE_GLOW = 'rgba(51, 255, 102, 0.4)';
 const BG_COLOR = '#0a0e0a';
 
 const rhythmLabel = (rhythm: string) => {
@@ -27,18 +27,43 @@ const rhythmLabel = (rhythm: string) => {
       return 'TACHYCARDIA';
     case 'ventricular_tachycardia':
       return 'VENTRICULAR TACHYCARDIA';
+    case 'ventricular_fibrillation':
+    case 'fibrillation':
+      return 'VENTRICULAR FIBRILLATION';
     case 'asystole':
       return 'ASYSTOLE';
-    case 'fibrillation':
-      return 'FIBRILLATION';
     case 'arrhythmia':
       return 'ARRHYTHMIA';
     case 'pvc':
       return 'PVC';
     default:
-      return rhythm.toUpperCase();
+      return String(rhythm).toUpperCase();
   }
 };
+
+/** Interpolate ECG color from green → amber → red by criticality 0..1 */
+function traceColors(criticality: number) {
+  const c = Math.max(0, Math.min(1, criticality));
+  // green (51,255,102) → amber (255,200,40) → red (255,60,60)
+  let r: number;
+  let g: number;
+  let b: number;
+  if (c < 0.5) {
+    const t = c / 0.5;
+    r = Math.round(51 + (255 - 51) * t);
+    g = Math.round(255 + (200 - 255) * t);
+    b = Math.round(102 + (40 - 102) * t);
+  } else {
+    const t = (c - 0.5) / 0.5;
+    r = 255;
+    g = Math.round(200 + (60 - 200) * t);
+    b = Math.round(40 + (60 - 40) * t);
+  }
+  const trace = `rgb(${r},${g},${b})`;
+  const glow = `rgba(${r},${g},${b},0.45)`;
+  const grid = `rgba(${Math.max(20, r - 40)},${Math.max(40, g - 80)},${Math.max(20, b - 40)},0.35)`;
+  return { trace, glow, grid };
+}
 
 function generateCycle(
   rhythm: string,
@@ -46,7 +71,7 @@ function generateCycle(
   strength: number,
 ): Float32Array {
   const out = new Float32Array(samples);
-  const s = Math.max(0.15, Math.min(strength, 1.5));
+  const s = Math.max(0.12, Math.min(strength, 1.5));
   const set = (i: number, v: number) => {
     if (i >= 0 && i < samples) out[i] = v;
   };
@@ -58,8 +83,9 @@ function generateCycle(
       i++
     ) {
       const t = (i - center) / half;
-      if (t >= -1 && t <= 1)
+      if (t >= -1 && t <= 1) {
         set(i, (out[i] || 0) + amplitude * (1 - Math.abs(t)));
+      }
     }
   };
 
@@ -67,37 +93,41 @@ function generateCycle(
     return out;
   }
 
-  if (rhythm === 'fibrillation') {
+  // Chaotic VF / fibrillation — irregular low-amplitude quiver
+  if (rhythm === 'ventricular_fibrillation' || rhythm === 'fibrillation') {
     let phase = Math.random() * Math.PI * 2;
     for (let i = 0; i < samples; i++) {
-      phase += 0.4 + Math.random() * 0.6;
-      out[i] = Math.sin(phase) * (0.15 + Math.random() * 0.25) * s;
-      out[i] += Math.sin(phase * 2.3) * 0.08 * s;
+      phase += 0.55 + Math.random() * 0.9;
+      out[i] = Math.sin(phase) * (0.18 + Math.random() * 0.32) * s;
+      out[i] += Math.sin(phase * 2.7) * (0.06 + Math.random() * 0.1) * s;
+      out[i] += (Math.random() - 0.5) * 0.12 * s;
     }
     return out;
   }
 
+  // Wide bizarre QRS — ventricular tachycardia
   if (rhythm === 'ventricular_tachycardia') {
-    const peak = samples * 0.35;
-    spike(peak, samples * 0.35, -0.9 * s);
-    spike(peak + samples * 0.08, samples * 0.2, 1.1 * s);
-    spike(peak + samples * 0.18, samples * 0.25, -0.5 * s);
+    const peak = samples * 0.32;
+    spike(peak, samples * 0.38, -0.95 * s);
+    spike(peak + samples * 0.1, samples * 0.22, 1.15 * s);
+    spike(peak + samples * 0.22, samples * 0.28, -0.55 * s);
     return out;
   }
 
-  spike(samples * 0.15, samples * 0.1, 0.15 * s);
-  spike(samples * 0.28, samples * 0.04, -0.12 * s);
-  spike(samples * 0.32, samples * 0.08, 1.0 * s);
-  spike(samples * 0.38, samples * 0.06, -0.25 * s);
-  spike(samples * 0.58, samples * 0.16, 0.28 * s);
+  // Normal / tachy / brady sinus morphology
+  spike(samples * 0.14, samples * 0.09, 0.14 * s); // P
+  spike(samples * 0.27, samples * 0.035, -0.1 * s); // Q
+  spike(samples * 0.32, samples * 0.07, 1.05 * s); // R
+  spike(samples * 0.38, samples * 0.055, -0.28 * s); // S
+  spike(samples * 0.58, samples * 0.15, 0.26 * s); // T
 
   if (rhythm === 'pvc') {
-    spike(samples * 0.75, samples * 0.2, -0.7 * s);
+    spike(samples * 0.74, samples * 0.2, -0.7 * s);
     spike(samples * 0.8, samples * 0.12, 0.9 * s);
   }
 
   if (rhythm === 'arrhythmia') {
-    const shift = Math.floor((Math.random() - 0.5) * samples * 0.08);
+    const shift = Math.floor((Math.random() - 0.5) * samples * 0.1);
     if (shift !== 0) {
       const tmp = Float32Array.from(out);
       for (let i = 0; i < samples; i++) {
@@ -118,6 +148,8 @@ export const Cardiogram = (props: Props) => {
     alert,
     noise = 0,
     flatline = 0,
+    criticality = 0,
+    cardiacOutput = 0,
     paused = false,
     compact = false,
   } = props;
@@ -128,8 +160,10 @@ export const Cardiogram = (props: Props) => {
   const bufferRef = useRef<Float32Array | null>(null);
   const samplesPerBeat = 120;
 
+  const colors = useMemo(() => traceColors(criticality), [criticality]);
+
   const cycle = useMemo(
-    () => generateCycle(rhythm, samplesPerBeat, strength),
+    () => generateCycle(String(rhythm), samplesPerBeat, strength),
     [rhythm, strength],
   );
 
@@ -156,9 +190,18 @@ export const Cardiogram = (props: Props) => {
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    const bpm = Math.max(20, Math.min(rate || 80, 220));
+    // Cap display rate for VF so the scroll still reads, actual irregularity comes from noise
+    const displayRate = Math.max(
+      20,
+      Math.min(
+        rhythm === 'ventricular_fibrillation' || rhythm === 'fibrillation'
+          ? 180
+          : rate || 80,
+        220,
+      ),
+    );
     const pxPerSecond = 90;
-    const beatDuration = 60 / bpm;
+    const beatDuration = 60 / displayRate;
     let lastTime = performance.now();
 
     const draw = (now: number) => {
@@ -180,7 +223,7 @@ export const Cardiogram = (props: Props) => {
       ctx.fillStyle = BG_COLOR;
       ctx.fillRect(0, 0, w, h);
 
-      ctx.strokeStyle = GRID_COLOR;
+      ctx.strokeStyle = colors.grid;
       ctx.lineWidth = 1;
       ctx.beginPath();
       for (let x = 0; x < w; x += 16) {
@@ -199,8 +242,8 @@ export const Cardiogram = (props: Props) => {
       const midY = h * 0.5;
       const amp = h * 0.32 * (1 - flatline * 0.85);
       ctx.lineWidth = 2;
-      ctx.strokeStyle = TRACE_COLOR;
-      ctx.shadowColor = TRACE_GLOW;
+      ctx.strokeStyle = colors.trace;
+      ctx.shadowColor = colors.glow;
       ctx.shadowBlur = 4;
       ctx.beginPath();
 
@@ -214,7 +257,7 @@ export const Cardiogram = (props: Props) => {
         const frac = samplePos - Math.floor(samplePos);
         let yVal = buf[i0] * (1 - frac) + buf[i1] * frac;
         yVal *= 1 - flatline;
-        if (noise > 0) yVal += (Math.random() - 0.5) * noise * 0.4;
+        if (noise > 0) yVal += (Math.random() - 0.5) * noise * 0.55;
 
         const y = midY - yVal * amp;
         if (!started) {
@@ -227,7 +270,7 @@ export const Cardiogram = (props: Props) => {
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      ctx.fillStyle = TRACE_COLOR;
+      ctx.fillStyle = colors.trace;
       ctx.beginPath();
       ctx.arc(w - 1, midY, 2.5, 0, Math.PI * 2);
       ctx.fill();
@@ -239,7 +282,14 @@ export const Cardiogram = (props: Props) => {
       cancelAnimationFrame(rafRef.current);
       ro.disconnect();
     };
-  }, [rate, rhythm, strength, noise, flatline, paused]);
+  }, [rate, rhythm, strength, noise, flatline, paused, colors]);
+
+  const pulseText =
+    rhythm === 'asystole' || flatline
+      ? '—'
+      : rhythm === 'ventricular_fibrillation' || rhythm === 'fibrillation'
+        ? `${Math.round(rate)}±`
+        : `${Math.round(rate)}`;
 
   return (
     <div
@@ -248,8 +298,24 @@ export const Cardiogram = (props: Props) => {
       }`}
     >
       <canvas ref={canvasRef} className="HealthPanel__cardiogram-canvas" />
+
+      <div className="HealthPanel__cardiogram-hud">
+        <div className="HealthPanel__cardiogram-hud-row">
+          <span className="HealthPanel__cardiogram-hud-label">Pulse</span>
+          <span className="HealthPanel__cardiogram-hud-value">{pulseText}</span>
+          <span className="HealthPanel__cardiogram-hud-unit">bpm</span>
+        </div>
+        <div className="HealthPanel__cardiogram-hud-row">
+          <span className="HealthPanel__cardiogram-hud-label">Output</span>
+          <span className="HealthPanel__cardiogram-hud-value">
+            {Math.round(Math.max(0, cardiacOutput) * 100)}
+          </span>
+          <span className="HealthPanel__cardiogram-hud-unit">%</span>
+        </div>
+      </div>
+
       {alert && <div className="HealthPanel__cardiogram-alert">{alert}</div>}
-      <div className="HealthPanel__cardiogram-label">{rhythmLabel(rhythm)}</div>
+      <div className="HealthPanel__cardiogram-label">{rhythmLabel(String(rhythm))}</div>
     </div>
   );
 };

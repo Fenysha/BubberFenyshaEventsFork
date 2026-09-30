@@ -22,12 +22,12 @@ type OffsetMap = Partial<Record<BodyDollZone, Partial<BodyDollOffset>>>;
  * describe the parts that differ from the default silhouette.
  */
 export const BODY_DOLL_BASE_OFFSETS: Record<BodyDollZone, BodyDollOffset> = {
-  head: { x: 78, y: 39, width: 64, height: 64 },
-  l_arm: { x: 105, y: 114, width: 64, height: 64 },
-  chest: { x: 78, y: 74, width: 64, height: 64 },
-  r_arm: { x: 51, y: 114, width: 64, height: 64 },
-  l_leg: { x: 97, y: 191, width: 64, height: 64 },
-  r_leg: { x: 60, y: 191, width: 64, height: 64 },
+  head: { x: 78, y: 39, width: 96, height: 96 },
+  chest: { x: 78, y: 107, width: 96, height: 96 },
+  l_arm: { x: 113, y: 110, width: 96, height: 96 },
+  r_arm: { x: 43, y: 110, width: 96, height: 96 },
+  l_leg: { x: 81, y: 171, width: 96, height: 96 },
+  r_leg: { x: 75, y: 171, width: 96, height: 96 },
 };
 
 /**

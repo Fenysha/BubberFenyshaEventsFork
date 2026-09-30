@@ -11,12 +11,17 @@
 	/// World time until which CPR provides artificial cardiac output.
 	var/cpr_until = 0
 
+	/// TRUE while the heart is in ventricular fibrillation.
+	/// In VF the myocardium quivers without coordinated ejection — cardiac output is effectively zero.
+	var/fibrillating = FALSE
+
 
 /obj/item/organ/heart/proc/Stop()
-	if(!beating)
+	if(!beating && !fibrillating)
 		return FALSE
 
 	beating = FALSE
+	fibrillating = FALSE
 	rate = 0
 	update_appearance()
 	beat = BEAT_NONE
@@ -26,10 +31,11 @@
 
 
 /obj/item/organ/heart/proc/Restart()
-	if(beating)
+	if(beating && !fibrillating)
 		return FALSE
 
 	beating = TRUE
+	fibrillating = FALSE
 	rate = HEART_RATE_NORMAL * 0.8
 	rate_target = HEART_RATE_NORMAL
 	update_appearance()
@@ -38,20 +44,52 @@
 
 
 /obj/item/organ/heart/proc/get_rate()
+	if(fibrillating)
+		// VF is often displayed as a very high, irregular rate on monitors
+		return rand(180, 320)
 	return beating ? round(rate) : 0
 
 
 /// Returns myocardial contractility from 0 to 1 based on organ health.
 /obj/item/organ/heart/proc/get_contractility()
+	if(fibrillating)
+		return 0
 	if(!is_beating() || (organ_flags & (ORGAN_FAILING|ORGAN_EMP)))
 		return 0
 
 	return clamp((maxHealth - damage) / maxHealth, 0, 1)
 
 
+/// Preload factor from circulating blood volume (Frank-Starling approximation).
+/// Severe hypovolemia collapses stroke volume even if the myocardium is healthy.
+/obj/item/organ/heart/proc/get_preload_factor()
+	if(!owner)
+		return 1
+
+	var/ratio = owner.get_blood_ratio()
+
+	// Above ~70% volume: full preload
+	if(ratio >= 0.70)
+		return 1
+
+	// 40-70%: progressive reduction
+	if(ratio >= 0.40)
+		return 0.35 + (ratio - 0.40) * (0.65 / 0.30)
+
+	// Below 40%: critically reduced filling
+	if(ratio >= 0.20)
+		return 0.10 + (ratio - 0.20) * (0.25 / 0.20)
+
+	// Near-empty vascular bed — almost no forward flow from native beats
+	return clamp(ratio * 0.5, 0, 0.10)
+
+
 /// Returns the efficiency of a single heartbeat.
 /// At high heart rates, the chambers have less time to fill between beats.
 /obj/item/organ/heart/proc/get_stroke_efficiency(at_rate = rate)
+	if(fibrillating)
+		return 0
+
 	if(at_rate <= HEART_RATE_STROKE_LIMIT)
 		return 1
 
@@ -63,14 +101,15 @@
 
 
 /// Returns relative cardiac output, where 1.0 represents normal output.
-/// CPR provides a small amount of artificial circulation while the heart is stopped.
+/// CPR provides a small amount of artificial circulation while the heart is stopped or fibrillating.
 /obj/item/organ/heart/proc/get_cardiac_output()
+	// Coordinated beating
 	var/contractility = get_contractility()
+	if(contractility > 0 && !fibrillating)
+		var/preload = get_preload_factor()
+		return (rate / HEART_RATE_NORMAL) * get_stroke_efficiency() * contractility * preload
 
-	if(contractility)
-		return (rate / HEART_RATE_NORMAL) * get_stroke_efficiency() * contractility
-
-	// A stopped heart can still provide minimal circulation through CPR.
+	// Stopped or fibrillating heart can still provide minimal circulation through CPR
 	if(cpr_until > world.time)
 		return HEART_CPR_OUTPUT
 
@@ -92,36 +131,51 @@
 
 /**
  * Restarts the heart after successful defibrillation.
- * Returns TRUE if the heart was successfully restored.
+ * Also clears ventricular fibrillation.
+ * Returns TRUE if the heart was successfully restored to a coordinated rhythm.
  */
 /obj/item/organ/heart/proc/resuscitate(start_rate = HEART_RATE_NORMAL * 1.1)
 	if(organ_flags & ORGAN_FAILING)
 		return FALSE
 
-	if(get_contractility() > 0 || Restart())
-		rate = start_rate
-		rate_target = HEART_RATE_NORMAL
-		return TRUE
+	// Defibrillation / resuscitation clears VF and attempts to restore beating
+	if(fibrillating || !beating)
+		if(get_contractility() > 0 || Restart())
+			fibrillating = FALSE
+			beating = TRUE
+			rate = start_rate
+			rate_target = HEART_RATE_NORMAL
+			update_appearance()
+			return TRUE
+		return FALSE
 
-	return FALSE
+	// Already beating normally
+	rate = start_rate
+	rate_target = HEART_RATE_NORMAL
+	return TRUE
 
 
 /obj/item/organ/heart/proc/reset_rhythm()
 	rate = HEART_RATE_NORMAL
 	rate_target = HEART_RATE_NORMAL
 	cpr_until = 0
+	fibrillating = FALSE
 	Restart()
 
 
 /// Calculates the physiological demand currently placed on the heart.
 /obj/item/organ/heart/proc/get_rate_drive()
+	if(!owner)
+		return HEART_RATE_NORMAL
+
 	var/drive = HEART_RATE_NORMAL
 
 	drive += owner.pain * 0.25
 	drive += owner.shock * 0.3
 
 	// Blood loss causes compensatory tachycardia.
-	drive += max(0, 1 - owner.get_blood_ratio()) * 120
+	var/blood_ratio = owner.get_blood_ratio()
+	drive += max(0, 1 - blood_ratio) * 120
 
 	// Cerebral hypoxia increases heart rate until terminal hypoxia causes bradycardia.
 	drive += max(0, BRAIN_O2_HYPOXIA - owner.get_brain_oxygen()) * 0.5
@@ -133,7 +187,77 @@
 	return drive
 
 
+/**
+ * Chance (0-100) that the current conditions will precipitate ventricular fibrillation.
+ * Driven by severe hypovolemia, extreme tachycardia and myocardial damage.
+ */
+/obj/item/organ/heart/proc/get_fibrillation_chance(seconds_per_tick)
+	if(!owner || fibrillating || !beating)
+		return 0
+	if(organ_flags & (ORGAN_FAILING | ORGAN_EMP))
+		return 0
+
+	var/blood_ratio = owner.get_blood_ratio()
+	var/chance = 0
+
+	// Severe hypovolemia is the primary driver
+	if(blood_ratio < 0.45)
+		chance += (0.45 - blood_ratio) * 40   // up to ~18 at ratio 0
+
+	// Extreme rate further destabilises the myocardium
+	if(rate > 160)
+		chance += (rate - 160) * 0.15
+
+	// Damaged heart fibrillates more easily
+	if(damage > low_threshold)
+		chance += 4
+	if(damage > high_threshold)
+		chance += 8
+
+	// Very low volume + high rate is especially dangerous
+	if(blood_ratio < 0.30 && rate > 140)
+		chance += 12
+
+	return chance * seconds_per_tick
+
+
+/**
+ * Puts the heart into ventricular fibrillation.
+ * Coordinated contraction ceases; cardiac output collapses.
+ */
+/obj/item/organ/heart/proc/enter_fibrillation()
+	if(fibrillating)
+		return FALSE
+
+	fibrillating = TRUE
+	beating = TRUE          // still "electrically active", but chaotic
+	rate = rand(200, 280)   // monitor shows high irregular rate
+	beat = BEAT_NONE
+	owner?.stop_sound_channel(CHANNEL_HEARTBEAT)
+	update_appearance()
+
+	if(owner)
+		owner.visible_message(
+			span_danger("[owner]'s heart rhythm becomes chaotic!"),
+			span_userdanger("Your heart flutters wildly and loses any effective beat!")
+		)
+
+	return TRUE
+
+
 /obj/item/organ/heart/proc/process_rhythm(seconds_per_tick)
+	if(!owner)
+		return
+
+	// Already in VF — no coordinated rate control
+	if(fibrillating)
+		// Small chance of spontaneous deterioration into full asystole
+		if(SPT_PROB(1.5, seconds_per_tick))
+			Stop()
+			if(owner)
+				to_chat(owner, span_userdanger("Your heart falls completely silent..."))
+		return
+
 	if(!beating)
 		rate = 0
 		return
@@ -146,7 +270,13 @@
 		HEART_RATE_SLEW * seconds_per_tick
 	)
 
-	// Extremely high or low heart rates cause cardiac arrest.
+	// Check for transition into ventricular fibrillation
+	var/fib_chance = get_fibrillation_chance(seconds_per_tick)
+	if(fib_chance > 0 && SPT_PROB(fib_chance, seconds_per_tick))
+		enter_fibrillation()
+		return
+
+	// Extremely high or low heart rates cause cardiac arrest (asystole path)
 	if(rate >= HEART_RATE_MAX_SURVIVABLE || rate <= HEART_RATE_MIN_SURVIVABLE)
 		if(owner.can_heartattack() && Stop())
 			owner.visible_message(
@@ -166,8 +296,12 @@
 		)
 
 		if(rate > 180 && damage > low_threshold && owner.can_heartattack() && SPT_PROB(3, seconds_per_tick))
-			Stop()
-			to_chat(owner, span_userdanger("Your heart flutters wildly and then stops!"))
+			// Prefer fibrillation over instant asystole when volume is still present
+			if(owner.get_blood_ratio() > 0.25 && prob(60))
+				enter_fibrillation()
+			else
+				Stop()
+				to_chat(owner, span_userdanger("Your heart flutters wildly and then stops!"))
 
 
 /**
@@ -177,25 +311,25 @@
 /obj/item/organ/heart/on_life(seconds_per_tick)
 	. = ..()
 
-	if(!owner.needs_heart())
+	if(!owner || !owner.needs_heart())
 		return
 
 	process_rhythm(seconds_per_tick)
 
-	// A failed or stopped heart cannot maintain circulation.
-	if(!beating || (organ_flags & ORGAN_FAILING))
+	// A failed, stopped or fibrillating heart cannot maintain effective circulation.
+	if(!beating || fibrillating || (organ_flags & ORGAN_FAILING))
 		if(organ_flags & ORGAN_FAILING)
 			Stop()
 
-		if(!IS_UNCONSCIOUS_OR_CRIT(owner))
+		// Avoid spamming messages every tick
+		if(!IS_UNCONSCIOUS_OR_CRIT(owner) && !fibrillating)
 			owner.visible_message(
 				span_danger("[owner] clutches at [owner.p_their()] chest as if [owner.p_their()] heart is stopping!")
 			)
-
-		to_chat(
-			owner,
-			span_userdanger("You feel a terrible pain in your chest, as if your heart has stopped!")
-		)
+			to_chat(
+				owner,
+				span_userdanger("You feel a terrible pain in your chest, as if your heart has stopped!")
+			)
 
 		return
 
@@ -223,6 +357,9 @@
  * The value is derived directly from the simulated heart state rather than stored separately.
  */
 /obj/item/organ/heart/proc/get_rhythm_type()
+	if(fibrillating)
+		return "ventricular_fibrillation"
+
 	if(!is_beating())
 		return "asystole"
 

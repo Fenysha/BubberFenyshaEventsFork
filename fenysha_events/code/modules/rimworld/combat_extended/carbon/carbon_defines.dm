@@ -49,6 +49,9 @@
 	/// Current blood oxygenation level, represented as a percentage.
 	var/blood_oxygenation = 100
 
+	var/blood_pallor_visual = -1
+	var/blood_colorgrade_visual = -1
+
 	/// Cached total blood loss rate from all active injuries.
 	var/total_bleed_rate = 0
 
@@ -64,6 +67,17 @@
 	QDEL_NULL(health_ui)
 	return ..()
 
+/mob/living/carbon/examine(mob/user)
+	. = ..()
+	append_blood_loss_examine(user, .)
+	append_injury_signs_examine(user, .)
+
+/// Visible signs of injuries (spraying blood, deformed limbs, blue lips...) for anyone who looks.
+/mob/living/carbon/proc/append_injury_signs_examine(mob/user, list/examine_list)
+	for(var/datum/injury/injury as anything in all_injuries)
+		var/signs = injury.get_visible_signs(user)
+		if(signs)
+			examine_list += signs
 
 /**
  * Opens the detailed health panel for the user.
