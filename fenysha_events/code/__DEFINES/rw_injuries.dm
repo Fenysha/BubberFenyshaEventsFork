@@ -35,6 +35,31 @@
 #define PAIN_CRIT_THRESHOLD         90      // Severe pain that significantly impairs consciousness
 #define PAIN_UNCONSCIOUS_THRESHOLD  140     // Pain level at which unconsciousness becomes likely
 
+#define PAIN_BLUR_THRESHOLD          35
+#define PAIN_DROP_THRESHOLD          110
+#define PAIN_SPOTS_THRESHOLD         55
+#define PAIN_SHOCK_PUSH_THRESHOLD    70
+#define PAIN_FIBRILLATION_THRESHOLD  160
+
+#define PAIN_BLUR_MAX                6 SECONDS
+#define PAIN_SPOTS_MAX_SEVERITY      6
+
+
+
+/// Consciousness at or below this value = blackout (knocked out).
+#define CONSCIOUSNESS_BLACKOUT 8
+/// A blacked-out mob only wakes once consciousness has climbed back to this value (hysteresis).
+#define CONSCIOUSNESS_WAKE 20
+/// Shock per second per point of pain above PAIN_SHOCK_PUSH_THRESHOLD.
+#define PAIN_SHOCK_RATE 0.12
+/// Blood ratio below which hypovolemic shock starts to form a shock floor.
+#define SHOCK_BLOOD_START 0.80
+/// Blood ratio at which the hypovolemic shock floor reaches its maximum.
+#define SHOCK_BLOOD_FULL 0.35
+/// Maximum shock produced purely by blood loss.
+#define SHOCK_BLOOD_FLOOR_MAX 80
+
+
 #define SHOCK_MAX                   100
 #define SHOCK_MILD                  25
 #define SHOCK_MODERATE              50
@@ -83,8 +108,8 @@
 #define BRAIN_HYPOXIA_DAMAGE_MAX 1.0    // Maximum brain damage per second at 0% brain oxygen
 
 
-#define CONSCIOUSNESS_FALL_RATE  4		// How fast consciousness drops toward a worse target (points per second).
-#define CONSCIOUSNESS_RISE_RATE   2		/// How fast it recovers when the target improves.
+#define CONSCIOUSNESS_FALL_RATE   2.8		// How fast consciousness drops toward a worse target (points per second).
+#define CONSCIOUSNESS_RISE_RATE   1.6		// How fast it recovers when the target improves.
 
 
 #define LUNG_FLUID_MAX 100
@@ -100,9 +125,9 @@
 #define CIRCULATION_TRAIT "circulation"
 
 
-#define SHOCK_RECOVERY_RATE 14.0
+#define SHOCK_RECOVERY_RATE 7.0
 #define ACUTE_PAIN_RECOVERY_RATE 12.0
-#define CONSCIOUSNESS_STUN_RECOVERY_RATE 18.0
+#define CONSCIOUSNESS_STUN_RECOVERY_RATE 16.0
 
 #define IMPACT_PAIN_THRESHOLD 2.0
 #define IMPACT_PAIN_MULT 0.85

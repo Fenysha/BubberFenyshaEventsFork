@@ -4,6 +4,7 @@
 		return FALSE
 	return TRUE
 
+#if defined(OLD_COMBAT_SYSTEM)
 ///Remove target limb from its owner, with side effects.
 /obj/item/bodypart/proc/dismember(dam_type = BRUTE, silent=TRUE, wounding_type)
 	if(!owner || (bodypart_flags & BODYPART_UNREMOVABLE))
@@ -139,7 +140,7 @@
 		forceMove(drop_loc)
 
 	SEND_SIGNAL(phantom_owner, COMSIG_CARBON_POST_REMOVE_LIMB, src, special, dismembered)
-
+#endif
 /**
  * try_dismember() is used, once we've confirmed that a flesh and bone bodypart has both the skin and bone mangled, to actually roll for it
  *

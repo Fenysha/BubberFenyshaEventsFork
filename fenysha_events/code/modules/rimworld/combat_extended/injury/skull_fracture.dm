@@ -63,8 +63,10 @@
 	)
 	treatable_tools = list()
 
+	COOLDOWN_DECLARE(grind_cd)
+
 /datum/injury/skull_fracture/depressed/process_effects(seconds_per_tick)
-	if(treatment_quality >= INJURY_TREATMENT_ADEQUATE || !SPT_PROB(12, seconds_per_tick))
+	if(treatment_quality >= INJURY_TREATMENT_ADEQUATE || !COOLDOWN_FINISHED(src, grind_cd) || !SPT_PROB(8, seconds_per_tick))
 		return
 	// Bone fragments grind against the brain.
 	var/obj/item/organ/brain/brain = owner.get_organ_slot(ORGAN_SLOT_BRAIN)
@@ -72,3 +74,4 @@
 	if(effect_message_ready())
 		to_chat(owner, span_userdanger("A stabbing pressure grinds inside your skull!"))
 	owner.apply_consciousness_impulse(50, src)
+	COOLDOWN_START(src, grind_cd, 4 SECONDS)

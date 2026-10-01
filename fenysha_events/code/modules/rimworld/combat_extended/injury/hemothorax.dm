@@ -10,7 +10,7 @@
 
 	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_PROGRESSING
 
-	bleed_rate = 1.5
+	bleed_rate = 0.9
 	pain_amount = 22
 	processes = TRUE
 
@@ -22,7 +22,6 @@
 		/obj/item/chest_drain = INJURY_TREATMENT_EFFECTIVENESS_EXCELLENT,
 	)
 
-	/// Lung fluid added per unit of blood lost.
 	var/fluid_per_bleed = 0.35
 	var/ventilation_penalty = 0.15
 
@@ -36,7 +35,6 @@
 
 /datum/injury/hemothorax/occur_text()
 	return "starts filling with blood"
-
 
 /datum/injury/hemothorax/register_effects()
 	. = ..()
@@ -56,13 +54,10 @@
 	if(!lungs)
 		return
 
-	// The blood lost into the chest floods the airways. The lungs themselves
-	// cough it up (see lungs.dm), spraying blood out of the mouth.
 	var/rate = get_bleed_rate()
 	if(rate > 0)
 		lungs.add_fluid(rate * fluid_per_bleed * seconds_per_tick, TRUE)
 
-	// Aspiration / drainage after treatment.
 	if(treatment_quality > INJURY_TREATMENT_NONE)
 		lungs.add_fluid(-treatment_quality * 0.2 * seconds_per_tick)
 

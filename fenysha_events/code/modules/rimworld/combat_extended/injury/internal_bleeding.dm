@@ -10,7 +10,7 @@
 
 	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_PROGRESSING
 
-	bleed_rate = 1.0
+	bleed_rate = 0.6
 	pain_amount = 14
 	processes = TRUE
 
@@ -19,6 +19,8 @@
 	treatable_by = list(
 		/obj/item/stack/medical/medicine/medkit/indusrtial = INJURY_TREATMENT_EFFECTIVENESS_NORMAL,
 	)
+
+	COOLDOWN_DECLARE(vomit_cd)
 
 /datum/injury/internal_bleeding/can_apply_to(obj/item/bodypart/target_limb)
 	return target_limb.body_zone == BODY_ZONE_CHEST
@@ -30,11 +32,11 @@
 	return "is struck hard, deep tissue tearing beneath the skin"
 
 /datum/injury/internal_bleeding/process_effects(seconds_per_tick)
-	if(treatment_quality >= INJURY_TREATMENT_ADEQUATE || get_bleed_rate() < 0.4)
+	if(treatment_quality >= INJURY_TREATMENT_ADEQUATE || get_bleed_rate() < 0.25)
 		return
-	// Blood irritates the stomach: bloody vomit, faster the worse it bleeds.
-	if(SPT_PROB(2 + get_bleed_rate() * 2, seconds_per_tick))
+	if(COOLDOWN_FINISHED(src, vomit_cd) && SPT_PROB(1.5 + get_bleed_rate() * 1.5, seconds_per_tick))
 		owner.vomit(VOMIT_CATEGORY_BLOOD, lost_nutrition = 10)
+		COOLDOWN_START(src, vomit_cd, 8 SECONDS)
 
 /datum/injury/internal_bleeding/get_visible_signs(mob/user)
 	if(!owner || treatment_quality >= INJURY_TREATMENT_ADEQUATE || get_bleed_rate() < 0.6)

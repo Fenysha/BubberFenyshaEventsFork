@@ -24,6 +24,9 @@
 	treatable_tools = list(TOOL_BONESET)
 	var/leg_step_pain = 10
 
+	COOLDOWN_DECLARE(drop_cd)
+	COOLDOWN_DECLARE(step_pain_cd)
+
 /datum/injury/fracture/resolve_treatment_quality(obj/item/tool, mob/user)
 	if(tool.tool_behaviour == TOOL_BONESET || istype(tool, /obj/item/stack/medical/medicine/bone_gel))
 		return INJURY_TREATMENT_EXCELLENT
@@ -43,16 +46,20 @@
 
 /datum/injury/fracture/process_effects(seconds_per_tick)
 	// A broken arm cannot hold things reliably.
-	if(is_arm() && treatment_quality < INJURY_TREATMENT_ADEQUATE && SPT_PROB(4, seconds_per_tick))
+	if(is_arm() && treatment_quality < INJURY_TREATMENT_ADEQUATE && COOLDOWN_FINISHED(src, drop_cd) && SPT_PROB(3, seconds_per_tick))
 		drop_limb_item("gives out with a grinding crunch")
+		COOLDOWN_START(src, drop_cd, 4 SECONDS)
 
 /datum/injury/fracture/on_owner_moved(movement_dir)
 	if(!owner || owner.stat == DEAD || owner.body_position == LYING_DOWN || treatment_quality >= INJURY_TREATMENT_ADEQUATE)
 		return
-	if(!prob(limp_chance * 0.4))
+	if(!COOLDOWN_FINISHED(src, step_pain_cd))
+		return
+	if(!prob(limp_chance * 0.35))
 		return
 	pain_spike(leg_step_pain, "Your broken [limb.plaintext_zone] screams with pain as you put weight on it!", "[owner] winces and limps on a broken [limb.plaintext_zone].", "groan")
-	if(prob(8))
+	COOLDOWN_START(src, step_pain_cd, 2 SECONDS)
+	if(prob(6))
 		owner.visible_message(span_danger("[owner] stumbles on [owner.p_their()] broken [limb.plaintext_zone]!"))
 		owner.Knockdown(1.5 SECONDS)
 
@@ -73,7 +80,7 @@
 	// Open fracture: no self-healing, and the wound has to be closed as well.
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE | INJURY_FLAG_ACCEPTS_SPLINT
 
-	bleed_rate = 0.9
+	bleed_rate = 0.54
 	pain_amount = 35
 	dismemberment_weight = 3.5
 	disabling = TRUE
@@ -100,8 +107,9 @@
 
 /datum/injury/fracture/compound/on_owner_moved(movement_dir)
 	..()
-	if(owner && treatment_quality < INJURY_TREATMENT_ADEQUATE && prob(35) && isturf(owner.loc))
+	if(owner && treatment_quality < INJURY_TREATMENT_ADEQUATE && COOLDOWN_FINISHED(src, step_pain_cd) && prob(25) && isturf(owner.loc))
 		owner.ce_splatter_at(get_turf(owner), TRUE)
+		COOLDOWN_START(src, step_pain_cd, 1.5 SECONDS)
 
 /datum/injury/fracture/compound/get_visible_signs(mob/user)
 	if(!owner || !limb || treatment_quality >= INJURY_TREATMENT_ADEQUATE)

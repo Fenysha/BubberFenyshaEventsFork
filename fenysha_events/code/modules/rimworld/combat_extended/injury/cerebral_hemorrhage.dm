@@ -10,7 +10,7 @@
 
 	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_PROGRESSING
 
-	bleed_rate = 1.8
+	bleed_rate = 1.08
 	pain_amount = 34
 	processes = TRUE
 	disabling = TRUE
@@ -26,6 +26,12 @@
 	var/pressure_relief = 0.5
 	/// Brain damage per second at 100 pressure.
 	var/brain_damage_rate = 0.3
+
+	COOLDOWN_DECLARE(symptom_cd)
+	COOLDOWN_DECLARE(bleed_cd)
+	COOLDOWN_DECLARE(vomit_cd)
+	COOLDOWN_DECLARE(seizure_cd)
+	COOLDOWN_DECLARE(emote_cd)
 
 /datum/injury/cerebral_hemorrhage/can_apply_to(obj/item/bodypart/target_limb)
 	return target_limb.body_zone == BODY_ZONE_HEAD
@@ -61,7 +67,7 @@
 		return
 
 	// Stage 1: headache, confusion, blurred vision.
-	if(SPT_PROB(8, seconds_per_tick))
+	if(COOLDOWN_FINISHED(src, symptom_cd) && SPT_PROB(6, seconds_per_tick))
 		owner.adjust_confusion_up_to(4 SECONDS, 12 SECONDS)
 		owner.adjust_eye_blur_up_to(4 SECONDS, 12 SECONDS)
 		if(effect_message_ready())
@@ -70,6 +76,7 @@
 				"Your head pounds so hard that you can barely think.",
 				"Light stabs at your eyes and the room swims.",
 			)))
+		COOLDOWN_START(src, symptom_cd, 5 SECONDS)
 
 	if(stage < 2)
 		return
@@ -79,21 +86,26 @@
 	brain?.apply_organ_damage(brain_damage_rate * (pressure / 100) * seconds_per_tick)
 	owner.set_slurring_if_lower(6 SECONDS)
 
-	if(SPT_PROB(6, seconds_per_tick))
+	if(COOLDOWN_FINISHED(src, bleed_cd) && SPT_PROB(4, seconds_per_tick))
 		bleed_from_head()
-	if(SPT_PROB(5, seconds_per_tick))
+		COOLDOWN_START(src, bleed_cd, 7 SECONDS)
+	if(COOLDOWN_FINISHED(src, vomit_cd) && SPT_PROB(3, seconds_per_tick))
 		owner.vomit(VOMIT_CATEGORY_DEFAULT, lost_nutrition = 10)
-	if(SPT_PROB(4, seconds_per_tick))
+		COOLDOWN_START(src, vomit_cd, 12 SECONDS)
+	if(COOLDOWN_FINISHED(src, symptom_cd) && SPT_PROB(3, seconds_per_tick))
 		owner.apply_consciousness_impulse(60, src)
+		COOLDOWN_START(src, symptom_cd, 6 SECONDS)
 
 	if(stage < 3)
 		return
 
 	// Stage 3: herniation. Seizures, blackouts, gasping.
-	if(SPT_PROB(6, seconds_per_tick))
+	if(COOLDOWN_FINISHED(src, seizure_cd) && SPT_PROB(4, seconds_per_tick))
 		seizure()
-	if(SPT_PROB(15, seconds_per_tick))
+		COOLDOWN_START(src, seizure_cd, 15 SECONDS)
+	if(COOLDOWN_FINISHED(src, emote_cd) && SPT_PROB(10, seconds_per_tick))
 		owner.emote("gasp")
+		COOLDOWN_START(src, emote_cd, 3 SECONDS)
 
 /datum/injury/cerebral_hemorrhage/proc/bleed_from_head()
 	if(isturf(owner.loc))

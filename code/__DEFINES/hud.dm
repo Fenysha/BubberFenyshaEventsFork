@@ -235,6 +235,7 @@
 #define ui_storage2 "CENTER+2:20,SOUTH:5"
 #define ui_combo "CENTER+4:24,SOUTH+1:7" //combo meter for martial arts
 
+/* RW CHANGE - Moved everything to left
 //Lower right, persistent menu
 #define ui_below_throw "EAST-1:28,SOUTH+1:7"
 #define ui_drop_throw "EAST-1:28,SOUTH+1:24"
@@ -252,6 +253,24 @@
 #define ui_language_menu "EAST-4:6,SOUTH:21"
 #define ui_navigate_menu "EAST-4:6,SOUTH:5"
 #define ui_memories_menu "EAST-4:6,SOUTH:5"
+*/
+//Lower right, persistent menu
+#define ui_below_throw "EAST-2:28,SOUTH+1:7"
+#define ui_drop_throw "EAST-2:28,SOUTH+1:24"
+#define ui_above_throw "EAST-2:28,SOUTH+1:41"
+#define ui_above_movement "EAST-3:26,SOUTH+1:7"
+#define ui_above_movement_top "EAST-3:26,SOUTH+1:24"
+#define ui_above_intent "EAST-4:24,SOUTH+1:7"
+#define ui_movi "EAST-3:26,SOUTH:5"
+#define ui_acti "EAST-4:24,SOUTH:5"
+#define ui_floor_change "BOTTOM+1:8,RIGHT-2:28"
+#define ui_zonesel "EAST-2:28,SOUTH:5"
+#define ui_acti_alt "EAST-2:28,SOUTH:5" //alternative intent switcher for when the interface is hidden (F12)
+#define ui_crafting "EAST-5:22,SOUTH:5"
+#define ui_building "EAST-5:22,SOUTH:21"
+#define ui_language_menu "EAST-5:6,SOUTH:21"
+#define ui_navigate_menu "EAST-5:6,SOUTH:5"
+#define ui_memories_menu "EAST-5:6,SOUTH:5"
 
 //basic mob-unique ui
 #define ui_basic_combat_toggle "EAST-1:28,SOUTH:6"
@@ -289,6 +308,7 @@
 #define ui_living_pull "EAST-1:28,CENTER-3:15"
 #define ui_living_healthdoll "EAST-1:28,CENTER-1:15"
 
+/* RW CHANGE
 //Humans
 #define ui_human_floor_changer "EAST-4:22,SOUTH:5"
 #define ui_human_crafting "EAST-3:24,SOUTH+1:7"
@@ -296,6 +316,13 @@
 #define ui_human_language "EAST-3:7,SOUTH+1:24"
 #define ui_human_area "EAST-3:24,SOUTH+1:24"
 #define ui_human_memories_menu "EAST-4:22,SOUTH+1:7"
+*/
+#define ui_human_floor_changer "EAST-5:22,SOUTH:5"
+#define ui_human_crafting "EAST-4:24,SOUTH+1:7"
+#define ui_human_navigate "EAST-4:7,SOUTH+1:7"
+#define ui_human_language "EAST-4:7,SOUTH+1:24"
+#define ui_human_area "EAST-4:24,SOUTH+1:24"
+#define ui_human_memories_menu "EAST-5:22,SOUTH+1:7"
 
 //Drones
 #define ui_drone_drop "CENTER+1:18,SOUTH:5"

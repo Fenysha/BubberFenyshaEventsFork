@@ -9,7 +9,7 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE
 
-	bleed_rate = 1.0
+	bleed_rate = 0.6
 	pain_amount = 24
 	processes = TRUE
 
@@ -18,6 +18,8 @@
 	treatable_by = list(
 		/obj/item/stack/medical/medicine/medkit/indusrtial/glitertech = INJURY_TREATMENT_EFFECTIVENESS_NORMAL,
 	)
+
+	COOLDOWN_DECLARE(spit_cd)
 
 /datum/injury/facial_trauma/can_apply_to(obj/item/bodypart/target_limb)
 	return target_limb.body_zone == BODY_ZONE_HEAD
@@ -41,10 +43,11 @@
 /datum/injury/facial_trauma/process_effects(seconds_per_tick)
 	if(treatment_quality >= INJURY_TREATMENT_ADEQUATE)
 		return
-	if(SPT_PROB(6, seconds_per_tick) && isturf(owner.loc))
+	if(COOLDOWN_FINISHED(src, spit_cd) && SPT_PROB(4, seconds_per_tick) && isturf(owner.loc))
 		owner.ce_splatter_at(get_turf(owner), TRUE)
 		if(effect_message_ready())
 			owner.visible_message(span_danger("[owner] spits out a mouthful of blood."), span_warning("Your mouth fills with blood and you spit it out."))
+		COOLDOWN_START(src, spit_cd, 6 SECONDS)
 
 /datum/injury/facial_trauma/get_visible_signs(mob/user)
 	if(!owner || treatment_quality >= INJURY_TREATMENT_ADEQUATE)

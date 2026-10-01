@@ -35,6 +35,8 @@
 	/// Fraction of ventilation lost to painful, restricted breathing.
 	var/ventilation_penalty = 0.10
 
+	COOLDOWN_DECLARE(organ_hit_cd)
+
 /datum/injury/rib_fracture/can_apply_to(obj/item/bodypart/target_limb)
 	return target_limb.body_zone == BODY_ZONE_CHEST
 
@@ -70,11 +72,14 @@
 /datum/injury/rib_fracture/on_owner_moved(movement_dir)
 	if(!owner || !limb || owner.stat == DEAD || owner.body_position == LYING_DOWN)
 		return
+	if(!COOLDOWN_FINISHED(src, organ_hit_cd))
+		return
 	var/chance = scale_by_treatment(organ_hit_chance)
 	if(owner.move_intent == MOVE_INTENT_RUN)
 		chance *= 1.6
 	if(prob(chance))
 		hurt_organ()
+		COOLDOWN_START(src, organ_hit_cd, 5 SECONDS)
 
 /datum/injury/rib_fracture/proc/hurt_organ()
 	var/list/candidates = list()
@@ -151,11 +156,12 @@
 
 /datum/injury/rib_fracture/flail/process_effects(seconds_per_tick)
 	..()
-	if(treatment_quality < INJURY_TREATMENT_ADEQUATE && SPT_PROB(8, seconds_per_tick) && effect_message_ready())
+	if(treatment_quality < INJURY_TREATMENT_ADEQUATE && COOLDOWN_FINISHED(src, organ_hit_cd) && SPT_PROB(5, seconds_per_tick) && effect_message_ready())
 		owner.visible_message(
 			span_danger("[owner]'s chest wall sucks inward with every breath!"),
 			span_userdanger("Part of your chest collapses inward every time you try to breathe!"),
 		)
+		COOLDOWN_START(src, organ_hit_cd, 12 SECONDS)
 
 /datum/injury/rib_fracture/flail/get_visible_signs(mob/user)
 	if(!owner || treatment_quality >= INJURY_TREATMENT_ADEQUATE)

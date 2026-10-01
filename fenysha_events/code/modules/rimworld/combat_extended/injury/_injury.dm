@@ -83,6 +83,9 @@
 	/// 0 means the injury has not received skill-based medical treatment.
 	var/treatment_effectiveness = 0
 
+	/// Set by promote() for intermediate tiers so a multi-tier upgrade applies the shock response only once.
+	var/skip_initial_response = FALSE
+
 
 /datum/injury/New()
 	unique_id = REF(src)
@@ -147,13 +150,16 @@
 	// Incoming is stronger — upgrade along path or replace with incoming type
 	var/datum/injury/result = src
 	if(upgrade_path && incoming.severity > severity)
-		result = promote(silent, attack_direction, source)
+		result = promote(silent, attack_direction, source, FALSE)
 		// If still below incoming severity and can promote further, keep going
 		while(result && result.upgrade_path && result.severity < incoming.severity)
-			var/datum/injury/next = result.promote(TRUE, attack_direction, source)
+			var/datum/injury/next = result.promote(TRUE, attack_direction, source, FALSE)
 			if(!next || next == result)
 				break
 			result = next
+		// Shock/consciousness response for the whole upgrade chain is applied once, for the final tier.
+		if(result && result.owner)
+			result.owner.apply_injury_response(result)
 	else if(incoming.type != type && incoming.severity > severity)
 		// Different subtype, higher severity — replace entirely
 		result = replace_with(incoming, silent, attack_direction, source)
@@ -185,7 +191,7 @@
 /**
  * Promote this injury one step along upgrade_path. Returns the new injury.
  */
-/datum/injury/proc/promote(silent = FALSE, attack_direction = null, source = "Unknown")
+/datum/injury/proc/promote(silent = FALSE, attack_direction = null, source = "Unknown", apply_response = TRUE)
 	if(!upgrade_path || !limb)
 		return src
 
@@ -206,6 +212,7 @@
 	upgraded.treatment_effectiveness = old_treatment_effectiveness * 0.5
 	upgraded.healing_progress = old_healing * 0.5
 	upgraded.on_treated(old_treatment, null) // re-apply multipliers for the new tier
+	upgraded.skip_initial_response = !apply_response
 
 	// Force apply without series check recursion — series matches, limb empty of us
 	upgraded.limb = cached_limb
@@ -245,8 +252,9 @@
 /datum/injury/proc/on_apply(silent = FALSE, attack_direction = null)
 	if(disabling && limb)
 		limb.add_traits(list(TRAIT_PARALYSIS, TRAIT_DISABLED_BY_INJURY), unique_id)
-	if(owner)
+	if(owner && !skip_initial_response)
 		owner.apply_injury_response(src)
+	skip_initial_response = FALSE
 	if(!silent)
 		show_application_message()
 

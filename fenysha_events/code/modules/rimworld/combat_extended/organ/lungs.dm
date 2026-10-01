@@ -18,10 +18,12 @@
 		return 0
 
 	var/health_factor = clamp((maxHealth - damage) / maxHealth, 0, 1)
-	var/fluid_factor = 1 - clamp(fluid / LUNG_FLUID_MAX, 0, 1)
+	var/fluid_ratio = clamp(fluid / LUNG_FLUID_MAX, 0, 1)
+	var/fluid_factor = 1 - (fluid_ratio ** 1.35)
+	if(fluid > LUNG_FLUID_SEVERE)
+		fluid_factor *= 0.7
 
 	return health_factor * fluid_factor * get_ventilation_modifier()
-
 
 /// Returns the effective pressure multiplier for inhalation.
 /// A minimum of 5% is preserved so that gas-related effects are never completely disabled.
@@ -93,15 +95,22 @@
 		owner.blood_oxygenation = 100
 		return
 
-	var/target = owner.failed_last_breath ? 0 : (get_ventilation() * 100)
+	var/vent = get_ventilation()
+	var/target = vent * 100
+	target = max(target, 8)
+
 	var/step = (target < owner.blood_oxygenation) ? LUNG_GAS_EXCHANGE_DOWN : LUNG_GAS_EXCHANGE_UP
+	if(fluid > LUNG_FLUID_SEVERE)
+		if(target < owner.blood_oxygenation)
+			step *= 1.4
+		else
+			step *= 0.55
 
 	owner.blood_oxygenation = clamp(
 		owner.blood_oxygenation + clamp(target - owner.blood_oxygenation, -step, step) * seconds_per_tick,
 		0,
 		100
 	)
-
 
 /obj/item/organ/lungs/on_life(seconds_per_tick)
 	. = ..()

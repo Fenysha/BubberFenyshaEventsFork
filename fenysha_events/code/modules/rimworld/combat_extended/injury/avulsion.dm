@@ -9,7 +9,7 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE
 
-	bleed_rate = 2.2
+	bleed_rate = 1.32
 	pain_amount = 38
 	damage_multiplier = 1.45
 	dismemberment_weight = 4.0
@@ -26,15 +26,15 @@
 	)
 	treatable_tools = list(TOOL_CAUTERY)
 
+	COOLDOWN_DECLARE(spray_cd)
+
 /datum/injury/avulsion/resolve_treatment_quality(obj/item/tool, mob/user)
-	// Tissue is missing, so nothing field-grade can do better than "adequate".
 	if(tool.tool_behaviour == TOOL_CAUTERY || istype(tool, /obj/item/stack/medical/suture))
 		return INJURY_TREATMENT_ADEQUATE
 	return INJURY_TREATMENT_POOR
 
 /datum/injury/avulsion/occur_text()
 	return "is torn open, flesh ripped away"
-
 
 /datum/injury/avulsion/on_applied_effects(attack_direction)
 	hit_spray(attack_direction, 3, 3)
@@ -43,12 +43,12 @@
 	if(prob(80))
 		owner.emote("scream")
 
-/// The wound keeps pumping blood out while it stays open.
 /datum/injury/avulsion/process_effects(seconds_per_tick)
 	if(treatment_quality >= INJURY_TREATMENT_ADEQUATE || !isturf(owner.loc))
 		return
-	if(get_bleed_rate() > 1 && SPT_PROB(35, seconds_per_tick))
+	if(get_bleed_rate() > 0.8 && COOLDOWN_FINISHED(src, spray_cd) && SPT_PROB(25, seconds_per_tick))
 		owner.ce_spray_blood(pick(GLOB.alldirs), rand(1, 2), TRUE)
+		COOLDOWN_START(src, spray_cd, 2.5 SECONDS)
 
 /datum/injury/avulsion/get_visible_signs(mob/user)
 	if(!owner || !limb || treatment_quality >= INJURY_TREATMENT_ADEQUATE)

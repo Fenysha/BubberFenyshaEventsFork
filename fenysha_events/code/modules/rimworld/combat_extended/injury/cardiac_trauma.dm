@@ -22,6 +22,8 @@
 
 	var/fibrillation_chance = 1.5
 
+	COOLDOWN_DECLARE(palpitation_cd)
+
 /datum/injury/cardiac_trauma/can_apply_to(obj/item/bodypart/target_limb)
 	return target_limb.body_zone == BODY_ZONE_CHEST
 
@@ -43,9 +45,10 @@
 		return
 
 	// Palpitations: a painful stutter and a wave of faintness.
-	if(SPT_PROB(10, seconds_per_tick))
+	if(COOLDOWN_FINISHED(src, palpitation_cd) && SPT_PROB(7, seconds_per_tick))
 		pain_spike(28, "Your heart stutters painfully in your chest!", "[owner] clutches [owner.p_their()] chest, wincing.", "gasp")
 		owner.apply_consciousness_impulse(45, src)
+		COOLDOWN_START(src, palpitation_cd, 5 SECONDS)
 
 	// The bruised myocardium can fall into ventricular fibrillation.
 	if(heart.is_beating() && !heart.fibrillating && SPT_PROB(fibrillation_chance * scale_by_treatment(1), seconds_per_tick))

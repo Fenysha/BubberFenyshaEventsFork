@@ -22,6 +22,8 @@
 	)
 	treatable_tools = list(TOOL_BONESET)
 
+	COOLDOWN_DECLARE(drool_cd)
+
 /datum/injury/jaw_fracture/can_apply_to(obj/item/bodypart/target_limb)
 	return target_limb.body_zone == BODY_ZONE_HEAD
 
@@ -42,8 +44,9 @@
 	if(treatment_quality >= INJURY_TREATMENT_ADEQUATE)
 		return
 	owner.set_slurring_if_lower(5 SECONDS)
-	if(SPT_PROB(3, seconds_per_tick) && isturf(owner.loc))
+	if(COOLDOWN_FINISHED(src, drool_cd) && SPT_PROB(2, seconds_per_tick) && isturf(owner.loc))
 		owner.ce_splatter_at(get_turf(owner), TRUE)
+		COOLDOWN_START(src, drool_cd, 7 SECONDS)
 
 /datum/injury/jaw_fracture/get_visible_signs(mob/user)
 	if(!owner || treatment_quality >= INJURY_TREATMENT_ADEQUATE)

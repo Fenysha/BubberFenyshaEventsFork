@@ -17,8 +17,12 @@
 	var/acute_pain = 0
 	/// Persistent shock level accumulated from injuries, blood loss, and other sources.
 	var/shock_base = 0
-	/// Temporary loss of consciousness caused by recent impacts or other acute events.
+	/// DEPRECATED: impulses now reduce consciousness directly. Always ~0, kept for compatibility.
 	var/consciousness_stun = 0
+	/// Pain from non-injury sources (adjust_pain). Not overwritten by limb pain updates.
+	var/pain_misc = 0
+	/// TRUE while blacked out. Set at CONSCIOUSNESS_BLACKOUT, cleared at CONSCIOUSNESS_WAKE.
+	var/consciousness_blackout = FALSE
 
 	/// Multipliers applied when calculating the final medical state.
 	var/pain_mod = 1.0

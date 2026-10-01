@@ -9,11 +9,10 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE | INJURY_FLAG_SELF_HEALING
 
-	bleed_rate = 1.2
+	bleed_rate = 0.72
 	pain_amount = 10
 	reacts_to_movement = TRUE
 
-	// Low-pressure vessels can clot on their own, but very slowly.
 	base_healing_rate = 0.004
 	base_treat_time = 4 SECONDS
 	treatable_by = list(
@@ -24,6 +23,8 @@
 	)
 	treatable_tools = list(TOOL_CAUTERY)
 
+	COOLDOWN_DECLARE(trail_cd)
+
 /datum/injury/venous_bleed/occur_text()
 	return "starts bleeding steadily"
 
@@ -31,12 +32,12 @@
 	hit_spray(attack_direction, 1, 1, TRUE)
 	play_effect_sound(INJURY_SOUND_BLOOD, 35)
 
-/// A moving casualty leaves a trail of blood behind.
 /datum/injury/venous_bleed/on_owner_moved(movement_dir)
 	if(!owner || owner.stat == DEAD || treatment_quality >= INJURY_TREATMENT_ADEQUATE)
 		return
-	if(prob(30) && isturf(owner.loc))
+	if(COOLDOWN_FINISHED(src, trail_cd) && prob(22) && isturf(owner.loc))
 		owner.ce_splatter_at(get_turf(owner), TRUE)
+		COOLDOWN_START(src, trail_cd, 1.2 SECONDS)
 
 /datum/injury/venous_bleed/get_visible_signs(mob/user)
 	return get_untreated_sign()

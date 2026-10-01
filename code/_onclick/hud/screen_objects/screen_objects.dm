@@ -928,6 +928,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen) // I hate this place
 	hovering = FALSE
 	update_appearance(UPDATE_ICON)
 
+#if defined(OLD_COMBAT_SYSTEM)
 /atom/movable/screen/healthdoll/human
 	mouse_over_pointer = MOUSE_HAND_POINTER
 	/// Tracks components of our doll, each limb is a separate atom in our vis_contents
@@ -1018,6 +1019,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen) // I hate this place
 /atom/movable/screen/healthdoll_limb
 	screen_loc = ui_living_healthdoll
 	vis_flags = VIS_INHERIT_ID | VIS_INHERIT_PLANE
+#endif
 
 /atom/movable/screen/mood
 	name = "mood"

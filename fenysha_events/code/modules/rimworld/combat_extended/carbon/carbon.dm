@@ -105,7 +105,9 @@
 	recalculate_medical_state()
 
 /mob/living/carbon/proc/adjust_pain(amount)
-	set_pain(pain_base + amount)
+	// pain_base is rebuilt from limbs; non-injury pain lives in its own variable.
+	pain_misc = max(pain_misc + amount, 0)
+	recalculate_medical_state()
 
 /mob/living/carbon/proc/update_pain_from_limb(obj/item/bodypart/source_limb)
 	var/total = 0
@@ -125,11 +127,12 @@
 	shock_base = clamp(shock_base + amount, 0, SHOCK_MAX * 2)
 	recalculate_medical_state()
 
+/// Knocks consciousness down immediately (it then recovers at CONSCIOUSNESS_RISE_RATE).
 /mob/living/carbon/proc/apply_consciousness_impulse(amount, source = null)
-	if(amount <= 0)
+	if(amount <= 0 || stat == DEAD)
 		return
-	consciousness_stun = clamp(consciousness_stun + amount, 0, CONSCIOUSNESS_MAX * 2)
-	recalculate_medical_state()
+	consciousness = max(consciousness - amount * consciousness_mod, 0)
+	update_blackout_state()
 
 /mob/living/carbon/proc/apply_combat_impact_response(damage, body_zone, damage_type = BRUTE, source = null)
 	if(damage <= 0 || stat == DEAD)
@@ -190,7 +193,7 @@
 		total_brute += (BP.brute_dam * BP.body_damage_coeff)
 		total_burn += (BP.burn_dam * BP.body_damage_coeff)
 
-	set_health(round(maxHealth - get_oxy_loss() - get_tox_loss() - total_burn - total_brute, DAMAGE_PRECISION))
+	set_health(round(maxHealth - get_tox_loss() - total_burn - total_brute, DAMAGE_PRECISION))
 	update_stat()
 	update_stamina()
 
@@ -206,7 +209,7 @@
 /**
  * Death still from lethal health / traits.
  * No SOFT_CRIT / HARD_CRIT from health thresholds.
- * Unconscious is applied by apply_pain_effects() when consciousness <= 0.
+ * Unconscious is applied by update_blackout_state() (hysteresis, see carbon_life.dm).
  */
 /mob/living/carbon/update_stat()
 	if(HAS_TRAIT(src, TRAIT_GODMODE))
@@ -219,7 +222,7 @@
 		med_hud_set_status()
 		return
 
-	if(consciousness <= 0)
+	if(consciousness_blackout)
 		if(stat < SOFT_CRIT)
 			set_stat(SOFT_CRIT)
 	else if(stat == SOFT_CRIT || stat == HARD_CRIT)
@@ -447,12 +450,14 @@
 
 	if(heal_flags & HEAL_DAMAGE)
 		pain_base = 0
+		pain_misc = 0
 		acute_pain = 0
 		shock_base = 0
 		consciousness_stun = 0
 		pain = 0
 		shock = 0
 		consciousness = CONSCIOUSNESS_MAX
+		consciousness_blackout = FALSE
 		total_bleed_rate = 0
 		remove_movespeed_modifier(/datum/movespeed_modifier/pain)
 		reset_circulation()
@@ -497,12 +502,6 @@
 	if(get_organ_slot(ORGAN_SLOT_LUNGS))
 		return
 	blood_oxygenation = max(blood_oxygenation - LUNG_GAS_EXCHANGE_DOWN * seconds_per_tick, 0)
-
-/mob/living/carbon/proc/sync_oxyloss()
-	var/target = (100 - blood_oxygenation) * 0.5
-	var/diff = target - get_oxy_loss()
-	if(abs(diff) >= 1)
-		adjust_oxy_loss(diff, updating_health = FALSE, forced = TRUE)
 
 /mob/living/carbon/proc/get_cause_of_death()
 	var/obj/item/organ/heart/heart = get_organ_slot(ORGAN_SLOT_HEART)

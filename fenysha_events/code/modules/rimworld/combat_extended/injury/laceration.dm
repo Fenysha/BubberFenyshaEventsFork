@@ -9,7 +9,7 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_SELF_HEALING
 
-	bleed_rate = 0.6
+	bleed_rate = 0.36
 	pain_amount = 12
 	damage_multiplier = 1.1
 
@@ -33,7 +33,7 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL
 
-	bleed_rate = 1.4
+	bleed_rate = 0.84
 	pain_amount = 22
 	damage_multiplier = 1.25
 	base_healing_rate = 0.005
@@ -49,14 +49,13 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL
 
-	bleed_rate = 2.8
+	bleed_rate = 1.68
 	pain_amount = 35
 	damage_multiplier = 1.4
 	dismemberment_weight = 3.0
 	disabling = TRUE
 	base_healing_rate = 0.003
 	base_treat_time = 8 SECONDS
-
 
 /datum/injury/laceration/on_applied_effects(attack_direction)
 	if(severity < INJURY_SEVERITY_SEVERE)

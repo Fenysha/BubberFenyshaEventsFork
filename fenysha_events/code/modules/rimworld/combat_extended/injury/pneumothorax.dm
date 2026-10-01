@@ -28,6 +28,9 @@
 	var/tension_progress = 0
 	var/escalating = FALSE
 
+	COOLDOWN_DECLARE(emote_cd)
+	COOLDOWN_DECLARE(message_cd)
+
 /datum/injury/pneumothorax/can_apply_to(obj/item/bodypart/target_limb)
 	return target_limb.body_zone == BODY_ZONE_CHEST
 
@@ -65,13 +68,15 @@
 			// Outside the Life() injury loop: promote() edits owner.all_injuries.
 			addtimer(CALLBACK(src, PROC_REF(escalate)), 1)
 
-	if(SPT_PROB(7, seconds_per_tick))
+	if(COOLDOWN_FINISHED(src, emote_cd) && SPT_PROB(5, seconds_per_tick))
 		owner.emote(prob(50) ? "cough" : "gasp")
-	if(treatment_quality < INJURY_TREATMENT_ADEQUATE && SPT_PROB(6, seconds_per_tick) && effect_message_ready())
+		COOLDOWN_START(src, emote_cd, 3 SECONDS)
+	if(treatment_quality < INJURY_TREATMENT_ADEQUATE && COOLDOWN_FINISHED(src, message_cd) && SPT_PROB(4, seconds_per_tick) && effect_message_ready())
 		owner.visible_message(
 			span_warning("[owner] takes short, shallow breaths, [owner.p_their()] chest rising unevenly."),
 			span_warning("Every breath is shallow, and one side of your chest barely moves."),
 		)
+		COOLDOWN_START(src, message_cd, 8 SECONDS)
 
 /datum/injury/pneumothorax/proc/escalate()
 	if(QDELETED(src) || !limb)
@@ -120,15 +125,17 @@
 		return
 
 	// Obstructive shock: the trapped air squeezes the heart's venous return.
-	owner.apply_shock_impulse(scale_by_treatment(1) * 20 * seconds_per_tick, src)
+	owner.apply_shock_impulse(scale_by_treatment(1) * 10 * seconds_per_tick, src)
 
-	if(SPT_PROB(30, seconds_per_tick))
+	if(COOLDOWN_FINISHED(src, emote_cd) && SPT_PROB(18, seconds_per_tick))
 		owner.emote("gasp")
-	if(SPT_PROB(6, seconds_per_tick) && effect_message_ready())
+		COOLDOWN_START(src, emote_cd, 2 SECONDS)
+	if(COOLDOWN_FINISHED(src, message_cd) && SPT_PROB(4, seconds_per_tick) && effect_message_ready())
 		owner.visible_message(
 			span_userdanger("[owner] gasps desperately, [owner.p_their()] lips turning blue!"),
 			span_userdanger("You can't breathe! Your chest feels like it's about to burst!"),
 		)
+		COOLDOWN_START(src, message_cd, 6 SECONDS)
 
 /datum/injury/pneumothorax/tension/get_visible_signs(mob/user)
 	if(!owner || treatment_quality >= INJURY_TREATMENT_ADEQUATE)
