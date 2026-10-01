@@ -25,3 +25,6 @@
 
 
 #define COMSIG_RIMWORLD_CELL_POD_LANDED "rimworld_cell_pod_landed"
+
+
+#define COMSIG_KB_MOB_OPENHEALTHPANEL_DOWN "keybinding_mob_openhealthpanel_down"

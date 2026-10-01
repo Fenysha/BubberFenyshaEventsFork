@@ -174,4 +174,6 @@ export type HealthPanelData = {
   /** False for ghosts — hide treat buttons */
   can_treat: boolean;
   is_self: boolean;
+  /** Name of the person being examined */
+  subject_name?: string;
 };

@@ -421,7 +421,7 @@
 	if(!owner || (body_zone in list(BODY_ZONE_HEAD, BODY_ZONE_CHEST)))
 		return FALSE
 
-	if(HAS_TRAIT(owner, TRAIT_NODISMEMBER))
+	if(HAS_TRAIT(owner, TRAIT_NODISMEMBER) || !sharpness)
 		return FALSE
 
 	if(brute <= 0)

@@ -57,6 +57,7 @@
 	data["can_see_full"] = can_see_full
 	data["can_treat"] = can_treat
 	data["is_self"] = (user == owner)
+	data["subject_name"] = owner?.name
 
 	data["parameters"] = list(
 		"consciousness" = clamp(owner.consciousness, 0, CONSCIOUSNESS_MAX),
@@ -354,7 +355,7 @@
  * Key = typepath string, value = list(iconSrc, name)
  */
 /datum/health_ui/proc/get_treatment_item_ui(typepath)
-	if(!ispath(typepath))
+	if(!ispath(typepath, /obj/item))
 		return null
 
 	var/static/list/treat_icon_cache = list()
@@ -363,14 +364,17 @@
 	if(treat_icon_cache[key])
 		return treat_icon_cache[key]
 
-	var/obj/item/sample = new typepath()
+	var/obj/item/sample = new typepath(null)
 	if(!sample)
 		return null
 
-	var/icon/I = icon(sample.icon, sample.icon_state, SOUTH, 1)
+	var/icon/I
+	if(sample.icon && sample.icon_state)
+		I = icon(sample.icon, sample.icon_state, SOUTH, 1)
+
 	var/list/entry = list(
 		"type" = key,
-		"name" = sample.name,
+		"name" = sample.name || key,
 		"iconSrc" = I ? icon2base64(I) : null,
 	)
 	qdel(sample)
@@ -388,11 +392,12 @@
 
 	if(length(injury.treatable_by))
 		for(var/typepath in injury.treatable_by)
+			if(!ispath(typepath))
+				continue
 			var/list/entry = get_treatment_item_ui(typepath)
 			if(entry)
 				options += list(entry)
 
-	// Tool behaviours are harder to icon; skip pure tools unless they map to items
 	return options
 
 /datum/health_ui/proc/get_limb_injury_bleed_rate(obj/item/bodypart/BP)
@@ -501,5 +506,53 @@
 	)
 
 	return organs_data
+
+
+/datum/keybinding/mob/open_health_panel
+	hotkey_keys = list("H")
+	name = "open_health_panel"
+	full_name = "Open Health Panel"
+	description = "Opens the health panel for the living mob under your cursor (if visible and within 3 tiles), or your own panel."
+	keybind_signal = COMSIG_KB_MOB_OPENHEALTHPANEL_DOWN
+
+/datum/keybinding/mob/open_health_panel/down(client/user, turf/target, mousepos_x, mousepos_y)
+	. = ..()
+	if(.)
+		return
+
+	var/mob/user_mob = user.mob
+	if(!user_mob)
+		return TRUE
+
+	var/mob/living/examined = null
+
+	// Prefer a living mob on the turf under the cursor.
+	if(isturf(target))
+		for(var/mob/living/candidate in target)
+			if(candidate == user_mob)
+				continue
+			if(candidate.invisibility > user_mob.see_invisible)
+				continue
+			if(!can_see(user_mob, candidate, 3))
+				continue
+			examined = candidate
+			break
+
+	// If nothing useful under the cursor, open self.
+	if(!examined)
+		if(iscarbon(user_mob))
+			var/mob/living/carbon/carbon_self = user_mob
+			carbon_self.open_health_ui(user_mob)
+		else
+			to_chat(user, span_warning("You have no health panel."))
+		return TRUE
+
+	// Target is a living mob — open their panel if they support it.
+	if(iscarbon(examined))
+		var/mob/living/carbon/carbon_target = examined
+		carbon_target.open_health_ui(user_mob)
+	else
+		examined.examine(user_mob)
+	return TRUE
 
 #endif

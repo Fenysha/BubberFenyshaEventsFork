@@ -97,7 +97,9 @@ export const HealthPanel = () => {
               <Stack align="center">
                 <Stack.Item grow>
                   <Box bold fontSize="1.1em">
-                    Physiological state
+                    {data.is_self
+                      ? 'Physiological state'
+                      : `Examining: ${data.subject_name || 'Unknown'}`}
                   </Box>
                   <Box color={patientColor}>{patientStatus}</Box>
                 </Stack.Item>

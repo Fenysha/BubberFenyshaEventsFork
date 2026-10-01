@@ -535,7 +535,9 @@ const InjuryEntry = ({
       : injury.undiagnosed_name;
 
   const treatOptions =
-    canTreat && injury.can_treat && injury.treat_options
+    canTreat &&
+    Array.isArray(injury.treat_options) &&
+    injury.treat_options.length > 0
       ? injury.treat_options
       : [];
 

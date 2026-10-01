@@ -617,6 +617,7 @@
 
 
 /datum/injury/proc/get_ui_data()
+	var/has_treatments = length(treatable_by) || length(treatable_tools)
 	return list(
 		"id" = unique_id,
 		"name" = name,
@@ -627,14 +628,15 @@
 		"examine_desc" = examine_desc,
 		"bleed_rate" = get_bleed_rate(),
 		"pain" = get_pain(),
-		"disabling" = disabling,
-		"can_treat" = !!(treatable_by || treatable_tools) && treatment_quality < INJURY_TREATMENT_EXCELLENT,
+		"disabling" = !!disabling,
+		"can_treat" = has_treatments && treatment_quality < INJURY_TREATMENT_EXCELLENT,
 		"series" = series,
 		"treatment_quality" = treatment_quality,
 		"treatment_effectiveness" = treatment_effectiveness,
 		"healing_progress" = healing_progress,
 		"treated" = treatment_quality > INJURY_TREATMENT_NONE,
 	)
+
 
 /datum/injury/proc/severity_text()
 	switch(severity)
@@ -703,19 +705,37 @@
 		span_userdanger("Your [limb.plaintext_zone] [occur_text()]!"),
 	)
 
-/datum/injury/proc/can_be_seen_by(mob/viewer)
-	if(!viewer)
+/datum/injury/proc/can_be_seen_by(mob/user)
+	if(!user || !owner)
 		return FALSE
-	switch(visibility)
-		if(INJURY_VISIBILITY_NONE)
-			return FALSE
-		if(INJURY_VISIBILITY_SELF)
-			return viewer == owner
-		if(INJURY_VISIBILITY_MEDICAL)
-			return viewer == owner || HAS_TRAIT(viewer, TRAIT_VIEW_FULL_HEALTH)
-		if(INJURY_VISIBILITY_FULL)
-			return TRUE
+
+	if(user == owner)
+		return visibility > INJURY_VISIBILITY_NONE
+
+	if(isobserver(user) || HAS_TRAIT(user, TRAIT_VIEW_FULL_HEALTH))
+		return visibility > INJURY_VISIBILITY_NONE
+
+	if(injury_flags & INJURY_FLAG_EXTERNAL)
+		return TRUE
+
+	if(visibility >= INJURY_VISIBILITY_MEDICAL)
+		return TRUE
+
 	return FALSE
+
+/datum/injury/proc/severity_to_text()
+	switch(severity)
+		if(INJURY_SEVERITY_MINOR)
+			return "minor"
+		if(INJURY_SEVERITY_MODERATE)
+			return "moderate"
+		if(INJURY_SEVERITY_SEVERE)
+			return "severe"
+		if(INJURY_SEVERITY_CRITICAL)
+			return "critical"
+		if(INJURY_SEVERITY_LOSS)
+			return "loss"
+	return "unknown"
 
 /datum/injury/proc/occur_text()
 	return "is injured"

@@ -25,6 +25,23 @@
 
 	return health_factor * fluid_factor * get_ventilation_modifier()
 
+
+
+/obj/item/organ/lungs/proc/get_perfusion_factor()
+	if(!owner)
+		return 0
+	if(!owner.needs_heart())
+		return 1
+
+	var/obj/item/organ/heart/heart = owner.get_organ_slot(ORGAN_SLOT_HEART)
+	if(!heart)
+		return 0
+
+
+	var/output = heart.get_cardiac_output()
+	return clamp(output, 0, 1.2)
+
+
 /// Returns the effective pressure multiplier for inhalation.
 /// A minimum of 5% is preserved so that gas-related effects are never completely disabled.
 /obj/item/organ/lungs/proc/get_effective_pressure_mult()
@@ -96,21 +113,32 @@
 		return
 
 	var/vent = get_ventilation()
-	var/target = vent * 100
-	target = max(target, 8)
+	var/perfusion = get_perfusion_factor()
+
+	var/exchange = vent * perfusion
+	var/target = exchange * 100
+	if(perfusion > 0.05)
+		target = max(target, 5)
+	else
+		target = 0
 
 	var/step = (target < owner.blood_oxygenation) ? LUNG_GAS_EXCHANGE_DOWN : LUNG_GAS_EXCHANGE_UP
+
 	if(fluid > LUNG_FLUID_SEVERE)
 		if(target < owner.blood_oxygenation)
 			step *= 1.4
 		else
 			step *= 0.55
 
+	if(perfusion <= 0.05)
+		step = max(step, LUNG_GAS_EXCHANGE_DOWN * 1.6)
+
 	owner.blood_oxygenation = clamp(
 		owner.blood_oxygenation + clamp(target - owner.blood_oxygenation, -step, step) * seconds_per_tick,
 		0,
 		100
 	)
+
 
 /obj/item/organ/lungs/on_life(seconds_per_tick)
 	. = ..()

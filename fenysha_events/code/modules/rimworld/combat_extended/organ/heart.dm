@@ -252,7 +252,7 @@
 	// Already in VF — no coordinated rate control
 	if(fibrillating)
 		// Small chance of spontaneous deterioration into full asystole
-		if(SPT_PROB(1.5, seconds_per_tick))
+		if(SPT_PROB(1, seconds_per_tick))
 			Stop()
 			if(owner)
 				to_chat(owner, span_userdanger("Your heart falls completely silent..."))
@@ -277,7 +277,7 @@
 		return
 
 	// Extremely high or low heart rates cause cardiac arrest (asystole path)
-	if(rate >= HEART_RATE_MAX_SURVIVABLE || rate <= HEART_RATE_MIN_SURVIVABLE)
+	if((rate >= HEART_RATE_MAX_SURVIVABLE || rate <= HEART_RATE_MIN_SURVIVABLE) && beating)
 		if(owner.can_heartattack() && Stop())
 			owner.visible_message(
 				span_danger("[owner] clutches at [owner.p_their()] chest as if [owner.p_their()] heart is stopping!")
@@ -297,9 +297,9 @@
 
 		if(rate > 180 && damage > low_threshold && owner.can_heartattack() && SPT_PROB(3, seconds_per_tick))
 			// Prefer fibrillation over instant asystole when volume is still present
-			if(owner.get_blood_ratio() > 0.25 && prob(60))
+			if(owner.get_blood_ratio() > 0.25 && prob(90))
 				enter_fibrillation()
-			else
+			else if(beating)
 				Stop()
 				to_chat(owner, span_userdanger("Your heart flutters wildly and then stops!"))
 

@@ -178,7 +178,7 @@
 /**
  * How awake the brain is *allowed* to be given O2 and perfusion.
  * A ceiling, not a subtraction. There are no floors: zero oxygen or zero
- * perfusion drives the ceiling to 0, which causes a blackout.
+ * perfusion drives the ceiling to PERFUSION_CONSCIOUSNESS_MIN(default 40)
  */
 /mob/living/carbon/proc/get_physiological_consciousness_cap()
 	var/cap = CONSCIOUSNESS_MAX
@@ -204,7 +204,7 @@
 		perf_cap = ce_curve_lerp(perfusion, 0.70, 0.85, 65, CONSCIOUSNESS_MAX)
 	cap = min(cap, perf_cap)
 
-	return clamp(cap, 0, CONSCIOUSNESS_MAX)
+	return clamp(cap, PERFUSION_CONSCIOUSNESS_MIN, CONSCIOUSNESS_MAX)
 
 
 /**
@@ -271,7 +271,7 @@
 	if(pain >= PAIN_FIBRILLATION_THRESHOLD && needs_heart())
 		var/obj/item/organ/heart/heart = get_organ_slot(ORGAN_SLOT_HEART)
 		if(heart && !heart.fibrillating && heart.is_beating())
-			var/fib_chance = (pain - PAIN_FIBRILLATION_THRESHOLD) * 0.05
+			var/fib_chance = abs((pain - PAIN_FIBRILLATION_THRESHOLD) * 0.01)
 			if(SPT_PROB(fib_chance, seconds_per_tick))
 				if(heart.enter_fibrillation())
 					to_chat(src, span_userdanger("Agony tears through your chest — your heart stumbles into chaos!"))
