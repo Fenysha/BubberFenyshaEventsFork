@@ -36,6 +36,40 @@
 	F.ui_interact(user)
 	return TRUE
 
+/datum/action/cooldown/mob_cooldown/faction_research
+	name = "Faction Research"
+	desc = "Open the faction research tree."
+
+	button_icon = 'icons/mob/actions/actions_spells.dmi'
+	button_icon_state = "spell_default"
+
+	click_to_activate = FALSE
+	cooldown_time = 1 SECONDS
+	melee_cooldown_time = 0
+	shared_cooldown = NONE
+
+/datum/action/cooldown/mob_cooldown/faction_research/IsAvailable(feedback = FALSE)
+	. = ..()
+	if(!.)
+		return FALSE
+	var/mob/living/user = owner
+	if(user.stat || user.incapacitated)
+		return FALSE
+	if(!user?.rw_faction || !istype(user.rw_faction, /datum/rw_faction/player))
+		if(feedback)
+			owner.balloon_alert(owner, "No faction!")
+		return FALSE
+	return TRUE
+
+/datum/action/cooldown/mob_cooldown/faction_research/Activate(atom/target)
+	var/mob/living/user = owner
+	var/datum/rw_faction/player/F = user.rw_faction
+	if(!F?.techweb)
+		return FALSE
+	. = ..()
+	F.techweb.ui_interact(user)
+	return TRUE
+
 /datum/action/cooldown/mob_cooldown/faction_invite
 	name = "Invite to Faction"
 	desc = "Invite the selected creature to join your faction."
@@ -229,6 +263,8 @@
 
 	var/datum/faction_leadership_vote/active_vote
 
+	var/leader_can_research = TRUE
+
 /datum/rw_faction/player/New(faction_id, faction_name)
 	. = ..()
 	techweb = new /datum/techweb/faction()
@@ -270,7 +306,7 @@
 	return member_roles[M] || FACTION_ROLE_MEMBER
 
 /datum/rw_faction/player/proc/set_role(mob/living/M, new_role)
-	if(!(M in members) || !(new_role in list(FACTION_ROLE_MEMBER, FACTION_ROLE_CHIEF, FACTION_ROLE_LEADER)))
+	if(!(M in members) || !(new_role in list(FACTION_ROLE_MEMBER, FACTION_ROLE_CHIEF, FACTION_ROLE_LEADER, FACTION_ROLE_RESEARCHER, FACTION_ROLE_TRADER)))
 		return FALSE
 
 	if(new_role == FACTION_ROLE_LEADER)
@@ -282,6 +318,28 @@
 
 /datum/rw_faction/player/proc/is_chief(mob/living/M)
 	return get_role(M) == FACTION_ROLE_CHIEF
+
+/datum/rw_faction/player/proc/is_researcher(mob/living/M)
+	return get_role(M) == FACTION_ROLE_RESEARCHER
+
+/datum/rw_faction/player/proc/is_trader(mob/living/M)
+	return get_role(M) == FACTION_ROLE_TRADER
+
+/datum/rw_faction/player/proc/can_manage_research(mob/living/M)
+	if(!(M in members) || !is_alive(M))
+		return FALSE
+	var/role = get_role(M)
+	return role == FACTION_ROLE_RESEARCHER || (leader_can_research && role == FACTION_ROLE_LEADER)
+
+/datum/rw_faction/player/proc/can_trade(mob/living/M)
+	if(!(M in members) || !is_alive(M))
+		return FALSE
+	return get_role(M) == FACTION_ROLE_TRADER
+
+/datum/rw_faction/player/proc/can_assign_role(mob/living/actor, mob/living/target, new_role)
+	if(!is_leader(actor) || !(target in members) || !is_alive(target) || is_leader(target))
+		return FALSE
+	return (new_role in list(FACTION_ROLE_MEMBER, FACTION_ROLE_RESEARCHER, FACTION_ROLE_TRADER))
 
 /datum/rw_faction/player/proc/can_manage_members(mob/living/M)
 	if(!(M in members) || !is_alive(M))
@@ -308,6 +366,10 @@
 	var/datum/action/cooldown/mob_cooldown/faction_panel/panel = new
 	panel.Grant(M)
 
+	// Research tree - view for everyone, management is checked in techweb ui_act
+	var/datum/action/cooldown/mob_cooldown/faction_research/research = new
+	research.Grant(M)
+
 	// Invite + Kick — only for members who can manage the faction
 	if(can_manage_members(M))
 		var/datum/action/cooldown/mob_cooldown/faction_invite/invite = new
@@ -321,6 +383,8 @@
 		return
 
 	for(var/datum/action/cooldown/mob_cooldown/faction_panel/A in M.actions)
+		A.Remove(M)
+	for(var/datum/action/cooldown/mob_cooldown/faction_research/A in M.actions)
 		A.Remove(M)
 	for(var/datum/action/cooldown/mob_cooldown/faction_invite/A in M.actions)
 		A.Remove(M)
@@ -344,7 +408,7 @@
 	return is_leader(actor) && (target in members) && is_alive(target) && is_chief(target)
 
 /datum/rw_faction/player/proc/research_tech(tech_id)
-	return techweb?.research_node(tech_id)
+	return techweb?.enqueue_research(tech_id)
 
 
 /datum/rw_faction/player/proc/start_leadership_vote(mob/living/initiator, mob/living/candidate)
@@ -398,6 +462,8 @@
 	data["is_leader"] = is_leader(user)
 	data["is_chief"] = is_chief(user)
 	data["can_manage"] = can_manage_members(user)
+	data["user_role"] = get_role(user)
+	data["can_research"] = can_manage_research(user)
 	data["user_ref"] = REF(user)
 
 
@@ -425,6 +491,10 @@
 		entry["can_demote"] = can_demote_chief(user, M)
 		entry["can_transfer_leadership"] = is_leader(user) && M != user && is_alive(M)
 		entry["can_nominate"] = (M != leader) && is_alive(M) && !active_vote
+		var/member_role = get_role(M)
+		entry["can_set_researcher"] = can_assign_role(user, M, FACTION_ROLE_RESEARCHER) && member_role != FACTION_ROLE_RESEARCHER
+		entry["can_set_trader"] = can_assign_role(user, M, FACTION_ROLE_TRADER) && member_role != FACTION_ROLE_TRADER
+		entry["can_clear_role"] = can_assign_role(user, M, FACTION_ROLE_MEMBER) && (member_role in list(FACTION_ROLE_RESEARCHER, FACTION_ROLE_TRADER))
 		members_data += list(entry)
 	data["members"] = members_data
 
@@ -466,6 +536,28 @@
 			set_role(target, FACTION_ROLE_MEMBER)
 			to_chat(user, span_notice("[target.real_name] is no longer Chief."))
 			to_chat(target, span_warning("You were removed from the Chief position."))
+			return TRUE
+
+		if("set_role")
+			var/mob/living/target = locate(params["ref"])
+			var/new_role = params["role"]
+			if(!istext(new_role) || !can_assign_role(user, target, new_role))
+				return FALSE
+			set_role(target, new_role)
+			switch(new_role)
+				if(FACTION_ROLE_RESEARCHER)
+					to_chat(user, span_notice("[target.real_name] is now a Researcher."))
+					to_chat(target, span_notice("You were appointed Researcher of faction [name]. You can manage the research queue."))
+				if(FACTION_ROLE_TRADER)
+					to_chat(user, span_notice("[target.real_name] is now a Trader."))
+					to_chat(target, span_notice("You were appointed Trader of faction [name]."))
+				else
+					to_chat(user, span_notice("[target.real_name] no longer has a special role."))
+					to_chat(target, span_warning("You were relieved of your faction role."))
+			return TRUE
+
+		if("open_research")
+			techweb?.ui_interact(user)
 			return TRUE
 
 		if("transfer_leadership")

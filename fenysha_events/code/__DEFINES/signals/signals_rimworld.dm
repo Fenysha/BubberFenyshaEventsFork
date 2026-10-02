@@ -9,7 +9,6 @@
 // fired by walls/structures when they stop providing support
 #define COMSIG_ATOM_ROOF_SUPPORT_LOST "atom_roof_support_lost"
 
-
 /// Fired on the planet when the global quadrum changes. (old_quadrum, new_quadrum, year)
 #define COMSIG_RIMWORLD_PLANET_QUADRUM_CHANGED "rimworld_planet_quadrum_changed"
 /// Fired on the planet when the calendar year changes. (old_year, new_year)
@@ -28,3 +27,7 @@
 
 
 #define COMSIG_KB_MOB_OPENHEALTHPANEL_DOWN "keybinding_mob_openhealthpanel_down"
+
+
+#define COMSIG_RW_MULTIBLOCK_INTERACT	"rw_mb_interact"
+#define COMSIG_RW_MULTIBLOCK_BROKEN		"rw_mb_broken"

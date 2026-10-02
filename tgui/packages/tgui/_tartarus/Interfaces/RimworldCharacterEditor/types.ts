@@ -140,10 +140,7 @@ export type RimworldCharacterEditorData = {
   hairIcons?: Record<string, string> | [string, string][];
   underwearIcons?: Record<string, string> | [string, string][];
   clothingDefs?: RwClothingChooser[];
-  clothingIcons?: Record<
-    string,
-    Record<string, string> | [string, string][]
-  >;
+  clothingIcons?: Record<string, Record<string, string> | [string, string][]>;
   clothing?: Record<string, string>;
   clothingColors?: Record<string, string>;
   skinTones: string[];

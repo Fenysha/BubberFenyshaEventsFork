@@ -15,6 +15,10 @@
 
 	var/datum/mind/preserved_mind = viewer.mind
 
+	if(isnewplayer(viewer))
+		var/mob/dead/new_player/player = viewer
+		player.hide_title_screen()
+
 	preserved_mind.active = FALSE
 	preserved_mind.transfer_to(character)
 	preserved_mind.set_original_character(character)

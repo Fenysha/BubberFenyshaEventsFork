@@ -21,6 +21,9 @@ type MemberEntry = {
   can_demote: boolean;
   can_transfer_leadership: boolean;
   can_nominate: boolean;
+  can_set_researcher: boolean;
+  can_set_trader: boolean;
+  can_clear_role: boolean;
 };
 
 type FactionPanelData = {
@@ -32,6 +35,8 @@ type FactionPanelData = {
   is_leader: boolean;
   is_chief: boolean;
   can_manage: boolean;
+  can_research: boolean;
+  user_role: string;
   user_ref: string;
   has_active_vote: boolean;
   vote_candidate?: string;
@@ -50,6 +55,10 @@ const roleLabel = (role: string) => {
       return 'Leader';
     case 'chief':
       return 'Chief';
+    case 'researcher':
+      return 'Researcher';
+    case 'trader':
+      return 'Trader';
     default:
       return 'Member';
   }
@@ -61,6 +70,10 @@ const roleColor = (role: string) => {
       return 'yellow';
     case 'chief':
       return 'good';
+    case 'researcher':
+      return 'teal';
+    case 'trader':
+      return 'orange';
     default:
       return 'label';
   }
@@ -90,25 +103,21 @@ export const FactionPanel = () => {
                   {data.alive_count} alive / {data.member_count} total
                 </LabeledList.Item>
                 <LabeledList.Item label="Your role">
-                  <Box
-                    color={roleColor(
-                      data.is_leader
-                        ? 'leader'
-                        : data.is_chief
-                          ? 'chief'
-                          : 'member',
-                    )}
-                  >
-                    {data.is_leader
-                      ? 'Leader'
-                      : data.is_chief
-                        ? 'Chief'
-                        : 'Member'}
+                  <Box color={roleColor(data.user_role)}>
+                    {roleLabel(data.user_role)}
                   </Box>
                 </LabeledList.Item>
               </LabeledList>
 
               <Box mt={1}>
+                <Button
+                  icon="flask"
+                  fluid
+                  mb={1}
+                  onClick={() => act('open_research')}
+                >
+                  Research
+                </Button>
                 <Button
                   icon="sign-out-alt"
                   color="bad"
@@ -235,6 +244,45 @@ export const FactionPanel = () => {
                               tooltip="Remove as Chief"
                               onClick={() =>
                                 act('demote_chief', { ref: m.ref })
+                              }
+                            />
+                          </Stack.Item>
+                        )}
+                        {m.can_set_researcher && (
+                          <Stack.Item>
+                            <Button
+                              icon="flask"
+                              color="teal"
+                              tooltip="Appoint as Researcher"
+                              onClick={() =>
+                                act('set_role', {
+                                  ref: m.ref,
+                                  role: 'researcher',
+                                })
+                              }
+                            />
+                          </Stack.Item>
+                        )}
+                        {m.can_set_trader && (
+                          <Stack.Item>
+                            <Button
+                              icon="coins"
+                              color="orange"
+                              tooltip="Appoint as Trader"
+                              onClick={() =>
+                                act('set_role', { ref: m.ref, role: 'trader' })
+                              }
+                            />
+                          </Stack.Item>
+                        )}
+                        {m.can_clear_role && (
+                          <Stack.Item>
+                            <Button
+                              icon="user-minus"
+                              color="average"
+                              tooltip="Remove role"
+                              onClick={() =>
+                                act('set_role', { ref: m.ref, role: 'member' })
                               }
                             />
                           </Stack.Item>

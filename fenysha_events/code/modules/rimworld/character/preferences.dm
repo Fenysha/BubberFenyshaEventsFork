@@ -279,10 +279,21 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 
 	return rw_skill_character_cost(new_level) - rw_skill_character_cost(current_level)
 
+/datum/rimworld_preferences/proc/passion_point_cost(passion_level)
+	switch(passion_level)
+		if(RW_PASSION_INTERESTED)
+			return 75
+		if(RW_PASSION_BURNING)
+			return 200
+	return 0
+
 /datum/rimworld_preferences/proc/points_spent()
 	. = 0
 	for(var/skill_id in skills)
 		. += rw_skill_character_cost(skills[skill_id] || 0)
+	if(islist(passions))
+		for(var/skill_id in passions)
+			. += passion_point_cost(passions[skill_id] || RW_PASSION_NONE)
 	for(var/trait_id in traits)
 		var/datum/rw_trait/trait = GLOB.all_rw_traits[trait_id]
 		. += trait?.cost || 0
@@ -313,6 +324,9 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	return ids[1]
 
 /datum/rimworld_preferences/proc/can_afford(cost)
+	if(!isnum(cost))
+		cost = 0
+	// Negative costs (point refunds from drawbacks) are always affordable.
 	return points_remaining() >= cost
 
 /datum/rimworld_preferences/proc/randomize_names()

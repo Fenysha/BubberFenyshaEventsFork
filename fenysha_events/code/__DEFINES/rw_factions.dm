@@ -34,3 +34,5 @@
 #define FACTION_ROLE_MEMBER "member"
 #define FACTION_ROLE_CHIEF  "chief"
 #define FACTION_ROLE_LEADER "leader"
+#define FACTION_ROLE_RESEARCHER "researcher"
+#define FACTION_ROLE_TRADER "trader"

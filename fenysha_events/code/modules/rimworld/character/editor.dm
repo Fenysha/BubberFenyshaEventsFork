@@ -560,6 +560,8 @@
 				xenogenes -= gene_id
 				if(islist(xenogene_inheritable))
 					xenogene_inheritable -= gene_id
+				if(islist(xenogene_values))
+					xenogene_values -= gene_id
 			else
 				var/list/conflicts = gene.conflicts_with_ids(xenogenes)
 				var/list/innate = proto?.rw_innate_xenogenes
@@ -568,10 +570,22 @@
 				for(var/conflict_id in conflicts)
 					if(conflict_id in innate)
 						return TRUE
+				// Net cost after refunding any conflicting genes being replaced.
+				var/net_cost = gene.point_cost
+				for(var/conflict_id in conflicts)
+					var/datum/rw_xenogene/conflict_gene = GLOB.all_rw_xenogenes[conflict_id]
+					if(conflict_gene)
+						net_cost -= conflict_gene.point_cost
+						if(islist(xenogene_inheritable) && (conflict_id in xenogene_inheritable))
+							net_cost -= conflict_gene.inheritable_cost
+				if(!can_afford(net_cost))
+					return TRUE
 				for(var/conflict_id in conflicts)
 					xenogenes -= conflict_id
 					if(islist(xenogene_inheritable))
 						xenogene_inheritable -= conflict_id
+					if(islist(xenogene_values))
+						xenogene_values -= conflict_id
 				xenogenes += gene_id
 				ensure_xenogene_value(gene_id)
 			save_character()
@@ -649,8 +663,14 @@
 			var/skill_id = params["id"]
 			if(!(skill_id in GLOB.all_rw_skills))
 				return TRUE
+			if(!islist(passions))
+				passions = list()
 			var/current = passions[skill_id] || RW_PASSION_NONE
-			passions[skill_id] = (current + 1) % 3
+			var/next = (current + 1) % 3
+			var/delta_cost = passion_point_cost(next) - passion_point_cost(current)
+			if(delta_cost > 0 && !can_afford(delta_cost))
+				return TRUE
+			passions[skill_id] = next
 			save_character()
 			return TRUE
 		if("toggle_trait")

@@ -4,17 +4,23 @@
 	sanitize_character()
 	target.real_name = real_name
 	target.name = real_name
-	if(istype(target, /mob/living/carbon/human/dummy))
+	var/is_dummy = istype(target, /mob/living/carbon/human/dummy)
+	if(is_dummy)
 		target.underwear_visibility = NONE
 	var/datum/preferences/bridge = ensure_pref_bridge()
 	refresh_pref_species()
+	// Always push current gene state into preference bridge first, including disabled genes
+	// so removed xenogenes clear mutant parts / accessory prefs before the body is rebuilt.
 	apply_xenogene_options()
 	var/list/skip_prefs = list(
 		/datum/preference/numeric/body_size,
 		/datum/preference/choiced/species,
 	)
 	var/wanted_species = rw_species()
-	if(target.dna && target.dna.species?.type != wanted_species)
+	// For the preview dummy always force a species rebuild so removed genes drop their
+	// mutant bodyparts. Live pawns only rebuild when the species actually changes.
+	var/force_species = is_dummy || (target.dna && target.dna.species?.type != wanted_species)
+	if(target.dna && force_species)
 		var/list/features
 		var/list/mutantparts
 		var/list/markings
@@ -23,7 +29,7 @@
 			mutantparts = copy_list(bridge.mutant_bodyparts)
 			markings = copy_list(bridge.body_markings)
 		target.set_species(wanted_species, FALSE, FALSE, TRUE, features, mutantparts, markings)
-	if(istype(target, /mob/living/carbon/human/dummy))
+	if(is_dummy)
 		var/wanted_legs = NORMAL_LEGS
 		if((RW_XENOGENE_LEGS in xenogenes) && islist(xenogene_values) && xenogene_values[RW_XENOGENE_LEGS])
 			wanted_legs = xenogene_values[RW_XENOGENE_LEGS]
@@ -34,9 +40,11 @@
 		bridge.apply_prefs_to(target, FALSE, skip_prefs, visuals_only)
 	apply_body_size_to(target)
 	apply_xenogene_visuals(target)
-	if(target.dna && !istype(target, /mob/living/carbon/human/dummy))
+	// Keep DNA gene set in sync for both live pawns and the preview dummy so removal
+	// drops visual organs / overlays that were added by the gene.
+	if(target.dna && hascall(target.dna, "set_rw_xenogenes"))
 		target.dna.set_rw_xenogenes(xenogenes, xenogene_values, TRUE)
-		if(target.dna.rw_xenogenes)
+		if(islist(target.dna.rw_xenogenes))
 			for(var/gene_id in target.dna.rw_xenogenes)
 				var/datum/rw_xenogene/live_gene = target.dna.rw_xenogenes[gene_id]
 				if(live_gene)
@@ -58,7 +66,7 @@
 			item.equip_to(target)
 	target.icon_render_keys = list()
 	target.update_body(TRUE)
-	if(istype(target, /mob/living/carbon/human/dummy))
+	if(is_dummy)
 		apply_dummy_clothes(target)
 	target.update_hair()
 	target.update_eyes()

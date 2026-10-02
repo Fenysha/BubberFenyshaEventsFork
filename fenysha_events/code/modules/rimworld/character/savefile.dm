@@ -140,6 +140,18 @@
 		loadout = list()
 		for(var/skill_id in GLOB.all_rw_skills)
 			skills[skill_id] = 0
+		// Drop non-innate xenogenes so a legacy/corrupt save cannot stay over budget.
+		var/datum/species/proto = GLOB.species_prototypes[rw_species()]
+		var/list/innate = proto?.rw_innate_xenogenes
+		if(!islist(innate))
+			innate = list()
+		var/list/kept_genes = list()
+		for(var/gene_id in xenogenes)
+			if(gene_id in innate)
+				kept_genes += gene_id
+		xenogenes = kept_genes
+		xenogene_inheritable = list()
+		sync_species_xenogenes()
 
 /datum/rimworld_preferences/proc/migrate_legacy_xenogenes()
 	if(!islist(xenogenes))
