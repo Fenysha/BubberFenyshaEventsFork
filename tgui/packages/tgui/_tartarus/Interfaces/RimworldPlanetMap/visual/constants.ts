@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 
+// Mirrored by RW_SUN_DIRECTION_* in fenysha_events/code/__DEFINES/rw_planet_time.dm; the server lights tiles from the same sun.
 export const PLANET_SUN_DIRECTION = new THREE.Vector3(5, 3.2, 4).normalize();
 
 export const PLANET_SUN_COLOR = new THREE.Color(0xfff3dc);

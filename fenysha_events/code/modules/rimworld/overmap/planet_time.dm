@@ -8,39 +8,56 @@
 	return get_tile_lat_lon(x, y)[2]
 
 
+/// Wraps degrees into -180..180.
+/proc/rw_wrap_degrees(degrees)
+	var/wrapped = MODULUS(degrees + 180, 360)
+	if(wrapped < 0)
+		wrapped += 360
+	return wrapped - 180
+
+
+/// Solar hour (0-24) for a signed hour angle; 12 = sun on the meridian, positive = morning side.
+/proc/rw_hour_angle_to_hour(delta)
+	var/hour = MODULUS(12 - delta / 15, RW_HOURS_PER_DAY)
+	if(hour < 0)
+		hour += RW_HOURS_PER_DAY
+	return hour
+
+
 /**
- * Solar longitude of the "sun" on the planet surface.
- * rotation_angle 0 = sun over longitude 0 (you can shift by a constant if needed).
+ * Planet-local longitude the sun is over. Mirrors the globe UI: a sun fixed in
+ * world space (RW_SUN_DIRECTION) and a planet spun about its axis by rotation_angle.
  */
 /datum/rimworld_planet/proc/get_sun_longitude()
-	// Map 0-360 rotation → -180..180 solar long
-	var/sun = rotation_angle
-	if(sun > 180)
-		sun -= 360
-	return sun
+	return rw_wrap_degrees(rotation_angle + RW_SUN_LONGITUDE_OFFSET)
+
+
+/// Unit vector to the subsolar point in planet-local space (same frame as get_tile_center).
+/datum/rimworld_planet/proc/get_sun_vector()
+	var/lon = get_sun_longitude()
+	var/lat = RW_SUN_LATITUDE
+	return list(cos(lat) * cos(lon), sin(lat), cos(lat) * sin(lon))
 
 
 /**
- * Angular distance from the tile to the subsolar point (0 = noon, 180 = midnight).
+ * Great-circle angle from the tile to the subsolar point (0 = noon, 180 = midnight).
  * Unsigned — fine for intensity falloff, which is symmetric around noon.
  */
 /datum/rimworld_planet/proc/get_solar_angle(x, y)
-	return abs(get_solar_hour_angle(x, y))
+	if(!is_valid_coordinate(x, y))
+		return 180
+	var/cosine = clamp(rw_vec_dot(get_tile_center(x, y), get_sun_vector()), -1, 1)
+	return arccos(cosine)
 
 
 /**
- * Signed angular offset of the tile from the subsolar point, in -180..180.
+ * Signed longitude offset of the tile from the subsolar meridian, in -180..180.
  * Positive = tile hasn't reached the sun yet (morning side), negative = tile is
  * past the sun (afternoon/evening side). Needed to recover a real 0-24h local
  * time — get_solar_angle() alone can't, since it discards this sign.
  */
 /datum/rimworld_planet/proc/get_solar_hour_angle(x, y)
-	var/lon = get_longitude(x, y)
-	var/sun = get_sun_longitude()
-	var/delta = lon - sun
-	// Normalize to -180..180
-	delta = ((delta + 180) % 360 + 360) % 360 - 180
-	return delta
+	return rw_wrap_degrees(get_longitude(x, y) - get_sun_longitude())
 
 
 /**
@@ -49,12 +66,7 @@
  * own correct phase (and colour) instead of both collapsing onto the morning half.
  */
 /datum/rimworld_planet/proc/get_solar_hour(x, y)
-	var/delta = get_solar_hour_angle(x, y) // >0 morning, <0 afternoon
-	var/hour = 12 - (delta / 180) * 12
-	hour = hour % 24
-	if(hour < 0)
-		hour += 24
-	return hour
+	return rw_hour_angle_to_hour(get_solar_hour_angle(x, y))
 
 
 /**

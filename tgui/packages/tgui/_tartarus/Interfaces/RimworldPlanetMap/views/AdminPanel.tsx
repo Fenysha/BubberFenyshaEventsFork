@@ -15,6 +15,7 @@ import {
   Stack,
 } from 'tgui-core/components';
 
+import { DaylightClock } from './DaylightClock';
 import type { AdminMapData } from './types';
 
 export const AdminPanel = () => {
@@ -144,15 +145,8 @@ export const AdminPanel = () => {
               {data.seasonNorth} / {data.seasonSouth}
             </LabeledList.Item>
 
-            <LabeledList.Item label="Time of day (h)">
-              <NumberInput
-                width="100%"
-                step={0.25}
-                minValue={0}
-                maxValue={24}
-                value={Number(data.timeOfDay?.toFixed?.(2) ?? 0)}
-                onChange={(value) => act('set_time_of_day', { hour: value })}
-              />
+            <LabeledList.Item label="Time of day">
+              <DaylightClock />
             </LabeledList.Item>
 
             <LabeledList.Item label="Year">

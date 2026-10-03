@@ -828,7 +828,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(loaded_area && SSdaylight.setup_complete)
 		loaded_area.cell_loading = FALSE
 		loaded_area.update_base_lighting()
-		if(loaded_area.daylight && !loaded_area.daylight_overlays_ready)
+		if(loaded_area.daylight)
+			// Turfs were stamped in while cell_loading suppressed per-turf refreshes, so attach from scratch.
+			loaded_area.daylight_overlays_ready = FALSE
 			loaded_area.apply_daylight_overlay()
 
 	phase = RW_CELL_JOB_FINISH

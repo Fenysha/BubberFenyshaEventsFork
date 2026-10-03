@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { resolveAsset } from 'tgui/assets';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import { DaylightClock } from './DaylightClock';
 import type { SettlementMapData, SettlementViewData } from './types';
 
 export const SettlementPanel = () => {
@@ -10,10 +11,19 @@ export const SettlementPanel = () => {
   const mode = view.mode || 'start';
   const selected = data.selectedTile;
 
+  const clock = data.canControlTime ? (
+    <Stack.Item>
+      <Section title="Planet Clock">
+        <DaylightClock />
+      </Section>
+    </Stack.Item>
+  ) : null;
+
   if (mode === 'observer') {
     const loadedCells = view.loadedCells || [];
     return (
       <Stack fill vertical>
+        {clock}
         <Stack.Item>
           <Section title="Loaded Cells">
             {loadedCells.length === 0 ? (
@@ -51,6 +61,7 @@ export const SettlementPanel = () => {
 
   return (
     <Stack fill vertical>
+      {clock}
       <Stack.Item>
         <Section title="Selected Location">
           {!selected ? (

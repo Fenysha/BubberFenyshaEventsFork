@@ -6,19 +6,7 @@ ADMIN_VERB(set_daylight_time, R_ADMIN, "Set Daylight Time (0-1)", "Force dayligh
 	if(isnull(value))
 		return
 
-	value = clamp(value, -1, 1)
-	if(value < 0)
-		SSdaylight.manual_time = -1
-		SSdaylight.time_locked = FALSE
-		SSdaylight.cycle_locked = FALSE
-	else
-		SSdaylight.manual_time = value
-		SSdaylight.time_locked = TRUE
-		SSdaylight.cycle_locked = TRUE
-		var/color = SSdaylight.get_manual_light_color(value)
-		SSdaylight.set_intensity_and_color(value, color, force = TRUE)
-		if(SSdaylight.use_planet_time)
-			SSdaylight.set_all_rimworld_daylight(value, color)
+	value = SSdaylight.set_global_daylight(value)
 
 	log_admin("[key_name(usr)] set daylight time to [value < 0 ? "AUTO" : value]")
 	message_admins(span_adminnotice("[key_name_admin(usr)] set daytime: [value < 0 ? "auto" : value]"))
@@ -28,12 +16,10 @@ ADMIN_VERB(toggle_daylight_cycle_lock, R_ADMIN, "Toggle Daylight Cycle Lock", "L
 	if(!check_rights(R_ADMIN))
 		return
 
-	SSdaylight.cycle_locked = !SSdaylight.cycle_locked
-	if(!SSdaylight.cycle_locked)
-		SSdaylight.time_locked = FALSE
-		SSdaylight.manual_time = -1
-		if(SSdaylight.use_planet_time)
-			SSdaylight.set_all_rimworld_daylight(null, null)
+	if(SSdaylight.cycle_locked)
+		SSdaylight.set_global_daylight(-1)
+	else
+		SSdaylight.cycle_locked = TRUE
 
 	log_admin("[key_name(usr)] [SSdaylight.cycle_locked ? "locked" : "unlocked"] daylight cycle")
 	message_admins(span_adminnotice("[key_name_admin(usr)] [SSdaylight.cycle_locked ? "locked" : "unlocked"] daylight cycle"))
@@ -119,22 +105,7 @@ ADMIN_VERB(daylight_reapply_lighting, R_ADMIN, "Daylight Reapply Area Lighting",
 
 	switch(action)
 		if("set_manual")
-			var/value = text2num(params["value"])
-			value = clamp(value, -1, 1)
-			if(value < 0)
-				SSdaylight.manual_time = -1
-				SSdaylight.time_locked = FALSE
-				SSdaylight.cycle_locked = FALSE
-				if(SSdaylight.use_planet_time)
-					SSdaylight.set_all_rimworld_daylight(null, null)
-			else
-				SSdaylight.manual_time = value
-				SSdaylight.time_locked = TRUE
-				SSdaylight.cycle_locked = TRUE
-				var/color = SSdaylight.get_manual_light_color(value)
-				SSdaylight.set_intensity_and_color(value, color, force = TRUE)
-				if(SSdaylight.use_planet_time)
-					SSdaylight.set_all_rimworld_daylight(value, color)
+			SSdaylight.set_global_daylight(text2num(params["value"]))
 			return TRUE
 
 		if("set_cycle_minutes")
@@ -143,20 +114,14 @@ ADMIN_VERB(daylight_reapply_lighting, R_ADMIN, "Daylight Reapply Area Lighting",
 			return TRUE
 
 		if("toggle_cycle_lock")
-			SSdaylight.cycle_locked = !SSdaylight.cycle_locked
-			if(!SSdaylight.cycle_locked)
-				SSdaylight.time_locked = FALSE
-				SSdaylight.manual_time = -1
-				if(SSdaylight.use_planet_time)
-					SSdaylight.set_all_rimworld_daylight(null, null)
+			if(SSdaylight.cycle_locked)
+				SSdaylight.set_global_daylight(-1)
+			else
+				SSdaylight.cycle_locked = TRUE
 			return TRUE
 
 		if("set_auto")
-			SSdaylight.manual_time = -1
-			SSdaylight.time_locked = FALSE
-			SSdaylight.cycle_locked = FALSE
-			if(SSdaylight.use_planet_time)
-				SSdaylight.set_all_rimworld_daylight(null, null)
+			SSdaylight.set_global_daylight(-1)
 			return TRUE
 
 		if("set_planet_hour")

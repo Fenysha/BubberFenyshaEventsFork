@@ -142,6 +142,9 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 /area/rimworld/proc/attach_daylight_overlays()
 	if(!daylight || cell_loading || daylight_overlays_ready)
 		return
+	// Initialize() runs this before the generator has stamped any turfs in; the loader attaches later.
+	if(!length(contents))
+		return
 	daylight_overlays_ready = TRUE
 	ensure_sun_plate()
 	SSdaylight.daylight_areas |= src

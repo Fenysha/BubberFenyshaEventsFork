@@ -24,6 +24,16 @@
 #define RW_SEASON_WINTER          "winter"
 
 #define RW_HOURS_PER_DAY          24
+
+/// World-space sun the globe UI lights from (RimworldPlanetMap/visual/constants.ts PLANET_SUN_DIRECTION). Keep in sync.
+#define RW_SUN_DIRECTION_X        5
+#define RW_SUN_DIRECTION_Y        3.2
+#define RW_SUN_DIRECTION_Z        4
+/// Planet-local longitude the sun sits over at rotation_angle 0, and its fixed latitude.
+#define RW_SUN_LONGITUDE_OFFSET   (arctan(RW_SUN_DIRECTION_X, RW_SUN_DIRECTION_Z))
+#define RW_SUN_LATITUDE           (arctan(sqrt(RW_SUN_DIRECTION_X * RW_SUN_DIRECTION_X + RW_SUN_DIRECTION_Z * RW_SUN_DIRECTION_Z), RW_SUN_DIRECTION_Y))
+/// Longitude whose solar hour time_of_day reports.
+#define RW_CLOCK_LONGITUDE        0
 /// Day arc around solar noon (0-1). 0.5 ≈ 12h daylight.
 #define RW_DEFAULT_DAYLIGHT_FRACTION 0.5
 

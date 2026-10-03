@@ -117,7 +117,7 @@
 	data["canEdit"] = can_edit
 	data["canRegenerate"] = can_regenerate
 	data["canSelectTiles"] = can_select_tiles
-	data["canControlTime"] = can_control_time
+	data["canControlTime"] = can_control_time || check_rights_for(user?.client, R_ADMIN)
 
 	data["staticObjects"] = planet.get_static_objects()
 
@@ -288,6 +288,17 @@
 			SStgui.close_uis(src)
 			return TRUE
 
+		if("set_time_of_day")
+			if(!(can_control_time || check_rights_for(ui.user?.client, R_ADMIN)))
+				return FALSE
+			var/hour = text2num(params["hour"])
+			if(isnull(hour))
+				return FALSE
+			SSrimworld_planetmap.set_time_of_day(hour)
+			log_admin("[key_name(ui.user)] turned the planet clock to [SSrimworld_planetmap.time_of_day] from the planet map")
+			SStgui.update_uis(src)
+			return TRUE
+
 		if("select_tile")
 			var/x = params["x"]
 			var/y = params["y"]
@@ -449,13 +460,6 @@
 			return TRUE
 
 		// ── Calendar / time ─────────────────────────────────────────────────
-		if("set_time_of_day")
-			if(!can_control_time || isnull(params["hour"]))
-				return FALSE
-			SSrimworld_planetmap.set_time_of_day(text2num(params["hour"]))
-			SStgui.update_uis(src)
-			return TRUE
-
 		if("set_time_scale")
 			return FALSE
 

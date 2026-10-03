@@ -47,6 +47,7 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	if(SSmapping.current_map.rimworld_map)
 		planet = new /datum/rimworld_planet(null, default_planet_type)
 		sync_derived_rotation_speed()
+		time_of_day = rotation_to_hour(rotation_angle)
 		apply_rotation_settings()
 		sync_time_to_planet()
 
@@ -74,7 +75,7 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 		days_crossed++
 	planet.rotation_angle = rotation_angle
 
-	time_of_day = (rotation_angle / 360) * RW_HOURS_PER_DAY
+	time_of_day = rotation_to_hour(rotation_angle)
 	planet.time_of_day = time_of_day
 
 	if(advance_calendar && days_crossed > 0)
@@ -225,12 +226,25 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 		set_time_of_day(hour)
 
 
+/// Solar hour at RW_CLOCK_LONGITUDE for a rotation angle. The globe's sun is fixed in world space, so the clock follows it.
+/datum/controller/subsystem/rimworld_planetmap/proc/rotation_to_hour(angle)
+	return rw_hour_angle_to_hour(rw_wrap_degrees(RW_CLOCK_LONGITUDE - angle - RW_SUN_LONGITUDE_OFFSET))
+
+
+/// Rotation angle (0-360) that puts RW_CLOCK_LONGITUDE at the given solar hour. Inverse of rotation_to_hour().
+/datum/controller/subsystem/rimworld_planetmap/proc/hour_to_rotation(hour)
+	var/angle = MODULUS((hour - 12) * 15 + RW_CLOCK_LONGITUDE - RW_SUN_LONGITUDE_OFFSET, 360)
+	if(angle < 0)
+		angle += 360
+	return angle
+
+
 /datum/controller/subsystem/rimworld_planetmap/proc/set_time_of_day(hour)
-	hour = hour % RW_HOURS_PER_DAY
+	hour = MODULUS(hour, RW_HOURS_PER_DAY)
 	if(hour < 0)
 		hour += RW_HOURS_PER_DAY
 	time_of_day = hour
-	rotation_angle = (hour / RW_HOURS_PER_DAY) * 360
+	rotation_angle = hour_to_rotation(hour)
 	if(planet)
 		planet.time_of_day = time_of_day
 		planet.rotation_angle = rotation_angle
@@ -305,10 +319,10 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 
 
 /datum/controller/subsystem/rimworld_planetmap/proc/set_rotation_angle(new_angle)
-	rotation_angle = new_angle % 360
+	rotation_angle = MODULUS(new_angle, 360)
 	if(rotation_angle < 0)
 		rotation_angle += 360
-	time_of_day = (rotation_angle / 360) * RW_HOURS_PER_DAY
+	time_of_day = rotation_to_hour(rotation_angle)
 	if(planet)
 		planet.rotation_angle = rotation_angle
 		planet.time_of_day = time_of_day

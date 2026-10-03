@@ -1,15 +1,7 @@
 import { useBackend } from 'tgui/backend';
 import { LabeledList, Section, Stack } from 'tgui-core/components';
+import { DaylightClock, formatHour } from './DaylightClock';
 import type { OverviewMapData } from './types';
-
-const formatHour = (hour: number | undefined | null) => {
-  if (hour == null || Number.isNaN(hour)) {
-    return '—';
-  }
-  const h = Math.floor(hour) % 24;
-  const m = Math.floor((hour % 1) * 60);
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-};
 
 export const OverviewPanel = () => {
   const { data } = useBackend<OverviewMapData>();
@@ -43,7 +35,11 @@ export const OverviewPanel = () => {
               {data.dayOfYear ?? '—'} / {data.daysPerYear ?? 60}
             </LabeledList.Item>
             <LabeledList.Item label="Time">
-              {formatHour(data.timeOfDay)}
+              {data.canControlTime ? (
+                <DaylightClock />
+              ) : (
+                formatHour(data.timeOfDay)
+              )}
             </LabeledList.Item>
             <LabeledList.Item label="Season (N)">
               {data.seasonNorth ?? '—'}

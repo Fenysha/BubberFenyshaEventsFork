@@ -744,16 +744,16 @@ SUBSYSTEM_DEF(daylight)
 	if(!plate || QDELETED(plate) || (plate in rimworld_plates))
 		return
 	rimworld_plates += plate
-	// VIS_HIDE keeps the plate out of the HUD. Clients already render wash_source,
-	// so its vis_contents still fill the plate's render_target.
-	if(wash_source)
-		wash_source.vis_contents += plate
+	// A render_target only fills while a client draws it, so the plate goes on every screen like wash_source.
+	// The leading * on its render_target keeps it invisible there.
+	for(var/mob/viewer as anything in GLOB.player_list)
+		viewer.hud_used?.register_reuse(plate)
 
 
 /datum/controller/subsystem/daylight/proc/unregister_rimworld_plate(obj/rimworld_daylight_plate/plate)
 	rimworld_plates -= plate
-	if(wash_source)
-		wash_source.vis_contents -= plate
+	for(var/mob/viewer as anything in GLOB.player_list)
+		viewer.hud_used?.unregister_reuse(plate)
 
 
 /datum/controller/subsystem/daylight/proc/register_emitter(obj/effect/light_emitter/daylight/emitter)
@@ -779,6 +779,26 @@ SUBSYSTEM_DEF(daylight)
 /datum/controller/subsystem/daylight/proc/set_all_rimworld_daylight(intensity, color = null)
 	for(var/area/rimworld/A as anything in GLOB.rimworld_areas)
 		A.set_forced_daylight(intensity, color)
+
+
+/// Forces every daylit area to one sun level (0 = night, 1 = day) or hands control back to the clock (value < 0).
+/datum/controller/subsystem/daylight/proc/set_global_daylight(value)
+	if(isnull(value) || value < 0)
+		manual_time = -1
+		time_locked = FALSE
+		cycle_locked = FALSE
+		if(use_planet_time)
+			set_all_rimworld_daylight(null, null)
+		return -1
+	value = clamp(value, 0, 1)
+	manual_time = value
+	time_locked = TRUE
+	cycle_locked = TRUE
+	var/color = get_manual_light_color(value)
+	set_intensity_and_color(value, color, force = TRUE)
+	if(use_planet_time)
+		set_all_rimworld_daylight(value, color)
+	return value
 
 
 /datum/controller/subsystem/daylight/proc/flash(color, duration = 10 SECONDS, transition_time = 2 SECONDS, list/areas)
@@ -885,7 +905,6 @@ SUBSYSTEM_DEF(daylight)
 	blend_mode = BLEND_ADD
 	screen_loc = "1,1"
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	vis_flags = VIS_HIDE
 	var/area/rimworld/owner
 	var/static/next_id = 0
 
@@ -920,6 +939,8 @@ SUBSYSTEM_DEF(daylight)
 	if(offset != 0 || !mymob || !SSdaylight?.wash_source)
 		return
 	mymob.hud_used?.register_reuse(SSdaylight.wash_source)
+	for(var/obj/rimworld_daylight_plate/plate as anything in SSdaylight.rimworld_plates)
+		mymob.hud_used?.register_reuse(plate)
 
 
 /atom/movable/screen/plane_master/daylight_anchor/hide_from(mob/oldmob)
@@ -927,6 +948,8 @@ SUBSYSTEM_DEF(daylight)
 	if(offset != 0 || !oldmob || !SSdaylight?.wash_source)
 		return
 	oldmob.hud_used?.unregister_reuse(SSdaylight.wash_source)
+	for(var/obj/rimworld_daylight_plate/plate as anything in SSdaylight.rimworld_plates)
+		oldmob.hud_used?.unregister_reuse(plate)
 
 
 /obj/effect/light_emitter
