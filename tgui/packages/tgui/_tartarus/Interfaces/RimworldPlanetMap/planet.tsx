@@ -86,6 +86,7 @@ type PlanetRuntime = {
   currentLod: LodLevel;
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
+  applySunRotation: (radians: number) => void;
 };
 
 const LOD_DISTANCES = {
@@ -475,7 +476,7 @@ export const Planet = ({
       targetRotationRef.current = serverRad;
 
       if (runtimeRef.current) {
-        runtimeRef.current.planetGroup.rotation.y = serverRad;
+        runtimeRef.current.applySunRotation(serverRad);
       }
       return;
     }
@@ -625,7 +626,6 @@ export const Planet = ({
 
     if (data.rotationAngle != null) {
       const initialRad = (data.rotationAngle * Math.PI) / 180;
-      planetGroup.rotation.y = initialRad;
       currentRotationRef.current = initialRad;
       targetRotationRef.current = initialRad;
     }
@@ -768,6 +768,23 @@ export const Planet = ({
     );
     planetGroup.add(night);
 
+    const nightMaterial = night.material as THREE.ShaderMaterial;
+    const sunAxis = new THREE.Vector3(0, 1, 0);
+    const sunDir = new THREE.Vector3();
+    // Rotation is drawn as the sun orbiting a still globe, so terrain never moves under the camera.
+    const applySunRotation = (radians: number) => {
+      sunDir
+        .copy(PLANET_SUN_DIRECTION)
+        .applyAxisAngle(sunAxis, -radians)
+        .normalize();
+      surfaceMaterial.uniforms.sunDirection.value.copy(sunDir);
+      atmosphereMaterial.uniforms.sunDirection.value.copy(sunDir);
+      nightMaterial.uniforms.sunDirection.value.copy(sunDir);
+      sun.position.copy(sunDir);
+      sunGroup.rotation.y = -radians;
+    };
+    applySunRotation(currentRotationRef.current);
+
     const cloudMaterial = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
@@ -833,6 +850,7 @@ export const Planet = ({
       currentLod,
       camera,
       controls,
+      applySunRotation,
     };
 
     const switchLod = (newLod: LodLevel) => {
@@ -1113,7 +1131,7 @@ export const Planet = ({
 
       if (rotDelta !== 0) {
         currentRotationRef.current += rotDelta;
-        planetGroup.rotation.y = currentRotationRef.current;
+        applySunRotation(currentRotationRef.current);
       }
 
       sunInnerGlowMesh.scale.setScalar(1 + Math.sin(time * 1.5) * 0.025);
