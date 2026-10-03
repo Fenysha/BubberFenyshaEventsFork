@@ -145,7 +145,10 @@
 	new_player.equipOutfit(
 		/datum/outfit/ss_construct/admin
 	)
-
+	SSfactions.add_member(
+		"admin",
+		new_player,
+	)
 	/*
 	 * Transfer the mind/key exactly like the normal
 	 * quick-spawn implementation.

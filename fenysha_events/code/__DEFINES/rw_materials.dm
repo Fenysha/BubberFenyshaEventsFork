@@ -59,3 +59,6 @@
 
 
 #define TOOL_HOE "tool_hoe"
+
+
+#define GET_MATERIAL_REF(arguments...) SSmaterials.get_material(arguments)

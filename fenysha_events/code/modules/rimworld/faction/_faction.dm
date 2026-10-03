@@ -34,6 +34,7 @@ SUBSYSTEM_DEF(factions)
 
 		RW_FACTION_ANCIENTS_NEUTRAL = /datum/rw_faction/ancients/neutral,
 		RW_FACTION_ANCIENTS_HOSTILE = /datum/rw_faction/ancients/hostile,
+		"admin" = /datum/rw_faction/player/admin,
 	)
 
 	for(var/faction_id in default_factions)
@@ -490,7 +491,7 @@ SUBSYSTEM_DEF(factions)
 	members += new_member
 	new_member.rw_faction = src
 
-	if(!leader && is_alive(new_member))
+	if((!leader && is_alive(new_member)) && id != "admin")
 		set_leader(new_member)
 
 	on_member_joined(new_member)

@@ -11,10 +11,25 @@ import {
   Stack,
 } from 'tgui-core/components';
 
-type MaterialEntry = {
+type CostEntry = {
   path: string;
   name: string;
   amount: number;
+};
+
+type StuffMaterial = {
+  path: string;
+  name: string;
+  desc: string;
+  color: string;
+  category: string;
+  hp: number;
+  beauty: number;
+  flammability: number;
+  armor_sharp: number;
+  armor_blunt: number;
+  armor_heat: number;
+  value: number;
 };
 
 type BlueprintEntry = {
@@ -25,9 +40,14 @@ type BlueprintEntry = {
   can_rotate: boolean;
   is_multiblock: boolean;
   construction_time: number;
+  build_steps: number;
   icon: string;
   icon_state: string;
-  materials: MaterialEntry[];
+  extra_costs: CostEntry[];
+  stuffed: boolean;
+  stuff_cost: number;
+  stuff_categories: string[];
+  default_stuff: string | null;
   from_faction: boolean;
 };
 
@@ -38,7 +58,11 @@ type ArchitectData = {
   planning_id: string | null;
   planning_name: string | null;
   planning_dir: string | null;
+  planning_material: string | null;
   has_faction: boolean;
+  materials: StuffMaterial[];
+  material_categories: string[];
+  stock: Record<string, number>;
 };
 
 const GRID_STYLE: React.CSSProperties = {
@@ -57,12 +81,15 @@ export function FactionArchitect() {
     planning_name,
     planning_dir,
     has_faction,
+    materials = [],
+    stock = {},
   } = data;
 
   const [tab, setTab] = useState(tabs[0] || 'Structure');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [materialPath, setMaterialPath] = useState<string | null>(null);
+  const [matCategory, setMatCategory] = useState<string>('All');
 
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -78,6 +105,35 @@ export function FactionArchitect() {
   }, [blueprints, tab, normalizedSearch]);
 
   const selected = blueprints.find((b) => b.id === selectedId);
+
+  const allowedMaterials = selected?.stuffed
+    ? materials.filter((m) => selected.stuff_categories.includes(m.category))
+    : [];
+  const allowedCategories = Array.from(
+    new Set(allowedMaterials.map((m) => m.category)),
+  );
+  const shownMaterials =
+    matCategory === 'All'
+      ? allowedMaterials
+      : allowedMaterials.filter((m) => m.category === matCategory);
+
+  const effectiveMaterial: StuffMaterial | undefined = selected?.stuffed
+    ? allowedMaterials.find((m) => m.path === materialPath) ||
+      allowedMaterials.find((m) => m.path === selected.default_stuff) ||
+      allowedMaterials[0]
+    : undefined;
+
+  const selectBlueprint = (id: string) => {
+    setSelectedId(id);
+    setMaterialPath(null);
+    setMatCategory('All');
+  };
+
+  const plan = (bp: BlueprintEntry) =>
+    act('select', {
+      id: bp.id,
+      material: bp.stuffed ? effectiveMaterial?.path : null,
+    });
   const fallback = <Box width="48px" height="48px" />;
 
   return (
@@ -148,13 +204,14 @@ export function FactionArchitect() {
                                   ? '#666666'
                                   : '#444444'
                             }
-                            onClick={() => setSelectedId(bp.id)}
-                            onDoubleClick={() =>
+                            onClick={() => selectBlueprint(bp.id)}
+                            onDoubleClick={() => {
+                              selectBlueprint(bp.id);
                               act('select', {
                                 id: bp.id,
-                                material: materialPath,
-                              })
-                            }
+                                material: bp.stuffed ? bp.default_stuff : null,
+                              });
+                            }}
                           >
                             <DmIcon
                               icon={bp.icon}
@@ -201,8 +258,19 @@ export function FactionArchitect() {
                         width="96px"
                         fallback={fallback}
                       />
+                      <Box
+                        height="4px"
+                        width="96px"
+                        backgroundColor={
+                          effectiveMaterial?.color || 'transparent'
+                        }
+                      />
                       <Stack.Item>
-                        <Box fontWeight="bold">{selected.name}</Box>
+                        <Box fontWeight="bold">
+                          {effectiveMaterial
+                            ? `${effectiveMaterial.name} ${selected.name}`
+                            : selected.name}
+                        </Box>
                       </Stack.Item>
                       <Stack.Item>
                         <Box color="#b0b0b0">{selected.desc || '—'}</Box>
@@ -227,33 +295,38 @@ export function FactionArchitect() {
                     <Stack vertical>
                       <Stack.Item>
                         <Box color="#d2d2d2" mb={0.5}>
-                          Materials
+                          Cost
                         </Box>
-                        {selected.materials?.length ? (
-                          selected.materials.map((m) => (
-                            <Button
-                              key={m.path}
-                              fluid
-                              mb={0.5}
-                              color={
-                                materialPath === m.path ? 'grey' : 'transparent'
-                              }
-                              onClick={() =>
-                                setMaterialPath(
-                                  materialPath === m.path ? null : m.path,
-                                )
-                              }
-                            >
-                              {m.name} × {m.amount}
-                            </Button>
-                          ))
-                        ) : (
-                          <Box color="#888888">No materials listed</Box>
+                        {selected.stuffed && (
+                          <Box
+                            color={
+                              (stock[effectiveMaterial?.path || ''] || 0) >=
+                              selected.stuff_cost
+                                ? '#cccccc'
+                                : '#ff8888'
+                            }
+                          >
+                            {effectiveMaterial?.name || 'material'} ×{' '}
+                            {selected.stuff_cost}
+                            <Box as="span" color="#888888">
+                              {' '}
+                              (have {stock[effectiveMaterial?.path || ''] || 0})
+                            </Box>
+                          </Box>
+                        )}
+                        {selected.extra_costs.map((m) => (
+                          <Box key={m.path} color="#cccccc">
+                            {m.name} × {m.amount}
+                          </Box>
+                        ))}
+                        {!selected.stuffed && !selected.extra_costs.length && (
+                          <Box color="#888888">Free</Box>
                         )}
                       </Stack.Item>
                       <Stack.Item>
                         <Box color="#888888" fontSize="12px">
                           Time: {(selected.construction_time / 10).toFixed(1)}s
+                          · {selected.build_steps} steps
                         </Box>
                       </Stack.Item>
                     </Stack>
@@ -261,6 +334,62 @@ export function FactionArchitect() {
                     <Box color="#888888">Select a blueprint</Box>
                   )}
                 </Section>
+
+                {!!selected?.stuffed && (
+                  <Section title="Made of" mb={2}>
+                    <Box mb={0.5}>
+                      {['All', ...allowedCategories].map((c) => (
+                        <Button
+                          key={c}
+                          compact
+                          mr={0.5}
+                          color={matCategory === c ? 'grey' : 'transparent'}
+                          onClick={() => setMatCategory(c)}
+                        >
+                          {c}
+                        </Button>
+                      ))}
+                    </Box>
+                    <Box style={{ maxHeight: '170px', overflowY: 'auto' }}>
+                      {shownMaterials.map((m) => {
+                        const have = stock[m.path] || 0;
+                        return (
+                          <Button
+                            key={m.path}
+                            fluid
+                            mb={0.5}
+                            selected={effectiveMaterial?.path === m.path}
+                            color="transparent"
+                            tooltip={`${m.desc} HP ×${m.hp} · Beauty ×${m.beauty} · Flammability ${Math.round(
+                              m.flammability * 100,
+                            )}% · Armor ${m.armor_sharp}/${m.armor_blunt}/${m.armor_heat} · Value ${m.value}`}
+                            onClick={() => setMaterialPath(m.path)}
+                          >
+                            <Box
+                              as="span"
+                              inline
+                              mr={1}
+                              width="10px"
+                              height="10px"
+                              backgroundColor={m.color}
+                              style={{ border: '1px solid #000' }}
+                            />
+                            {m.name}
+                            <Box
+                              as="span"
+                              ml={1}
+                              color={
+                                have >= selected.stuff_cost ? '#8f8' : '#888'
+                              }
+                            >
+                              ({have})
+                            </Box>
+                          </Button>
+                        );
+                      })}
+                    </Box>
+                  </Section>
+                )}
 
                 {!has_faction && (
                   <Section mb={2}>
@@ -277,13 +406,7 @@ export function FactionArchitect() {
                     icon="pencil-alt"
                     color="good"
                     disabled={!selected}
-                    onClick={() =>
-                      selected &&
-                      act('select', {
-                        id: selected.id,
-                        material: materialPath,
-                      })
-                    }
+                    onClick={() => selected && plan(selected)}
                   >
                     Plan
                   </Button>

@@ -373,3 +373,12 @@
 	)
 
 	return pick(names)
+
+
+/datum/rw_faction/player/admin
+	id = "admin"
+	desc = "The administrative faction for the player. This faction is not meant to be interacted with by the player."
+	player_faction = TRUE
+
+	color = "#1100ff"
+	icon_state = RW_PLANET_CELL_TOWN

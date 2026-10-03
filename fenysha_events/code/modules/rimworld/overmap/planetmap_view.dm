@@ -285,7 +285,7 @@
 			return TRUE
 
 		if("set_time_of_day")
-			if(!(can_control_time || check_rights_for(ui.user?.client, R_ADMIN)))
+			if(!can_control_time)
 				return FALSE
 			var/hour = text2num(params["hour"])
 			if(isnull(hour))
