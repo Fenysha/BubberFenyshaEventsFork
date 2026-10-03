@@ -1097,32 +1097,23 @@ export const Planet = ({
       const autoRotateEnabled =
         currentData.autoRotate == null || Boolean(currentData.autoRotate);
 
+      let rotDelta = 0;
       if (autoRotateEnabled) {
         const dayMinutes = Math.max(currentData.dayLengthMinutes ?? 30, 1);
         const speedDeg = 360 / (dayMinutes * 60);
-        const radPerSecond = (speedDeg * Math.PI) / 180;
+        rotDelta = delta * ((speedDeg * Math.PI) / 180);
+      }
 
-        let rotDelta = delta * radPerSecond;
+      if (targetRotationRef.current != null) {
+        const diff = wrapAngle(
+          targetRotationRef.current - currentRotationRef.current,
+        );
+        rotDelta += diff * Math.min(1, delta * 6.0);
+      }
 
-        if (targetRotationRef.current != null) {
-          const diff = wrapAngle(
-            targetRotationRef.current - currentRotationRef.current,
-          );
-
-          const correction = diff * Math.min(1, delta * 3.0);
-          rotDelta += correction;
-        }
-
+      if (rotDelta !== 0) {
         currentRotationRef.current += rotDelta;
         planetGroup.rotation.y = currentRotationRef.current;
-
-        if (nearProgress < 0.85) {
-          const bindRatio = 1.0 - nearProgress / 0.85;
-          camera.position.applyAxisAngle(
-            new THREE.Vector3(0, 1, 0),
-            rotDelta * bindRatio,
-          );
-        }
       }
 
       sunInnerGlowMesh.scale.setScalar(1 + Math.sin(time * 1.5) * 0.025);

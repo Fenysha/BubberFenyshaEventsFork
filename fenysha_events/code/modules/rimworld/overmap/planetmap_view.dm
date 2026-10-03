@@ -120,12 +120,8 @@
 	data["canControlTime"] = can_control_time || check_rights_for(user?.client, R_ADMIN)
 
 	data["staticObjects"] = planet.get_static_objects()
-
-	var/list/rotation = SSrimworld_planetmap.get_rotation_data()
-	data["autoRotate"] = rotation["autoRotate"]
-	data["rotationSpeed"] = rotation["rotationSpeed"]
-	data["rotationAngle"] = rotation["rotationAngle"]
-	data["dayLengthMinutes"] = rotation["dayLengthMinutes"]
+	// tgui lets static data win over live data for the same key, so anything that changes stays out of here.
+	data -= "autoRotate"
 
 	data["daysPerYear"] = RW_DAYS_PER_YEAR
 	data["daysPerQuadrum"] = RW_DAYS_PER_QUADRUM

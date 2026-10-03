@@ -248,7 +248,15 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	if(planet)
 		planet.time_of_day = time_of_day
 		planet.rotation_angle = rotation_angle
+	refresh_daylight()
 	return time_of_day
+
+
+/// Admin clock changes should show on the ground now, not on the next daylight tick.
+/datum/controller/subsystem/rimworld_planetmap/proc/refresh_daylight()
+	for(var/area/rimworld/A as anything in GLOB.rimworld_areas)
+		if(A.daylight)
+			A.update_rimworld_daylight()
 
 
 /datum/controller/subsystem/rimworld_planetmap/proc/set_quadrum(quadrum, keep_day_of_quadrum = TRUE)
@@ -326,6 +334,7 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 	if(planet)
 		planet.rotation_angle = rotation_angle
 		planet.time_of_day = time_of_day
+	refresh_daylight()
 	return rotation_angle
 
 
