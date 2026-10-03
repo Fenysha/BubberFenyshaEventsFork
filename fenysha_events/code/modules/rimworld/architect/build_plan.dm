@@ -266,7 +266,8 @@
 		return
 
 	var/datum/material/mat = material_path ? GET_MATERIAL_REF(material_path) : null
-	var/ghost_color = placement_valid ? (mat?.color || "#ffffff") : "#ff5555"
+	var/ghost_color = mat?.color ? mat.color : "#ffffff"
+	ghost_color = color_interpolate(ghost_color, placement_valid ? "#4987e4" : "#fa4444", 0.3)
 
 	for(var/list/entry as anything in blueprint.get_cell_entries(origin, dir))
 		var/turf/T = entry["turf"]
