@@ -117,6 +117,13 @@
 	var/structural_hit = brute > 0
 	var/thermal_hit = burn > 0
 
+	// Kinetic energy factor: larger single hits relative to limb health are far more likely
+	// to produce severe injuries even if accumulated damage is still moderate.
+	var/hit_energy = 0
+	if(max_damage > 0)
+		hit_energy = clamp((brute + burn) / max_damage, 0, 2.5)
+	var/energy_bonus = hit_energy * 35 // added to chance rolls
+
 	/*
 	 * ------------------------------------------------------------
 	 * SKIN / SUPERFICIAL TISSUE
@@ -152,7 +159,7 @@
 		if(physical_ratio >= 0.65 && brute >= max_damage * 0.20)
 			apply_generated_injury(/datum/injury/avulsion, attack_direction, damage_source)
 		else
-			apply_generated_injury(/datum/injury/puncture, attack_direction, damage_source, clamp(40 + physical_ratio * 100, 40, 100))
+			apply_generated_injury(/datum/injury/puncture, attack_direction, damage_source, clamp(40 + physical_ratio * 100 + energy_bonus, 40, 100))
 
 	/*
 	 * ------------------------------------------------------------
@@ -168,10 +175,10 @@
 				apply_generated_injury(/datum/injury/contusion, attack_direction, damage_source)
 
 		if(physical_ratio >= 0.30)
-			apply_generated_injury(/datum/injury/fracture, attack_direction, damage_source, clamp(45 + (physical_ratio - 0.30) * 120, 45, 100))
+			apply_generated_injury(/datum/injury/fracture, attack_direction, damage_source, clamp(45 + (physical_ratio - 0.30) * 120 + energy_bonus, 45, 100))
 
 		if(physical_ratio >= 0.65)
-			apply_generated_injury(/datum/injury/fracture/compound, attack_direction, damage_source, clamp((physical_ratio - 0.55) * 220, 30, 100))
+			apply_generated_injury(/datum/injury/fracture/compound, attack_direction, damage_source, clamp((physical_ratio - 0.55) * 220 + energy_bonus * 0.8, 30, 100))
 
 	/*
 	 * ------------------------------------------------------------
@@ -199,19 +206,19 @@
 
 	if(structural_hit && body_zone == BODY_ZONE_HEAD)
 		if(physical_ratio >= 0.12)
-			apply_generated_injury(/datum/injury/concussion, attack_direction, damage_source, clamp(45 + physical_ratio * 70, 45, 100))
+			apply_generated_injury(/datum/injury/concussion, attack_direction, damage_source, clamp(45 + physical_ratio * 70 + energy_bonus, 45, 100))
 
 		if(physical_ratio >= 0.32)
-			apply_generated_injury(/datum/injury/skull_fracture, attack_direction, damage_source, clamp((physical_ratio - 0.25) * 180, 30, 100))
+			apply_generated_injury(/datum/injury/skull_fracture, attack_direction, damage_source, clamp((physical_ratio - 0.25) * 180 + energy_bonus, 30, 100))
 
 		if(physical_ratio >= 0.55)
-			apply_generated_injury(/datum/injury/facial_trauma, attack_direction, damage_source, clamp((physical_ratio - 0.45) * 180, 25, 100))
+			apply_generated_injury(/datum/injury/facial_trauma, attack_direction, damage_source, clamp((physical_ratio - 0.45) * 180 + energy_bonus * 0.7, 25, 100))
 
 		if(physical_ratio >= 0.35 && ((sharpness & (SHARP_EDGED | SHARP_POINTY)) || physical_ratio >= 0.65))
-			apply_generated_injury(/datum/injury/eye_trauma, attack_direction, damage_source, clamp((physical_ratio - 0.30) * 160, 20, 80))
+			apply_generated_injury(/datum/injury/eye_trauma, attack_direction, damage_source, clamp((physical_ratio - 0.30) * 160 + energy_bonus, 20, 80))
 
 		if(physical_ratio >= 0.60)
-			apply_generated_injury(/datum/injury/jaw_fracture, attack_direction, damage_source, clamp((physical_ratio - 0.50) * 140, 20, 70))
+			apply_generated_injury(/datum/injury/jaw_fracture, attack_direction, damage_source, clamp((physical_ratio - 0.50) * 140 + energy_bonus * 0.6, 20, 70))
 
 	/*
 	 * ------------------------------------------------------------
@@ -226,18 +233,18 @@
 		var/chest_severity = physical_ratio
 
 		if(chest_severity >= 0.22)
-			apply_generated_injury(/datum/injury/rib_fracture, attack_direction, damage_source, clamp(40 + chest_severity * 70, 40, 100))
+			apply_generated_injury(/datum/injury/rib_fracture, attack_direction, damage_source, clamp(40 + chest_severity * 70 + energy_bonus, 40, 100))
 
 		if(chest_severity >= 0.58)
-			apply_generated_injury(/datum/injury/rib_fracture/flail, attack_direction, damage_source, clamp((chest_severity - 0.50) * 180, 25, 90))
+			apply_generated_injury(/datum/injury/rib_fracture/flail, attack_direction, damage_source, clamp((chest_severity - 0.50) * 180 + energy_bonus * 0.7, 25, 90))
 
 		if(chest_severity >= 0.40)
-			apply_generated_injury(/datum/injury/internal_bleeding, attack_direction, damage_source, clamp((chest_severity - 0.30) * 130, 20, 85))
+			apply_generated_injury(/datum/injury/internal_bleeding, attack_direction, damage_source, clamp((chest_severity - 0.30) * 130 + energy_bonus, 20, 85))
 
 		if(chest_severity >= 0.32 && (sharpness & SHARP_POINTY))
-			apply_generated_injury(/datum/injury/pneumothorax, attack_direction, damage_source, clamp(60 + chest_severity * 50, 60, 100))
+			apply_generated_injury(/datum/injury/pneumothorax, attack_direction, damage_source, clamp(60 + chest_severity * 50 + energy_bonus, 60, 100))
 		else if(chest_severity >= 0.60)
-			apply_generated_injury(/datum/injury/pneumothorax, attack_direction, damage_source, clamp((chest_severity - 0.50) * 140, 15, 70))
+			apply_generated_injury(/datum/injury/pneumothorax, attack_direction, damage_source, clamp((chest_severity - 0.50) * 140 + energy_bonus * 0.6, 15, 70))
 
 		if(chest_severity >= 0.52)
 			apply_generated_injury(/datum/injury/hemothorax, attack_direction, damage_source, clamp((chest_severity - 0.45) * 150, 15, 70))
@@ -464,7 +471,12 @@
 		return FALSE
 
 	var/obj/item/bodypart/affecting = limb_owner.get_bodypart(BODY_ZONE_CHEST)
-	affecting.receive_damage(clamp(brute_dam/2 * affecting.body_damage_coeff, 15, 50), clamp(burn_dam/2 * affecting.body_damage_coeff, 0, 50), wound_bonus=CANT_WOUND) //Damage the chest based on limb's existing damage
+	if(affecting)
+		affecting.receive_damage(clamp(brute_dam/2 * affecting.body_damage_coeff, 15, 50), clamp(burn_dam/2 * affecting.body_damage_coeff, 0, 50), wound_bonus=CANT_WOUND)
+		var/datum/injury/stump/stump_injury = new /datum/injury/stump()
+		stump_injury.lost_zone = body_zone
+		stump_injury.apply_to_limb(affecting, silent = silent, source = "dismemberment")
+
 	if(!silent)
 		limb_owner.visible_message(span_danger("<B>[limb_owner]'s [name] is violently dismembered!</B>"))
 	INVOKE_ASYNC(limb_owner, TYPE_PROC_REF(/mob, emote), "scream")
@@ -478,15 +490,19 @@
 	drop_limb(dismembered = TRUE)
 	limb_owner.update_equipment_speed_mods()
 
+	// Immediate medical state refresh after the stump is applied and the limb is gone.
+	limb_owner.recalculate_medical_state()
+	limb_owner.updatehealth()
+
 	if(QDELETED(src)) //Could have dropped into lava/explosion/chasm/whatever
 		return TRUE
 	if(dam_type == BURN)
 		burn()
 		return TRUE
 
-	// Assume we had our limb sliced/punched off by this point
+	// Residual arterial spray from the open stump (stump injury already has its own bleed_rate).
 	if(can_bleed())
-		limb_owner.bleed(rand(20, 40))
+		limb_owner.bleed(rand(15, 30))
 	return TRUE
 
 /obj/item/bodypart/chest/dismember(dam_type = BRUTE, silent=TRUE, wounding_type)
@@ -526,22 +542,30 @@
 	if(!owner)
 		return
 	var/atom/drop_loc = owner.drop_location()
+	var/mob/living/carbon/limb_owner = owner
 
-	SEND_SIGNAL(owner, COMSIG_CARBON_REMOVE_LIMB, src, special, dismembered)
-	SEND_SIGNAL(src, COMSIG_BODYPART_REMOVED, owner, special, dismembered)
+	// Clean injuries WHILE owner is still valid so pain/shock totals update correctly.
+	// remove_from_limb() calls update_injuries() which needs a live owner reference.
+	for(var/datum/injury/injury as anything in injuries)
+		injury.remove_from_limb()
+
+	SEND_SIGNAL(limb_owner, COMSIG_CARBON_REMOVE_LIMB, src, special, dismembered)
+	SEND_SIGNAL(src, COMSIG_BODYPART_REMOVED, limb_owner, special, dismembered)
 	bodypart_flags &= ~BODYPART_IMPLANTED //limb is out and about, it can't really be considered an implant
-	add_mob_blood(owner)
-	owner.remove_bodypart(src, special)
+	add_mob_blood(limb_owner)
+	limb_owner.remove_bodypart(src, special)
 
 	for(var/datum/scar/scar as anything in scars)
 		scar.victim = null
-		LAZYREMOVE(owner.all_scars, scar)
+		LAZYREMOVE(limb_owner.all_scars, scar)
 
 	var/mob/living/carbon/phantom_owner = update_owner(null) // so we can still refer to the guy who lost their limb after said limb forgets 'em
 	update_limb(dropping_limb = TRUE)
 
-	for(var/datum/injury/injury as anything in injuries)
-		injury.remove_from_limb()
+	// Force a full pain rebuild now that this limb is gone from bodyparts.
+	if(phantom_owner)
+		phantom_owner.update_pain_from_limb(null)
+		phantom_owner.recalculate_medical_state()
 
 	if(!phantom_owner.has_embedded_objects())
 		phantom_owner.clear_alert(ALERT_EMBEDDED_OBJECT)
@@ -610,8 +634,38 @@
 	if(!length(candidates))
 		return
 
-	var/obj/item/organ/target = pick(candidates)
-	var/organ_damage = packet["damage"] * 0.5
+	// Prefer vital organs when present (brain on head, heart/lungs on chest).
+	var/obj/item/organ/target
+	if(body_zone == BODY_ZONE_HEAD)
+		target = owner?.get_organ_slot(ORGAN_SLOT_BRAIN)
+	else if(body_zone == BODY_ZONE_CHEST)
+		// Slight preference for heart, then lungs.
+		target = owner?.get_organ_slot(ORGAN_SLOT_HEART) || owner?.get_organ_slot(ORGAN_SLOT_LUNGS)
+
+	if(!target || !(target in candidates))
+		target = pick(candidates)
+
+	// Remaining kinetic energy / AP after tissue determines organ trauma severity.
+	var/remaining_damage = packet["damage"]
+	var/remaining_sharp_ap = packet["sharp_ap"]
+	var/remaining_blunt_ap = packet["blunt_ap"]
+	var/ap_factor = 1.0 + max(remaining_sharp_ap, remaining_blunt_ap) * 0.08
+
+	// Full penetration (high residual AP) transfers far more energy into organs.
+	var/base_mult = 0.55
+	if(remaining_sharp_ap > 4 || remaining_blunt_ap > 6)
+		base_mult = 0.95
+	if(remaining_sharp_ap > 8 || remaining_blunt_ap > 12)
+		base_mult = 1.35
+
+	// Headshots that fully defeat protection are especially lethal to the brain.
+	if(body_zone == BODY_ZONE_HEAD && istype(target, /obj/item/organ/brain))
+		base_mult *= 1.6
+		// High-velocity / high-AP rounds can instantly cripple or destroy the brain.
+		if(remaining_sharp_ap > 6)
+			base_mult *= 1.4
+
+	var/organ_damage = remaining_damage * base_mult * ap_factor
 
 	if(organ_damage < 0.5)
 		return
@@ -619,4 +673,14 @@
 	pen_apply_body_density(packet, target.density_sharp, target.density_blunt)
 	target.apply_organ_damage(organ_damage)
 	target.on_external_damage(organ_damage, packet, null)
+
+	// Extra shock / consciousness impulse for deep organ trauma, especially brain.
+	if(owner && organ_damage >= 8)
+		var/extra_shock = organ_damage * 0.35
+		var/extra_consc = organ_damage * 0.25
+		if(istype(target, /obj/item/organ/brain))
+			extra_shock *= 1.8
+			extra_consc *= 2.2
+		owner.apply_shock_impulse(extra_shock, target)
+		owner.apply_consciousness_impulse(extra_consc, target)
 #endif

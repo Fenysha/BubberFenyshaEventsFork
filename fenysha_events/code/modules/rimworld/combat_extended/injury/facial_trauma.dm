@@ -9,7 +9,7 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE
 
-	bleed_rate = 0.6
+	bleed_rate = 0.45
 	pain_amount = 24
 	processes = TRUE
 

@@ -80,7 +80,7 @@
 	// Open fracture: no self-healing, and the wound has to be closed as well.
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE | INJURY_FLAG_ACCEPTS_SPLINT
 
-	bleed_rate = 0.54
+	bleed_rate = 0.40
 	pain_amount = 35
 	dismemberment_weight = 3.5
 	disabling = TRUE

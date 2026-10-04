@@ -260,6 +260,7 @@
 #include "code\modules\rimworld\combat_extended\injury\skin_damage.dm"
 #include "code\modules\rimworld\combat_extended\injury\skull_fracture.dm"
 #include "code\modules\rimworld\combat_extended\injury\spleen_rupture.dm"
+#include "code\modules\rimworld\combat_extended\injury\stump.dm"
 #include "code\modules\rimworld\combat_extended\injury\venous_bleed.dm"
 #include "code\modules\rimworld\combat_extended\medicine\_base_medicine.dm"
 #include "code\modules\rimworld\combat_extended\organ\_organ.dm"

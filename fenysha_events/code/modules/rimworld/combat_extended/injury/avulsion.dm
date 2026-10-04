@@ -9,7 +9,7 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE
 
-	bleed_rate = 1.32
+	bleed_rate = 1.0
 	pain_amount = 38
 	damage_multiplier = 1.45
 	dismemberment_weight = 4.0

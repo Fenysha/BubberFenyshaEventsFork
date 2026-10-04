@@ -11,7 +11,7 @@
 
 	injury_flags = INJURY_FLAG_INTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL
 
-	bleed_rate = 1.2
+	bleed_rate = 0.9
 	pain_amount = 26
 	processes = TRUE
 

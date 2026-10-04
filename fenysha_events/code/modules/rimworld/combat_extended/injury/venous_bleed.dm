@@ -9,7 +9,7 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE | INJURY_FLAG_SELF_HEALING
 
-	bleed_rate = 0.72
+	bleed_rate = 0.54
 	pain_amount = 10
 	reacts_to_movement = TRUE
 

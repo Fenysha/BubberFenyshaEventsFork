@@ -9,7 +9,7 @@
 
 	injury_flags = INJURY_FLAG_EXTERNAL | INJURY_FLAG_BLEEDING | INJURY_FLAG_PAINFUL | INJURY_FLAG_ACCEPTS_GAUZE | INJURY_FLAG_ACCEPTS_SUTURE | INJURY_FLAG_PROGRESSING
 
-	bleed_rate = 2.1
+	bleed_rate = 1.6
 	pain_amount = 28
 	processes = TRUE
 
@@ -25,7 +25,7 @@
 	treatable_tools = list(TOOL_CAUTERY)
 
 	/// Untreated arterial bleeding keeps worsening up to this rate.
-	var/max_bleed_rate = 3.0
+	var/max_bleed_rate = 2.3
 
 	COOLDOWN_DECLARE(spurt_cd)
 
