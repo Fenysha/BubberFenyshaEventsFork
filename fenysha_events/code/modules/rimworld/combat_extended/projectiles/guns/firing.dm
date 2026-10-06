@@ -15,6 +15,9 @@
 	if(rw_manipulation(user) < RW_MIN_MANIPULATION)
 		balloon_alert(user, "can't hold it steady!")
 		return ITEM_INTERACT_BLOCKING
+	if(bolt_locked)
+		balloon_alert(user, "[bolt_wording] locked!")
+		return ITEM_INTERACT_BLOCKING
 	if(!chambered?.loaded_projectile)
 		shoot_with_empty_chamber(user)
 		return user.combat_mode ? ITEM_INTERACT_SKIP_TO_ATTACK : NONE
@@ -84,6 +87,9 @@
 	rw_fire_effects(user, target)
 	if(!QDELETED(src))
 		process_chamber()
+		// Parent fire_gun() calls postfire_empty_checks after the shot.
+		// Our custom fire path never reaches fire_gun, so lock the bolt here.
+		rw_postfire_bolt_check(TRUE)
 		update_appearance()
 	rw_shots_in_row++
 	rw_last_shot = world.time
@@ -108,8 +114,28 @@
 	rw_next_fire = world.time + cd
 	rw_refresh_hud()
 	rw_update_ready_overlay()
-	addtimer(CALLBACK(src, PROC_REF(rw_on_ready_again)), max(rw_next_fire - world.time, 0) + 1)
+	// TIMER_UNIQUE|OVERRIDE so rapid re-fires don't leave orphan timers that
+	// clear the overlay while a newer cooldown is still running (or vice versa).
+	var/wait = max(rw_next_fire - world.time, 0) + 1
+	addtimer(CALLBACK(src, PROC_REF(rw_on_ready_again)), wait, TIMER_UNIQUE | TIMER_OVERRIDE | TIMER_STOPPABLE)
 	return FALSE
+
+
+/// Mirror of /obj/item/gun/ballistic/postfire_empty_checks for our custom fire path.
+/// Locks a LOCKING bolt when the chamber and magazine are empty after a live shot.
+/obj/item/gun/rimworld/proc/rw_postfire_bolt_check(last_shot_succeeded)
+	if(!last_shot_succeeded)
+		return
+	if(chambered || get_ammo())
+		return
+	if(bolt_type == BOLT_TYPE_LOCKING && semi_auto)
+		bolt_locked = TRUE
+		if(lock_back_sound)
+			playsound(src, lock_back_sound, lock_back_sound_volume, lock_back_sound_vary)
+	else if(bolt_type == BOLT_TYPE_OPEN && !bolt_locked)
+		bolt_locked = TRUE
+		if(bolt_drop_sound)
+			playsound(src, bolt_drop_sound, bolt_drop_sound_volume)
 
 
 /// Copy the transient shot bag onto a rimworld projectile.

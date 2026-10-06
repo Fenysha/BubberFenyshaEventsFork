@@ -135,7 +135,7 @@
 #define RW_MISS_SUPPRESS_POINT_BLANK_MULT 0.85
 
 /// Movespeed slowdown applied after each shot (decays)
-#define RW_FIRE_SLOWDOWN 0.35
+#define RW_FIRE_SLOWDOWN 1.5
 /// How long the fire slowdown lasts (ds)
 #define RW_FIRE_SLOWDOWN_DURATION (1.2 SECONDS)
 /// Max stacks of fire slowdown

@@ -65,7 +65,7 @@
 /obj/item/gun/rimworld/ballistic/update_overlays()
 	. = ..()
 	if(!rw_should_show_mag_overlay())
-		return
+		return .
 	var/mutable_appearance/mag_overlay = mutable_appearance(
 		rw_get_magazine_icon(),
 		rw_get_magazine_icon_state(),
@@ -83,7 +83,7 @@
 
 /obj/item/gun/rimworld/ballistic/rw_get_ammo_max()
 	if(internal_magazine)
-		return magazine.max_ammo
+		return magazine ? magazine.max_ammo : 0
 	return magazine ? magazine.max_ammo : 0
 
 
@@ -95,22 +95,28 @@
 /obj/item/gun/rimworld/ballistic/proc/rw_can_accept_magazine(obj/item/ammo_box/magazine/rimworld/mag)
 	if(!istype(mag))
 		return FALSE
+	// Caliber is mandatory: missing or mismatched caliber is always rejected.
 	if(rw_caliber)
-		var/mag_cal = mag.rw_caliber
-		if(mag_cal && (mag_cal != rw_caliber))
+		if(!mag.rw_caliber || mag.rw_caliber != rw_caliber)
 			return FALSE
+	var/type_ok = FALSE
 	if(rw_accepted_magazine_type && istype(mag, rw_accepted_magazine_type))
-		return TRUE
-	for(var/path in rw_extra_magazine_types)
-		if(istype(mag, path))
-			return TRUE
-	return FALSE
+		type_ok = TRUE
+	else
+		for(var/path in rw_extra_magazine_types)
+			if(istype(mag, path))
+				type_ok = TRUE
+				break
+	return type_ok
 
 /obj/item/gun/rimworld/ballistic/proc/rw_magazine_reject_reason(obj/item/ammo_box/magazine/rimworld/mag)
 	if(!istype(mag))
 		return "not a magazine!"
-	if(rw_caliber && mag.rw_caliber && mag.rw_caliber != rw_caliber)
-		return "wrong caliber ([mag.rw_caliber])!"
+	if(rw_caliber)
+		if(!mag.rw_caliber)
+			return "magazine has no caliber!"
+		if(mag.rw_caliber != rw_caliber)
+			return "wrong caliber ([mag.rw_caliber])!"
 	return "incompatible magazine!"
 
 
@@ -122,14 +128,20 @@
 /obj/item/gun/rimworld/ballistic/proc/rw_service(mob/living/user)
 	if(rw_wield_busy)
 		return FALSE
+	// Empty detachable mag: eject first (matches parent attack_self priority).
 	if(!internal_magazine && magazine && !magazine.ammo_count())
 		eject_magazine(user)
 		return TRUE
 	if(bolt_type == BOLT_TYPE_NO_BOLT)
 		unload_ammo(user)
 		return TRUE
+	// Locked bolt: release it (chambers a round if a loaded mag is present).
 	if(bolt_type == BOLT_TYPE_LOCKING && bolt_locked)
 		drop_bolt(user)
+		return TRUE
+	// Open bolt that is locked back: cock it forward.
+	if(bolt_type == BOLT_TYPE_OPEN && bolt_locked)
+		rack(user)
 		return TRUE
 	if(recent_rack > world.time)
 		return TRUE
@@ -150,7 +162,7 @@
 			span_notice("[user] starts ejecting the magazine from [src]..."),
 			span_notice("You start ejecting the magazine..."),
 		)
-		if(!do_after(user, duration, src))
+		if(!do_after(user, duration, src, IGNORE_USER_LOC_CHANGE))
 			return
 
 	. = ..()
@@ -172,7 +184,7 @@
 			span_notice("[user] starts loading a magazine into [src]..."),
 			span_notice("You start loading the magazine..."),
 		)
-		if(!do_after(user, duration, src))
+		if(!do_after(user, duration, src, IGNORE_USER_LOC_CHANGE))
 			return FALSE
 
 	. = ..()
@@ -206,7 +218,7 @@
 		span_notice("[user] starts a tactical reload on [src]..."),
 		span_notice("You start a tactical reload..."),
 	)
-	if(!do_after(user, duration, src))
+	if(!do_after(user, duration, src, IGNORE_USER_LOC_CHANGE))
 		return ITEM_INTERACT_BLOCKING
 
 	var/obj/item/ammo_box/magazine/old = magazine
@@ -224,7 +236,6 @@
 		rw_refresh_hud()
 		return ITEM_INTERACT_BLOCKING
 
-	playsound(src, load_sound, 50, TRUE)
 	balloon_alert(user, "tactical reload!")
 	update_appearance()
 	rw_refresh_hud()
@@ -271,8 +282,3 @@
 		if(held_gun.rw_service(user_mob))
 			return TRUE
 	return FALSE
-
-
-/obj/item/ammo_casing/rimworld
-	name = "rimworld casing"
-	projectile_type = /obj/projectile/rimworld

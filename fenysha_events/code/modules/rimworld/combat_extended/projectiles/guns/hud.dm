@@ -212,7 +212,8 @@
 	alpha = 160
 
 /atom/movable/screen/rw_cooldown/proc/update_state(obj/item/gun/rimworld/gun)
-	invisibility = gun.rw_can_fire_now() ? INVISIBILITY_ABSTRACT : 0
+	var/show = gun.rw_wielded && !gun.rw_is_ready()
+	invisibility = show ? 0 : INVISIBILITY_ABSTRACT
 
 /atom/movable/screen/rw_mode_button
 	parent_type = /atom/movable/screen/rw_hud_element

@@ -1,4 +1,4 @@
-// MARK: Ammoy casing
+// MARK: Ammo casing
 // Cartridge casings, one subtype per ammunition variant.
 /obj/item/ammo_casing/rimworld
 	name = "rimworld casing"
@@ -102,8 +102,11 @@
 
 
 // --- .303 British ---
+// Type path kept as brtish303 for compatibility with existing maps/spawns.
 /obj/item/ammo_casing/rimworld/brtish303
 	name = ".303 British FMJ casing"
+	desc = "A .303 British full metal jacket cartridge."
+	rw_caliber = RW_CALIBER_303BRITISH
 	projectile_type = /obj/projectile/rimworld/bullet_303british
 
 /obj/item/ammo_casing/rimworld/brtish303/ap
@@ -113,7 +116,6 @@
 /obj/item/ammo_casing/rimworld/brtish303/hp
 	name = ".303 British HP casing"
 	projectile_type = /obj/projectile/rimworld/bullet_303british/hp
-
 
 
 // --- 7.62 ---

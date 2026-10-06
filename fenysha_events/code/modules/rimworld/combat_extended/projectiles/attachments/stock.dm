@@ -18,6 +18,9 @@
 	name = "Wooden stock"
 	icon_state = "garand_a"
 
+	pixel_shift_x = 32
+	pixel_shift_y = 3
+
 	spread_mod = -0.4 DEGREES
 	recoil_spread_mod = -0.2
 	camera_recoil_mod = -1

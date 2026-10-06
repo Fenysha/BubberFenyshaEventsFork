@@ -27,6 +27,7 @@
 	base_icon_state = "garand"
 
 	rw_caliber = RW_CALIBER_303BRITISH
+	rw_accepted_magazine_type = /obj/item/ammo_box/magazine/rimworld/british_303
 	rw_starting_attachments = list(/obj/item/rw_attachment/stock/british_rifle)
 	rw_attachable_allowed = list(
 		/obj/item/rw_attachment/stock/british_rifle,
@@ -35,12 +36,12 @@
 	)
 
 	rw_allowed_fire_modes = list(RW_FIRE_SINGLE)
-	rw_wield_time = 3 SECONDS
+	rw_wield_time = 1.5 SECONDS
 	rw_base_spread = 1 DEGREES
 	rw_cooldown = 4.5 SECONDS
 	rw_effective_range = 32 TILES
 	rw_moving_spread = 60 DEGREES
-	rw_settle_time = 5 SECONDS
+	rw_settle_time = 2.5 SECONDS
 
 	rw_mag_display = FALSE
 	rw_biocode_enabled = FALSE

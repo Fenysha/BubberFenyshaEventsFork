@@ -91,10 +91,6 @@ GLOBAL_LIST_INIT(rw_area_zones, list(
 	/// HUD component that draws ammo / aim / fire-mode buttons.
 	var/datum/component/rw_gun_hud/rw_hud
 
-	/// Icon used for the "not ready to fire" overlay.
-	var/rw_not_ready_overlay_icon = 'fenysha_events/icons/ui/hud/screen_gen.dmi'
-	var/rw_not_ready_overlay_state = "busy"
-	var/mutable_appearance/rw_not_ready_overlay
 
 
 /obj/item/gun/rimworld/Initialize(mapload)
@@ -270,7 +266,6 @@ GLOBAL_LIST_INIT(rw_area_zones, list(
 	rw_wielded = TRUE
 	update_appearance()
 	user?.update_held_items()
-	rw_update_ready_overlay()
 	rw_refresh_hud()
 	return NONE
 
@@ -278,7 +273,6 @@ GLOBAL_LIST_INIT(rw_area_zones, list(
 	rw_wielded = FALSE
 	update_appearance()
 	user?.update_held_items()
-	rw_update_ready_overlay()
 	rw_refresh_hud()
 	return NONE
 
@@ -322,7 +316,7 @@ GLOBAL_LIST_INIT(rw_area_zones, list(
 		span_notice("[user] begins to bring [src] up in a two-handed grip."),
 		span_notice("You start gripping [src] with both hands..."),
 	)
-	var/ok = do_after(user, rw_wield_duration(user), src)
+	var/ok = do_after(user, rw_wield_duration(user), src, IGNORE_USER_LOC_CHANGE)
 	rw_wield_busy = FALSE
 	if(!ok || QDELETED(src) || !user.is_holding(src) || user.get_inactive_held_item())
 		return
@@ -356,4 +350,5 @@ GLOBAL_LIST_INIT(rw_area_zones, list(
 /obj/item/gun/rimworld/proc/rw_apply_fire_slowdown(mob/living/user)
 	if(!user)
 		return
+
 	user.apply_status_effect(/datum/status_effect/rw_fire_recoil)

@@ -63,20 +63,15 @@
 
 
 /obj/item/gun/rimworld/proc/rw_on_ready_again()
+	// Cooldown finished — refresh HUD (hides screen/rw_cooldown).
+	// Item sprite no longer carries a busy overlay.
 	rw_refresh_hud()
-	rw_update_ready_overlay()
 
 
-/// Show / hide the "busy" overlay while the gun cannot fire.
+/// Kept as a thin wrapper so existing call sites stay valid.
+/// Only the HUD "not ready" element is updated; no item-sprite overlay.
 /obj/item/gun/rimworld/proc/rw_update_ready_overlay()
-	var/should_show = !rw_can_fire_now()
-	if(should_show)
-		if(!rw_not_ready_overlay)
-			rw_not_ready_overlay = mutable_appearance(rw_not_ready_overlay_icon, rw_not_ready_overlay_state)
-			rw_not_ready_overlay.appearance_flags = RESET_COLOR | KEEP_APART
-		add_overlay(rw_not_ready_overlay)
-	else if(rw_not_ready_overlay)
-		cut_overlay(rw_not_ready_overlay)
+	rw_refresh_hud()
 
 
 /// Right-click in hand: bind or clear biocode (3 s do_after).

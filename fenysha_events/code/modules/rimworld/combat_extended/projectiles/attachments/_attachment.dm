@@ -11,9 +11,8 @@
 
 	/// One RW_ATT_SLOT_* value.
 	var/slot
-	/// Attachment sprite anchor point.
-	var/pixel_shift_x = 16
-	var/pixel_shift_y = 16
+	var/pixel_shift_x = 0
+	var/pixel_shift_y = 0
 	/// RW_ATT_REMOVABLE / RW_ATT_ACTIVATION
 	var/attach_flags = RW_ATT_REMOVABLE
 	var/attach_delay = RW_ATT_BASE_TIME
@@ -185,15 +184,16 @@
 				return variants_by_gun_type[gun_path]
 	return icon_state
 
-/// Build the gun overlay from the gun's slot anchor and the attachment's anchor.
+
 /obj/item/rw_attachment/proc/build_gun_overlay(obj/item/gun/rimworld/gun)
 	var/state = get_overlay_state()
 	if(!state)
 		return null
 	var/mutable_appearance/overlay = mutable_appearance(icon, state)
 	// Without a slot anchor, keep the attachment at its native position.
-	var/anchor_x = gun.rw_attachable_offset?["[slot]_x"] || 0
-	var/anchor_y = gun.rw_attachable_offset?["[slot]_y"] || 0
+	var/anchor_x = gun.rw_attachable_offset?["[slot]_x"] ? gun.rw_attachable_offset?["[slot]_x"] : 0
+	var/anchor_y = gun.rw_attachable_offset?["[slot]_y"] ? gun.rw_attachable_offset?["[slot]_y"] : 0
+
 	overlay.pixel_x = (isnull(anchor_x) ? pixel_shift_x : anchor_x) - pixel_shift_x
 	overlay.pixel_y = (isnull(anchor_y) ? pixel_shift_y : anchor_y) - pixel_shift_y
 	return overlay
