@@ -16,12 +16,7 @@
 	return max(melee * 0.08, bomb * 0.05)
 
 
-/**
- * Returns the client readable name of an armor type
- *
- * Arguments:
- * * armor_type - The type to convert
- */
+/// Returns a readable armor type name.
 /armor_to_protection_name(armor_type)
 	switch(armor_type)
 		if(ACID)
@@ -61,11 +56,8 @@
 		"limb_damage" = 0,
 	)
 
-/**
- * One armor layer (clothing / natural / physiology).
- * Sharp: RemainingAP = AP - Armor; Damage *= RemainingAP/AP; Armor > AP → deflect + blunt trauma.
- * Blunt: same reduction without sharp→blunt conversion.
- */
+/// Applies one armor layer. Sharp AP can penetrate or be deflected into blunt trauma;
+/// blunt AP is reduced independently.
 /proc/pen_apply_armor_layer(list/packet, sharp_armor, blunt_armor)
 	if(!packet || packet["damage"] <= 0)
 		return packet
@@ -124,6 +116,12 @@
 	packet["blunt_ap"] = max(0, packet["blunt_ap"] - density_blunt)
 	return packet
 
+/proc/pen_finalize_soft_damage(list/packet, soft_damage_mult = 1)
+	if(!packet || packet["damage"] <= 0)
+		return packet
+	packet["damage"] *= max(0, soft_damage_mult)
+	return packet
+
 /proc/pen_can_penetrate_deeper(list/packet)
 	if(!packet || packet["damage"] <= 0)
 		return FALSE
@@ -137,8 +135,8 @@
 	var/blunt_ap = 0
 
 	if(proj)
-		sharp_ap = proj.armour_penetration_sharp
-		blunt_ap = proj.armour_penetration_blunt
+		sharp_ap = proj.rw_ap_sharp
+		blunt_ap = proj.rw_ap_blunt
 		if(!sharp_ap && !blunt_ap && proj.armour_penetration)
 			if(proj.sharpness & (SHARP_EDGED | SHARP_POINTY))
 				sharp_ap = proj.armour_penetration * 0.1
@@ -146,8 +144,8 @@
 			else
 				blunt_ap = proj.armour_penetration * 0.1
 	else if(weapon)
-		sharp_ap = weapon.armour_penetration_sharp
-		blunt_ap = weapon.armour_penetration_blunt
+		sharp_ap = weapon.rw_ap_sharp
+		blunt_ap = weapon.rw_ap_blunt
 		if(!sharp_ap && !blunt_ap && weapon.armour_penetration)
 			if(sharpness & (SHARP_EDGED | SHARP_POINTY))
 				sharp_ap = weapon.armour_penetration * 0.1
@@ -167,9 +165,9 @@
 
 
 /obj/item
-	var/armour_penetration_sharp = 0
-	var/armour_penetration_blunt = 0
+	var/rw_ap_sharp = 0
+	var/rw_ap_blunt = 0
 
 /obj/projectile
-	var/armour_penetration_sharp = 0
-	var/armour_penetration_blunt = 0
+	var/rw_ap_sharp = 0
+	var/rw_ap_blunt = 0

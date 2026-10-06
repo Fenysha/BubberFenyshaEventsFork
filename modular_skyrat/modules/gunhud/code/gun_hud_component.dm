@@ -1,3 +1,4 @@
+#if defined(OLD_COMBAT_SYSTEM)
 /datum/component/ammo_hud
 	var/atom/movable/screen/ammo_counter/hud
 
@@ -167,3 +168,5 @@
 /obj/item/weldingtool/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/ammo_hud)
+
+#endif

@@ -697,6 +697,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen) // I hate this place
 		var/mob/living/user = usr
 		user.toggle_throw_mode()
 
+#if defined(OLD_COMBAT_SYSTEM)
 /atom/movable/screen/zone_sel
 	name = "damage zone"
 	icon_state = "zone_sel"
@@ -817,7 +818,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen) // I hate this place
 	if(!hud?.mymob)
 		return
 	. += mutable_appearance(overlay_icon, "[hud.mymob.zone_selected]")
-
+#endif
 /atom/movable/screen/zone_sel/alien
 	icon = 'icons/hud/screen_alien.dmi'
 	overlay_icon = 'icons/hud/screen_alien.dmi'

@@ -24,7 +24,7 @@
 
 	var/used_sharpness = sharpness
 	if(used_sharpness == NONE)
-		if(weapon)
+		if(weapon && !proj)
 			used_sharpness = weapon.get_sharpness()
 		else if(proj)
 			used_sharpness = proj.sharpness
