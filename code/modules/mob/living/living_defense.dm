@@ -336,6 +336,7 @@
 	adjust_fire_stacks(3)
 	ignite_mob()
 
+#if defined(OLD_COMBAT_SYSTEM)
 /**
  * Called when a mob is grabbing another mob.
  */
@@ -348,6 +349,7 @@
 		return GRAB_FAILURE
 	target.grabbedby(src)
 	return GRAB_SUCCESS
+#endif
 
 /**
  * Called when this mob is grabbed by another mob.
@@ -778,6 +780,7 @@
 	ricocheting_projectile.set_angle(new_angle_s)
 	return TRUE
 
+#if defined(OLD_COMBAT_SYSTEM)
 /**
  * Attempt to disarm the target mob. Some items might let you do it, also carbon can do it with right click.
  * Will shove the target mob back, and drop them if they're in front of something dense
@@ -868,6 +871,7 @@
 		target.adjust_staggered_up_to(STAGGERED_SLOWDOWN_LENGTH, 10 SECONDS)
 
 	log_combat(src, target, "shoved", append_message)
+#endif
 
 ///Check if the universal conditions for disarming/shoving are met.
 /mob/living/proc/can_disarm(mob/living/target)

@@ -28,6 +28,7 @@
 
 #define COMSIG_KB_MOB_OPENHEALTHPANEL_DOWN "keybinding_mob_openhealthpanel_down"
 #define COMSIG_KB_MOB_RW_RACK_DOWN "keybinding_mob_rw_rack_down"
+#define COMSIG_KB_MOB_TOGGLE_PARRY_DOWN "keybinding_mob_parry_down"
 
 
 #define COMSIG_RW_MULTIBLOCK_INTERACT	"rw_mb_interact"

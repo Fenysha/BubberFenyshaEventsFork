@@ -1,9 +1,4 @@
 #ifndef OLD_COMBAT_SYSTEM
-
-/**
- * Unarmed harm: check_block → try_dodge → apply_damage(blocked=0).
- * Percent armor no longer reduces damage; penetration/clothing is on carbon apply_damage.
- */
 /datum/species/proc/harm(mob/living/carbon/human/user, mob/living/carbon/human/target, datum/martial_art/attacker_style)
 	if(HAS_TRAIT(user, TRAIT_PACIFISM) && !attacker_style?.pacifist_style)
 		to_chat(user, span_warning("You don't want to harm [target]!"))
@@ -47,13 +42,17 @@
 
 	upper_unarmed_damage += HAS_TRAIT(user, TRAIT_STRENGTH) ? 2 : 0
 
-	// Prefer RW melee skill if present; fall back to athletics
+	// Skill bonus
 	var/skill_bonus = user.get_combat_melee_skill()
 	if(!skill_bonus)
 		skill_bonus = user.mind?.get_skill_level(/datum/skill/athletics) || 0
 	lower_unarmed_damage = min(lower_unarmed_damage + skill_bonus, upper_unarmed_damage)
 
 	var/damage = rand(lower_unarmed_damage, upper_unarmed_damage)
+
+	// Capacity damage mod ===
+	damage *= user.get_combat_damage_mod()
+
 	var/limb_accuracy = attacking_bodypart.unarmed_effectiveness
 	var/limb_sharpness = attacking_bodypart.unarmed_sharpness
 
@@ -83,13 +82,22 @@
 	var/hit_zone = target.get_random_valid_zone(user.zone_selected, blacklisted_parts = (user == target ? list(attacking_bodypart.body_zone) : null))
 	var/obj/item/bodypart/affecting = target.get_bodypart(hit_zone)
 
-	// Stock miss roll (accuracy / stagger / lying)
+	// Skill + Capacity miss roll
+	var/attacker_skill = user.get_combat_melee_skill()
+	var/defender_skill = target.get_combat_melee_skill()
+	var/skill_diff = attacker_skill - defender_skill
+	var/accuracy_mod = user.get_combat_accuracy_mod()
+
 	var/miss_chance = 100
 	if(lower_unarmed_damage)
 		if((target.body_position == LYING_DOWN) || HAS_TRAIT(user, TRAIT_PERFECT_ATTACKER) || staggered || (user_drunkenness && HAS_TRAIT(user, TRAIT_DRUNKEN_BRAWLER)))
 			miss_chance = 0
 		else
-			miss_chance = clamp(UNARMED_MISS_CHANCE_BASE - limb_accuracy + (puncher_brute_and_burn / 2), 0, UNARMED_MISS_CHANCE_MAX)
+			miss_chance = clamp(
+				(UNARMED_MISS_CHANCE_BASE - limb_accuracy - (skill_diff * 3.5) + (puncher_brute_and_burn / 2)) / max(accuracy_mod, 0.15),
+				0,
+				UNARMED_MISS_CHANCE_MAX
+			)
 
 	if(!damage || !affecting || prob(miss_chance))
 		playsound(target.loc, attacking_bodypart.unarmed_miss_sound, 25, TRUE, -1)
@@ -99,14 +107,17 @@
 		log_combat(user, target, "attempted to punch")
 		return FALSE
 
-	// Active defense: block then skill dodge (after miss roll succeeds)
 	if(target.check_block(user, damage, "[user]'s [atk_verb]", UNARMED_ATTACK, 0, BRUTE))
 		return FALSE
 
 	if(target.try_dodge(user, "[user]'s [atk_verb]", UNARMED_ATTACK))
 		return FALSE
 
-	// Flavor-only armor message (does not reduce damage)
+	if(user != target)
+		var/parry_result = target.try_parry_attack(user, damage, "bare hands")
+		if(parry_result == SUCCESSFUL_BLOCK)
+			return ATTACK_FAILED
+
 	var/armor_block = target.run_armor_check(affecting, MELEE, silent = TRUE)
 	if(armor_block >= 100)
 		to_chat(target, span_notice("Your armor absorbs the blow!"))
@@ -144,7 +155,6 @@
 	var/attack_type = attacking_bodypart.attack_type
 	var/kicking = (atk_effect == ATTACK_EFFECT_KICK)
 
-	// blocked = 0 — CE penetration / clothing layers handle mitigation
 	target.apply_damage(
 		damage,
 		attack_type,
@@ -153,6 +163,11 @@
 		attack_direction = attack_direction,
 		sharpness = limb_sharpness,
 	)
+
+	// Mutual slowdown
+	target.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
+	if(user != target)
+		user.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 
 	if(damage >= 12 || (damage >= 9 && prob(66)))
 		target.force_say()
@@ -163,7 +178,6 @@
 		tasty_meal.add_reagent(/datum/reagent/consumable/nutriment/protein, round(damage / 3, 1))
 		tasty_meal.trans_to(user, tasty_meal.total_volume, transferred_by = user, methods = INGEST)
 
-	// Signals still get armor_block for listeners that care about flavor numbers
 	SEND_SIGNAL(target, COMSIG_HUMAN_GOT_PUNCHED, user, damage, attack_type, affecting, armor_block, kicking, limb_sharpness)
 	SEND_SIGNAL(user, COMSIG_HUMAN_PUNCHED, target, damage, attack_type, affecting, armor_block, kicking, limb_sharpness)
 
@@ -179,10 +193,7 @@
 	if(staggered && target_brute_and_burn >= clamp(effective_armor, 0, 200))
 		stagger_combo(user, target, atk_verb, limb_accuracy, armor_block)
 
-/**
- * Block at touch still uses check_block; no damage path here.
- * Dodge is only on successful harm(), not on help/disarm.
- */
+
 /datum/species/proc/spec_attack_hand(mob/living/carbon/human/owner, mob/living/carbon/human/target, datum/martial_art/attacker_style, modifiers)
 	if(!istype(owner))
 		return

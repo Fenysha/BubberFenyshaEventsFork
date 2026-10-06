@@ -1,5 +1,117 @@
+#ifndef OLD_COMBAT_SYSTEM
+// MARK: Melee Recoil
+/datum/status_effect/rw_melee_recoil
+	id = "rw_melee_recoil"
+	duration = RW_MELEE_SLOWDOWN_DURATION
+	status_type = STATUS_EFFECT_REFRESH
+	alert_type = null
+	tick_interval = STATUS_EFFECT_NO_TICK
+	var/stacks = 1
+
+/datum/status_effect/rw_melee_recoil/on_creation(mob/living/new_owner, starting_stacks = 1)
+	stacks = clamp(starting_stacks, 1, RW_MELEE_SLOWDOWN_MAX)
+	return ..()
+
+/datum/status_effect/rw_melee_recoil/on_apply()
+	. = ..()
+	if(!.)
+		return
+	if(HAS_TRAIT(owner, TRAIT_COMBAT_SLOWDOWN_IMMUNE))
+		return FALSE
+	rw_update_movespeed()
+
+/datum/status_effect/rw_melee_recoil/on_remove()
+	owner.remove_movespeed_modifier(/datum/movespeed_modifier/rw_melee_recoil)
+	return ..()
+
+/datum/status_effect/rw_melee_recoil/refresh(effect, starting_stacks = 1)
+	if(HAS_TRAIT(owner, TRAIT_COMBAT_SLOWDOWN_IMMUNE))
+		return
+	stacks = min(stacks + starting_stacks, RW_MELEE_SLOWDOWN_MAX)
+	duration = RW_MELEE_SLOWDOWN_DURATION
+	rw_update_movespeed()
+
+/datum/status_effect/rw_melee_recoil/proc/rw_update_movespeed()
+	if(QDELETED(owner))
+		return
+	var/multiplier = HAS_TRAIT(owner, TRAIT_COMBAT_SLOWDOWN_RESISTANT) ? 0.5 : 1
+	owner.add_or_update_variable_movespeed_modifier(
+		/datum/movespeed_modifier/rw_melee_recoil,
+		multiplicative_slowdown = RW_MELEE_SLOWDOWN * stacks * multiplier
+	)
+
+/datum/movespeed_modifier/rw_melee_recoil
+	variable = TRUE
+	multiplicative_slowdown = RW_MELEE_SLOWDOWN
+	id = MOVESPEED_ID_RW_MELEE_RECOIL
+	priority = 100
+
 /mob/living/proc/get_combat_melee_skill()
 	return rw_get_skill(src, RW_SKILL_MELEE)
+
+/// 0.0 - 1.0+ multiplier for outgoing melee/weapon damage
+/mob/living/proc/get_combat_damage_mod()
+	return 1.0
+
+/mob/living/carbon/get_combat_damage_mod()
+	var/manip = get_manipulation_capacity()
+	var/consc = get_consciousness_capacity()
+	var/pain = get_pain_capacity()
+	var/shock = get_shock_capacity()
+
+	// Pain & shock share the remaining weight
+	var/pain_shock = min(pain, shock)
+
+	var/mod = (manip * COMBAT_DAMAGE_MANIP_WEIGHT) + \
+			  (consc * COMBAT_DAMAGE_CONSC_WEIGHT) + \
+			  (pain_shock * COMBAT_DAMAGE_PAIN_WEIGHT)
+
+	return clamp(mod, 0.15, 1.45)
+
+/mob/living/proc/get_combat_accuracy_mod()
+	return 1.0
+
+/mob/living/carbon/get_combat_accuracy_mod()
+	var/manip = get_manipulation_capacity()
+	var/consc = get_consciousness_capacity()
+	var/move = get_moving_capacity()
+
+	var/mod = (manip * COMBAT_ACCURACY_MANIP_WEIGHT) + \
+			  (consc * COMBAT_ACCURACY_CONSC_WEIGHT) + \
+			  (move * COMBAT_ACCURACY_MOVE_WEIGHT)
+
+	return clamp(mod, 0.20, 1.15)
+
+
+/mob/living/proc/get_combat_dodge_mod()
+	return 1.0
+
+/mob/living/carbon/get_combat_dodge_mod()
+	var/move = get_moving_capacity()
+	var/consc = get_consciousness_capacity()
+	var/pain = get_pain_capacity()
+	var/shock = get_shock_capacity()
+	var/pain_shock = min(pain, shock)
+
+	var/mod = (move * COMBAT_DODGE_MOVE_WEIGHT) + \
+			  (consc * COMBAT_DODGE_CONSC_WEIGHT) + \
+			  (pain_shock * COMBAT_DODGE_PAIN_WEIGHT)
+
+	return clamp(mod, 0.05, 1.20)
+
+/// 0.0-1.0+ how well this mob can block right now
+/mob/living/proc/get_combat_block_mod()
+	return 1.0
+
+/mob/living/carbon/get_combat_block_mod()
+	var/manip = get_manipulation_capacity()
+	var/consc = get_consciousness_capacity()
+	var/pain = get_pain_capacity()
+	var/shock = get_shock_capacity()
+	var/pain_shock = min(pain, shock)
+
+	var/mod = (manip * 0.40) + (consc * 0.35) + (pain_shock * 0.25)
+	return clamp(mod, 0.10, 1.20)
 
 /**
  * Dodge chance 0-100 against attacker for the given attack_type.
@@ -19,6 +131,9 @@
 	var/chance = DODGE_BASE_CHANCE
 	chance += defender_skill * DODGE_PER_DEFENDER_MELEE
 	chance -= attacker_skill * DODGE_PER_ATTACKER_MELEE
+
+	// Capacity modifier (movement is the biggest factor)
+	chance *= get_combat_dodge_mod()
 
 	if(HAS_TRAIT(src, TRAIT_FLOORED))
 		chance *= 0.25
@@ -57,7 +172,7 @@
 		)
 		if(isliving(attacker))
 			to_chat(attacker, span_warning("[src] dodges [attack_text]!"))
-
+	playsound(src, 'fenysha_events/sounds/effects/dodge.ogg', 65, TRUE)
 	if(client)
 		rw_train_skill(src, RW_SKILL_MELEE, RW_SKILL_POINTS_NORMAL)
 	if(isliving(attacker))
@@ -67,20 +182,52 @@
 
 	return TRUE
 
-
-#ifndef OLD_COMBAT_SYSTEM
-
 /**
  * Zone resolve, messages, block, dodge, then apply_damage with blocked=0.
- * Clothing/natural armor is handled inside carbon apply_penetrating_damage.
  */
 /mob/living/attacked_by(obj/item/attacking_item, mob/living/user, list/modifiers, list/attack_modifiers)
 	var/targeting = check_zone(user.zone_selected)
+
+	// === Skill + Capacity accuracy ===
+	var/attacker_skill = user.get_combat_melee_skill()
+	var/defender_skill = get_combat_melee_skill()
+	var/skill_diff = attacker_skill - defender_skill
+
+	var/accuracy_mod = user.get_combat_accuracy_mod()
+
+	// Полный промах
+	var/miss_chance = MELEE_MISS_BASE - (skill_diff * MELEE_MISS_PER_SKILL_DIFF)
+	miss_chance /= max(accuracy_mod, 0.15) // низкая ёмкость → больше промахов
+	miss_chance = clamp(miss_chance, MELEE_MISS_MIN, MELEE_MISS_MAX)
+
+	if(body_position == LYING_DOWN || has_status_effect(/datum/status_effect/staggered) || HAS_TRAIT(user, TRAIT_PERFECT_ATTACKER))
+		miss_chance *= 0.35
+
+	if(prob(miss_chance))
+		if(!LAZYACCESS(attack_modifiers, SILENCE_DEFAULT_MESSAGES))
+			visible_message(
+				span_danger("[user]'s attack with [attacking_item] misses [src]!"),
+				span_danger("You avoid [user]'s [attacking_item]!"),
+				span_hear("You hear a whoosh!"),
+				COMBAT_MESSAGE_RANGE,
+				user
+			)
+			to_chat(user, span_warning("Your attack with [attacking_item] misses [src]!"))
+		if(client)
+			rw_train_skill(src, RW_SKILL_MELEE, RW_SKILL_POINTS_MINOR)
+		if(user.client)
+			rw_train_skill(user, RW_SKILL_MELEE, RW_SKILL_POINTS_MINOR)
+		return ATTACK_FAILED
+
+	var/zone_hit_chance = MELEE_ZONE_HIT_BASE + (skill_diff * MELEE_ZONE_HIT_PER_SKILL)
+	zone_hit_chance *= accuracy_mod
+	if(body_position == LYING_DOWN)
+		zone_hit_chance += 12
+	zone_hit_chance = clamp(zone_hit_chance, 30, 96)
+
 	if(user != src)
-		var/zone_hit_chance = 80
-		if(body_position == LYING_DOWN)
-			zone_hit_chance += 10
 		targeting = get_random_valid_zone(targeting, zone_hit_chance)
+
 	var/targeting_human_readable = parse_zone_with_bodypart(targeting)
 
 	if(!LAZYACCESS(attack_modifiers, SILENCE_DEFAULT_MESSAGES))
@@ -102,12 +249,21 @@
 		to_chat(src, span_warning("Your armor has softened a hit to your [targeting_human_readable]!"))
 
 	var/final_force = CALCULATE_FORCE(attacking_item, attack_modifiers)
+
+	// Capacity damage mod
+	final_force *= user.get_combat_damage_mod()
+
 	if(mob_biotypes & (MOB_ROBOTIC | MOB_MINERAL | MOB_SKELETAL))
 		final_force *= attacking_item.get_demolition_modifier(src)
 
 	var/wounding = attacking_item.wound_bonus
 	if((attacking_item.item_flags & SURGICAL_TOOL) && !user.combat_mode && HAS_TRAIT(user, TRAIT_READY_TO_OPERATE))
 		wounding = CANT_WOUND
+
+	if(user != src)
+		var/parry_result = try_parry_attack(user, final_force, "\the [attacking_item]")
+		if(parry_result == SUCCESSFUL_BLOCK)
+			return ATTACK_FAILED
 
 	if(user != src)
 		if(check_block(
@@ -144,14 +300,22 @@
 		attacking_item = attacking_item,
 	)
 
+	apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
+	if(user != src)
+		user.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
+
 	attack_effects(damage_done, targeting, armor_block, attacking_item, user)
+
+	if(client)
+		rw_train_skill(src, RW_SKILL_MELEE, RW_SKILL_POINTS_NORMAL)
+	if(user.client)
+		rw_train_skill(user, RW_SKILL_MELEE, RW_SKILL_POINTS_MINOR)
+
 	return damage_done
 
 
 /**
  * Projectile damage application.
- * Armor percent is NOT applied as blocked — clothing sharp/blunt is in apply_penetrating_damage.
- * armor_check still used for effects / sparks / dismember messaging.
  */
 /mob/living/proc/apply_projectile_effects(obj/projectile/proj, def_zone, armor_check)
 	if(proj.is_hostile_projectile() && try_dodge(proj.firer, "\the [proj]", PROJECTILE_ATTACK))
@@ -168,6 +332,9 @@
 		attack_direction = get_dir(proj.starting, src),
 		attacking_item = proj,
 	)
+
+	if(damage_dealt > 0)
+		apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 
 	apply_effects(
 		stun = proj.stun,
@@ -196,7 +363,7 @@
 	return damage_dealt
 
 /**
- * Thrown items: same rule — no percent blocked on apply_damage.
+ * Thrown items
  */
 /mob/living/hitby(atom/movable/AM, skipcatch, hitpush = TRUE, blocked = FALSE, datum/thrownthing/throwingdatum)
 	if(!isitem(AM))
@@ -255,7 +422,7 @@
 		thrown_item.weak_against_armour,
 	)
 
-	apply_damage(
+	var/damage_dealt = apply_damage(
 		thrown_item.throwforce,
 		thrown_item.damtype,
 		zone,
@@ -264,6 +431,10 @@
 		wound_bonus = (nosell_hit * CANT_WOUND),
 		attacking_item = thrown_item,
 	)
+
+	if(damage_dealt > 0)
+		apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
+
 	log_hit_combat(thrown_by, thrown_item)
 
 	if(QDELETED(src))
@@ -331,13 +502,15 @@
 		sharpness = user.sharpness,
 		attack_direction = get_dir(user, src),
 	)
+
+	if(damage_done > 0)
+		apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
+
 	log_combat(user, src, "attacked")
 	return damage_done
 
-// Optional thin override — reduce double brain trauma from attack_effects
 /mob/living/carbon/human/attack_effects(damage_done, hit_zone, armor_block, obj/item/attacking_item, mob/living/attacker)
 	. = ..()
-	// Parent already ran; if you need to strip brain extra damage,
-	// better override the head branch only in a full copy later.
 	return .
+
 #endif

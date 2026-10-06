@@ -12,7 +12,7 @@
 	name = ".303 british bullet stock (FMJ)"
 	rw_caliber = RW_CALIBER_303BRITISH
 	icon = 'fenysha_events/icons/items/ammo/rifle.dmi'
-	icon_state = "clip-full"
+	icon_state = "clip"
 	base_icon_state = "clip"
 	ammo_type = /obj/item/ammo_casing/rimworld/brtish303
 	max_ammo = 4
