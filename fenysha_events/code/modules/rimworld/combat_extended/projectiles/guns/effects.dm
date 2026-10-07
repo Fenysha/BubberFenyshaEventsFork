@@ -19,7 +19,6 @@
 	var/rw_saved_fire_sound
 	var/rw_saved_fire_volume
 
-
 /obj/item/gun/rimworld/proc/rw_fire_effects(mob/living/user, atom/target)
 	var/angle = get_angle(user, target)
 	if(!rw_att_silenced)
@@ -28,13 +27,11 @@
 	if(rw_fire_anim_state)
 		flick(rw_fire_anim_state, src)
 
-
 /obj/item/gun/rimworld/proc/rw_is_low_ammo()
 	var/max_ammo_count = rw_get_ammo_max()
 	if(max_ammo_count <= 0)
 		return FALSE
 	return (rw_get_ammo_count() / max_ammo_count) <= rw_low_ammo_frac
-
 
 /obj/item/gun/rimworld/proc/rw_fire_audio_begin()
 	rw_saved_fire_sound = fire_sound
@@ -67,7 +64,6 @@
 	if(flash_state)
 		icon_state = flash_state
 
-
 /obj/effect/abstract/rw_muzzle_flash/proc/show(atom/movable/holder, duration = 0.2 SECONDS)
 	holder.vis_contents += src
 	applied = TRUE
@@ -95,7 +91,6 @@
 	flash_matrix.Turn(angle)
 	rw_muzzle_flash.transform = flash_matrix
 	rw_muzzle_flash.show(user)
-
 
 /obj/item/gun/rimworld/proc/rw_calc_camera_recoil(mob/living/user)
 	var/skill = rw_ranged_skill(user)
@@ -126,58 +121,3 @@
 	var/back_time = clamp(round(strength * 2), 2, 8)
 	animate(target_client, pixel_x = dx, pixel_y = dy, time = 1, easing = SINE_EASING|EASE_OUT, flags = ANIMATION_RELATIVE|ANIMATION_PARALLEL)
 	animate(target_client, pixel_x = -dx, pixel_y = -dy, time = back_time, easing = SINE_EASING|EASE_IN, flags = ANIMATION_RELATIVE)
-
-
-/proc/rw_flinch_animation(mob/living/target)
-	var/dx = pick(-3, 3)
-	var/dy = pick(-2, 0, 2)
-	animate(target, pixel_x = dx, pixel_y = dy, time = 1, flags = ANIMATION_RELATIVE|ANIMATION_PARALLEL)
-	animate(pixel_x = -dx, pixel_y = -dy, time = 2, flags = ANIMATION_RELATIVE)
-
-/proc/rw_flash_color(mob/living/target, flash_color = "#ff7070", speed = 2)
-	if(target.stat == DEAD)
-		return
-	var/old_color = target.color
-	animate(target, color = flash_color, time = speed)
-	animate(color = old_color, time = speed)
-
-
-// MARK: Recoil
-/datum/status_effect/rw_fire_recoil
-	id = "rw_fire_recoil"
-	duration = RW_FIRE_SLOWDOWN_DURATION
-	status_type = STATUS_EFFECT_REFRESH
-	alert_type = null
-	tick_interval = STATUS_EFFECT_NO_TICK
-	var/stacks = 1
-
-/datum/status_effect/rw_fire_recoil/on_creation(mob/living/new_owner, starting_stacks = 1)
-	stacks = clamp(starting_stacks, 1, RW_FIRE_SLOWDOWN_MAX)
-	return ..()
-
-/datum/status_effect/rw_fire_recoil/on_apply()
-	. = ..()
-	if(!.)
-		return
-	rw_update_movespeed()
-
-/datum/status_effect/rw_fire_recoil/on_remove()
-	owner.remove_movespeed_modifier(/datum/movespeed_modifier/rw_fire_recoil)
-	return ..()
-
-/datum/status_effect/rw_fire_recoil/refresh(effect, starting_stacks = 1)
-	stacks = min(stacks + 1, RW_FIRE_SLOWDOWN_MAX)
-	duration = RW_FIRE_SLOWDOWN_DURATION
-	rw_update_movespeed()
-
-/datum/status_effect/rw_fire_recoil/proc/rw_update_movespeed()
-	if(QDELETED(owner))
-		return
-	owner.add_or_update_variable_movespeed_modifier(/datum/movespeed_modifier/rw_fire_recoil, multiplicative_slowdown = RW_FIRE_SLOWDOWN * stacks)
-
-
-/datum/movespeed_modifier/rw_fire_recoil
-	variable = TRUE
-	multiplicative_slowdown = RW_FIRE_SLOWDOWN
-	id = MOVESPEED_ID_RW_FIRE_RECOIL
-	priority = 100

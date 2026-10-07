@@ -281,3 +281,19 @@
 		if(RW_FIRE_AUTO)
 			return "full auto"
 	return "single"
+
+
+/obj/item/gun/rimworld/proc/rw_refresh_hud()
+	rw_hud?.update_all()
+
+
+/obj/item/gun/rimworld/proc/rw_on_ready_again()
+	// Cooldown finished — refresh HUD (hides screen/rw_cooldown).
+	// Item sprite no longer carries a busy overlay.
+	rw_refresh_hud()
+
+
+/// Kept as a thin wrapper so existing call sites stay valid.
+/// Only the HUD "not ready" element is updated; no item-sprite overlay.
+/obj/item/gun/rimworld/proc/rw_update_ready_overlay()
+	rw_refresh_hud()

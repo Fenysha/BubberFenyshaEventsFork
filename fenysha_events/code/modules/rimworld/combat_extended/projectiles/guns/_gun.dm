@@ -1,26 +1,3 @@
-/mob/living
-	/// Current paper-doll aim area (RW_AREA_HEAD / TORSO / LEGS). Null = precise limb targeting when skill allows.
-	var/rw_aim_area = RW_AREA_TORSO
-	var/datum/component/rw_gun_hud/rw_gun_hud
-
-
-/// Maps a body zone string to one of the three coarse aim areas.
-/proc/rw_area_of_zone(zone)
-	switch(zone)
-		if(BODY_ZONE_HEAD, BODY_ZONE_PRECISE_EYES, BODY_ZONE_PRECISE_MOUTH)
-			return RW_AREA_HEAD
-		if(BODY_ZONE_L_LEG, BODY_ZONE_R_LEG)
-			return RW_AREA_LEGS
-	return RW_AREA_TORSO
-
-
-GLOBAL_LIST_INIT(rw_area_zones, list(
-	RW_AREA_HEAD = list(BODY_ZONE_HEAD),
-	RW_AREA_TORSO = list(BODY_ZONE_CHEST, BODY_ZONE_L_ARM, BODY_ZONE_R_ARM),
-	RW_AREA_LEGS = list(BODY_ZONE_L_LEG, BODY_ZONE_R_LEG),
-))
-
-
 /obj/item/gun/rimworld
 	name = "rimworld gun"
 	desc = "A firearm with a biometric lock."
@@ -91,8 +68,6 @@ GLOBAL_LIST_INIT(rw_area_zones, list(
 	/// HUD component that draws ammo / aim / fire-mode buttons.
 	var/datum/component/rw_gun_hud/rw_hud
 
-
-
 /obj/item/gun/rimworld/Initialize(mapload)
 	. = ..()
 	rw_hud = AddComponent(/datum/component/rw_gun_hud)
@@ -101,7 +76,6 @@ GLOBAL_LIST_INIT(rw_area_zones, list(
 		wield_callback = CALLBACK(src, PROC_REF(rw_on_wield)), \
 		unwield_callback = CALLBACK(src, PROC_REF(rw_on_unwield)))
 	rw_init_attachments()
-
 
 /// Subtypes override to report current magazine / internal ammo count.
 /obj/item/gun/rimworld/proc/rw_get_ammo_count()
@@ -124,218 +98,9 @@ GLOBAL_LIST_INIT(rw_area_zones, list(
 		return C.get_manipulation_capacity()
 	return 1
 
-/// Whether the user's skill is high enough for the given aim mode.
-/obj/item/gun/rimworld/proc/rw_can_use_aim_mode(mob/living/user, mode)
-	var/skill = rw_ranged_skill(user)
-	switch(mode)
-		if(RW_AIM_SNAP)
-			return TRUE
-		if(RW_AIM_AIMED)
-			return skill >= RW_REQ_SKILL_AIMED
-		if(RW_AIM_SUPPRESS)
-			return skill >= RW_REQ_SKILL_SUPPRESS
-	return FALSE
-
-/// Whether the fire mode is allowed by the gun and by the current aim mode.
-/// Full-auto is only legal while suppressing.
-/obj/item/gun/rimworld/proc/rw_can_use_fire_mode(mode, aim_mode = rw_aim_mode)
-	if(!(mode in rw_allowed_fire_modes) && !(mode in rw_att_fire_modes))
-		return FALSE
-	if(mode == RW_FIRE_AUTO && aim_mode != RW_AIM_SUPPRESS)
-		return FALSE
-	return TRUE
-
-
-/// Clamp current aim/fire modes to what the user can actually use.
-/obj/item/gun/rimworld/proc/rw_sanitize_modes(mob/living/user)
-	if(!rw_can_use_aim_mode(user, rw_aim_mode))
-		rw_aim_mode = RW_AIM_SNAP
-	if(!rw_can_use_fire_mode(rw_fire_mode))
-		rw_fire_mode = RW_FIRE_SINGLE
-	if(user && rw_ranged_skill(user) < RW_REQ_SKILL_LIMB && !user.rw_aim_area)
-		user.rw_aim_area = rw_area_of_zone(user.zone_selected)
-
-
-/// Cycle aim mode to the next one the user is skilled enough to use.
-/obj/item/gun/rimworld/proc/rw_cycle_aim_mode(mob/living/user)
-	var/static/list/order = list(RW_AIM_SNAP, RW_AIM_AIMED, RW_AIM_SUPPRESS)
-	var/idx = order.Find(rw_aim_mode)
-	for(var/i in 1 to length(order))
-		idx = (idx % length(order)) + 1
-		var/candidate = order[idx]
-		if(rw_can_use_aim_mode(user, candidate))
-			rw_aim_mode = candidate
-			break
-	rw_sanitize_modes(user)
-	playsound(src, SFX_FIRE_MODE_SWITCH, 40, TRUE)
-	rw_refresh_hud()
-
-
-/// Cycle fire mode to the next legal mode for this gun + current aim mode.
-/obj/item/gun/rimworld/proc/rw_cycle_fire_mode(mob/living/user)
-	var/static/list/order = list(RW_FIRE_SINGLE, RW_FIRE_BURST, RW_FIRE_AUTO)
-	var/idx = order.Find(rw_fire_mode)
-	for(var/i in 1 to length(order))
-		idx = (idx % length(order)) + 1
-		if(rw_can_use_fire_mode(order[idx]))
-			rw_fire_mode = order[idx]
-			break
-	playsound(src, SFX_FIRE_MODE_SWITCH, 40, TRUE)
-	rw_refresh_hud()
-
-
-/obj/item/gun/rimworld/proc/rw_calc_spread(mob/living/user)
-	var/skill = rw_ranged_skill(user)
-	var/manip = clamp(rw_manipulation(user), 0.2, 1)
-
-	var/mode_mult = RW_SPREAD_MULT_SNAP
-	var/skill_mult = clamp(1.5 - 0.06 * skill, 0.3, 1.5)
-	var/flat_spread = 0 DEGREES
-	switch(rw_aim_mode)
-		if(RW_AIM_AIMED)
-			mode_mult = RW_SPREAD_MULT_AIMED
-		if(RW_AIM_SUPPRESS)
-			mode_mult = RW_SPREAD_MULT_SUPPRESS
-			skill_mult = 1 // Suppression is intentionally skill-independent.
-			flat_spread = RW_SUPPRESS_FLAT_SPREAD
-
-	var/result = (rw_base_spread + spread + rw_att_spread) * mode_mult * skill_mult + flat_spread
-	result *= 1 + (1 - manip) * 2.5
-	result += rw_calc_moving_penalty()
-	result += rw_recoil_spread * rw_att_recoil_spread_mult * rw_shots_in_row
-	return max(result, 0)
-
-
-/// Extra spread that decays linearly after the shooter stops moving.
-/obj/item/gun/rimworld/proc/rw_calc_moving_penalty()
-	var/still_time = world.time - rw_last_move
-	if(still_time >= rw_settle_time)
-		return 0
-	return rw_moving_spread * rw_att_moving_spread_mult * (1 - still_time / max(rw_settle_time, 1))
-
-
-/obj/item/gun/rimworld/proc/rw_calc_cooldown(mob/living/user)
-	var/skill = rw_ranged_skill(user)
-	var/manip = clamp(rw_manipulation(user), 0.3, 1)
-	var/mode_mult = RW_DELAY_MULT_SNAP
-	switch(rw_aim_mode)
-		if(RW_AIM_AIMED)
-			mode_mult = RW_DELAY_MULT_AIMED
-		if(RW_AIM_SUPPRESS)
-			mode_mult = RW_DELAY_MULT_SUPPRESS
-	var/skill_mult = clamp(1.25 - 0.025 * skill, 0.75, 1.25)
-
-	return max(RW_COOLDOWN_FLOOR, rw_cooldown * rw_att_cooldown_mult * mode_mult * skill_mult / manip)
-
-
-/// Chance (0-100) that a hit lands on the intended area/zone rather than scattering.
-/obj/item/gun/rimworld/proc/rw_calc_zone_accuracy_pct(mob/living/user)
-	var/skill = rw_ranged_skill(user)
-	var/manip = clamp(rw_manipulation(user), 0.2, 1)
-	var/accuracy_pct = (35 + skill * 3) * manip
-	if(rw_aim_mode == RW_AIM_AIMED)
-		accuracy_pct += 10
-	accuracy_pct += rw_att_zone_acc_add
-	accuracy_pct -= rw_calc_moving_penalty() * 2
-	return clamp(accuracy_pct, 5, 98)
-
-
-/obj/item/gun/rimworld/proc/rw_calc_miss_base(mob/living/user)
-	var/skill = rw_ranged_skill(user)
-	var/manip = clamp(rw_manipulation(user), 0.2, 1)
-
-	var/miss = max(RW_MISS_UNSKILLED - RW_MISS_PER_SKILL_LEVEL * skill, RW_MISS_MIN)
-
-	switch(rw_aim_mode)
-		if(RW_AIM_AIMED)
-			miss *= 0.45
-		if(RW_AIM_SUPPRESS)
-			miss = max(miss, 0.55) + RW_MISS_SUPPRESS_BONUS
-			miss *= 1.15
-
-	miss += (1 - manip) * RW_MISS_MANIP_FACTOR
-	miss += (rw_calc_moving_penalty() / max(rw_moving_spread, 1)) * RW_MISS_MOVING_FACTOR
-	miss += min(rw_shots_in_row * 0.04, 0.25) // Sustained fire worsens accuracy.
-	miss += rw_att_miss_add
-
-	return clamp(miss, 0, 0.97)
-
-
-
-/obj/item/gun/rimworld/proc/rw_on_wield(obj/item/source, mob/living/user)
-	rw_wielded = TRUE
-	update_appearance()
-	user?.update_held_items()
-	rw_refresh_hud()
-	return NONE
-
-/obj/item/gun/rimworld/proc/rw_on_unwield(obj/item/source, mob/living/user)
-	rw_wielded = FALSE
-	update_appearance()
-	user?.update_held_items()
-	rw_refresh_hud()
-	return NONE
-
-
-/obj/item/gun/rimworld/attack_self(mob/living/user)
-	if(rw_wield_busy)
-		return
-	var/datum/component/two_handed/th = GetComponent(/datum/component/two_handed)
-	if(!th)
-		return
-	if(th.wielded)
-		th.unwield(user)
-		return
-	rw_try_wield(user)
-
-
-/// Time (ds) required to finish the two-handed grip do_after.
-/obj/item/gun/rimworld/proc/rw_wield_duration(mob/living/user)
-	var/skill = rw_ranged_skill(user)
-	var/manip = clamp(rw_manipulation(user), 0.3, 1)
-	// Floor of 2 ds so the do_after never becomes instant.
-	return max(2, round(rw_wield_time * rw_att_wield_mult * clamp(1.4 - 0.03 * skill, 0.8, 1.4) / manip))
-
-
-/// Start the do_after that ends in a proper two-handed wield.
-/obj/item/gun/rimworld/proc/rw_try_wield(mob/living/user)
-	if(!user.is_holding(src))
-		return
-	if(user.get_inactive_held_item())
-		balloon_alert(user, "free your other hand!")
-		return
-	if(HAS_TRAIT(user, TRAIT_HANDS_BLOCKED) || HAS_TRAIT(user, TRAIT_NO_TWOHANDING))
-		balloon_alert(user, "can't use two hands!")
-		return
-	if(user.usable_hands < 2)
-		balloon_alert(user, "not enough hands!")
-		return
-
-	rw_wield_busy = TRUE
-	user.visible_message(
-		span_notice("[user] begins to bring [src] up in a two-handed grip."),
-		span_notice("You start gripping [src] with both hands..."),
-	)
-	var/ok = do_after(user, rw_wield_duration(user), src, IGNORE_USER_LOC_CHANGE)
-	rw_wield_busy = FALSE
-	if(!ok || QDELETED(src) || !user.is_holding(src) || user.get_inactive_held_item())
-		return
-
-	var/datum/component/two_handed/th = GetComponent(/datum/component/two_handed)
-	if(th)
-		th.wield(user)
-
-
-/obj/item/gun/rimworld/proc/rw_unwield(mob/living/user, silent = FALSE)
-	var/datum/component/two_handed/th = GetComponent(/datum/component/two_handed)
-	if(th?.wielded)
-		th.unwield(user, show_message = !silent)
-
-
 /obj/item/gun/rimworld/update_icon_state()
 	inhand_icon_state = "[base_icon_state][rw_wielded ? "_w" : ""]"
 	. = ..()
-
 
 /// TRUE when the gun is gripped and not on cooldown / mid-burst.
 /obj/item/gun/rimworld/proc/rw_can_fire_now()
@@ -345,10 +110,37 @@ GLOBAL_LIST_INIT(rw_area_zones, list(
 /obj/item/gun/rimworld/proc/rw_is_ready()
 	return !firing_burst && world.time >= rw_next_fire
 
-
-
-/obj/item/gun/rimworld/proc/rw_apply_fire_slowdown(mob/living/user)
-	if(!user)
+/obj/item/gun/rimworld/equipped(mob/user, slot, initial = FALSE)
+	. = ..()
+	if(!(slot & ITEM_SLOT_HANDS) || !isliving(user))
+		rw_unwield(null, silent = TRUE)
 		return
+	RegisterSignal(user, COMSIG_MOVABLE_MOVED, PROC_REF(rw_on_user_moved), override = TRUE)
+	rw_last_move = world.time
+	if(rw_biocode_enabled && rw_biocode_on_equip && !rw_is_biocoded())
+		rw_biocode_to(user)
+	rw_sanitize_modes(user)
+	rw_recalc_attachments(user)
+	rw_refresh_hud()
 
-	user.apply_status_effect(/datum/status_effect/rw_fire_recoil)
+/obj/item/gun/rimworld/dropped(mob/user, silent = FALSE)
+	. = ..()
+	rw_wield_busy = FALSE
+	rw_unwield(user, silent = TRUE)
+	if(user)
+		UnregisterSignal(user, COMSIG_MOVABLE_MOVED)
+
+/obj/item/gun/rimworld/proc/rw_on_user_moved(datum/source)
+	SIGNAL_HANDLER
+	rw_last_move = world.time
+
+/obj/item/gun/rimworld/examine(mob/user)
+	. = ..()
+	if(rw_is_biocoded())
+		. += span_notice("It is biocoded to <b>[rw_biocode_name]</b>. Right-click it in hand to re-code or clear.")
+	else if(rw_biocode_enabled)
+		. += span_notice("It is not biocoded. Right-click it in hand to bind it to yourself.")
+	. += span_notice("Press <b>Z</b> to grip it with both hands. Effective range: <b>[rw_effective_range] tiles</b>.")
+	. += span_notice("Aimed mode needs Shooting [RW_REQ_SKILL_AIMED]+, suppression needs [RW_REQ_SKILL_SUPPRESS]+, limb targeting needs [RW_REQ_SKILL_LIMB]+.")
+	. += span_notice("Tactical reload (mag on loaded gun / gun on mag) needs Shooting [RW_REQ_SKILL_TACTICAL_RELOAD]+.")
+	. += rw_attachment_examine_lines(user)

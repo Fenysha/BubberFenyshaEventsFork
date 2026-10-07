@@ -26,7 +26,6 @@
 	/// Magazine overlay Y offset.
 	var/rw_mag_y_offset = 0
 
-
 /obj/item/gun/rimworld/ballistic/Initialize(mapload)
 	if(rw_accepted_magazine_type)
 		accepted_magazine_type = rw_accepted_magazine_type
@@ -44,7 +43,6 @@
 	if(magazine && !rw_can_accept_magazine(magazine))
 		stack_trace("[src] spawned with illegal magazine [magazine.type] for caliber [rw_caliber].")
 		QDEL_NULL(magazine)
-
 
 /// Resolve the icon used for the magazine overlay.
 /obj/item/gun/rimworld/ballistic/proc/rw_get_magazine_icon()
@@ -75,7 +73,6 @@
 	mag_overlay.pixel_y = rw_mag_y_offset
 	. += mag_overlay
 
-
 /obj/item/gun/rimworld/ballistic/rw_get_ammo_count()
 	if(internal_magazine)
 		return get_ammo()
@@ -86,11 +83,9 @@
 		return magazine ? magazine.max_ammo : 0
 	return magazine ? magazine.max_ammo : 0
 
-
 /obj/item/gun/rimworld/ballistic/update_appearance(updates = ALL)
 	. = ..()
 	rw_refresh_hud()
-
 
 /obj/item/gun/rimworld/ballistic/proc/rw_can_accept_magazine(obj/item/ammo_box/magazine/rimworld/mag)
 	if(!istype(mag))
@@ -118,7 +113,6 @@
 		if(mag.rw_caliber != rw_caliber)
 			return "wrong caliber ([mag.rw_caliber])!"
 	return "incompatible magazine!"
-
 
 /obj/item/gun/rimworld/ballistic/proc/rw_mag_swap_duration(mob/living/user)
 	var/skill = rw_ranged_skill(user)
@@ -149,7 +143,6 @@
 	rack(user)
 	return TRUE
 
-
 /obj/item/gun/rimworld/ballistic/eject_magazine(mob/user, display_message = TRUE, obj/item/ammo_box/magazine/tac_load = null)
 	if(!magazine)
 		return
@@ -168,7 +161,6 @@
 	. = ..()
 	update_appearance()
 	rw_refresh_hud()
-
 
 /obj/item/gun/rimworld/ballistic/insert_magazine(mob/user, obj/item/ammo_box/magazine/AM, display_message = TRUE)
 	if(rw_wield_busy)
@@ -192,14 +184,12 @@
 	rw_refresh_hud()
 	return .
 
-
 /obj/item/gun/rimworld/ballistic/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
 	if(istype(tool, /obj/item/ammo_box/magazine))
 		if(magazine)
 			return rw_try_tactical_reload(user, tool)
 		return insert_magazine(user, tool) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 	return ..()
-
 
 /obj/item/gun/rimworld/ballistic/proc/rw_try_tactical_reload(mob/living/user, obj/item/ammo_box/magazine/new_mag)
 	if(!magazine)
@@ -241,7 +231,6 @@
 	rw_refresh_hud()
 	return ITEM_INTERACT_SUCCESS
 
-
 /obj/item/gun/rimworld/ballistic/examine(mob/user)
 	. = ..()
 	. += span_notice("Caliber: <b>[rw_caliber]</b>.")
@@ -251,34 +240,3 @@
 		. += span_notice("Magazine: [magazine.name] ([rw_get_ammo_count()]/[rw_get_ammo_max()]).")
 	else
 		. += span_warning("No magazine loaded.")
-
-
-/obj/item/ammo_box/magazine/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
-	if(istype(tool, /obj/item/gun/rimworld/ballistic))
-		var/obj/item/gun/rimworld/ballistic/G = tool
-		if(G.magazine)
-			return G.rw_try_tactical_reload(user, src)
-		return G.insert_magazine(user, src) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
-	return ..()
-
-
-/datum/keybinding/mob/rw_rack_gun
-	hotkey_keys = list("Space")
-	name = "rw_rack_gun"
-	full_name = "Rack / Service Gun"
-	description = "Racks the bolt, releases a locked bolt or ejects an empty magazine on the RimWorld-style gun in your hands."
-	keybind_signal = COMSIG_KB_MOB_RW_RACK_DOWN
-
-/datum/keybinding/mob/rw_rack_gun/down(client/user, turf/target, mousepos_x, mousepos_y)
-	. = ..()
-	if(.)
-		return
-
-	var/mob/living/user_mob = user.mob
-	if(!isliving(user_mob))
-		return FALSE
-
-	for(var/obj/item/gun/rimworld/ballistic/held_gun in list(user_mob.get_active_held_item(), user_mob.get_inactive_held_item()))
-		if(held_gun.rw_service(user_mob))
-			return TRUE
-	return FALSE

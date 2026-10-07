@@ -193,7 +193,6 @@
 	if(staggered && target_brute_and_burn >= clamp(effective_armor, 0, 200))
 		stagger_combo(user, target, atk_verb, limb_accuracy, armor_block)
 
-
 /datum/species/proc/spec_attack_hand(mob/living/carbon/human/owner, mob/living/carbon/human/target, datum/martial_art/attacker_style, modifiers)
 	if(!istype(owner))
 		return
@@ -220,5 +219,4 @@
 		harm(owner, target, attacker_style)
 	else
 		help(owner, target, attacker_style)
-
 #endif

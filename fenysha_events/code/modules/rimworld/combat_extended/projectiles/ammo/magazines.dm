@@ -88,3 +88,12 @@
 /obj/item/ammo_box/magazine/rimworld/rifle_762/bops
 	name = "7.62 rifle magazine (APFSDS)"
 	ammo_type = /obj/item/ammo_casing/rimworld/a762/bops
+
+
+/obj/item/ammo_box/magazine/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
+	if(istype(tool, /obj/item/gun/rimworld/ballistic))
+		var/obj/item/gun/rimworld/ballistic/G = tool
+		if(G.magazine)
+			return G.rw_try_tactical_reload(user, src)
+		return G.insert_magazine(user, src) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+	return ..()

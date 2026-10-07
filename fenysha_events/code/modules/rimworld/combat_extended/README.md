@@ -359,27 +359,3 @@ BODYPART_DENSITY_BLUNT   = 0.72
 | Death is primarily based on health                         | Death can result from cerebral hypoxia, cardiac arrest, exsanguination, and other physiological failures |
 
 ---
-
-## 10. File Structure
-
-```text
-combat_extended/
-├── armor.dm                 # Armor, penetration packets, tissue density
-├── attack_procs.dm          # Attack / projectile hooks
-├── bodypart/_bodypart.dm    # Damage, injury generation, dismemberment, stumps
-├── carbon/
-│   ├── carbon.dm            # Pain/Shock/Consciousness API + capacities
-│   ├── carbon_defense.dm    # apply_penetrating_damage
-│   ├── carbon_defines.dm    # Carbon variables
-│   ├── carbon_life.dm       # Life, consciousness stepping, blood
-│   └── human/               # Human-specific code
-├── injury/                  # All injury types + _injury.dm
-├── organ/                   # Brain, Heart, Lungs
-├── medicine/                # Base medical system
-├── health_ui.dm             # Health UI
-├── species.dm
-├── rw_combat_extended.dm    # Combat defines
-└── rw_injuries.dm           # Medical defines
-```
-
----

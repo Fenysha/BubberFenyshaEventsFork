@@ -15,6 +15,9 @@
 	/// In VF the myocardium quivers without coordinated ejection — cardiac output is effectively zero.
 	var/fibrillating = FALSE
 
+	/// Prevents spam of "heart stopping" messages.
+	var/last_stop_message = 0
+
 
 /obj/item/organ/heart/proc/Stop()
 	if(!beating && !fibrillating)
@@ -101,19 +104,21 @@
 
 
 /// Returns relative cardiac output, where 1.0 represents normal output.
-/// CPR provides a small amount of artificial circulation while the heart is stopped or fibrillating.
+/// CPR provides additional artificial circulation while active (does not replace native output).
 /obj/item/organ/heart/proc/get_cardiac_output()
-	// Coordinated beating
+	var/native_output = 0
+
 	var/contractility = get_contractility()
 	if(contractility > 0 && !fibrillating)
 		var/preload = get_preload_factor()
-		return (rate / HEART_RATE_NORMAL) * get_stroke_efficiency() * contractility * preload
+		native_output = (rate / HEART_RATE_NORMAL) * get_stroke_efficiency() * contractility * preload
 
-	// Stopped or fibrillating heart can still provide minimal circulation through CPR
+	// CPR adds a small amount of artificial circulation (does not replace native beats)
+	var/cpr_output = 0
 	if(cpr_until > world.time)
-		return HEART_CPR_OUTPUT
+		cpr_output = HEART_CPR_OUTPUT
 
-	return 0
+	return native_output + cpr_output
 
 
 /// Shifts the heart's target rate, for example due to drugs or chemical effects.
@@ -138,20 +143,23 @@
 	if(organ_flags & ORGAN_FAILING)
 		return FALSE
 
-	// Defibrillation / resuscitation clears VF and attempts to restore beating
-	if(fibrillating || !beating)
-		if(get_contractility() > 0 || Restart())
-			fibrillating = FALSE
-			beating = TRUE
-			rate = start_rate
-			rate_target = HEART_RATE_NORMAL
-			update_appearance()
-			return TRUE
+	// Already beating normally — just nudge the rate
+	if(beating && !fibrillating)
+		rate = start_rate
+		rate_target = HEART_RATE_NORMAL
+		return TRUE
+
+	// Need actual myocardial function to restart
+	if(get_contractility() <= 0 && !(organ_flags & ORGAN_EMP))
+		// Contractility is zero because of damage/failure, not EMP
+		// (EMP case is already blocked by the failing check above in most setups)
 		return FALSE
 
-	// Already beating normally
+	fibrillating = FALSE
+	beating = TRUE
 	rate = start_rate
 	rate_target = HEART_RATE_NORMAL
+	update_appearance()
 	return TRUE
 
 
@@ -160,7 +168,8 @@
 	rate_target = HEART_RATE_NORMAL
 	cpr_until = 0
 	fibrillating = FALSE
-	Restart()
+	beating = TRUE
+	update_appearance()
 
 
 /// Calculates the physiological demand currently placed on the heart.
@@ -178,11 +187,14 @@
 	drive += max(0, 1 - blood_ratio) * 120
 
 	// Cerebral hypoxia increases heart rate until terminal hypoxia causes bradycardia.
-	drive += max(0, BRAIN_O2_HYPOXIA - owner.get_brain_oxygen()) * 0.5
+	var/brain_o2 = owner.get_brain_oxygen()
+	drive += max(0, BRAIN_O2_HYPOXIA - brain_o2) * 0.5
 
-	// Severe terminal hypoxia eventually causes bradycardia.
-	if(owner.get_brain_oxygen() < BRAIN_O2_SEVERE * 0.5)
-		drive = HEART_RATE_MIN_SURVIVABLE + owner.get_brain_oxygen()
+	// Severe terminal hypoxia eventually causes bradycardia / pre-asystole.
+	// Scale toward the minimum survivable rate instead of adding raw oxygen units.
+	if(brain_o2 < BRAIN_O2_SEVERE * 0.5)
+		var/severity = 1 - (brain_o2 / (BRAIN_O2_SEVERE * 0.5))
+		drive = LERP(drive, HEART_RATE_MIN_SURVIVABLE, clamp(severity, 0, 1))
 
 	return drive
 
@@ -279,13 +291,7 @@
 	// Extremely high or low heart rates cause cardiac arrest (asystole path)
 	if((rate >= HEART_RATE_MAX_SURVIVABLE || rate <= HEART_RATE_MIN_SURVIVABLE) && beating)
 		if(owner.can_heartattack() && Stop())
-			owner.visible_message(
-				span_danger("[owner] clutches at [owner.p_their()] chest as if [owner.p_their()] heart is stopping!")
-			)
-			to_chat(
-				owner,
-				span_userdanger("You feel a terrible pain in your chest, as if your heart has stopped!")
-			)
+			notify_heart_stop()
 		return
 
 	// Sustained tachycardia damages the myocardium.
@@ -305,6 +311,29 @@
 
 
 /**
+ * Sends the "heart stopping" feedback to the owner / nearby players.
+ * Rate-limited so it does not spam every life tick.
+ */
+/obj/item/organ/heart/proc/notify_heart_stop()
+	if(!owner)
+		return
+	if(world.time < last_stop_message + 5 SECONDS)
+		return
+	if(IS_UNCONSCIOUS_OR_CRIT(owner))
+		return
+
+	last_stop_message = world.time
+
+	owner.visible_message(
+		span_danger("[owner] clutches at [owner.p_their()] chest as if [owner.p_their()] heart is stopping!")
+	)
+	to_chat(
+		owner,
+		span_userdanger("You feel a terrible pain in your chest, as if your heart has stopped!")
+	)
+
+
+/**
  * Processes heart rhythm and updates heartbeat feedback for the owner.
  * This replaces the default heart on_life() processing.
  */
@@ -321,15 +350,9 @@
 		if(organ_flags & ORGAN_FAILING)
 			Stop()
 
-		// Avoid spamming messages every tick
-		if(!IS_UNCONSCIOUS_OR_CRIT(owner) && !fibrillating)
-			owner.visible_message(
-				span_danger("[owner] clutches at [owner.p_their()] chest as if [owner.p_their()] heart is stopping!")
-			)
-			to_chat(
-				owner,
-				span_userdanger("You feel a terrible pain in your chest, as if your heart has stopped!")
-			)
+		// Message only when the heart just stopped (not while already in VF)
+		if(!fibrillating)
+			notify_heart_stop()
 
 		return
 

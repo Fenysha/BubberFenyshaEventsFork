@@ -58,11 +58,6 @@
 		packet = pen_apply_armor_layer(packet, BP.natural_sharp_armor, BP.natural_blunt_armor)
 	return packet
 
-
-
-
-// code/modules/mob/living/carbon/carbon_damage_routing.dm
-// Compile AFTER living damage procs and carbon_penetration.dm
 // Toggle: #define OLD_COMBAT_SYSTEM restores stock apply_damage path
 
 #ifndef OLD_COMBAT_SYSTEM
