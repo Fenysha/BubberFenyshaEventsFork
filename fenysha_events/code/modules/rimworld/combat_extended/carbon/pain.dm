@@ -32,6 +32,20 @@
 /mob/living/carbon/proc/in_pain()
 	return pain >= PAIN_SHOCK_THRESHOLD
 
+/// Keep a continuously scaled mood penalty for pain, independent of need levels.
+/mob/living/carbon/proc/update_psychology_pain_factor()
+	var/datum/psychology/psy = get_psychology()
+	if(!psy)
+		return
+	if(pain <= 0)
+		psy.clear_factor(PSY_CATEGORY_PAIN)
+		return
+
+	var/penalty = -round(clamp(pain / PAIN_MAX, 0, 1) * PSY_PAIN_MOOD_MAX_PENALTY, 0.1)
+	var/datum/psychology_factor/current = psy.get_factor(PSY_CATEGORY_PAIN)
+	if(!current || current.mood_change != penalty)
+		psy.add_factor(PSY_CATEGORY_PAIN, "pain", penalty, "Ongoing pain reduces your mood.")
+
 /atom/movable/screen/fullscreen/pain_spots
 	icon = 'icons/hud/screen_full.dmi'
 	icon_state = "brutedamageoverlay"

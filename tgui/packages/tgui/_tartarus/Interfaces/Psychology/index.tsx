@@ -8,6 +8,7 @@ import {
   Section,
   Stack,
   Tabs,
+  Tooltip,
 } from 'tgui-core/components';
 // @ts-expect-error
 import '../../Styles/Psychology.scss';
@@ -15,10 +16,14 @@ import '../../Styles/Psychology.scss';
 type NeedRow = {
   id: string;
   name: string;
+  description: string;
   value: number;
   max: number;
   label: string;
   moodContribution: number;
+  lowThreshold: number;
+  mediumThreshold: number;
+  criticalThreshold: number;
 };
 
 type FactorRow = {
@@ -46,6 +51,8 @@ type PsychologyData = {
   pawnName: string;
   speciesName: string;
   mood: number;
+  moodScaleMin: number;
+  moodScaleMax: number;
   moodLabel: string;
   breakSeverity: number;
   inBreak: boolean;
@@ -373,12 +380,15 @@ function NeedRowView({ need }: { need: NeedRow }) {
   const max = need.max || 100;
   const value = Math.max(0, Math.min(max, need.value || 0));
   const color = NEED_COLORS[need.label] || 'average';
+  const tooltip = `${need.description} Mood thresholds: low ${need.lowThreshold}, moderate ${need.mediumThreshold}, critical ${need.criticalThreshold}.`;
 
   return (
     <div className="Psychology__need">
       <Stack align="center">
         <Stack.Item grow>
-          <Box bold>{need.name}</Box>
+          <Tooltip content={tooltip}>
+            <Box bold>{need.name}</Box>
+          </Tooltip>
           <Box color={color} className="Psychology__needLabel">
             {need.label}
           </Box>
@@ -401,6 +411,14 @@ function NeedRowView({ need }: { need: NeedRow }) {
 
 function NeedsTabMoodNote({ data }: { data: PsychologyData }) {
   const moodColor = MOOD_COLOR[data.moodLabel] || 'average';
+  const moodScaleMin = data.moodScaleMin;
+  const moodScaleMax = data.moodScaleMax;
+  const moodRange = Math.max(moodScaleMax - moodScaleMin, 1);
+  const moodScaleValue = Math.max(
+    moodScaleMin,
+    Math.min(moodScaleMax, data.mood || 0),
+  );
+  const neutralPosition = `${((0 - moodScaleMin) / moodRange) * 100}%`;
 
   return (
     <div className="Psychology__moodNote">
@@ -412,6 +430,21 @@ function NeedsTabMoodNote({ data }: { data: PsychologyData }) {
       <Box color="label" className="Psychology__moodHint">
         Mood combines current needs and psychological effects.
       </Box>
+      <div className="Psychology__moodScale" title="Current overall mood">
+        <ProgressBar
+          value={(moodScaleValue - moodScaleMin) / moodRange}
+          maxValue={1}
+          color={moodColor}
+        >
+          {data.mood > 0 ? '+' : ''}
+          {Math.round(data.mood || 0)}
+        </ProgressBar>
+        <div className="Psychology__moodScaleLabels">
+          <span>Severe distress</span>
+          <span style={{ left: neutralPosition }}>Neutral</span>
+          <span>Positive</span>
+        </div>
+      </div>
     </div>
   );
 }

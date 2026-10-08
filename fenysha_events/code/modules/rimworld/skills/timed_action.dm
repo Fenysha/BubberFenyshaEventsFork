@@ -1,6 +1,7 @@
 #define RW_SKILL_ACTION_TIME_PER_LEVEL 0.10
 #define RW_SKILL_ACTION_MIN_MULTIPLIER 0.25
 #define RW_SKILL_ACTION_MAX_MULTIPLIER 3.0
+#define RW_SKILL_ACTION_HEALTH_MULTIPLIER 2.0
 
 
 #define RW_SKILL_ACTION_MAX_INTERACTIONS 1
@@ -30,6 +31,17 @@
 	)
 
 	return max(round(expected_delay * multiplier), minimum_delay)
+
+
+/// Wounds and low consciousness slow work actions; arm function also gates manipulation.
+/proc/rw_get_health_action_multiplier(atom/movable/user)
+#ifndef OLD_COMBAT_SYSTEM
+	if(iscarbon(user))
+		var/mob/living/carbon/carbon_user = user
+		var/capacity = min(carbon_user.get_work_capacity(), carbon_user.get_manipulation_capacity())
+		return clamp(1 + (1 - capacity) * RW_SKILL_ACTION_HEALTH_MULTIPLIER, 1, RW_SKILL_ACTION_MAX_MULTIPLIER)
+#endif
+	return 1
 
 
 /proc/rw_get_skill_action_delay_for(
@@ -103,6 +115,7 @@
 		ideal_skill,
 		minimum_delay
 	)
+	actual_delay = round(actual_delay * rw_get_health_action_multiplier(user))
 
 	. = ..(
 		user,

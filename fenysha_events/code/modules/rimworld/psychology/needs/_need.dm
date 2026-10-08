@@ -5,14 +5,13 @@
 /datum/psychology_need
 	var/id
 	var/name = "Need"
+	var/description = "A basic psychological need."
 	var/value = 80
 	var/default_value = 80
-	/// How much the need falls per second when not satisfied
-	var/decay_rate = 0.15
-	/// Mood contribution when value == 100
-	var/mood_weight = PSY_NEED_MOOD_WEIGHT
-	/// Mood contribution when value == 0 (usually negative)
-	var/mood_penalty = -8
+	/// How much the need falls per second when not satisfied.
+	var/decay_rate = 0.04
+	/// Total penalty when this need is completely depleted. No penalty applies above PSY_NEED_OK.
+	var/mood_penalty = -9
 
 /datum/psychology_need/proc/set_value(amount)
 	value = clamp(amount, PSY_NEED_MIN, PSY_NEED_MAX)
@@ -34,11 +33,17 @@
 			return "desperate"
 
 /**
- * Linear interpolation between mood_penalty (at 0) and mood_weight (at 100).
+ * Need value is mood-neutral while healthy, then accumulates a tiered penalty
+ * between the low, medium, and critical thresholds.
  */
 /datum/psychology_need/proc/get_mood_contribution()
-	var/t = value / PSY_NEED_MAX
-	return round(mood_penalty + (mood_weight - mood_penalty) * t, 0.1)
+	if(value >= PSY_NEED_OK)
+		return 0
+	if(value >= PSY_NEED_LOW)
+		return round(mood_penalty * 0.25 * (PSY_NEED_OK - value) / (PSY_NEED_OK - PSY_NEED_LOW), 0.1)
+	if(value >= PSY_NEED_CRITICAL)
+		return round(mood_penalty * LERP(0.25, 0.65, (PSY_NEED_LOW - value) / (PSY_NEED_LOW - PSY_NEED_CRITICAL)), 0.1)
+	return round(mood_penalty * LERP(0.65, 1, (PSY_NEED_CRITICAL - value) / PSY_NEED_CRITICAL), 0.1)
 
 /**
  * Called every psychology process tick.
@@ -55,33 +60,28 @@
 /datum/psychology_need/hunger
 	id = PSY_NEED_HUNGER
 	name = "Hunger"
-	decay_rate = 0.25
-	mood_weight = 3
+	description = "Hunger falls over roughly 30 minutes and improves after eating."
+	decay_rate = 100 / (30 MINUTES / 10)
+	default_value = PSY_NEED_MAX
 	mood_penalty = -12
 
 /datum/psychology_need/hunger/process_need(seconds_per_tick, datum/psychology/psy)
 	if(!psy?.owner)
 		return
-	// Sync with nutrition if the mob has it
 	var/mob/living/L = psy.owner
-	if(HAS_TRAIT(L, TRAIT_NOHUNGER))
-		set_value(PSY_NEED_MAX)
-		return
 	if(iscarbon(L))
 		var/mob/living/carbon/C = L
-		// Map nutrition (0–NUTRITION_LEVEL_FULL-ish) roughly onto 0–100
-		var/nut = C.nutrition
-		// Typical SS13: starving ~0, full ~NUTRITION_LEVEL_FULL (often 550+)
-		var/mapped = clamp(round(nut / 5.5), PSY_NEED_MIN, PSY_NEED_MAX)
-		set_value(mapped)
+		C.process_rw_hunger(seconds_per_tick, psy)
+	else if(HAS_TRAIT(L, TRAIT_NOHUNGER))
+		set_value(PSY_NEED_MAX)
 	else
 		adjust_value(-decay_rate * seconds_per_tick)
 
 /datum/psychology_need/beauty
 	id = PSY_NEED_BEAUTY
 	name = "Environment"
+	description = "The visual quality of your surroundings."
 	decay_rate = 0 // driven by area beauty
-	mood_weight = 4
 	mood_penalty = -6
 
 /datum/psychology_need/beauty/process_need(seconds_per_tick, datum/psychology/psy)
@@ -114,8 +114,8 @@
 /datum/psychology_need/comfort
 	id = PSY_NEED_COMFORT
 	name = "Comfort"
-	decay_rate = 0.08
-	mood_weight = 3
+	description = "General physical comfort. Resting helps recover it."
+	decay_rate = 0.03
 	mood_penalty = -5
 
 /datum/psychology_need/comfort/process_need(seconds_per_tick, datum/psychology/psy)
@@ -125,15 +125,15 @@
 		return
 	var/mob/living/L = psy.owner
 	if(L.resting || L.IsSleeping())
-		adjust_value(0.4 * seconds_per_tick)
+		adjust_value(0.08 * seconds_per_tick)
 	else
 		adjust_value(-decay_rate * seconds_per_tick)
 
 /datum/psychology_need/rest
 	id = PSY_NEED_REST
 	name = "Rest"
-	decay_rate = 0.12
-	mood_weight = 4
+	description = "Fatigue accumulates while awake and recovers during rest or sleep."
+	decay_rate = 0.04
 	mood_penalty = -10
 
 /datum/psychology_need/rest/process_need(seconds_per_tick, datum/psychology/psy)
@@ -141,17 +141,17 @@
 		return
 	var/mob/living/L = psy.owner
 	if(L.IsSleeping())
-		adjust_value(1.2 * seconds_per_tick)
+		adjust_value(0.15 * seconds_per_tick)
 	else if(L.resting)
-		adjust_value(0.3 * seconds_per_tick)
+		adjust_value(0.05 * seconds_per_tick)
 	else
 		adjust_value(-decay_rate * seconds_per_tick)
 
 /datum/psychology_need/recreation
 	id = PSY_NEED_RECREATION
 	name = "Recreation"
-	decay_rate = 0.1
-	mood_weight = 3
+	description = "Leisure and enjoyable activities help satisfy this need."
+	decay_rate = 0.04
 	mood_penalty = -6
 
 /datum/psychology_need/recreation/process_need(seconds_per_tick, datum/psychology/psy)
@@ -162,8 +162,8 @@
 /datum/psychology_need/outdoors
 	id = PSY_NEED_OUTDOORS
 	name = "Outdoors"
+	description = "Time outside satisfies this need; staying indoors slowly reduces it."
 	decay_rate = 0
-	mood_weight = 2
 	mood_penalty = -3
 
 /datum/psychology_need/outdoors/process_need(seconds_per_tick, datum/psychology/psy)
@@ -171,6 +171,6 @@
 		return
 	var/area/A = get_area(psy.owner)
 	if(A?.outdoors)
-		adjust_value(0.5 * seconds_per_tick)
+		adjust_value(0.1 * seconds_per_tick)
 	else
-		adjust_value(-0.15 * seconds_per_tick)
+		adjust_value(-0.03 * seconds_per_tick)

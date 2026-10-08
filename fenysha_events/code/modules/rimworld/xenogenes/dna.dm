@@ -146,6 +146,18 @@
 	return rw_xenogenes[gene_id]
 
 
+/// Sum the metabolic-efficiency points from active RimWorld genes.
+/datum/dna/proc/get_rw_metabolic_efficiency()
+	var/total_efficiency = 0
+	if(!length(rw_xenogenes))
+		return total_efficiency
+	for(var/gene_id in rw_xenogenes)
+		var/datum/rw_xenogene/gene = rw_xenogenes[gene_id]
+		if(gene)
+			total_efficiency += gene.metabolic_efficiency
+	return total_efficiency
+
+
 /datum/dna/proc/has_rw_xenogene(gene_id)
 	return !!get_rw_xenogene(gene_id)
 

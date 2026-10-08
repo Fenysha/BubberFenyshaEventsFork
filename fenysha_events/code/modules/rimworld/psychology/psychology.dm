@@ -317,6 +317,9 @@
 		var/datum/psychology_need/N = needs[nid]
 		N?.process_need(seconds_per_tick, src)
 
+	// Mental-break rolls must use the updated needs and pain factors from this tick.
+	recalculate_mood()
+
 	// Mental break handling
 	if(active_break)
 		active_break.process_break(seconds_per_tick)
@@ -405,10 +408,14 @@
 		need_data += list(list(
 			"id" = nid,
 			"name" = N.name,
+			"description" = N.description,
 			"value" = N.value,
 			"max" = PSY_NEED_MAX,
 			"label" = N.get_label(),
 			"moodContribution" = N.get_mood_contribution(),
+			"lowThreshold" = PSY_NEED_OK,
+			"mediumThreshold" = PSY_NEED_LOW,
+			"criticalThreshold" = PSY_NEED_CRITICAL,
 		))
 
 	var/list/factor_data = list()
@@ -425,6 +432,8 @@
 
 	return list(
 		"mood" = mood,
+		"moodScaleMin" = PSY_MOOD_SCALE_MIN,
+		"moodScaleMax" = PSY_MOOD_SCALE_MAX,
 		"moodLabel" = mood_label,
 		"breakSeverity" = get_break_severity(),
 		"inBreak" = is_in_break(),

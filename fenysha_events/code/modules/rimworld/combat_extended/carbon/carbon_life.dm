@@ -111,4 +111,5 @@
 		0,
 		shock_limit
 	)
+	update_psychology_pain_factor()
 #endif

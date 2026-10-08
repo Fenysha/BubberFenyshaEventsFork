@@ -214,3 +214,33 @@
   font-size: 0.75em;
   line-height: 1.3;
 }
+
+.Psychology__moodScale {
+  margin-top: 7px;
+}
+
+.Psychology__moodScaleLabels {
+  position: relative;
+  height: 12px;
+  margin-top: 2px;
+  color: var(--psychology-muted);
+  font-size: 0.65em;
+}
+
+.Psychology__moodScaleLabels span {
+  position: absolute;
+  white-space: nowrap;
+}
+
+.Psychology__moodScaleLabels span:nth-child(1) {
+  left: 0;
+}
+
+.Psychology__moodScaleLabels span:nth-child(2) {
+  left: 66.666%;
+  transform: translateX(-50%);
+}
+
+.Psychology__moodScaleLabels span:nth-child(3) {
+  right: 0;
+}
