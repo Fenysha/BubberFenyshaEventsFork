@@ -179,7 +179,7 @@
 		secondary_weapon_overlay.icon_state = "[secondary_weapon.icon_state]_[newdir]"
 		update_appearance(UPDATE_OVERLAYS)
 
-/obj/vehicle/sealed/armored/update_integrity(new_value)
+/obj/vehicle/sealed/armored/on_update_integrity(old_value, new_value)
 	. = ..()
 	update_appearance(UPDATE_ICON_STATE)
 

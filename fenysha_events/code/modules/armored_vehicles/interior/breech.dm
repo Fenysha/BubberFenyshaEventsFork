@@ -318,6 +318,7 @@
 	pixel_x = -34
 
 /obj/structure/ammo_rack/primary/som/update_overlays()
+	SHOULD_CALL_PARENT(FALSE)
 	. = list()
 	if(!length(contents))
 		return
@@ -338,6 +339,7 @@
 	pixel_x = -34
 
 /obj/structure/ammo_rack/primary/icc/update_overlays()
+	SHOULD_CALL_PARENT(FALSE)
 	. = list()
 
 /obj/structure/ammo_rack/secondary/icc
