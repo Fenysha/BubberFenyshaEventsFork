@@ -168,7 +168,7 @@
 /obj/effect/abstract/surveillance_snare/Initialize(mapload, spawning_guardian)
 	. = ..()
 	name = "[get_area(src)] snare ([rand(1, 1000)])"
-	var/static/list/loc_connections = list(COMSIG_ATOM_ENTERED = PROC_REF(on_entered))
+	var/list/loc_connections = list(COMSIG_ATOM_ENTERED = PROC_REF(on_entered))
 	AddElement(/datum/element/connect_loc, loc_connections)
 
 /// Set up crossed notification

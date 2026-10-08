@@ -379,6 +379,16 @@ export function GeneInspector(props: {
         </Box>
       )}
       <GeneOptionEditor gene={gene} />
+      {(innate || equipped) && !!gene.option && (
+        <Button
+          mt={0.5}
+          fluid
+          icon="undo"
+          onClick={() => act('reset_xenogene_option', { id: gene.id })}
+        >
+          {innate ? 'Reset to race default' : 'Reset to default'}
+        </Button>
+      )}
       {!innate && (
         <Button
           mt={1}

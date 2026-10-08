@@ -83,6 +83,59 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	xenotype_description = default["description"]
 	xenotype_icon_gene = default["iconGene"]
 
+/// Race baseline = immutable defaults of the race (code). Never saved per character.
+/// Returns list("genes" = list, "values" = assoc list).
+/datum/rimworld_preferences/proc/get_species_baseline()
+	var/datum/species/proto = GLOB.species_prototypes[rw_species()]
+	var/list/entry = proto?.rw_default_xenotype_id ? SSxenogenes?.saved_xenotypes[proto.rw_default_xenotype_id] : null
+	var/list/genes = islist(entry) && islist(entry["genes"]) ? entry["genes"] : proto?.rw_innate_xenogenes
+	var/list/values = islist(entry) && islist(entry["values"]) ? entry["values"] : proto?.rw_innate_xenogene_values
+	var/list/clean_genes = list()
+	if(islist(genes))
+		for(var/gene_id in genes)
+			if(GLOB.all_rw_xenogenes[gene_id])
+				clean_genes += gene_id
+	return list("genes" = clean_genes, "values" = islist(values) ? values : list())
+
+/datum/rimworld_preferences/proc/xenogene_values_equal(a, b)
+	if(islist(a) || islist(b))
+		if(!islist(a) || !islist(b) || length(a) != length(b))
+			return FALSE
+		for(var/index in 1 to length(a))
+			if(lowertext("[a[index]]") != lowertext("[b[index]]"))
+				return FALSE
+		return TRUE
+	var/num_a = isnum(a) ? a : text2num(a)
+	var/num_b = isnum(b) ? b : text2num(b)
+	if(isnum(num_a) && isnum(num_b))
+		return abs(num_a - num_b) < 0.001
+	return "[a]" == "[b]"
+
+/// True when our genes AND option values are identical to a xenotype entry.
+/datum/rimworld_preferences/proc/xenotype_matches_entry(list/entry)
+	if(!islist(entry) || !islist(entry["genes"]))
+		return FALSE
+	var/list/entry_genes = entry["genes"]
+	if(length(entry_genes) != length(xenogenes))
+		return FALSE
+	for(var/gene_id in xenogenes)
+		if(!(gene_id in entry_genes))
+			return FALSE
+	var/list/entry_values = islist(entry["values"]) ? entry["values"] : list()
+	for(var/gene_id in xenogenes)
+		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(!gene || gene.option_kind == RW_XENOGENE_OPTION_NONE)
+			continue
+		if(!xenogene_values_equal(xenogene_values[gene_id], entry_values[gene_id]))
+			return FALSE
+	return TRUE
+
+/// Call after any manual gene/option edit: drops the preset link, then re-links to the
+/// race baseline if the edits happen to match it again.
+/datum/rimworld_preferences/proc/refresh_xenotype_identity()
+	mark_xenotype_custom()
+	sync_xenotype_identity()
+
 /datum/rimworld_preferences/proc/sync_xenotype_identity()
 	if(xenotype_id)
 		var/list/saved = SSxenogenes?.saved_xenotypes[xenotype_id]
@@ -94,11 +147,8 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 		mark_xenotype_custom()
 	var/datum/species/species = GLOB.species_prototypes[rw_species()]
 	var/list/baseline = species?.rw_default_xenotype_id ? SSxenogenes?.saved_xenotypes[species.rw_default_xenotype_id] : null
-	if(!islist(baseline) || length(xenogenes) != length(baseline["genes"]))
+	if(!islist(baseline) || !xenotype_matches_entry(baseline))
 		return
-	for(var/gene_id in xenogenes)
-		if(!(gene_id in baseline["genes"]))
-			return
 	set_race_default_xenotype()
 
 /datum/rimworld_preferences/Destroy(force)
@@ -238,31 +288,32 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	traits = list()
 	loadout = list()
 
+/// Race baseline genes are always present, but their option values are only DEFAULTS:
+/// a value already stored in xenogene_values (the character's override) wins.
 /datum/rimworld_preferences/proc/sync_species_xenogenes()
-	var/datum/species/proto = GLOB.species_prototypes[rw_species()]
+	var/list/baseline = get_species_baseline()
+	var/list/baseline_genes = baseline["genes"]
+	var/list/baseline_values = baseline["values"]
 	var/list/old_genes = copy_list(xenogenes)
 	var/list/old_values = copy_list(xenogene_values)
-	var/list/baseline = proto?.rw_default_xenotype_id ? SSxenogenes?.saved_xenotypes[proto.rw_default_xenotype_id] : null
-	var/list/baseline_genes = islist(baseline?["genes"]) ? baseline["genes"] : proto?.rw_innate_xenogenes
-	if(!islist(baseline_genes))
-		baseline_genes = list()
-	var/list/baseline_values = islist(baseline?["values"]) ? baseline["values"] : proto?.rw_innate_xenogene_values
 	var/list/kept = list()
-	var/list/clean_values = list()
 	for(var/gene_id in baseline_genes)
-		if(!GLOB.all_rw_xenogenes[gene_id])
-			continue
 		kept += gene_id
-		if(islist(baseline_values) && !isnull(baseline_values[gene_id]))
-			clean_values[gene_id] = baseline_values[gene_id]
 	for(var/gene_id in old_genes)
 		if(!GLOB.all_rw_xenogenes[gene_id] || (gene_id in kept))
 			continue
 		kept += gene_id
 	xenogenes = kept
-	for(var/gene_id in old_values)
-		if(!(gene_id in baseline_genes) && (gene_id in xenogenes))
-			clean_values[gene_id] = old_values[gene_id]
+	var/list/clean_values = list()
+	for(var/gene_id in kept)
+		var/value = old_values[gene_id]
+		if(isnull(value) && (gene_id in baseline_genes))
+			value = baseline_values[gene_id]
+		if(islist(value))
+			var/list/value_list = value
+			value = value_list.Copy()
+		if(!isnull(value))
+			clean_values[gene_id] = value
 	xenogene_values = clean_values
 	for(var/gene_id in xenogenes)
 		ensure_xenogene_value(gene_id)

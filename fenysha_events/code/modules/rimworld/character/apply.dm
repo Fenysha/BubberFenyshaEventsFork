@@ -20,6 +20,10 @@
 	// For the preview dummy always force a species rebuild so removed genes drop their
 	// mutant bodyparts. Live pawns only rebuild when the species actually changes.
 	var/force_species = is_dummy || (target.dna && target.dna.species?.type != wanted_species)
+	// Pooled / preview dummies keep their DNA between renders. Wipe the previous character's
+	// xenogenes so they cannot leak into this one (including via the species baseline hook).
+	if(is_dummy && target.dna)
+		target.dna.purge_rw_xenogenes()
 	if(target.dna && force_species)
 		var/list/features
 		var/list/mutantparts
@@ -43,7 +47,8 @@
 	// Keep DNA gene set in sync for both live pawns and the preview dummy so removal
 	// drops visual organs / overlays that were added by the gene.
 	if(target.dna && hascall(target.dna, "set_rw_xenogenes"))
-		target.dna.set_rw_xenogenes(xenogenes, xenogene_values, TRUE)
+		var/datum/species/wanted_proto = GLOB.species_prototypes[wanted_species]
+		target.dna.set_rw_xenogenes(xenogenes, xenogene_values, TRUE, wanted_proto?.rw_innate_xenogenes)
 		target.dna.set_rw_xenotype(xenogenes, xenogene_values, rw_species(), xenotype_name, xenotype_description, xenotype_icon_gene, xenotype_id)
 		if(islist(target.dna.rw_xenogenes))
 			for(var/gene_id in target.dna.rw_xenogenes)
@@ -110,7 +115,14 @@
 		return
 	if(!islist(xenogene_values))
 		xenogene_values = list()
+	// Palette first so every part reads the final mutant colors.
+	var/list/ordered_genes = list()
+	if(GLOB.all_rw_xenogenes[RW_XENOGENE_MUTANT_COLORS])
+		ordered_genes += RW_XENOGENE_MUTANT_COLORS
 	for(var/gene_id in GLOB.all_rw_xenogenes)
+		if(gene_id != RW_XENOGENE_MUTANT_COLORS)
+			ordered_genes += gene_id
+	for(var/gene_id in ordered_genes)
 		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
 		if(!gene || !(gene.xenogen_flags & RW_XENOGEN_VISUAL))
 			continue

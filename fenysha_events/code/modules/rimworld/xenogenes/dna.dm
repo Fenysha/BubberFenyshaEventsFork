@@ -7,7 +7,7 @@
 	var/list/rw_xenogenes
 
 /datum/dna/Destroy()
-	QDEL_NULL(rw_xenotype)
+	purge_rw_xenogenes()
 	return ..()
 
 /datum/dna/proc/set_rw_xenotype(list/gene_ids, list/option_values = null, new_species_path, new_name = null, new_description = null, new_icon_gene = null, new_id = null)
@@ -32,11 +32,28 @@
 	return rw_xenotype
 
 
-/datum/dna/proc/set_rw_xenogenes(list/new_ids, list/option_values = null, apply = TRUE)
+/// Hard reset of this DNA's xenogene state without running visual cleanup. Used on pooled/preview
+/// dummies so one character's genes can never leak into the next one rendered on the same dummy.
+/datum/dna/proc/purge_rw_xenogenes()
+	if(islist(rw_xenogenes))
+		for(var/gene_id in rw_xenogenes)
+			var/datum/rw_xenogene/gene = rw_xenogenes[gene_id]
+			if(!gene)
+				continue
+			gene.holder = null
+			qdel(gene)
+	rw_xenogenes = list()
+	QDEL_NULL(rw_xenotype)
+
+/// innate_ids: gene ids that come from the race. Everything else is ACQUIRED. Source flags are
+/// authoritative from the preferences, so a gene can never stay on a body after its race is gone.
+/datum/dna/proc/set_rw_xenogenes(list/new_ids, list/option_values = null, apply = TRUE, list/innate_ids = null)
 	if(!rw_xenogenes)
 		rw_xenogenes = list()
 	if(!islist(new_ids))
 		new_ids = list()
+	if(!islist(innate_ids))
+		innate_ids = list()
 
 	var/list/wanted = list()
 	for(var/gene_id in new_ids)
@@ -51,18 +68,30 @@
 			continue
 		remove_rw_xenogene(gene_id, stale.xenogen_source_flags)
 
+	// Palette first, so parts that copy mutant colors read the final colors.
+	var/list/ordered = list()
+	if(RW_XENOGENE_MUTANT_COLORS in new_ids)
+		ordered += RW_XENOGENE_MUTANT_COLORS
 	for(var/gene_id in new_ids)
+		if(gene_id != RW_XENOGENE_MUTANT_COLORS)
+			ordered += gene_id
+
+	for(var/gene_id in ordered)
 		var/option_value
 		if(islist(option_values))
 			option_value = option_values[gene_id]
+		var/source = (gene_id in innate_ids) ? RW_XENOGEN_SOURCE_INNATE : RW_XENOGEN_SOURCE_ACQUIRED
 		var/datum/rw_xenogene/existing = rw_xenogenes[gene_id]
 		var/already = !!existing
 		var/old_option
 		if(existing)
 			old_option = existing.option_value
-		add_rw_xenogene(gene_id, option_value, FALSE, RW_XENOGEN_SOURCE_ACQUIRED)
+		add_rw_xenogene(gene_id, option_value, FALSE, source)
 		existing = rw_xenogenes[gene_id]
-		if(!apply || !holder || !existing)
+		if(!existing)
+			continue
+		existing.xenogen_source_flags = source
+		if(!apply || !holder)
 			continue
 		if(!already || (!isnull(option_value) && old_option != existing.option_value))
 			existing.on_gain(holder)

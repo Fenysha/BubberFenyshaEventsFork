@@ -1,3 +1,7 @@
+/// Xenogene save layout. 1 = whole gene list incl. race genes (values were clobbered by the race baseline).
+/// 2 = acquired genes only + option values that differ from the race baseline. Race genes are derived.
+#define RW_XENOGENE_SCHEMA 2
+
 /datum/rimworld_preferences/proc/load_path(ckey, filename = "rimworld_preferences.json")
 	if(!ckey || !load_and_save)
 		return
@@ -25,7 +29,31 @@
 /datum/rimworld_preferences/proc/slot_key(slot)
 	return "character[slot]"
 
+/// Compact form of the xenogene state: race genes are implied by the race, values equal to the
+/// race default are implied too. Only what the player actually chose gets saved.
+/datum/rimworld_preferences/proc/compact_xenogene_save()
+	var/list/baseline = get_species_baseline()
+	var/list/baseline_genes = baseline["genes"]
+	var/list/baseline_values = baseline["values"]
+	var/list/acquired = list()
+	var/list/overrides = list()
+	for(var/gene_id in xenogenes)
+		var/is_race_gene = (gene_id in baseline_genes)
+		if(!is_race_gene)
+			acquired += gene_id
+		if(!islist(xenogene_values) || isnull(xenogene_values[gene_id]))
+			continue
+		var/value = xenogene_values[gene_id]
+		if(is_race_gene && xenogene_values_equal(value, baseline_values[gene_id]))
+			continue
+		if(islist(value))
+			var/list/value_list = value
+			value = value_list.Copy()
+		overrides[gene_id] = value
+	return list("genes" = acquired, "values" = overrides)
+
 /datum/rimworld_preferences/proc/serialize_character()
+	var/list/xenogene_save = compact_xenogene_save()
 	var/list/data = list(
 		"version" = RW_CHARACTER_SAVE_VERSION,
 		"real_name" = real_name,
@@ -33,8 +61,9 @@
 		"nickname" = nickname,
 		"last_name" = last_name,
 		"tattoo" = tattoo,
-		"xenogenes" = copy_list(xenogenes),
-		"xenogene_values" = copy_list(xenogene_values),
+		"xenogene_schema" = RW_XENOGENE_SCHEMA,
+		"xenogenes" = xenogene_save["genes"],
+		"xenogene_values" = xenogene_save["values"],
 		"xenogene_inheritable" = copy_list(xenogene_inheritable),
 		"xenotype_id" = xenotype_id,
 		"xenotype_name" = xenotype_name,
@@ -86,8 +115,26 @@
 			passions[skill_id] = RW_PASSION_NONE
 	import_pref_bridge(data)
 	migrate_legacy_appearance(data)
+	migrate_xenogene_schema(data["xenogene_schema"])
 	sanitize_character()
 	return TRUE
+
+/// Runs after the race is known and before sanitize_character() rebuilds the baseline.
+/datum/rimworld_preferences/proc/migrate_xenogene_schema(schema)
+	if(!islist(xenogenes))
+		xenogenes = list()
+	if(!islist(xenogene_values))
+		xenogene_values = list()
+	if(isnum(schema) && schema >= RW_XENOGENE_SCHEMA)
+		return
+	// Schema 1 stored race genes and their values, but every sanitize pass overwrote those values
+	// with the race defaults, so none of them is a real player choice. Drop them; the current race
+	// baseline refills them (and picks up any later balance changes to the race).
+	var/datum/species/proto = GLOB.species_prototypes[rw_species()]
+	if(!islist(proto?.rw_innate_xenogenes))
+		return
+	for(var/gene_id in proto.rw_innate_xenogenes)
+		xenogene_values -= gene_id
 
 /datum/rimworld_preferences/proc/sanitize_character()
 	first_name = reject_bad_name(first_name) || first_name

@@ -493,16 +493,24 @@
 			return TRUE
 		if("set_species")
 			var/new_species = text2path(params["value"])
+			if(new_species == rw_species())
+				return TRUE
 			var/datum/species/old_proto = GLOB.species_prototypes[rw_species()]
 			var/list/old_innate = copy_list(old_proto?.rw_innate_xenogenes)
 			if(!rw_set_species(new_species))
 				return TRUE
+			var/datum/species/new_proto = GLOB.species_prototypes[rw_species()]
+			var/list/new_innate = copy_list(new_proto?.rw_innate_xenogenes)
 			var/list/acquired = list()
 			for(var/gene_id in xenogenes)
 				if(!(gene_id in old_innate))
 					acquired += gene_id
 			xenogenes = acquired
+			// A new race starts from its own baseline: drop the old race's overrides, and any
+			// stale value for a gene that is innate to the new race.
 			for(var/gene_id in old_innate)
+				xenogene_values -= gene_id
+			for(var/gene_id in new_innate)
 				xenogene_values -= gene_id
 			sync_species_xenogenes()
 			ensure_hair_preferences()
@@ -635,12 +643,13 @@
 		if("set_xenogene_option")
 			var/gene_id = params["id"]
 			var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
-			if(!gene || gene.option_kind == RW_XENOGENE_OPTION_NONE)
+			if(!gene || gene.option_kind == RW_XENOGENE_OPTION_NONE || !(gene_id in xenogenes))
 				return TRUE
 			if(!islist(xenogene_values))
 				xenogene_values = list()
 			if(gene.option_kind == RW_XENOGENE_OPTION_TRICOLOR)
 				var/list/colors = islist(xenogene_values[gene_id]) ? xenogene_values[gene_id] : gene.sanitize_option(gene.default_option)
+				colors = colors.Copy()
 				var/index = text2num(params["index"]) || 1
 				index = clamp(index, 1, 3)
 				var/new_color = params["value"]
@@ -652,18 +661,38 @@
 				xenogene_values[gene_id] = gene.sanitize_option(colors)
 			else
 				xenogene_values[gene_id] = gene.sanitize_option(params["value"])
-			mark_xenotype_custom()
+			refresh_xenotype_identity()
 			save_character()
 			update_preview()
+			return TRUE
+		if("reset_xenogene_option")
+			var/gene_id = params["id"]
+			var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+			if(!gene || gene.option_kind == RW_XENOGENE_OPTION_NONE || !(gene_id in xenogenes))
+				return TRUE
+			var/list/baseline = get_species_baseline()
+			var/list/baseline_genes = baseline["genes"]
+			var/list/baseline_values = baseline["values"]
+			var/default_value = gene.default_option
+			if((gene_id in baseline_genes) && !isnull(baseline_values[gene_id]))
+				default_value = baseline_values[gene_id]
+			if(!islist(xenogene_values))
+				xenogene_values = list()
+			xenogene_values[gene_id] = gene.sanitize_option(default_value)
+			refresh_xenotype_identity()
+			save_character()
+			update_preview()
+			update_static_data(user, ui, TRUE)
 			return TRUE
 		if("pick_xenogene_color")
 			var/gene_id = params["id"]
 			var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
-			if(!gene || gene.option_kind != RW_XENOGENE_OPTION_TRICOLOR)
+			if(!gene || gene.option_kind != RW_XENOGENE_OPTION_TRICOLOR || !(gene_id in xenogenes))
 				return TRUE
 			if(!islist(xenogene_values))
 				xenogene_values = list()
 			var/list/colors = islist(xenogene_values[gene_id]) ? xenogene_values[gene_id] : gene.sanitize_option(gene.default_option)
+			colors = colors.Copy()
 			var/index = text2num(params["index"]) || 1
 			index = clamp(index, 1, 3)
 			var/new_color = tgui_color_picker(user, "Select color [index]", "Prepare Colonist", colors[index] || COLOR_WHITE)
@@ -671,6 +700,7 @@
 				return TRUE
 			colors[index] = new_color
 			xenogene_values[gene_id] = gene.sanitize_option(colors)
+			refresh_xenotype_identity()
 			save_character()
 			update_preview()
 			return TRUE

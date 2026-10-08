@@ -155,7 +155,7 @@ PROCESSING_SUBSYSTEM_DEF(xenogenes)
 			"builtin" = !!entry["builtin"],
 			"creator" = entry["creator"] || "",
 		))
-	var/list/root = list("version" = 1, "xenotypes" = entries)
+	var/list/root = list("version" = 2, "xenotypes" = entries)
 	var/list/saved_pins = list()
 	for(var/gene_id in pinned_genes)
 		if(GLOB.all_rw_xenogenes[gene_id])
