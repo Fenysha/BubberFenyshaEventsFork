@@ -62,7 +62,10 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 		return
 
 	var/now = world.time
-	var/elapsed = last_rotation_time ? (now - last_rotation_time) : 0
+	var/elapsed = last_rotation_time ? (now - last_rotation_time) : wait
+	// Caravans tick every fire regardless of auto-rotate
+	process_caravans(elapsed)
+
 	last_rotation_time = now
 	if(!auto_rotate || day_length <= 0 || elapsed <= 0)
 		return
@@ -80,6 +83,16 @@ SUBSYSTEM_DEF(rimworld_planetmap)
 
 	if(advance_calendar && days_crossed > 0)
 		advance_day(days_crossed)
+
+
+/datum/controller/subsystem/rimworld_planetmap/proc/process_caravans(delta_ds)
+	if(!length(GLOB.rimworld_caravans))
+		return
+	for(var/id in GLOB.rimworld_caravans)
+		var/datum/rimworld_caravan/C = GLOB.rimworld_caravans[id]
+		if(QDELETED(C) || !C.moving)
+			continue
+		C.process_movement(delta_ds)
 
 
 /datum/controller/subsystem/rimworld_planetmap/proc/sync_time_to_planet()

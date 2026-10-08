@@ -133,7 +133,7 @@
 	new_player.name = target.name
 	new_player.real_name = target.real_name
 
-	target.client?.prefs.safe_transfer_prefs_to(new_player)
+	target.client?.rw_prefs.apply_to_human(new_player)
 
 	new_player.dna.update_dna_identity()
 
@@ -326,7 +326,7 @@
 		new_player.name = target.name
 		new_player.real_name = target.real_name
 
-		target.client?.prefs.safe_transfer_prefs_to(new_player)
+		target.client?.rw_prefs.apply_to_human(new_player)
 
 		new_player.dna.update_dna_identity()
 

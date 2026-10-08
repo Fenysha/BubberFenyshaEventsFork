@@ -3,7 +3,7 @@
 	name = "Hair"
 	desc = "Grows scalp hair. Style is chosen in Persona."
 	option_kind = RW_XENOGENE_OPTION_NONE
-	ui_icon = RW_XENOGENE_ICON_FILE
+	ui_icon = RW_XENOGENE_ICONS
 	icon_bg = "bg"
 	icon_state = "hair"
 
@@ -13,6 +13,9 @@
 	desc = "Typical human skin. Uses skin tones."
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_SKIN
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "smooth_skin"
 
 /datum/rw_xenogene/cosmetic/scaled_skin
 	id = RW_XENOGENE_SCALED_SKIN
@@ -20,6 +23,9 @@
 	desc = "Overlapping scales. Uses mutant colors instead of skin tones."
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_SKIN
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "scale_skin"
 
 /datum/rw_xenogene/cosmetic/human_eyes
 	id = RW_XENOGENE_HUMAN_EYES
@@ -27,6 +33,9 @@
 	desc = "Round primate eyes. Color is chosen in Persona."
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_EYES
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "human_eyes"
 
 /datum/rw_xenogene/cosmetic/lizard_eyes
 	id = RW_XENOGENE_LIZARD_EYES
@@ -34,6 +43,9 @@
 	desc = "Slit reptilian eyes. Color is chosen in Persona."
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_EYES
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "lizard_eyes"
 
 /datum/rw_xenogene/cosmetic/avali_eyes
 	id = RW_XENOGENE_AVALI_EYES
@@ -41,6 +53,9 @@
 	desc = "Large avian eyes. Color is chosen in Persona."
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_EYES
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "avali_eyes"
 
 /datum/rw_xenogene/cosmetic/ears
 	id = RW_XENOGENE_EARS
@@ -50,6 +65,9 @@
 	default_option = "Fox"
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/ears
 	value_pref_type = /datum/preference/choiced/mutant_choice/ears
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "ears"
 
 /datum/rw_xenogene/cosmetic/tail
 	id = RW_XENOGENE_TAIL
@@ -59,6 +77,9 @@
 	default_option = "Smooth"
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/tail
 	value_pref_type = /datum/preference/choiced/mutant_choice/tail
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "generic_tail"
 
 /datum/rw_xenogene/cosmetic/wings
 	id = RW_XENOGENE_WINGS
@@ -67,6 +88,9 @@
 	option_key = FEATURE_WINGS
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/wings
 	value_pref_type = /datum/preference/choiced/mutant_choice/wings
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "wings"
 
 /datum/rw_xenogene/cosmetic/fluff
 	id = RW_XENOGENE_FLUFF
@@ -75,6 +99,9 @@
 	option_key = FEATURE_FLUFF
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/fluff
 	value_pref_type = /datum/preference/choiced/mutant_choice/fluff
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "fur"
 
 /datum/rw_xenogene/cosmetic/legs
 	id = RW_XENOGENE_LEGS
@@ -85,6 +112,9 @@
 	option_choices = list(NORMAL_LEGS, DIGITIGRADE_LEGS)
 	default_option = NORMAL_LEGS
 	value_pref_type = /datum/preference/choiced/digitigrade_legs
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "leg_normal"
 
 /datum/rw_xenogene/cosmetic/legs/apply_to_preferences(datum/rimworld_preferences/prefs, enabled, value)
 	if(!prefs || !value_pref_type)
@@ -121,6 +151,9 @@
 	option_kind = RW_XENOGENE_OPTION_TRICOLOR
 	default_option = list("#C0965F", "#C0965F", "#C0965F")
 	value_pref_type = /datum/preference/tri_color/mutant_colors
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "mutant_color"
 
 /datum/rw_xenogene/cosmetic/mutant_colors/apply_visual(mob/living/new_holder, adding, forced_style)
 	if(!adding || !ishuman(new_holder))
@@ -143,6 +176,9 @@
 	default_option = "Sharp + Light"
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/snout
 	value_pref_type = /datum/preference/choiced/mutant_choice/snout
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "snout"
 
 /datum/rw_xenogene/cosmetic/horns
 	id = RW_XENOGENE_HORNS
@@ -152,52 +188,6 @@
 	default_option = "Simple"
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/horns
 	value_pref_type = /datum/preference/choiced/mutant_choice/horns
-
-/datum/rw_xenogene/cosmetic/body_hulk
-	id = RW_XENOGENE_BODY_HULK
-	name = "Hulk body"
-	desc = "Large, muscular body type."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_BODY_TYPE
-
-/datum/rw_xenogene/cosmetic/body_fat
-	id = RW_XENOGENE_BODY_FAT
-	name = "Fat body"
-	desc = "Heavy body type."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_BODY_TYPE
-
-/datum/rw_xenogene/cosmetic/body_thin
-	id = RW_XENOGENE_BODY_THIN
-	name = "Thin body"
-	desc = "Slender body type."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_BODY_TYPE
-
-/datum/rw_xenogene/cosmetic/body_standard
-	id = RW_XENOGENE_BODY_STANDARD
-	name = "Standard body"
-	desc = "Average body type."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_BODY_TYPE
-
-/datum/rw_xenogene/cosmetic/no_hair
-	id = RW_XENOGENE_NO_HAIR
-	name = "No hair"
-	desc = "Grows no scalp hair."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_HAIR_STYLE
-
-/datum/rw_xenogene/cosmetic/short_hair_only
-	id = RW_XENOGENE_SHORT_HAIR_ONLY
-	name = "Short-haired"
-	desc = "Can only grow short hair."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_HAIR_STYLE
-
-/datum/rw_xenogene/cosmetic/long_hair_only
-	id = RW_XENOGENE_LONG_HAIR_ONLY
-	name = "Long-haired"
-	desc = "Hair grows very quickly."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_HAIR_STYLE
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "horns"

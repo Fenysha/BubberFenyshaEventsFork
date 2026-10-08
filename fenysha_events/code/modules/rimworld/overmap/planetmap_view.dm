@@ -88,6 +88,36 @@
 	return list("x" = cell.x, "y" = cell.y)
 
 
+/**
+ * Payload for the avatar marker on the planet surface:
+ * list("x", "y", "icon") where icon is a base64 PNG of the atom's appearance, or null.
+ * Override in caravan (and similar) views that are not physically on a cell.
+ */
+/datum/planetmap_view/proc/get_map_avatar_payload(mob/user)
+	var/list/pos = get_viewer_planet_position(user)
+	if(!pos)
+		return null
+
+	return list(
+		"x" = pos["x"],
+		"y" = pos["y"],
+		"icon" = get_atom_map_icon_b64(user),
+	)
+
+
+/**
+ * Renders an atom's current appearance to a base64 PNG for the planet map UI.
+ * Same pattern as trader portraits: getFlatIcon(atom, SOUTH, start = FALSE).
+ */
+/proc/get_atom_map_icon_b64(atom/A)
+	if(!A)
+		return null
+	var/icon/flat = getFlatIcon(A, SOUTH, start = FALSE)
+	if(!flat)
+		return null
+	return icon2base64(flat)
+
+
 /datum/planetmap_view/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -169,14 +199,16 @@
 	data["seasonSouth"] = calendar["seasonSouth"]
 	data["timeScale"] = calendar["timeScale"]
 
-	// Player position on the global hex map (only when inside a planet cell)
-	var/list/player_pos = get_viewer_planet_position(user)
-	if(player_pos)
-		data["playerX"] = player_pos["x"]
-		data["playerY"] = player_pos["y"]
+	// Avatar marker on the global hex map (position + optional appearance icon)
+	var/list/avatar = get_map_avatar_payload(user)
+	if(avatar)
+		data["playerX"] = avatar["x"]
+		data["playerY"] = avatar["y"]
+		data["playerIcon"] = avatar["icon"]
 	else
 		data["playerX"] = null
 		data["playerY"] = null
+		data["playerIcon"] = null
 
 	return data
 
@@ -311,7 +343,22 @@
 				return FALSE
 			return on_select_object(params["id"])
 
+		if("tile_double_click")
+			var/dx = params["x"]
+			var/dy = params["y"]
+			if(!isnum(dx))
+				dx = text2num("[dx]")
+			if(!isnum(dy))
+				dy = text2num("[dy]")
+			if(isnull(dx) || isnull(dy))
+				return FALSE
+			return on_tile_double_click(dx, dy)
+
 	return handle_view_act(action, params)
+
+
+/datum/planetmap_view/proc/on_tile_double_click(x, y)
+	return on_select_tile(x, y)
 
 /datum/planetmap_view/overview
 	view_type = "overview"
@@ -320,6 +367,8 @@
 /datum/planetmap_view/caravan
 	view_type = "caravan"
 	window_title = "Caravan Map"
+	prevent_close = TRUE
+	auto_reopen_on_login = TRUE
 
 	var/caravan_id
 	var/origin_x
@@ -327,24 +376,115 @@
 	var/destination_x
 	var/destination_y
 
+	var/datum/rimworld_caravan/caravan
+
 
 /datum/planetmap_view/caravan/New(mob/user, datum/rimworld_planet/new_planet, new_caravan_id = null, new_origin_x = null, new_origin_y = null)
 	. = ..(user, new_planet)
 	caravan_id = new_caravan_id
 	origin_x = new_origin_x
 	origin_y = new_origin_y
+	if(caravan_id)
+		caravan = get_rimworld_caravan(caravan_id)
+		if(caravan)
+			bind_caravan(caravan)
+
+
+/datum/planetmap_view/caravan/Destroy()
+	if(caravan)
+		caravan.bound_views -= src
+		caravan = null
+	return ..()
+
+
+/datum/planetmap_view/caravan/proc/bind_caravan(datum/rimworld_caravan/C)
+	caravan = C
+	if(!C)
+		return
+	caravan_id = C.id
+	origin_x = C.origin_x
+	origin_y = C.origin_y
+	destination_x = C.destination_x
+	destination_y = C.destination_y
+	C.bound_views |= src
 
 
 /datum/planetmap_view/caravan/get_view_data()
+	sync_from_caravan()
+
+	var/list/member_names = list()
+	var/list/nearby_caravans = list()
+	var/list/pending_merges = list()
+	var/list/pending_attacks = list()
+	var/is_leader = FALSE
+	var/status = "Idle"
+	var/can_travel = FALSE
+	var/can_enter = FALSE
+	var/in_arena = FALSE
+
+	if(caravan && !QDELETED(caravan))
+		is_leader = caravan.is_leader(viewer)
+		can_enter = !caravan.active_arena && !caravan.moving
+		in_arena = !!caravan.active_arena
+		can_travel = is_leader && !isnull(caravan.destination_x) && !caravan.moving && !in_arena
+
+		if(caravan.moving)
+			status = "Travelling"
+		else if(in_arena)
+			status = "In combat"
+		else if(!isnull(caravan.destination_x))
+			status = "Destination set"
+		else
+			status = "Idle"
+
+		for(var/mob/living/M as anything in caravan.members)
+			member_names += M.real_name || M.name
+
+		for(var/datum/rimworld_caravan/other as anything in get_caravans_at(planet, caravan.current_x, caravan.current_y))
+			if(other == caravan || QDELETED(other))
+				continue
+			nearby_caravans += list(list(
+				"id" = other.id,
+				"leader" = other.leader?.real_name || other.leader?.name || "?",
+				"members" = length(other.members),
+				"hasVehicle" = !!other.vehicle,
+			))
+
+		for(var/req_id in caravan.pending_merge_from)
+			pending_merges += req_id
+		for(var/req_id in caravan.pending_attack_from)
+			pending_attacks += req_id
+
 	return list(
 		"caravanId" = caravan_id,
 		"originX" = origin_x,
 		"originY" = origin_y,
+		"currentX" = caravan?.current_x,
+		"currentY" = caravan?.current_y,
 		"destinationX" = destination_x,
 		"destinationY" = destination_y,
-		"canTravel" = FALSE,
-		"status" = "Caravan travel is not implemented yet.",
+		"canTravel" = can_travel,
+		"canEnter" = can_enter,
+		"isLeader" = is_leader,
+		"inArena" = in_arena,
+		"status" = status,
+		"members" = member_names,
+		"hasVehicle" = !!(caravan?.vehicle),
+		"hasInterior" = !!(caravan?.has_interior),
+		"nearbyCaravans" = nearby_caravans,
+		"pendingMerges" = pending_merges,
+		"pendingAttacks" = pending_attacks,
 	)
+
+
+/datum/planetmap_view/caravan/proc/sync_from_caravan()
+	if(!caravan || QDELETED(caravan))
+		return
+	caravan_id = caravan.id
+	origin_x = caravan.origin_x
+	origin_y = caravan.origin_y
+	destination_x = caravan.destination_x
+	destination_y = caravan.destination_y
 
 
 /datum/planetmap_view/caravan/get_visible_objects()
@@ -374,6 +514,8 @@
 		return TRUE
 	if(!isnull(destination_x) && x == destination_x && y == destination_y)
 		return TRUE
+	if(caravan && x == caravan.current_x && y == caravan.current_y)
+		return TRUE
 	return FALSE
 
 
@@ -381,14 +523,122 @@
 	. = ..()
 	if(!.)
 		return
+	if(!caravan || QDELETED(caravan))
+		return FALSE
+	if(!caravan.is_leader(viewer))
+		to_chat(viewer, span_warning("Only the caravan leader can set a destination."))
+		return FALSE
+	if(caravan.active_arena)
+		to_chat(viewer, span_warning("You cannot travel while in combat."))
+		return FALSE
+
 	destination_x = x
 	destination_y = y
+	caravan.set_destination(x, y)
+	return TRUE
+
+
+/// Double-click sets destination and immediately starts travel.
+/datum/planetmap_view/caravan/on_tile_double_click(x, y)
+	if(!on_select_tile(x, y))
+		return FALSE
+	if(!caravan || QDELETED(caravan))
+		return FALSE
+	if(!caravan.is_leader(viewer))
+		return FALSE
+	return caravan.start_travel()
+
+
+/// Caravan avatar uses overmap coordinates + vehicle/leader appearance.
+/datum/planetmap_view/caravan/get_map_avatar_payload(mob/user)
+	if(!caravan || QDELETED(caravan))
+		return null
+	if(isnull(caravan.current_x) || isnull(caravan.current_y))
+		return null
+	if(!planet?.is_valid_coordinate(caravan.current_x, caravan.current_y))
+		return null
+
+	return list(
+		"x" = caravan.current_x,
+		"y" = caravan.current_y,
+		"icon" = caravan.get_map_icon_b64(),
+	)
 
 
 /datum/planetmap_view/caravan/handle_view_act(action, list/params)
+	if(!caravan || QDELETED(caravan))
+		return FALSE
+
 	switch(action)
 		if("travel")
-			return FALSE
+			if(!caravan.is_leader(viewer))
+				return FALSE
+			return caravan.start_travel()
+
+		if("stop_travel")
+			if(!caravan.is_leader(viewer))
+				return FALSE
+			caravan.stop_travel()
+			return TRUE
+
+		if("enter_tile")
+			return caravan.enter_current_tile()
+
+		if("request_merge")
+			var/target_id = params["id"]
+			var/datum/rimworld_caravan/target = get_rimworld_caravan(target_id)
+			if(!target)
+				return FALSE
+			return caravan.request_merge(target)
+
+		if("accept_merge")
+			if(!caravan.is_leader(viewer))
+				return FALSE
+			return caravan.accept_merge(params["id"])
+
+		if("deny_merge")
+			if(!caravan.is_leader(viewer))
+				return FALSE
+			return caravan.deny_merge(params["id"])
+
+		if("request_attack")
+			var/target_id = params["id"]
+			var/datum/rimworld_caravan/target = get_rimworld_caravan(target_id)
+			if(!target)
+				return FALSE
+			return caravan.request_attack(target)
+
+		if("accept_attack")
+			if(!caravan.is_leader(viewer))
+				return FALSE
+			return caravan.accept_attack(params["id"])
+
+		if("deny_attack")
+			if(!caravan.is_leader(viewer))
+				return FALSE
+			return caravan.deny_attack(params["id"])
+
+		if("split")
+			if(!caravan.is_leader(viewer))
+				return FALSE
+			// Split self out if alone request; full member picker left as stub
+			var/list/to_split = list(viewer)
+			var/datum/rimworld_caravan/fresh = caravan.split_members(to_split, viewer)
+			return !!fresh
+
+		// Stubs — wire to your existing UIs later
+		if("open_health")
+			to_chat(viewer, span_notice("Health UI stub."))
+			return TRUE
+
+		if("view_persona")
+			to_chat(viewer, span_notice("Persona UI stub."))
+			return TRUE
+
+		if("view_faction")
+			to_chat(viewer, span_notice("Faction UI stub."))
+			return TRUE
+
 	return FALSE
 
 

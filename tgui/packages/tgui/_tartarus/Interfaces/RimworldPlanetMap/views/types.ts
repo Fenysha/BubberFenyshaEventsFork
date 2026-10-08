@@ -31,14 +31,32 @@ export type SettlementViewData = {
   loadedCells?: LoadedCellInfo[];
 };
 
+export type NearbyCaravanInfo = {
+  id: string;
+  leader: string;
+  members: number;
+  hasVehicle?: BooleanLike;
+};
+
 export type CaravanViewData = {
   caravanId?: string | null;
   originX?: number | null;
   originY?: number | null;
+  currentX?: number | null;
+  currentY?: number | null;
   destinationX?: number | null;
   destinationY?: number | null;
   canTravel?: BooleanLike;
+  canEnter?: BooleanLike;
+  isLeader?: BooleanLike;
+  inArena?: BooleanLike;
   status?: string;
+  members?: string[];
+  hasVehicle?: BooleanLike;
+  hasInterior?: BooleanLike;
+  nearbyCaravans?: NearbyCaravanInfo[];
+  pendingMerges?: string[];
+  pendingAttacks?: string[];
 };
 
 export type AdminViewData = {

@@ -93,6 +93,12 @@ export type PlanetMapData = {
 
   tileImages?: PlanetTileImage[];
   biomeImages?: Record<string, string>;
+
+  /** Current avatar tile on the hex map (1-based), if any */
+  playerX?: number | null;
+  playerY?: number | null;
+  /** Base64 PNG of the avatar appearance (no data: prefix) */
+  playerIcon?: string | null;
 };
 
 export interface PlanetCellData {

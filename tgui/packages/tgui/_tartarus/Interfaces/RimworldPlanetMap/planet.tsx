@@ -62,6 +62,8 @@ type PlanetProps = {
   selectedY?: number;
   playerX?: number | null;
   playerY?: number | null;
+  /** Base64 PNG of the avatar appearance (no data: prefix) */
+  playerIcon?: string | null;
   /** Bump this value to request centering the camera on the player tile */
   centerOnPlayerRequest?: number;
   showAtmosphere?: boolean;
@@ -77,6 +79,13 @@ type PlanetRuntime = {
   objectGroup: THREE.Group;
   selection: THREE.Group;
   playerMarker: THREE.Group;
+  playerGlow: THREE.Mesh;
+  playerCore: THREE.Mesh;
+  /** Optional sprite using appearance icon; null while using default spheres */
+  playerIconSprite: THREE.Sprite | null;
+  playerIconKey: string | null;
+  /** True when avatar uses appearance icon instead of yellow sphere */
+  usePlayerIcon: boolean;
   surface: THREE.Mesh;
   planetGroup: THREE.Group;
   planetTexture: THREE.CanvasTexture | THREE.DataTexture;
@@ -388,6 +397,7 @@ export const Planet = ({
   selectedY,
   playerX,
   playerY,
+  playerIcon,
   centerOnPlayerRequest,
   showAtmosphere = true,
   showClouds = true,
@@ -841,6 +851,11 @@ export const Planet = ({
       objectGroup,
       selection,
       playerMarker,
+      playerGlow,
+      playerCore,
+      playerIconSprite: null,
+      playerIconKey: null,
+      usePlayerIcon: false,
       surface,
       planetGroup,
       planetTexture: initialTexture,
@@ -1182,19 +1197,36 @@ export const Planet = ({
         });
       }
 
-      // Gentle pulse on player marker glow
+      // Player / caravan avatar marker
       if (runtimeRef.current?.playerMarker?.visible) {
-        const glow = runtimeRef.current.playerMarker.children[0] as THREE.Mesh;
-        if (glow?.material) {
-          (glow.material as THREE.MeshBasicMaterial).opacity =
-            0.28 + Math.sin(time * 3.2) * 0.12;
-        }
+        const rt = runtimeRef.current;
         const playerScale = THREE.MathUtils.lerp(
           0.55,
           1.8,
           THREE.MathUtils.clamp((distance - 2.2) / (10.0 - 2.2), 0, 1),
         );
-        runtimeRef.current.playerMarker.scale.setScalar(playerScale);
+
+        if (rt.usePlayerIcon && rt.playerIconSprite) {
+          // Appearance icon: no yellow sphere, sprite sized for current zoom
+          rt.playerGlow.visible = false;
+          rt.playerCore.visible = false;
+          rt.playerMarker.scale.setScalar(1);
+          const spriteScale = 0.06 * playerScale;
+          rt.playerIconSprite.scale.set(spriteScale, spriteScale, 1);
+          rt.playerIconSprite.visible = true;
+        } else {
+          // Default yellow marker with pulse
+          rt.playerGlow.visible = true;
+          rt.playerCore.visible = true;
+          if (rt.playerIconSprite) {
+            rt.playerIconSprite.visible = false;
+          }
+          if (rt.playerGlow.material) {
+            (rt.playerGlow.material as THREE.MeshBasicMaterial).opacity =
+              0.28 + Math.sin(time * 3.2) * 0.12;
+          }
+          rt.playerMarker.scale.setScalar(playerScale);
+        }
       }
 
       controls.target.set(0, 0, 0);
@@ -1413,14 +1445,14 @@ export const Planet = ({
     updateSelection(runtime.selection, gridFor(data), selectedX, selectedY);
   }, [mapIdentity, selectedX, selectedY, data.width, data.height]);
 
-  // Player marker position on the planet surface
+  // Player marker position + optional appearance icon on the planet surface
   useEffect(() => {
     const runtime = runtimeRef.current;
     if (!runtime) {
       return;
     }
 
-    const { playerMarker } = runtime;
+    const { playerMarker, playerGlow, playerCore } = runtime;
     if (playerX == null || playerY == null) {
       playerMarker.visible = false;
       return;
@@ -1436,7 +1468,78 @@ export const Planet = ({
       tileToVector(grid, playerX, playerY, HEIGHT_PLAYER_MARKER),
     );
     playerMarker.visible = true;
-  }, [mapIdentity, playerX, playerY, data.width, data.height]);
+
+    const iconKey = playerIcon || null;
+    if (iconKey !== runtime.playerIconKey) {
+      runtime.playerIconKey = iconKey;
+
+      if (runtime.playerIconSprite) {
+        playerMarker.remove(runtime.playerIconSprite);
+        const mat = runtime.playerIconSprite.material as THREE.SpriteMaterial;
+        mat.map?.dispose();
+        mat.dispose();
+        runtime.playerIconSprite = null;
+      }
+
+      runtime.usePlayerIcon = !!iconKey;
+      playerGlow.visible = !iconKey;
+      playerCore.visible = !iconKey;
+
+      if (iconKey) {
+        // Same data-URL pattern as trader portraits in tgui
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => {
+          if (runtime.playerIconKey !== iconKey) {
+            return; // stale load
+          }
+          const texture = new THREE.Texture(img);
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.magFilter = THREE.NearestFilter;
+          texture.minFilter = THREE.NearestFilter;
+          texture.needsUpdate = true;
+
+          if (runtime.playerIconSprite) {
+            playerMarker.remove(runtime.playerIconSprite);
+            const oldMat = runtime.playerIconSprite
+              .material as THREE.SpriteMaterial;
+            oldMat.map?.dispose();
+            oldMat.dispose();
+          }
+
+          const material = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false,
+            depthTest: true,
+          });
+          const sprite = new THREE.Sprite(material);
+          sprite.scale.set(0.08, 0.08, 1);
+          sprite.renderOrder = 20;
+          sprite.visible = true;
+          playerMarker.add(sprite);
+          runtime.playerIconSprite = sprite;
+          runtime.usePlayerIcon = true;
+          playerGlow.visible = false;
+          playerCore.visible = false;
+        };
+        img.onerror = () => {
+          console.warn('[Planet] Failed to decode playerIcon base64');
+          runtime.usePlayerIcon = false;
+          playerGlow.visible = true;
+          playerCore.visible = true;
+        };
+        img.src = `data:image/png;base64,${iconKey}`;
+      }
+    } else {
+      runtime.usePlayerIcon = !!iconKey;
+      playerGlow.visible = !runtime.usePlayerIcon;
+      playerCore.visible = !runtime.usePlayerIcon;
+      if (runtime.playerIconSprite) {
+        runtime.playerIconSprite.visible = runtime.usePlayerIcon;
+      }
+    }
+  }, [mapIdentity, playerX, playerY, playerIcon, data.width, data.height]);
 
   // Center camera on the player's current tile
   useEffect(() => {

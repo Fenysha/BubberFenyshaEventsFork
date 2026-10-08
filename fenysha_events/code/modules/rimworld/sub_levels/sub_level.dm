@@ -186,6 +186,10 @@
 
 
 /turf/cordon/absolute
+
+	icon = 'fenysha_events/icons/turf/floors/floors.dmi'
+	icon_state = "black"
+	invisibility = INVISIBILITY_NONE
 	space_lit = FALSE
 
 

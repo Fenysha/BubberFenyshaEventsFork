@@ -547,6 +547,9 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	if(loading_job)
 		SSrimworld_sublevel_loader.cancel_cell(src)
 
+	clear_edge_markers()
+	exit_cooldown_until = 0
+
 	if(reservation)
 		qdel(reservation)
 		reservation = null

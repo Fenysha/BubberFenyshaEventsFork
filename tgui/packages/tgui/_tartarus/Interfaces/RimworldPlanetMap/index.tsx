@@ -111,6 +111,7 @@ export const RimworldPlanetMap = () => {
           selectedY={selectedY}
           playerX={data.playerX}
           playerY={data.playerY}
+          playerIcon={data.playerIcon}
           centerOnPlayerRequest={centerOnPlayerRequest}
           showAtmosphere={showAtmosphere}
           showClouds={showClouds}

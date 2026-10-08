@@ -863,6 +863,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	cell.loading_job = null
 
 	cell.refresh_from_planet()
+	cell.place_edge_markers()
 
 	qdel(generator)
 	generator = null
