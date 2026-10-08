@@ -46,6 +46,12 @@ export const CaravanPanel = () => {
                 : '—'}
             </LabeledList.Item>
 
+            <LabeledList.Item label="Route">
+              {view.path && view.path.length > 1
+                ? `${view.path.length - 1} tiles`
+                : '—'}
+            </LabeledList.Item>
+
             <LabeledList.Item label="Leader">
               {view.isLeader ? 'You' : 'Other'}
             </LabeledList.Item>

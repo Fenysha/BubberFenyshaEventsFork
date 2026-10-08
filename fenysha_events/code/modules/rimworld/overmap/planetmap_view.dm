@@ -474,6 +474,7 @@
 		"nearbyCaravans" = nearby_caravans,
 		"pendingMerges" = pending_merges,
 		"pendingAttacks" = pending_attacks,
+		"path" = caravan?.get_route_ui() || list(),
 	)
 
 
@@ -532,9 +533,11 @@
 		to_chat(viewer, span_warning("You cannot travel while in combat."))
 		return FALSE
 
-	destination_x = x
-	destination_y = y
-	caravan.set_destination(x, y)
+	if(!caravan.set_destination(x, y))
+		to_chat(viewer, span_warning("No route to that tile."))
+		return FALSE
+	destination_x = caravan.destination_x
+	destination_y = caravan.destination_y
 	return TRUE
 
 

@@ -14,6 +14,32 @@
 		var/final_level = rw_psychology_get_skill_level(skill_id, base_level, childhood, adulthood, source_traits, source_xenogenes)
 		skill_comp.set_skill(skill_id, final_level)
 		skill_comp.set_passion(skill_id, islist(source_passions) ? (source_passions[skill_id] || RW_PASSION_NONE) : RW_PASSION_NONE)
+	apply_xenogene_passions(source_xenogenes)
+	mark_xenogene_skill_bonuses(source_xenogenes)
+
+/datum/psychology/proc/apply_xenogene_passions(list/xenogene_ids)
+	if(!islist(xenogene_ids))
+		return
+	for(var/gene_id in xenogene_ids)
+		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(!gene?.passion_skill || isnull(gene.passion_grant))
+			continue
+		if(gene.passion_grant <= RW_PASSION_NONE)
+			set_passion(gene.passion_skill, RW_PASSION_NONE)
+		else if(get_passion(gene.passion_skill) < gene.passion_grant)
+			set_passion(gene.passion_skill, gene.passion_grant)
+
+/// Spawn applies skill numbers inside initialize_skills. Mark the live genes so removal can undo them.
+/datum/psychology/proc/mark_xenogene_skill_bonuses(list/xenogene_ids)
+	if(!iscarbon(owner) || !islist(xenogene_ids))
+		return
+	var/mob/living/carbon/pawn = owner
+	if(!pawn.dna)
+		return
+	for(var/gene_id in xenogene_ids)
+		var/datum/rw_xenogene/gene = pawn.dna.rw_xenogenes[gene_id]
+		if(gene?.skill_bonuses)
+			gene.skill_bonus_applied = TRUE
 
 /proc/rw_psychology_get_skill_bonus(skill_id, childhood_id, adulthood_id, list/trait_ids, list/xenogene_ids)
 	. = 0

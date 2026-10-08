@@ -4,6 +4,7 @@
 	desc = "Reduced sensitivity to toxic buildup."
 	complexity = 1
 	metabolic_efficiency = -1
+	tox_mult = 0.45
 	incompatibility_group = RW_XENOGENE_GROUP_TOX
 
 /datum/rw_xenogene/resistance/tox_immunity
@@ -12,6 +13,8 @@
 	desc = "Immune to toxic buildup."
 	complexity = 2
 	metabolic_efficiency = -2
+	tox_mult = 0
+	gameplay_traits = list(TRAIT_TOXIMMUNE)
 	incompatibility_group = RW_XENOGENE_GROUP_TOX
 
 /datum/rw_xenogene/resistance/mild_uv_sensitivity
@@ -21,6 +24,8 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	xenogen_flags = RW_XENOGEN_PROCESSING
+	uv_burn = 0.4
 	incompatibility_group = RW_XENOGENE_GROUP_UV
 
 /datum/rw_xenogene/resistance/intense_uv_sensitivity
@@ -30,6 +35,8 @@
 	complexity = 1
 	metabolic_efficiency = 2
 	negative = TRUE
+	xenogen_flags = RW_XENOGEN_PROCESSING
+	uv_burn = 1.2
 	incompatibility_group = RW_XENOGENE_GROUP_UV
 
 /datum/rw_xenogene/resistance/fire_resistance
@@ -38,6 +45,8 @@
 	desc = "Resistant to fire and heat damage from flames."
 	complexity = 1
 	metabolic_efficiency = -1
+	burn_taken_mult = 0.45
+	gameplay_traits = list(TRAIT_RESISTHEAT)
 
 /datum/rw_xenogene/resistance/fire_weakness
 	id = RW_XENOGENE_FIRE_WEAKNESS
@@ -46,6 +55,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	burn_taken_mult = 1.7
 
 /datum/rw_xenogene/resistance/vacuum_resistant
 	id = RW_XENOGENE_VACUUM_RESISTANT
@@ -53,3 +63,4 @@
 	desc = "Resistant to vacuum exposure."
 	complexity = 1
 	metabolic_efficiency = -1
+	gameplay_traits = list(TRAIT_RESISTLOWPRESSURE)

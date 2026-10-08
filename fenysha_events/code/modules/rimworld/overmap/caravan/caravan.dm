@@ -44,7 +44,7 @@ GLOBAL_LIST_EMPTY(rimworld_caravans)
 	var/moving = FALSE
 	var/move_progress = 0
 
-	/// Remaining path as list of list(x, y). Built by find_caravan_path on start_travel.
+	/// Remaining path as list of list(x, y), next step through the goal. Rust route, DM A* if Rust has none.
 	var/list/path
 
 	/// Cached planetary-map portrait (base64 PNG, no data: prefix)
@@ -265,7 +265,7 @@ GLOBAL_LIST_EMPTY(rimworld_caravans)
 	qdel(view)
 
 
-// ── Movement (stubs) ─────────────────────────────────────────────────────────
+// ── Movement ─────────────────────────────────────────────────────────────────
 
 /**
  * Base movement speed multiplier. Higher = faster.
@@ -322,8 +322,78 @@ GLOBAL_LIST_EMPTY(rimworld_caravans)
 		return FALSE
 	destination_x = dest_x
 	destination_y = dest_y
-	path = null
+	if(dest_x == current_x && dest_y == current_y)
+		path = null
+		refresh_bound_views()
+		return TRUE
+	if(!build_travel_path())
+		destination_x = null
+		destination_y = null
+		path = null
+		refresh_bound_views()
+		return FALSE
+	refresh_bound_views()
 	return TRUE
+
+/**
+ * Cell-by-cell overland route from the current tile to the destination.
+ * Prefers Rust (roads cheap, water blocked). Falls back to the DM A* when Rust
+ * has no route or a step is impassable for this caravan.
+ * Stores the steps AFTER the current tile. Returns FALSE when there is no route.
+ */
+/datum/rimworld_caravan/proc/build_travel_path()
+	path = null
+	if(!planet || isnull(destination_x) || isnull(destination_y))
+		return FALSE
+	if(destination_x == current_x && destination_y == current_y)
+		return FALSE
+
+	var/list/route
+	try
+		route = planet.find_path(current_x, current_y, destination_x, destination_y, TRUE)
+	catch
+		route = null
+
+	if(!rust_route_walkable(route))
+		route = planet.find_caravan_path(current_x, current_y, destination_x, destination_y, src)
+
+	if(!length(route))
+		return FALSE
+
+	var/list/first = route[1]
+	if(islist(first) && first[1] == current_x && first[2] == current_y)
+		route.Cut(1, 2)
+	if(!length(route))
+		return FALSE
+
+	path = route
+	return TRUE
+
+/datum/rimworld_caravan/proc/rust_route_walkable(list/route)
+	if(!islist(route) || !length(route))
+		return FALSE
+	for(var/step in route)
+		if(!islist(step) || length(step) < 2)
+			return FALSE
+		if(step[1] == current_x && step[2] == current_y)
+			continue
+		if(isnull(tile_enter_cost(step[1], step[2])))
+			return FALSE
+	return TRUE
+
+/// Current tile plus every remaining step, for the globe trail.
+/datum/rimworld_caravan/proc/get_route_ui()
+	var/list/route = list()
+	if(isnull(current_x) || isnull(current_y))
+		return route
+	if(!length(path) && isnull(destination_x))
+		return route
+	route += list(list("x" = current_x, "y" = current_y))
+	for(var/step in path)
+		if(!islist(step) || length(step) < 2)
+			continue
+		route += list(list("x" = step[1], "y" = step[2]))
+	return route
 
 
 /datum/rimworld_caravan/proc/start_travel()
@@ -338,8 +408,7 @@ GLOBAL_LIST_EMPTY(rimworld_caravans)
 			to_chat(M, span_warning("That tile is impassable."))
 		return FALSE
 
-	path = planet.find_caravan_path(current_x, current_y, destination_x, destination_y, src)
-	if(!length(path))
+	if(!build_travel_path())
 		for(var/mob/living/M as anything in members)
 			to_chat(M, span_warning("No route to ([destination_x], [destination_y])."))
 		return FALSE
@@ -355,7 +424,10 @@ GLOBAL_LIST_EMPTY(rimworld_caravans)
 /datum/rimworld_caravan/proc/stop_travel()
 	moving = FALSE
 	move_progress = 0
-	path = null
+	if(!isnull(destination_x) && (destination_x != current_x || destination_y != current_y))
+		build_travel_path()
+	else
+		path = null
 	refresh_bound_views()
 
 
@@ -378,8 +450,7 @@ GLOBAL_LIST_EMPTY(rimworld_caravans)
 
 	if(!length(path))
 		// Path exhausted or never built — try rebuild once
-		path = planet.find_caravan_path(current_x, current_y, destination_x, destination_y, src)
-		if(!length(path))
+		if(!build_travel_path())
 			stop_travel()
 			for(var/mob/living/M as anything in members)
 				to_chat(M, span_warning("The caravan lost its route."))
@@ -396,8 +467,13 @@ GLOBAL_LIST_EMPTY(rimworld_caravans)
 		var/cost = tile_enter_cost(nx, ny)
 		if(isnull(cost))
 			// Tile became impassable mid-route
-			path = planet.find_caravan_path(current_x, current_y, destination_x, destination_y, src)
-			if(!length(path))
+			if(!build_travel_path())
+				stop_travel()
+				for(var/mob/living/M as anything in members)
+					to_chat(M, span_warning("The route is blocked."))
+				return
+			var/list/rebuilt = length(path) ? path[1] : null
+			if(!islist(rebuilt) || (rebuilt[1] == nx && rebuilt[2] == ny))
 				stop_travel()
 				for(var/mob/living/M as anything in members)
 					to_chat(M, span_warning("The route is blocked."))

@@ -57,6 +57,8 @@ export type CaravanViewData = {
   nearbyCaravans?: NearbyCaravanInfo[];
   pendingMerges?: string[];
   pendingAttacks?: string[];
+  /** Current tile, then each remaining step. Drawn as the travel trail. */
+  path?: { x: number; y: number }[];
 };
 
 export type AdminViewData = {

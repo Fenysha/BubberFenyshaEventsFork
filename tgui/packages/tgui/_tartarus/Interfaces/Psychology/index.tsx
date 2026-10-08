@@ -178,6 +178,7 @@ export function Psychology() {
 }
 
 function MoodSummary({ data }: { data: PsychologyData }) {
+  const { act } = useBackend<PsychologyData>();
   const moodColor = MOOD_COLOR[data.moodLabel] || 'average';
   const breakRisk = getBreakRisk(data.mood, data.thresholds);
 
@@ -211,6 +212,38 @@ function MoodSummary({ data }: { data: PsychologyData }) {
         <Box color="label" className="Psychology__breakState">
           No mental break risk
         </Box>
+      )}
+      {!data.inBreak && (
+        <Stack mt={0.5} wrap>
+          <Stack.Item>
+            <Button
+              compact
+              color="bad"
+              icon="exclamation-triangle"
+              onClick={() => act('mental_break', { severity: 1 })}
+            >
+              Minor break
+            </Button>
+          </Stack.Item>
+          <Stack.Item>
+            <Button
+              compact
+              color="bad"
+              onClick={() => act('mental_break', { severity: 2 })}
+            >
+              Major
+            </Button>
+          </Stack.Item>
+          <Stack.Item>
+            <Button
+              compact
+              color="bad"
+              onClick={() => act('mental_break', { severity: 3 })}
+            >
+              Extreme
+            </Button>
+          </Stack.Item>
+        </Stack>
       )}
     </div>
   );

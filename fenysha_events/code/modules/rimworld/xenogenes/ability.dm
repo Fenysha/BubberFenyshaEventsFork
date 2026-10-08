@@ -4,6 +4,7 @@
 	desc = "Spew flammable bile that ignites targets and ground."
 	complexity = 1
 	metabolic_efficiency = -2
+	ability_path = /datum/action/cooldown/rw_xenogene/fire_spew
 
 /datum/rw_xenogene/ability/foam_spray
 	id = RW_XENOGENE_FOAM_SPRAY
@@ -11,6 +12,7 @@
 	desc = "Spray fire-retardant foam to extinguish fires."
 	complexity = 1
 	metabolic_efficiency = -2
+	ability_path = /datum/action/cooldown/rw_xenogene/foam_spray
 
 /datum/rw_xenogene/ability/animal_warcall
 	id = RW_XENOGENE_ANIMAL_WARCALL
@@ -18,6 +20,7 @@
 	desc = "Call nearby animals to attack a target."
 	complexity = 1
 	metabolic_efficiency = -1
+	ability_path = /datum/action/cooldown/rw_xenogene/animal_warcall
 
 /datum/rw_xenogene/ability/acid_spray
 	id = RW_XENOGENE_ACID_SPRAY
@@ -25,3 +28,4 @@
 	desc = "Spew acid that burns over time."
 	complexity = 1
 	metabolic_efficiency = -2
+	ability_path = /datum/action/cooldown/rw_xenogene/acid_spray

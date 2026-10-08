@@ -120,4 +120,14 @@
 	. = ..()
 	if(.)
 		return
+	switch(action)
+		if("mental_break")
+			if(!ui?.user || (ui.user != owner && !ui.user.client?.holder))
+				return FALSE
+			if(is_in_break())
+				return FALSE
+			var/severity = text2num(params["severity"])
+			if(!(severity in list(PSY_BREAK_MINOR, PSY_BREAK_MAJOR, PSY_BREAK_EXTREME)))
+				severity = PSY_BREAK_MINOR
+			return start_mental_break(severity)
 	return FALSE

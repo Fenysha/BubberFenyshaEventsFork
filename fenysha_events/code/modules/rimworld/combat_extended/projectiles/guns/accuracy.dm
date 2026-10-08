@@ -14,6 +14,9 @@
 			flat_spread = RW_SUPPRESS_FLAT_SPREAD
 
 	var/result = (rw_base_spread + spread + rw_att_spread) * mode_mult * skill_mult + flat_spread
+	if(isliving(user))
+		var/mob/living/shooter = user
+		result *= shooter.get_rw_ranged_spread_mult()
 	result *= 1 + (1 - manip) * 2.5
 	result += rw_calc_moving_penalty()
 	result += rw_recoil_spread * rw_att_recoil_spread_mult * rw_shots_in_row

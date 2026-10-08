@@ -32,6 +32,10 @@
 
 	var/dmg_multi = CONFIG_GET(number/damage_multiplier) * hit_percent
 
+	if(owner)
+		brute *= owner.get_rw_brute_taken_mult()
+		burn *= owner.get_rw_burn_taken_mult()
+
 	brute = round(max(brute * dmg_multi * brute_modifier * injury_damage_multiplier, 0), DAMAGE_PRECISION)
 	burn = round(max(burn * dmg_multi * burn_modifier * injury_damage_multiplier, 0), DAMAGE_PRECISION)
 

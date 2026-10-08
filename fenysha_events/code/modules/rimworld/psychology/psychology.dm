@@ -41,6 +41,8 @@
 	var/adulthood_id
 	/// Trait ids currently applied (from prefs + runtime)
 	var/list/trait_ids = list()
+	/// TRUE after load_persona has written skills. Genes gained after that adjust skills themselves.
+	var/persona_loaded = FALSE
 
 	/// Last time we processed needs / break rolls
 	var/last_process = 0
@@ -101,6 +103,11 @@
 	apply_trait_modifiers()
 	apply_backstory_modifiers()
 	recalculate_mood()
+	persona_loaded = TRUE
+	// Genes are applied before psychology exists, so mood and speed have to be pushed again here.
+	if(iscarbon(owner))
+		var/mob/living/carbon/pawn = owner
+		pawn.refresh_rw_xenogene_passives()
 
 /**
  * Applies permanent modifiers from selected traits (e.g. sanguine +12 mood, iron_willed lower thresholds).
@@ -340,6 +347,10 @@
 /datum/psychology/proc/try_roll_mental_break()
 	if(active_break || !owner)
 		return
+	if(iscarbon(owner))
+		var/mob/living/carbon/pawn = owner
+		if(pawn.dna?.rw_prevents_mental_breaks())
+			return
 
 	var/severity = PSY_BREAK_NONE
 	var/chance = 0

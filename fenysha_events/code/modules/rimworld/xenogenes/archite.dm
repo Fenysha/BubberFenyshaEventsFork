@@ -4,6 +4,7 @@
 	desc = "Special regenerator cells heal old wounds and chronic illnesses. Prevents new scars."
 	complexity = 4
 	metabolic_efficiency = 0
+	wound_heal_mult = 3
 
 /datum/rw_xenogene/archite/gene_implanter
 	id = RW_XENOGENE_GENE_IMPLANTER
@@ -11,6 +12,7 @@
 	desc = "Can implant a copy of xenogenes into another person. Genes regrow slowly."
 	complexity = 3
 	metabolic_efficiency = 0
+	ability_path = /datum/action/cooldown/rw_xenogene/gene_implanter
 
 /datum/rw_xenogene/archite/perfect_immunity
 	id = RW_XENOGENE_PERFECT_IMMUNITY
@@ -18,6 +20,8 @@
 	desc = "Totally immune to most normal illnesses."
 	complexity = 3
 	metabolic_efficiency = 0
+	immunity_mult = 4
+	gameplay_traits = list(TRAIT_VIRUSIMMUNE)
 	incompatibility_group = RW_XENOGENE_GROUP_IMMUNITY
 
 /datum/rw_xenogene/archite/non_senescent
@@ -27,12 +31,18 @@
 	complexity = 3
 	metabolic_efficiency = 0
 
+/mob/living/carbon/human/CanContractDisease(datum/disease/disease)
+	if(dna && (disease.disease_flags & CHRONIC) && dna.has_rw_xenogene(RW_XENOGENE_NON_SENESCENT))
+		return FALSE
+	return ..()
+
 /datum/rw_xenogene/archite/ageless
 	id = RW_XENOGENE_AGELESS
 	name = "Ageless"
 	desc = "Aging slows from 13 and stops completely by 18.5."
 	complexity = 3
 	metabolic_efficiency = 0
+	caps_age = TRUE
 
 /datum/rw_xenogene/archite/deathless
 	id = RW_XENOGENE_DEATHLESS
@@ -40,6 +50,8 @@
 	desc = "As long as the brain remains intact, never dies. Enters regenerative coma instead."
 	complexity = 7
 	metabolic_efficiency = 0
+	xenogen_flags = RW_XENOGEN_PROCESSING
+	deathless = TRUE
 
 /datum/rw_xenogene/archite/archite_metabolism
 	id = RW_XENOGENE_ARCHITE_METABOLISM
@@ -54,3 +66,13 @@
 	desc = "Rarely need to breathe. Immune to vacuum, tox gas, acidic smog, rot stink."
 	complexity = 3
 	metabolic_efficiency = 0
+	tox_mult = 0
+	gameplay_traits = list(TRAIT_NOBREATH, TRAIT_TOXIMMUNE, TRAIT_RESISTLOWPRESSURE)
+
+/datum/scar/generate(obj/item/bodypart/BP, datum/wound/W, add_to_scars = TRUE)
+	if(ishuman(BP?.owner))
+		var/mob/living/carbon/human/scar_host = BP.owner
+		if(scar_host.dna?.has_rw_xenogene(RW_XENOGENE_SCARLESS))
+			qdel(src)
+			return
+	return ..()

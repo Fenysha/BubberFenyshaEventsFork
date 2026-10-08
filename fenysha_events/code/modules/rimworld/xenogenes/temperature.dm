@@ -5,6 +5,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	cold_limit_mod = 25
 	incompatibility_group = RW_XENOGENE_GROUP_COLD
 
 /datum/rw_xenogene/temperature/cold_tolerant
@@ -13,6 +14,7 @@
 	desc = "More resistant to cold."
 	complexity = 1
 	metabolic_efficiency = -1
+	cold_limit_mod = -40
 	incompatibility_group = RW_XENOGENE_GROUP_COLD
 
 /datum/rw_xenogene/temperature/cold_super_tolerant
@@ -21,6 +23,8 @@
 	desc = "Greatly resistant to cold."
 	complexity = 2
 	metabolic_efficiency = -2
+	cold_limit_mod = -80
+	gameplay_traits = list(TRAIT_RESISTCOLD)
 	incompatibility_group = RW_XENOGENE_GROUP_COLD
 
 /datum/rw_xenogene/temperature/heat_weakness
@@ -30,6 +34,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	heat_limit_mod = -25
 	incompatibility_group = RW_XENOGENE_GROUP_HEAT
 
 /datum/rw_xenogene/temperature/heat_tolerant
@@ -38,6 +43,7 @@
 	desc = "More resistant to heat."
 	complexity = 1
 	metabolic_efficiency = -1
+	heat_limit_mod = 40
 	incompatibility_group = RW_XENOGENE_GROUP_HEAT
 
 /datum/rw_xenogene/temperature/heat_super_tolerant
@@ -46,4 +52,6 @@
 	desc = "Greatly resistant to heat."
 	complexity = 2
 	metabolic_efficiency = -2
+	heat_limit_mod = 80
+	gameplay_traits = list(TRAIT_RESISTHEAT)
 	incompatibility_group = RW_XENOGENE_GROUP_HEAT

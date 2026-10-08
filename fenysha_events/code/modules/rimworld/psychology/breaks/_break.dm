@@ -36,6 +36,11 @@
 	/// TRUE after start() has run successfully
 	var/active = FALSE
 
+	/// Chance, per psychology tick, to take a short random walk
+	var/wander_chance = 40
+	/// Emote played on ticks that do not wander
+	var/break_emote = "sigh"
+
 /datum/psychology_break/New(datum/psychology/parent, mob/living/mob_owner)
 	psychology = parent
 	owner = mob_owner
@@ -123,7 +128,8 @@
 		return
 	control_lost = TRUE
 	ADD_TRAIT(owner, TRAIT_PSY_NO_CONTROL, PSYCHOLOGY_TRAIT)
-	// Brief stun as feedback; real lock is the trait (hook Move/Click later)
+	// Same lock caravans use: no move, no hands, no actions. The custom trait stays as a marker.
+	owner.add_traits(list(TRAIT_IMMOBILIZED, TRAIT_HANDS_BLOCKED, TRAIT_INCAPACITATED), PSYCHOLOGY_TRAIT)
 	owner.Stun(0.5 SECONDS, ignore_canstun = TRUE)
 
 /datum/psychology_break/proc/restore_control()
@@ -131,6 +137,7 @@
 		return
 	control_lost = FALSE
 	REMOVE_TRAIT(owner, TRAIT_PSY_NO_CONTROL, PSYCHOLOGY_TRAIT)
+	owner.remove_traits(list(TRAIT_IMMOBILIZED, TRAIT_HANDS_BLOCKED, TRAIT_INCAPACITATED), PSYCHOLOGY_TRAIT)
 
 /** Called once when the break begins (after flags set, before control loss). */
 /datum/psychology_break/proc/on_start()
@@ -142,10 +149,40 @@
 
 /**
  * Per-tick behaviour while the break is active.
- * Intentionally empty on the base type — subtypes implement wandering / catatonia / etc.
+ * The player stays locked; the body still paces in a random direction.
  */
 /datum/psychology_break/proc/on_tick(seconds_per_tick)
-	return
+	if(!owner || QDELETED(owner) || owner.stat == DEAD)
+		return
+	if(prob(wander_chance))
+		var/steps = rand(1, 2)
+		for(var/i in 1 to steps)
+			if(!wander_step())
+				break
+	else if(break_emote && prob(30))
+		owner.emote(break_emote)
+
+/**
+ * One step in a random open direction.
+ * Immobilize is lifted only for that step, then put back, so the player still cannot steer.
+ */
+/datum/psychology_break/proc/wander_step()
+	if(!owner || QDELETED(owner) || owner.buckled || !isturf(owner.loc))
+		return FALSE
+	var/list/options = list()
+	for(var/dir in GLOB.cardinals)
+		var/turf/dest = get_step(owner, dir)
+		if(!dest || dest.is_blocked_turf(exclude_mobs = TRUE))
+			continue
+		options += dir
+	if(!length(options))
+		return FALSE
+	var/picked = pick(options)
+	REMOVE_TRAIT(owner, TRAIT_IMMOBILIZED, PSYCHOLOGY_TRAIT)
+	step(owner, picked)
+	if(control_lost && owner && !QDELETED(owner))
+		ADD_TRAIT(owner, TRAIT_IMMOBILIZED, PSYCHOLOGY_TRAIT)
+	return TRUE
 
 
 
@@ -157,14 +194,11 @@
 	description = "Having a minor mental break."
 	mood_penalty = -10
 	duration = PSY_BREAK_DURATION_MINOR
+	wander_chance = 35
+	break_emote = "sigh"
 
 /datum/psychology_break/minor/on_start()
-	to_chat(owner, span_warning("The pressure is too much. You freeze up for a moment..."))
-	// Future: brief pacing, mild emotes
-
-/datum/psychology_break/minor/on_tick(seconds_per_tick)
-	// Future: occasional emote / slight movement
-	return
+	to_chat(owner, span_warning("The pressure is too much. Your legs start moving on their own..."))
 
 /// Serious breakdown — longer lockout
 /datum/psychology_break/major
@@ -174,14 +208,11 @@
 	description = "Having a major mental break."
 	mood_penalty = -15
 	duration = PSY_BREAK_DURATION_MAJOR
+	wander_chance = 65
+	break_emote = "cry"
 
 /datum/psychology_break/major/on_start()
 	to_chat(owner, span_userdanger("Something inside you snaps. You can no longer trust your own hands..."))
-	// Future: random wandering, dropping items, crying
-
-/datum/psychology_break/major/on_tick(seconds_per_tick)
-	// Future: forced random actions
-	return
 
 /// Catastrophic breakdown — longest, heaviest effects
 /datum/psychology_break/extreme
@@ -191,14 +222,11 @@
 	description = "Suffering an extreme mental break."
 	mood_penalty = -25
 	duration = PSY_BREAK_DURATION_EXTREME
+	wander_chance = 85
+	break_emote = "scream"
 
 /datum/psychology_break/extreme/on_start()
 	to_chat(owner, span_userdanger("Your mind collapses. The world is noise and fear — you are no longer in control."))
-	// Future: catatonia, self-harm risk hooks, screaming, full AI takeover
-
-/datum/psychology_break/extreme/on_tick(seconds_per_tick)
-	// Future: aggressive / catatonic behaviour
-	return
 
 
 /**

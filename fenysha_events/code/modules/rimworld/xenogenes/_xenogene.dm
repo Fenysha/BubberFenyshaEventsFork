@@ -224,18 +224,26 @@
 	if(xenogen_flags & RW_XENOGEN_PROCESSING)
 		START_PROCESSING(SSxenogenes, src)
 
+	apply_gameplay(new_holder)
 	return
 
 
 /datum/rw_xenogene/proc/on_life(seconds_per_tick, mob/living/new_holder)
 	SHOULD_CALL_PARENT(FALSE)
+	return
 
-	return PROCESS_KILL
+
+/datum/rw_xenogene/process(seconds_per_tick)
+	if(!holder || QDELETED(holder))
+		return PROCESS_KILL
+	on_life(seconds_per_tick, holder)
+	tick_gameplay(seconds_per_tick, holder)
 
 
 /datum/rw_xenogene/proc/on_lose(mob/living/new_holder)
 	SHOULD_CALL_PARENT(TRUE)
 
+	clear_gameplay(new_holder)
 	STOP_PROCESSING(SSxenogenes, src)
 	holder = null
 
@@ -338,6 +346,8 @@
 
 
 /datum/rw_xenogene/Destroy()
+	if(effect_owner && !QDELETED(effect_owner))
+		clear_gameplay(effect_owner)
 	STOP_PROCESSING(SSxenogenes, src)
 	holder = null
 

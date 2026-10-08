@@ -19,7 +19,7 @@
 			  (consc * COMBAT_DAMAGE_CONSC_WEIGHT) + \
 			  (pain_shock * COMBAT_DAMAGE_PAIN_WEIGHT)
 
-	return clamp(mod, 0.15, 1.45)
+	return clamp(mod, 0.15, 1.45) * get_rw_melee_damage_mult()
 
 /mob/living/proc/get_combat_accuracy_mod()
 	return 1.0

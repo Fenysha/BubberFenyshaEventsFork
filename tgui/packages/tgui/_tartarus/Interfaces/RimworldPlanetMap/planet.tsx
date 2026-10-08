@@ -64,6 +64,8 @@ type PlanetProps = {
   playerY?: number | null;
   /** Base64 PNG of the avatar appearance (no data: prefix) */
   playerIcon?: string | null;
+  /** Travel trail in 1-based hex coordinates, current tile first */
+  route?: { x: number; y: number }[] | null;
   /** Bump this value to request centering the camera on the player tile */
   centerOnPlayerRequest?: number;
   showAtmosphere?: boolean;
@@ -84,8 +86,11 @@ type PlanetRuntime = {
   /** Optional sprite using appearance icon; null while using default spheres */
   playerIconSprite: THREE.Sprite | null;
   playerIconKey: string | null;
+  /** World size of the avatar for the current camera distance */
+  playerWorldSize: number;
   /** True when avatar uses appearance icon instead of yellow sphere */
   usePlayerIcon: boolean;
+  routeLine: THREE.Line | null;
   surface: THREE.Mesh;
   planetGroup: THREE.Group;
   planetTexture: THREE.CanvasTexture | THREE.DataTexture;
@@ -292,6 +297,16 @@ const sharedMarkerMaterials = {
   default: new THREE.MeshBasicMaterial({ color: 0xf0f4ff }),
 };
 
+const sharedRouteLineMaterial = new THREE.LineBasicMaterial({
+  color: 0x7dffb3,
+  transparent: true,
+  opacity: 0.95,
+  depthWrite: false,
+});
+
+const HEIGHT_ROUTE = PLANET_RADIUS + 0.012;
+const ROUTE_ARC_STEPS = 4;
+
 const sharedRoadLineMaterial = new THREE.LineBasicMaterial({
   color: 0xc4a574,
   transparent: true,
@@ -398,6 +413,7 @@ export const Planet = ({
   playerX,
   playerY,
   playerIcon,
+  route,
   centerOnPlayerRequest,
   showAtmosphere = true,
   showClouds = true,
@@ -855,7 +871,9 @@ export const Planet = ({
       playerCore,
       playerIconSprite: null,
       playerIconKey: null,
+      playerWorldSize: 0.02,
       usePlayerIcon: false,
+      routeLine: null,
       surface,
       planetGroup,
       planetTexture: initialTexture,
@@ -1175,6 +1193,13 @@ export const Planet = ({
           zoomProgress,
         );
         const markerScale = THREE.MathUtils.lerp(0.5, 2.0, zoomProgress);
+        // Same zoom curve as map icons: tile-sized up close, readable when far.
+        // The close end has to drop with the tiles, or the portrait stays huge on screen.
+        runtimeRef.current.playerWorldSize = THREE.MathUtils.lerp(
+          minSpriteScale * 1.35,
+          maxSpriteScale * 0.55,
+          zoomProgress,
+        );
 
         runtimeRef.current.objectGroup.children.forEach((child) => {
           child.visible = true;
@@ -1200,22 +1225,22 @@ export const Planet = ({
       // Player / caravan avatar marker
       if (runtimeRef.current?.playerMarker?.visible) {
         const rt = runtimeRef.current;
-        const playerScale = THREE.MathUtils.lerp(
-          0.55,
-          1.8,
-          THREE.MathUtils.clamp((distance - 2.2) / (10.0 - 2.2), 0, 1),
-        );
+        const playerWorldSize = rt.playerWorldSize ?? 0.02;
 
         if (rt.usePlayerIcon && rt.playerIconSprite) {
           // Appearance icon: no yellow sphere, sprite sized for current zoom
           rt.playerGlow.visible = false;
           rt.playerCore.visible = false;
           rt.playerMarker.scale.setScalar(1);
-          const spriteScale = 0.06 * playerScale;
-          rt.playerIconSprite.scale.set(spriteScale, spriteScale, 1);
+          const aspect = rt.playerIconSprite.userData.aspect || 1;
+          rt.playerIconSprite.scale.set(
+            playerWorldSize * aspect,
+            playerWorldSize,
+            1,
+          );
           rt.playerIconSprite.visible = true;
         } else {
-          // Default yellow marker with pulse
+          // Default yellow marker with pulse. Core diameter matches the icon size.
           rt.playerGlow.visible = true;
           rt.playerCore.visible = true;
           if (rt.playerIconSprite) {
@@ -1225,7 +1250,7 @@ export const Planet = ({
             (rt.playerGlow.material as THREE.MeshBasicMaterial).opacity =
               0.28 + Math.sin(time * 3.2) * 0.12;
           }
-          rt.playerMarker.scale.setScalar(playerScale);
+          rt.playerMarker.scale.setScalar(playerWorldSize / 0.044);
         }
       }
 
@@ -1259,6 +1284,10 @@ export const Planet = ({
       isMounted = false;
       saveCameraState(camera, controls);
 
+      if (runtimeRef.current?.routeLine) {
+        runtimeRef.current.routeLine.geometry.dispose();
+        runtimeRef.current.routeLine = null;
+      }
       runtimeRef.current = null;
       cancelAnimationFrame(frame);
 
@@ -1306,6 +1335,7 @@ export const Planet = ({
           (child.material as THREE.Material).dispose();
         }
       });
+
 
       (stars.material as THREE.Material).dispose();
 
@@ -1514,7 +1544,9 @@ export const Planet = ({
             depthTest: true,
           });
           const sprite = new THREE.Sprite(material);
-          sprite.scale.set(0.08, 0.08, 1);
+          const aspect = img.width / Math.max(img.height, 1);
+          sprite.userData.aspect = aspect;
+          sprite.scale.set(0.02 * aspect, 0.02, 1);
           sprite.renderOrder = 20;
           sprite.visible = true;
           playerMarker.add(sprite);
@@ -1540,6 +1572,68 @@ export const Planet = ({
       }
     }
   }, [mapIdentity, playerX, playerY, playerIcon, data.width, data.height]);
+
+  const routeKey =
+    route?.map((point) => `${point.x}:${point.y}`).join('|') ?? '';
+
+  // Travel trail: one polyline along the remaining route, held to the sphere
+  useEffect(() => {
+    const runtime = runtimeRef.current;
+    if (!runtime) {
+      return;
+    }
+
+    if (runtime.routeLine) {
+      runtime.planetGroup.remove(runtime.routeLine);
+      runtime.routeLine.geometry.dispose();
+      runtime.routeLine = null;
+    }
+
+    const points = route ?? [];
+    if (points.length < 2) {
+      return;
+    }
+
+    const grid = gridFor(data);
+    const vectors: THREE.Vector3[] = [];
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      if (!grid.isValid(point.x, point.y)) {
+        continue;
+      }
+      const here = tileToVector(grid, point.x, point.y, HEIGHT_ROUTE);
+      vectors.push(here);
+      const next = points[i + 1];
+      if (!next || !grid.isValid(next.x, next.y)) {
+        continue;
+      }
+      const there = tileToVector(grid, next.x, next.y, HEIGHT_ROUTE);
+      for (let step = 1; step < ROUTE_ARC_STEPS; step++) {
+        vectors.push(
+          here
+            .clone()
+            .lerp(there, step / ROUTE_ARC_STEPS)
+            .normalize()
+            .multiplyScalar(HEIGHT_ROUTE),
+        );
+      }
+    }
+
+    if (vectors.length < 2) {
+      return;
+    }
+
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(vectors),
+      sharedRouteLineMaterial,
+    );
+    line.renderOrder = 12;
+    line.frustumCulled = false;
+    runtime.planetGroup.add(line);
+    runtime.routeLine = line;
+    // routeKey is the stable identity; `route` is the matching array from this render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapIdentity, routeKey, data.width, data.height]);
 
   // Center camera on the player's current tile
   useEffect(() => {

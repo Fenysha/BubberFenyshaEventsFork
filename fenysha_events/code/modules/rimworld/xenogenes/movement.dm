@@ -5,6 +5,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	movespeed_slowdown = 0.7
 	incompatibility_group = RW_XENOGENE_GROUP_MOVE_SPEED
 
 /datum/rw_xenogene/movement/fast_runner
@@ -13,6 +14,7 @@
 	desc = "Moves faster."
 	complexity = 1
 	metabolic_efficiency = -1
+	movespeed_slowdown = -0.25
 	incompatibility_group = RW_XENOGENE_GROUP_MOVE_SPEED
 
 /datum/rw_xenogene/movement/very_fast_runner
@@ -21,6 +23,7 @@
 	desc = "Moves much faster."
 	complexity = 2
 	metabolic_efficiency = -2
+	movespeed_slowdown = -0.45
 	incompatibility_group = RW_XENOGENE_GROUP_MOVE_SPEED
 
 /datum/rw_xenogene/movement/naked_speed
@@ -29,3 +32,5 @@
 	desc = "Moves faster when wearing little or no clothing."
 	complexity = 1
 	metabolic_efficiency = 0
+	xenogen_flags = RW_XENOGEN_PROCESSING
+	naked_movespeed = -0.4

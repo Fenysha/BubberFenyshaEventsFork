@@ -355,6 +355,9 @@
 	if(rate <= 0)
 		return
 
+	if(owner)
+		rate *= owner.get_rw_wound_heal_mult()
+
 	healing_progress = min(healing_progress + rate * seconds_per_tick, 1)
 
 	if(healing_progress >= 1)
@@ -417,6 +420,9 @@
 		result *= get_bleed_treatment_multiplier()
 	else if(treatment_quality > INJURY_TREATMENT_NONE)
 		result *= treated_bleed_mult
+
+	if(owner)
+		result *= owner.get_rw_bleed_mult()
 
 	return result
 

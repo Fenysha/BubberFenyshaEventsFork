@@ -3,6 +3,8 @@
 	name = "Cold-blooded"
 	desc = "Poor internal temperature regulation. Hungrier in the cold."
 	metabolic_efficiency = -1
+	xenogen_flags = RW_XENOGEN_PROCESSING
+	cold_hunger = 0.35
 
 /datum/rw_xenogene/stat/body_size
 	id = RW_XENOGENE_BODY_SIZE
@@ -28,6 +30,8 @@
 	negative = TRUE
 	complexity = 1
 	metabolic_efficiency = -1
+	maxhealth_mult = 0.8
+	brute_taken_mult = 1.15
 
 /datum/rw_xenogene/stat/delicate
 	id = RW_XENOGENE_DELICATE
@@ -36,6 +40,8 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	brute_taken_mult = 1.3
+	burn_taken_mult = 1.3
 
 /datum/rw_xenogene/stat/robust
 	id = RW_XENOGENE_ROBUST
@@ -43,6 +49,8 @@
 	desc = "Takes less damage from attacks."
 	complexity = 1
 	metabolic_efficiency = -1
+	brute_taken_mult = 0.75
+	burn_taken_mult = 0.75
 
 /datum/rw_xenogene/stat/extra_pain
 	id = RW_XENOGENE_EXTRA_PAIN
@@ -51,6 +59,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	pain_mult = 1.5
 
 /datum/rw_xenogene/stat/reduced_pain
 	id = RW_XENOGENE_REDUCED_PAIN
@@ -58,6 +67,7 @@
 	desc = "Feels less pain."
 	complexity = 1
 	metabolic_efficiency = -1
+	pain_mult = 0.55
 
 /datum/rw_xenogene/stat/strong_melee_damage
 	id = RW_XENOGENE_STRONG_MELEE_DAMAGE
@@ -65,6 +75,7 @@
 	desc = "Melee attacks deal more damage."
 	complexity = 1
 	metabolic_efficiency = -1
+	melee_damage_mult = 1.3
 
 /datum/rw_xenogene/stat/weak_melee_damage
 	id = RW_XENOGENE_WEAK_MELEE_DAMAGE
@@ -73,6 +84,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	melee_damage_mult = 0.7
 
 /datum/rw_xenogene/stat/nearsighted
 	id = RW_XENOGENE_NEARSIGHTED
@@ -81,6 +93,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	ranged_spread_mult = 1.65
 
 /datum/rw_xenogene/stat/strong_stomach
 	id = RW_XENOGENE_STRONG_STOMACH
@@ -88,6 +101,7 @@
 	desc = "Never suffers food poisoning."
 	complexity = 1
 	metabolic_efficiency = 0
+	purges_food_toxins = TRUE
 
 /datum/rw_xenogene/stat/robust_digestion
 	id = RW_XENOGENE_ROBUST_DIGESTION
@@ -95,6 +109,7 @@
 	desc = "Gets full nutrition from raw food and doesn't mind the taste."
 	complexity = 1
 	metabolic_efficiency = 0
+	raw_nutrition_bonus = 8
 
 /datum/rw_xenogene/stat/unstoppable
 	id = RW_XENOGENE_UNSTOPPABLE
@@ -102,6 +117,7 @@
 	desc = "Never goes into shock from pain."
 	complexity = 1
 	metabolic_efficiency = -1
+	shock_mult = 0
 
 /datum/rw_xenogene/stat/kill_thirst
 	id = RW_XENOGENE_KILL_THIRST
@@ -110,6 +126,8 @@
 	complexity = 1
 	metabolic_efficiency = 0
 	negative = TRUE
+	xenogen_flags = RW_XENOGEN_PROCESSING
+	tracks_kill_thirst = TRUE
 
 /datum/rw_xenogene/stat/violence_disabled
 	id = RW_XENOGENE_VIOLENCE_DISABLED
@@ -118,6 +136,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	gameplay_traits = list(TRAIT_PACIFISM)
 
 /datum/rw_xenogene/stat/dead_calm
 	id = RW_XENOGENE_DEAD_CALM
@@ -125,6 +144,7 @@
 	desc = "Never breaks from mental stress. Very hard to drive into a mental break."
 	complexity = 1
 	metabolic_efficiency = 0
+	prevents_mental_breaks = TRUE
 
 /datum/rw_xenogene/stat/indoor_dweller
 	id = RW_XENOGENE_INDOOR_DWELLER
@@ -132,6 +152,8 @@
 	desc = "Prefers to stay indoors. Outdoor work causes mood penalties."
 	complexity = 1
 	metabolic_efficiency = 0
+	xenogen_flags = RW_XENOGEN_PROCESSING
+	outdoor_mood = -8
 
 /datum/rw_xenogene/stat/dark_vision
 	id = RW_XENOGENE_DARK_VISION
@@ -139,6 +161,7 @@
 	desc = "Sees well in darkness."
 	complexity = 1
 	metabolic_efficiency = -1
+	gameplay_traits = list(TRAIT_NIGHT_VISION)
 
 /datum/rw_xenogene/stat/trotter_hands
 	id = RW_XENOGENE_TROTTER_HANDS
@@ -147,6 +170,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	manipulation_mult = 0.55
 
 /datum/rw_xenogene/stat/elongated_fingers
 	id = RW_XENOGENE_ELONGATED_FINGERS
@@ -154,3 +178,4 @@
 	desc = "Improved manipulation for fine work."
 	complexity = 1
 	metabolic_efficiency = -1
+	manipulation_mult = 1.25

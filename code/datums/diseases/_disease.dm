@@ -232,6 +232,8 @@
 					recovery_prob += -0.4
 
 		recovery_prob += get_immunity_recovery()
+		if(affected_mob)
+			recovery_prob *= max(0.05, affected_mob.get_rw_immunity_mult())
 
 		if((HAS_TRAIT(affected_mob, TRAIT_NOHUNGER) || !(affected_mob.satiety < 0 || affected_mob.nutrition < NUTRITION_LEVEL_STARVING)) && is_sleeping) //resting starved won't help, but resting helps
 			var/turf/rest_turf = get_turf(affected_mob)

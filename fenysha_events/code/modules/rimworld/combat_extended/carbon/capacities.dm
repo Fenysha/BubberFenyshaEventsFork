@@ -74,7 +74,7 @@
 	var/arms_factor = (arm_count > 0) ? (arm_score / arm_count) * (0.55 + 0.45 * (arm_score / max(arm_count, 1))) : 0
 	// Global pain & shock also hinder fine motor control
 	var/global_pen = min(get_pain_capacity(), get_shock_capacity())
-	return clamp(consc * arms_factor * (0.4 + 0.6 * global_pen), 0, 1)
+	return clamp(consc * arms_factor * (0.4 + 0.6 * global_pen) * get_rw_manipulation_mult(), 0, 1.25)
 
 /// Moving / locomotion capacity. Legs + consciousness + pain.
 /mob/living/carbon/proc/get_moving_capacity()

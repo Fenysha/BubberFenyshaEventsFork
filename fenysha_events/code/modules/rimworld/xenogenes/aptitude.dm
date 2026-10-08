@@ -7,6 +7,8 @@
 	negative = TRUE
 	skill_bonuses = list(RW_SKILL_ANIMALS = -8)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_ANIMALS
+	passion_skill = RW_SKILL_ANIMALS
+	passion_grant = RW_PASSION_NONE
 
 /datum/rw_xenogene/aptitude/poor_animals
 	id = RW_XENOGENE_POOR_ANIMALS
@@ -35,6 +37,8 @@
 	metabolic_efficiency = -2
 	skill_bonuses = list(RW_SKILL_ANIMALS = 8)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_ANIMALS
+	passion_skill = RW_SKILL_ANIMALS
+	passion_grant = RW_PASSION_INTERESTED
 
 /datum/rw_xenogene/aptitude/awful_melee
 	id = RW_XENOGENE_AWFUL_MELEE

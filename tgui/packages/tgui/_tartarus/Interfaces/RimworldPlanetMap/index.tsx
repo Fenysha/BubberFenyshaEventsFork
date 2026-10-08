@@ -5,6 +5,7 @@ import { Button, Stack } from 'tgui-core/components';
 import { FullscreenWindow } from '../../layouts/FullscreenWindow';
 import { type CellInteraction, Planet } from './planet';
 import type { PlanetMapData } from './types';
+import type { CaravanMapData } from './views/types';
 
 import { AdminPanel } from './views/AdminPanel';
 import { CaravanPanel } from './views/CaravanPanel';
@@ -81,6 +82,10 @@ export const RimworldPlanetMap = () => {
   };
 
   const viewType = data.viewType || 'overview';
+  const route =
+    viewType === 'caravan'
+      ? (data as CaravanMapData).view?.path
+      : undefined;
   // Tile details come from DM, which reads Rust's climate model; until they arrive for a fresh
   // click, only the coordinates are known
   const serverTile = data.selectedTile;
@@ -112,6 +117,7 @@ export const RimworldPlanetMap = () => {
           playerX={data.playerX}
           playerY={data.playerY}
           playerIcon={data.playerIcon}
+          route={route}
           centerOnPlayerRequest={centerOnPlayerRequest}
           showAtmosphere={showAtmosphere}
           showClouds={showClouds}

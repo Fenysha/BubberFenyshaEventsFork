@@ -5,6 +5,7 @@
 	complexity = 1
 	metabolic_efficiency = 2
 	negative = TRUE
+	mood_offset = -12
 	incompatibility_group = RW_XENOGENE_GROUP_MOOD
 
 /datum/rw_xenogene/mood/unhappy
@@ -14,6 +15,7 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	mood_offset = -6
 	incompatibility_group = RW_XENOGENE_GROUP_MOOD
 
 /datum/rw_xenogene/mood/happy
@@ -22,6 +24,7 @@
 	desc = "Baseline mood increased."
 	complexity = 1
 	metabolic_efficiency = -1
+	mood_offset = 6
 	incompatibility_group = RW_XENOGENE_GROUP_MOOD
 
 /datum/rw_xenogene/mood/very_happy
@@ -30,4 +33,5 @@
 	desc = "Baseline mood greatly increased."
 	complexity = 2
 	metabolic_efficiency = -2
+	mood_offset = 12
 	incompatibility_group = RW_XENOGENE_GROUP_MOOD

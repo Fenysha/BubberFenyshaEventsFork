@@ -545,7 +545,26 @@
 	var/list/decoded = json_decode(result)
 	if(decoded["status"] != "ok")
 		return null
-	return decoded["path"]
+	return normalize_rust_path(decoded["path"])
+
+/// json_decode of [[x, y], ...] into list(list(x, y), ...). Drops malformed steps.
+/datum/rimworld_planet/proc/normalize_rust_path(list/raw)
+	var/list/path = list()
+	if(!islist(raw))
+		return path
+	for(var/step in raw)
+		if(!islist(step) || length(step) < 2)
+			continue
+		var/sx = step[1]
+		var/sy = step[2]
+		if(istext(sx))
+			sx = text2num(sx)
+		if(istext(sy))
+			sy = text2num(sy)
+		if(!isnum(sx) || !isnum(sy))
+			continue
+		path += list(list(round(sx), round(sy)))
+	return path
 
 /datum/rimworld_planet/proc/get_road_mask(x, y)
 	if(!is_valid_coordinate(x, y))

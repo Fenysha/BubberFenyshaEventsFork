@@ -5,6 +5,8 @@
 	complexity = 1
 	metabolic_efficiency = 1
 	negative = TRUE
+	sets_psychic_sensitivity = TRUE
+	psychic_sensitivity = 0
 	incompatibility_group = RW_XENOGENE_GROUP_PSYCHIC_SENSITIVITY
 
 /datum/rw_xenogene/psychic/psychically_dull
@@ -13,6 +15,8 @@
 	desc = "Reduced psychic sensitivity."
 	complexity = 1
 	metabolic_efficiency = 0
+	sets_psychic_sensitivity = TRUE
+	psychic_sensitivity = 0.5
 	incompatibility_group = RW_XENOGENE_GROUP_PSYCHIC_SENSITIVITY
 
 /datum/rw_xenogene/psychic/psy_sensitive
@@ -21,6 +25,8 @@
 	desc = "Increased psychic sensitivity."
 	complexity = 1
 	metabolic_efficiency = -1
+	sets_psychic_sensitivity = TRUE
+	psychic_sensitivity = 1.5
 	incompatibility_group = RW_XENOGENE_GROUP_PSYCHIC_SENSITIVITY
 
 /datum/rw_xenogene/psychic/super_psy_sensitive
@@ -29,11 +35,15 @@
 	desc = "Greatly increased psychic sensitivity."
 	complexity = 2
 	metabolic_efficiency = -2
+	sets_psychic_sensitivity = TRUE
+	psychic_sensitivity = 2
 	incompatibility_group = RW_XENOGENE_GROUP_PSYCHIC_SENSITIVITY
 
 /datum/rw_xenogene/psychic/psychic_bonding
 	id = RW_XENOGENE_PSYCHIC_BONDING
 	name = "Psychic bonding"
-	desc = "Forms a powerful psychic bond with the first romantic partner."
+	desc = "Bonds with the first person who stands beside you. Their closeness lifts your mood; distance drags it down. Psychic deafness blocks the feeling."
 	complexity = 2
 	metabolic_efficiency = 0
+	xenogen_flags = RW_XENOGEN_PROCESSING
+	bonds_psychically = TRUE
