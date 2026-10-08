@@ -163,7 +163,7 @@
 		return
 
 	var/mob/living/carbon/human/H = usr
-	H.open_rw_skill_ui(H)
+	H.view_psychology()
 
 
 /atom/movable/screen/human/architector_button/mission

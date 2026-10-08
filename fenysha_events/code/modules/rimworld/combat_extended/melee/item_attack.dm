@@ -1,8 +1,14 @@
 #ifndef OLD_COMBAT_SYSTEM
 /**
- * Zone resolve, messages, block, dodge, then apply_damage with blocked=0.
+ * Zone resolve and messaging, then resolve defense and damage for a committed melee swing.
  */
 /mob/living/attacked_by(obj/item/attacking_item, mob/living/user, list/modifiers, list/attack_modifiers)
+	var/counter_force = CALCULATE_FORCE(attacking_item, attack_modifiers) * user.get_combat_damage_mod()
+	if(mob_biotypes & (MOB_ROBOTIC | MOB_MINERAL | MOB_SKELETAL))
+		counter_force *= attacking_item.get_demolition_modifier(src)
+	if(user.try_counter_attack(src, counter_force, attacking_item.damtype, attacking_item.get_sharpness(), attacking_item))
+		return counter_force
+
 	var/targeting = check_zone(user.zone_selected)
 
 	// === Skill + Capacity accuracy ===
@@ -12,9 +18,8 @@
 
 	var/accuracy_mod = user.get_combat_accuracy_mod()
 
-	// Полный промах
 	var/miss_chance = MELEE_MISS_BASE - (skill_diff * MELEE_MISS_PER_SKILL_DIFF)
-	miss_chance /= max(accuracy_mod, 0.15) // низкая ёмкость → больше промахов
+	miss_chance /= max(accuracy_mod, 0.15)
 	miss_chance = clamp(miss_chance, MELEE_MISS_MIN, MELEE_MISS_MAX)
 
 	if(body_position == LYING_DOWN || has_status_effect(/datum/status_effect/staggered) || HAS_TRAIT(user, TRAIT_PERFECT_ATTACKER))
@@ -30,6 +35,7 @@
 				user
 			)
 			to_chat(user, span_warning("Your attack with [attacking_item] misses [src]!"))
+		create_floating_combat_text(src, "Miss", "#FFB45E")
 		if(client)
 			rw_train_skill(src, RW_SKILL_MELEE, RW_SKILL_POINTS_MINOR)
 		if(user.client)
@@ -77,10 +83,10 @@
 	if((attacking_item.item_flags & SURGICAL_TOOL) && !user.combat_mode && HAS_TRAIT(user, TRAIT_READY_TO_OPERATE))
 		wounding = CANT_WOUND
 
+	// A committed melee exchange slows both sides, including when defended against.
+	apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 	if(user != src)
-		var/parry_result = try_parry_attack(user, final_force, "\the [attacking_item]")
-		if(parry_result == SUCCESSFUL_BLOCK)
-			return ATTACK_FAILED
+		user.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 
 	if(user != src)
 		if(check_block(
@@ -95,6 +101,12 @@
 
 		if(try_dodge(user, "\the [attacking_item]", MELEE_ATTACK))
 			return ATTACK_FAILED
+
+		var/parry_result = try_parry_attack(user, final_force, "\the [attacking_item]")
+		if(parry_result == SUCCESSFUL_BLOCK)
+			return ATTACK_FAILED
+		if(parry_result == RW_PARRY_PARTIAL_BLOCK)
+			final_force *= (1 - RW_PARRY_PARTIAL_DAMAGE_REDUCTION)
 
 	SEND_SIGNAL(attacking_item, COMSIG_ITEM_ATTACK_ZONE, src, user, targeting)
 
@@ -116,10 +128,6 @@
 		attack_direction = get_dir(user, src),
 		attacking_item = attacking_item,
 	)
-
-	apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
-	if(user != src)
-		user.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 
 	attack_effects(damage_done, targeting, armor_block, attacking_item, user)
 

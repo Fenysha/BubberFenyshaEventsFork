@@ -243,26 +243,6 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	var/datum/species/species = GLOB.species_prototypes[rw_species()]
 	return species && (TRAIT_USES_SKINTONES in species.inherent_traits)
 
-/datum/rimworld_preferences/proc/get_skill_bonus(skill_id)
-	. = 0
-	var/datum/rw_backstory/childhood = GLOB.all_rw_backstories[childhood_id]
-	if(childhood?.skill_bonuses)
-		. += childhood.skill_bonuses[skill_id] || 0
-	var/datum/rw_backstory/adulthood = GLOB.all_rw_backstories[adulthood_id]
-	if(adulthood?.skill_bonuses)
-		. += adulthood.skill_bonuses[skill_id] || 0
-	for(var/trait_id in traits)
-		var/datum/rw_trait/trait = GLOB.all_rw_traits[trait_id]
-		if(trait?.skill_bonuses)
-			. += trait.skill_bonuses[skill_id] || 0
-	for(var/gene_id in xenogenes)
-		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
-		if(gene?.skill_bonuses)
-			. += gene.skill_bonuses[skill_id] || 0
-
-/datum/rimworld_preferences/proc/get_skill_level(skill_id)
-	return clamp((skills[skill_id] || 0) + get_skill_bonus(skill_id), RW_SKILL_MIN, RW_SKILL_MAX)
-
 /datum/rimworld_preferences/proc/get_skill_point_cost(skill_id, level = null)
 	if(isnull(level))
 		level = skills[skill_id] || 0

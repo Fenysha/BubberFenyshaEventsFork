@@ -104,6 +104,7 @@
 	if(missed)
 		if(target.client)
 			to_chat(target, span_danger("A round cracks past!"))
+		create_floating_combat_text(target, "Miss", "#FFB45E")
 		if(trains)
 			RW_TRAIN_SKILL(firer, RW_SKILL_RANGED, RW_SKILL_POINTS_TINY)
 	else if(trains)

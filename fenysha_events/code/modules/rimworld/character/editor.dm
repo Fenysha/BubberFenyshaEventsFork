@@ -379,8 +379,8 @@
 		skill_rows += list(list(
 			"id" = skill_id,
 			"bought" = skills[skill_id] || 0,
-			"bonus" = get_skill_bonus(skill_id),
-			"level" = get_skill_level(skill_id),
+			"bonus" = rw_psychology_get_skill_bonus(skill_id, childhood_id, adulthood_id, traits, xenogenes),
+			"level" = rw_psychology_get_skill_level(skill_id, skills[skill_id] || 0, childhood_id, adulthood_id, traits, xenogenes),
 			"passion" = passions[skill_id] || RW_PASSION_NONE,
 		))
 	data["skills"] = skill_rows

@@ -283,6 +283,8 @@
 
 
 /datum/component/rw_skills/proc/set_passions(list/source)
+	for(var/skill_id in all_skills)
+		my_passion[skill_id] = RW_PASSION_NONE
 	if(!islist(source))
 		return
 	for(var/skill_id in source)

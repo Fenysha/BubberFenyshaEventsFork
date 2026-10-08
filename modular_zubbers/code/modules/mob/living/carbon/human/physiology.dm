@@ -1,3 +1,5 @@
+#if defined(OLD_COMBAT_SYSTEM)
+
 /datum/physiology
 	var/flat_brute_mod = 0
 	var/flat_burn_mod = 0
@@ -26,3 +28,4 @@
 			damage += physiology.flat_burn_mod
 
 	. = ..()
+#endif

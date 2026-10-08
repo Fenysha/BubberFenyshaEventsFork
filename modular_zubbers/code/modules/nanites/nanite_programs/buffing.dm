@@ -18,6 +18,7 @@
 		var/mob/living/carbon/human/H = host_mob
 		H.physiology.stun_mod *= 2
 
+#if defined(OLD_COMBAT_SYSTEM)
 /datum/nanite_program/dermal_armor
 	name = "Dermal Hardening"
 	desc = "The nanites form a mesh under the host's skin, protecting them from melee and bullet impacts. \
@@ -185,6 +186,7 @@
 	humie.physiology.flat_burn_mod -= current_flat_mod
 	current_flat_mod = amount
 	humie.physiology.flat_burn_mod += amount
+#endif
 
 /datum/nanite_program/coagulating
 	name = "Vein Repressurization"

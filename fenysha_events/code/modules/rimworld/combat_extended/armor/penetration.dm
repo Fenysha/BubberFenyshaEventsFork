@@ -111,7 +111,8 @@
 		if(!blunt_ap)
 			blunt_ap = max(damage * 0.05, 0.5)
 	else if(!blunt_ap)
-		blunt_ap = max(damage * 0.12, 1)
+		// Bare-limb strikes generate less blunt AP and have no minimum AP floor.
+		blunt_ap = istype(weapon, /obj/item/bodypart) ? damage * 0.08 : max(damage * 0.12, 1)
 
 	return create_pen_packet(damage, sharp_ap, blunt_ap, BRUTE)
 

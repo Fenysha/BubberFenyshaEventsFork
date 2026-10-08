@@ -34,6 +34,8 @@
 
 
 /obj/item/organ/heart/proc/Restart()
+	if(organ_flags & ORGAN_FAILING)
+		return FALSE
 	if(beating && !fibrillating)
 		return FALSE
 
@@ -164,6 +166,8 @@
 
 
 /obj/item/organ/heart/proc/reset_rhythm()
+	if(organ_flags & ORGAN_FAILING)
+		return FALSE
 	rate = HEART_RATE_NORMAL
 	rate_target = HEART_RATE_NORMAL
 	cpr_until = 0
@@ -220,11 +224,11 @@
 	if(rate > 160)
 		chance += (rate - 160) * 0.15
 
-	// Damaged heart fibrillates more easily
-	if(damage > low_threshold)
-		chance += 4
+	// Only substantial myocardial damage adds arrhythmia risk; scale it instead of
+	// giving a sudden fibrillation chance for barely crossing a damage threshold.
 	if(damage > high_threshold)
-		chance += 8
+		var/damage_range = max(maxHealth - high_threshold, 1)
+		chance += clamp((damage - high_threshold) / damage_range, 0, 1) * 12
 
 	// Very low volume + high rate is especially dangerous
 	if(blood_ratio < 0.30 && rate > 140)
@@ -335,7 +339,7 @@
 
 /**
  * Processes heart rhythm and updates heartbeat feedback for the owner.
- * This replaces the default heart on_life() processing.
+ * This replaces default heart rhythm processing while retaining generic organ life handling.
  */
 /obj/item/organ/heart/on_life(seconds_per_tick)
 	. = ..()
@@ -343,13 +347,18 @@
 	if(!owner || !owner.needs_heart())
 		return
 
+	// A failing heart is terminal in this state machine; stop it once and do not
+	// let rhythm processing restart or re-stop it every life tick.
+	if(organ_flags & ORGAN_FAILING)
+		if(beating || fibrillating)
+			Stop()
+		notify_heart_stop()
+		return
+
 	process_rhythm(seconds_per_tick)
 
-	// A failed, stopped or fibrillating heart cannot maintain effective circulation.
-	if(!beating || fibrillating || (organ_flags & ORGAN_FAILING))
-		if(organ_flags & ORGAN_FAILING)
-			Stop()
-
+	// A stopped or fibrillating heart cannot maintain effective circulation.
+	if(!beating || fibrillating)
 		// Message only when the heart just stopped (not while already in VF)
 		if(!fibrillating)
 			notify_heart_stop()

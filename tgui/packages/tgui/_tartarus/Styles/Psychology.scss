@@ -1,0 +1,216 @@
+.Psychology {
+  --psychology-panel: rgba(13, 13, 13, 0.94);
+  --psychology-raised: #111;
+  --psychology-border: #30302d;
+  --psychology-muted: var(--tartarus-gray-2);
+  color: var(--tartarus-text);
+  font-family: var(--font-family);
+  letter-spacing: 0.01em;
+}
+
+.Psychology__layout {
+  gap: 0;
+}
+
+.Psychology__header {
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid var(--psychology-border);
+  background: linear-gradient(90deg, #141412 0%, #0b0b0b 72%);
+}
+
+.Psychology__eyebrow {
+  margin-bottom: 3px;
+  color: var(--psychology-muted);
+  font-size: 0.68em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.Psychology__pawnName {
+  color: var(--tartarus-white);
+  font-size: 1.35em;
+  line-height: 1.2;
+}
+
+.Psychology__species {
+  margin-top: 2px;
+  color: var(--psychology-muted);
+  font-size: 0.8em;
+}
+
+.Psychology__moodSummary {
+  min-width: 190px;
+  padding: 7px 10px;
+  border: 1px solid var(--psychology-border);
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.Psychology__moodLabel {
+  font-size: 1.08em;
+  text-transform: capitalize;
+}
+
+.Psychology__moodValue {
+  font-size: 1.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.Psychology__breakState {
+  margin-top: 3px;
+  font-size: 0.75em;
+  white-space: nowrap;
+}
+
+.Psychology__tabs {
+  border-bottom: 1px solid var(--psychology-border);
+  background: #0d0d0d;
+}
+
+.Psychology__content,
+.Psychology__columns,
+.Psychology__leftColumn {
+  min-height: 0;
+}
+
+.Psychology__columns {
+  gap: 8px;
+}
+
+.Psychology__leftColumn {
+  gap: 8px;
+}
+
+.Psychology__section {
+  border: 1px solid var(--psychology-border);
+  background: var(--psychology-panel);
+}
+
+.Psychology__story {
+  padding: 7px 8px;
+  border-left: 2px solid #6e6e66;
+  background: var(--psychology-raised);
+}
+
+.Psychology__story + .Psychology__story {
+  margin-top: 6px;
+}
+
+.Psychology__traitList {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.Psychology__trait {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 4px 7px;
+  border: 1px solid var(--psychology-border);
+  background: var(--psychology-raised);
+  color: var(--tartarus-white);
+}
+
+.Psychology__trait > :first-child {
+  color: var(--tartarus-gray-2);
+}
+
+.Psychology__skillList,
+.Psychology__needList,
+.Psychology__factorList {
+  display: flex;
+  flex-direction: column;
+}
+
+.Psychology__skill {
+  padding: 7px 3px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.Psychology__skill:last-child {
+  border-bottom: 0;
+}
+
+.Psychology__skillTitle {
+  margin-top: 1px;
+  font-size: 0.78em;
+}
+
+.Psychology__passions {
+  display: flex;
+  justify-content: center;
+  min-width: 44px;
+  gap: 2px;
+}
+
+.Psychology__noPassion {
+  color: var(--tartarus-gray-3);
+}
+
+.Psychology__skillLevel {
+  min-width: 34px;
+  color: var(--tartarus-white);
+  font-size: 1.15em;
+}
+
+.Psychology__skillProgress,
+.Psychology__needBar {
+  margin-top: 5px;
+}
+
+.Psychology__skillDesc {
+  margin-top: 4px;
+  font-size: 0.74em;
+  line-height: 1.3;
+}
+
+.Psychology__need {
+  padding: 8px 3px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.Psychology__need:last-child {
+  border-bottom: 0;
+}
+
+.Psychology__needLabel {
+  margin-top: 1px;
+  font-size: 0.76em;
+  text-transform: capitalize;
+}
+
+.Psychology__factor {
+  padding: 8px 3px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.Psychology__factor:last-child {
+  border-bottom: 0;
+}
+
+.Psychology__factorDesc {
+  margin-top: 2px;
+  font-size: 0.78em;
+  line-height: 1.3;
+}
+
+.Psychology__permanent {
+  margin-top: 4px;
+  color: var(--tartarus-gray-3);
+  font-size: 0.66em;
+  letter-spacing: 0.1em;
+}
+
+.Psychology__moodNote {
+  margin-bottom: 7px;
+  padding: 7px;
+  border-left: 2px solid var(--tartarus-gray-3);
+  background: var(--psychology-raised);
+}
+
+.Psychology__moodHint {
+  margin-top: 3px;
+  font-size: 0.75em;
+  line-height: 1.3;
+}

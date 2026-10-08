@@ -28,10 +28,16 @@
 	var/manip = get_manipulation_capacity()
 	var/consc = get_consciousness_capacity()
 	var/move = get_moving_capacity()
+	var/pain = get_pain_capacity()
+	var/shock = get_shock_capacity()
+	var/health = clamp(1 - ((get_brute_loss() + get_fire_loss()) / max(maxHealth, 1)), 0, 1)
 
 	var/mod = (manip * COMBAT_ACCURACY_MANIP_WEIGHT) + \
 			  (consc * COMBAT_ACCURACY_CONSC_WEIGHT) + \
-			  (move * COMBAT_ACCURACY_MOVE_WEIGHT)
+			  (move * COMBAT_ACCURACY_MOVE_WEIGHT) + \
+			  (pain * COMBAT_ACCURACY_PAIN_WEIGHT) + \
+			  (shock * COMBAT_ACCURACY_SHOCK_WEIGHT) + \
+			  (health * COMBAT_ACCURACY_HEALTH_WEIGHT)
 
 	return clamp(mod, 0.20, 1.15)
 

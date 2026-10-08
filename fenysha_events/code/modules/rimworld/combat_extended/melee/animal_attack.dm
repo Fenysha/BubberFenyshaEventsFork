@@ -23,6 +23,10 @@
 		return FALSE
 
 	var/damage = rand(user.melee_damage_lower, user.melee_damage_upper)
+	apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
+	if(user != src)
+		user.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
+
 	if(check_block(user, damage, "[user]'s [user.attack_verb_simple]", UNARMED_ATTACK, user.armour_penetration, user.melee_damage_type))
 		return FALSE
 
@@ -56,9 +60,6 @@
 		sharpness = user.sharpness,
 		attack_direction = get_dir(user, src),
 	)
-
-	if(damage_done > 0)
-		apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 
 	log_combat(user, src, "attacked")
 	return damage_done

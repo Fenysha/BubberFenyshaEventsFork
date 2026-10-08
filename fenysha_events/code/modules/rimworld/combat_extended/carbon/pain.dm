@@ -59,8 +59,13 @@
 /mob/living/carbon/proc/process_pain_effects(seconds_per_tick = 1)
 	if(pain >= PAIN_FIBRILLATION_THRESHOLD && needs_heart())
 		var/obj/item/organ/heart/heart = get_organ_slot(ORGAN_SLOT_HEART)
-		if(heart && !heart.fibrillating && heart.is_beating())
-			var/fib_chance = abs((pain - PAIN_FIBRILLATION_THRESHOLD) * 0.01)
+		if(heart && heart.damage > heart.high_threshold && !heart.fibrillating && heart.is_beating())
+			var/cardiac_damage_factor = clamp(
+				(heart.damage - heart.high_threshold) / max(heart.maxHealth - heart.high_threshold, 1),
+				0,
+				1,
+			)
+			var/fib_chance = abs((pain - PAIN_FIBRILLATION_THRESHOLD) * 0.01) * cardiac_damage_factor
 			if(SPT_PROB(fib_chance, seconds_per_tick))
 				if(heart.enter_fibrillation())
 					to_chat(src, span_userdanger("Agony tears through your chest — your heart stumbles into chaos!"))

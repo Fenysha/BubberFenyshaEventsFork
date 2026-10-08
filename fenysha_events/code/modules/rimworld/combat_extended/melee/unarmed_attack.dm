@@ -81,6 +81,8 @@
 
 	var/hit_zone = target.get_random_valid_zone(user.zone_selected, blacklisted_parts = (user == target ? list(attacking_bodypart.body_zone) : null))
 	var/obj/item/bodypart/affecting = target.get_bodypart(hit_zone)
+	if(user.try_counter_attack(target, damage, attacking_bodypart.attack_type, limb_sharpness, attacking_bodypart, hit_zone))
+		return TRUE
 
 	// Skill + Capacity miss roll
 	var/attacker_skill = user.get_combat_melee_skill()
@@ -94,7 +96,7 @@
 			miss_chance = 0
 		else
 			miss_chance = clamp(
-				(UNARMED_MISS_CHANCE_BASE - limb_accuracy - (skill_diff * 3.5) + (puncher_brute_and_burn / 2)) / max(accuracy_mod, 0.15),
+				(UNARMED_MISS_CHANCE_BASE - limb_accuracy - (skill_diff * UNARMED_MISS_PER_SKILL_DIFF) + (puncher_brute_and_burn / 2)) / max(accuracy_mod, 0.15),
 				0,
 				UNARMED_MISS_CHANCE_MAX
 			)
@@ -104,8 +106,14 @@
 		target.visible_message(span_danger("[user]'s [atk_verb] misses [target]!"), \
 						span_danger("You avoid [user]'s [atk_verb]!"), span_hear("You hear a swoosh!"), COMBAT_MESSAGE_RANGE, user)
 		to_chat(user, span_warning("Your [atk_verb] misses [target]!"))
+		create_floating_combat_text(target, "Miss", "#FFB45E")
 		log_combat(user, target, "attempted to punch")
 		return FALSE
+
+	// Even a blocked, dodged, or parried strike disrupts both fighters' movement.
+	target.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
+	if(user != target)
+		user.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 
 	if(target.check_block(user, damage, "[user]'s [atk_verb]", UNARMED_ATTACK, 0, BRUTE))
 		return FALSE
@@ -117,6 +125,8 @@
 		var/parry_result = target.try_parry_attack(user, damage, "bare hands")
 		if(parry_result == SUCCESSFUL_BLOCK)
 			return ATTACK_FAILED
+		if(parry_result == RW_PARRY_PARTIAL_BLOCK)
+			damage *= (1 - RW_PARRY_PARTIAL_DAMAGE_REDUCTION)
 
 	var/armor_block = target.run_armor_check(affecting, MELEE, silent = TRUE)
 	if(armor_block >= 100)
@@ -162,12 +172,8 @@
 		blocked = 0,
 		attack_direction = attack_direction,
 		sharpness = limb_sharpness,
+		attacking_item = attacking_bodypart,
 	)
-
-	// Mutual slowdown
-	target.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
-	if(user != target)
-		user.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 
 	if(damage >= 12 || (damage >= 9 && prob(66)))
 		target.force_say()
@@ -200,6 +206,8 @@
 	CHECK_DNA_AND_SPECIES(target)
 
 	if(!istype(owner))
+		return
+	if(LAZYACCESS(modifiers, RIGHT_CLICK) && owner.try_counter_shove(target))
 		return
 	if(owner.mind)
 		attacker_style = GET_ACTIVE_MARTIAL_ART(owner)

@@ -152,10 +152,16 @@
 	if(!target || !(target in candidates))
 		target = pick(candidates)
 
-	// Remaining kinetic energy / AP after tissue determines organ trauma severity.
-	var/remaining_damage = packet["damage"]
+	// Tissue and organ density both have to be overcome before internal trauma is possible.
+	pen_apply_body_density(packet, target.density_sharp, target.density_blunt)
 	var/remaining_sharp_ap = packet["sharp_ap"]
 	var/remaining_blunt_ap = packet["blunt_ap"]
+	// Tiny residual AP is not enough to transmit force through the organ capsule.
+	if(remaining_sharp_ap <= 0.5 && remaining_blunt_ap <= 1)
+		return
+
+	// Remaining kinetic energy / AP after tissue determines organ trauma severity.
+	var/remaining_damage = packet["damage"]
 	var/ap_factor = 1.0 + max(remaining_sharp_ap, remaining_blunt_ap) * 0.08
 
 	// Full penetration (high residual AP) transfers far more energy into organs.
@@ -177,7 +183,6 @@
 	if(organ_damage < 0.5)
 		return
 
-	pen_apply_body_density(packet, target.density_sharp, target.density_blunt)
 	target.apply_organ_damage(organ_damage)
 	target.on_external_damage(organ_damage, packet, null)
 

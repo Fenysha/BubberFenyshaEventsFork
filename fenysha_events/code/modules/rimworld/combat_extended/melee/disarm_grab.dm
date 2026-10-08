@@ -1,5 +1,7 @@
 #ifndef OLD_COMBAT_SYSTEM
 /mob/living/proc/disarm(mob/living/target, obj/item/weapon)
+	if(try_counter_shove(target, weapon))
+		return TRUE
 	if(!can_disarm(target))
 		return
 
@@ -49,6 +51,8 @@
 /mob/living/proc/grab(mob/living/target)
 	if(!istype(target))
 		return GRAB_SKIP
+	if(try_counter_grab(target))
+		return GRAB_SUCCESS
 	if(SEND_SIGNAL(src, COMSIG_LIVING_GRAB, target) & (COMPONENT_CANCEL_ATTACK_CHAIN|COMPONENT_SKIP_ATTACK))
 		return GRAB_FAILURE
 	if(target.check_block(src, 0, "[src]'s grab", UNARMED_ATTACK))

@@ -34,5 +34,11 @@
 #define COMSIG_RW_MULTIBLOCK_INTERACT	"rw_mb_interact"
 #define COMSIG_RW_MULTIBLOCK_BROKEN		"rw_mb_broken"
 
-
-
+/// Signal fired when psychology mood changes
+#define COMSIG_MOB_PSYCHOLOGY_MOOD_UPDATE "psychology_mood_update"
+/// Signal when a mental break starts
+#define COMSIG_MOB_PSYCHOLOGY_BREAK_START "psychology_break_start"
+/// Signal when a mental break ends
+#define COMSIG_MOB_PSYCHOLOGY_BREAK_END "psychology_break_end"
+/// Signal when needs update
+#define COMSIG_MOB_PSYCHOLOGY_NEEDS_UPDATE "psychology_needs_update"

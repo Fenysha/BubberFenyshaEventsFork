@@ -49,15 +49,10 @@
 				var/datum/rw_xenogene/live_gene = target.dna.rw_xenogenes[gene_id]
 				if(live_gene)
 					live_gene.inheritable = islist(xenogene_inheritable) && (gene_id in xenogene_inheritable)
-	var/list/final_skills = list()
-	for(var/skill_id in GLOB.all_rw_skills)
-		final_skills[skill_id] = get_skill_level(skill_id)
-	var/datum/component/rw_skills/skill_comp = target.GetComponent(/datum/component/rw_skills)
-	if(skill_comp)
-		skill_comp.set_levels(final_skills)
-	else
-		skill_comp = target.AddComponent(/datum/component/rw_skills, final_skills)
-	skill_comp?.set_passions(passions)
+	// Psychology owns skill initialization and persona effects.
+	if(!visuals_only && !istype(target, /mob/living/carbon/human/dummy))
+		apply_psychology_to(target)
+
 	if(!visuals_only && !istype(target, /mob/living/carbon/human/dummy) && parent?.ckey)
 		target.AddComponent(/datum/component/rw_colonist, parent.ckey, default_slot)
 	for(var/item_id in loadout)

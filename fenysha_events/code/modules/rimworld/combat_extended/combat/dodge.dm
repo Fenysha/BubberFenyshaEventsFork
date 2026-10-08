@@ -58,6 +58,7 @@
 		if(isliving(attacker))
 			to_chat(attacker, span_warning("[src] dodges [attack_text]!"))
 	playsound(src, 'fenysha_events/sounds/effects/dodge.ogg', 65, TRUE)
+	create_floating_combat_text(src, "Dodge", "#71D7FF")
 	if(client)
 		rw_train_skill(src, RW_SKILL_MELEE, RW_SKILL_POINTS_NORMAL)
 	if(isliving(attacker))
