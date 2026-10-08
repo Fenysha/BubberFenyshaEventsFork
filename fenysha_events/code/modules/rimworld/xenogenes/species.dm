@@ -8,9 +8,12 @@
 	var/list/rw_innate_xenogenes = list()
 	/// Default option values for innate xenogenes, keyed by gene id.
 	var/list/rw_innate_xenogene_values = list()
+	/// Immutable shared xenotype preset used as this race's baseline.
+	var/rw_default_xenotype_id
 
 /datum/species/human
 	rw_label = "Human"
+	rw_default_xenotype_id = "baseline_human"
 	rw_innate_xenogenes = list(
 		RW_XENOGENE_HAIR,
 		RW_XENOGENE_SMOOTH_SKIN,
@@ -26,6 +29,7 @@
 /datum/species/lizard
 	rw_label = "Tiziran"
 	rw_subtitle = "Lizardperson"
+	rw_default_xenotype_id = "baseline_lizard"
 	rw_innate_xenogenes = list(
 		RW_XENOGENE_SCALED_SKIN,
 		RW_XENOGENE_LIZARD_EYES,
@@ -51,6 +55,8 @@
 			if(islist(rw_innate_xenogene_values))
 				option_value = rw_innate_xenogene_values[gene_id]
 			human_who_gained_species.dna.add_rw_xenogene(gene_id, option_value, TRUE, RW_XENOGEN_SOURCE_INNATE)
+	if(ishuman(human_who_gained_species) && human_who_gained_species.dna && rw_default_xenotype_id)
+		SSxenogenes?.set_dna_species_baseline(human_who_gained_species.dna, src)
 	return ..(human_who_gained_species, old_species, pref_load, regenerate_icons)
 
 

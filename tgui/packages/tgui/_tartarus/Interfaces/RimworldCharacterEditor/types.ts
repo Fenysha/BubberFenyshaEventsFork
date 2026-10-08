@@ -41,6 +41,7 @@ export type RwSkillRow = {
   id: string;
   bought: number;
   bonus: number;
+  sourceLevel?: number;
   level: number;
   passion: number;
 };
@@ -76,6 +77,54 @@ export type RwXenogeneDef = {
   incompatibleWith?: string[];
   incompatibilityGroup?: string | null;
   option?: RwXenogeneOption | null;
+};
+
+export type RwSavedXenotype = {
+  id: string;
+  name: string;
+  species: string;
+  speciesName: string;
+  genes: string[];
+  geneIds?: string[];
+  description?: string;
+  iconGene?: string;
+  iconSrc?: string | null;
+  iconBgSrc?: string | null;
+  favorite: boolean;
+  pinned?: boolean;
+  builtin?: boolean;
+};
+
+export type RwBrowserGene = {
+  id: string;
+  name: string;
+  desc: string;
+  category: string;
+  effects?: string[];
+  iconSrc?: string | null;
+  iconBgSrc?: string | null;
+  negative?: boolean;
+};
+
+export type RwBrowserXenotype = RwSavedXenotype & {
+  geneIds: string[];
+};
+
+export type XenotypeBrowserData = {
+  xenotypes: RwBrowserXenotype[];
+  xenogeneDefs: RwBrowserGene[];
+  pinnedGenes: string[];
+  canManage: boolean;
+  isAdminManager: boolean;
+  currentGeneIds?: string[];
+  currentXenotypeName?: string;
+  currentXenotype?: {
+    id: string;
+    name: string;
+    description: string;
+    species: string;
+    genes: RwBrowserGene[];
+  };
 };
 
 export type RwStoryGrant = {
@@ -158,6 +207,14 @@ export type RimworldCharacterEditorData = {
   speciesDefs: RwSpeciesDef[];
   skillDefs: RwSkillDef[];
   xenogeneDefs: RwXenogeneDef[];
+  hasHairGene?: boolean;
+  forcedTraits?: string[];
+  xenotypes?: RwSavedXenotype[];
+  isXenotypeAdmin?: boolean;
+  xenotypeId?: string;
+  xenotypeName?: string;
+  xenotypeDescription?: string;
+  xenotypeIconGene?: string;
   childhoods: RwNamedDef[];
   adulthoods: RwNamedDef[];
   traitDefs: RwPricedDef[];

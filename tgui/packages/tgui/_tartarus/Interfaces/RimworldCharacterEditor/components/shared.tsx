@@ -344,7 +344,10 @@ export function SkillRow(props: { skill: RwSkillDef; row?: RwSkillRow }) {
   const level = row?.level || 0;
   const bought = row?.bought || 0;
   const passion = row?.passion || 0;
-  const fill = (level / data.skillMax) * 100;
+  const sourceBonus = row?.bonus || 0;
+  const sourceLevel = Math.min(level, row?.sourceLevel || 0);
+  const sourceFill = (sourceLevel / data.skillMax) * 100;
+  const boughtFill = (Math.max(0, level - sourceLevel) / data.skillMax) * 100;
   const nextPassion = (passion + 1) % 3;
   const passionDelta = passionCost(nextPassion) - passionCost(passion);
   const passionBlocked =
@@ -368,8 +371,13 @@ export function SkillRow(props: { skill: RwSkillDef; row?: RwSkillRow }) {
       </Box>
       <div className="RimworldCharacterEditor__skillBar">
         <div
-          className="RimworldCharacterEditor__skillBarFill"
-          style={{ width: `${fill}%` }}
+          title={`Sources: ${sourceBonus >= 0 ? '+' : ''}${sourceBonus} · Purchased: ${bought}`}
+          className="RimworldCharacterEditor__skillBarFill RimworldCharacterEditor__skillBarFill--source"
+          style={{ width: `${sourceFill}%` }}
+        />
+        <div
+          className="RimworldCharacterEditor__skillBarFill RimworldCharacterEditor__skillBarFill--bought"
+          style={{ left: `${sourceFill}%`, width: `${boughtFill}%` }}
         />
       </div>
       <Button

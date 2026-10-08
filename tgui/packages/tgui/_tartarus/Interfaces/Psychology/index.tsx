@@ -3,6 +3,7 @@ import { useBackend } from 'tgui/backend';
 import { Window } from 'tgui/layouts';
 import {
   Box,
+  Button,
   Icon,
   ProgressBar,
   Section,
@@ -47,6 +48,24 @@ type SkillRow = {
   passion: number;
 };
 
+type XenotypeGene = {
+  id: string;
+  name: string;
+  desc: string;
+  category: string;
+  iconSrc?: string | null;
+  iconBgSrc?: string | null;
+};
+
+type XenotypeData = {
+  id: string;
+  name: string;
+  description: string;
+  species: string;
+  icon?: { src?: string; background?: string };
+  genes: XenotypeGene[];
+};
+
 type PsychologyData = {
   pawnName: string;
   speciesName: string;
@@ -68,6 +87,7 @@ type PsychologyData = {
   childhoodName: string;
   adulthoodName: string;
   traitNames: string[];
+  xenotype?: XenotypeData;
   persona?: {
     skillData?: SkillRow[];
   };
@@ -210,6 +230,7 @@ function getBreakRisk(mood: number, thresholds: PsychologyData['thresholds']) {
 }
 
 function CharacterTab({ data }: { data: PsychologyData }) {
+  const [showXenotype, setShowXenotype] = useState(false);
   const skills = data.persona?.skillData || [];
   const traits = data.traitNames || [];
 
@@ -221,6 +242,39 @@ function CharacterTab({ data }: { data: PsychologyData }) {
             <Section title="Life story" className="Psychology__section">
               <StoryCard label="CHILDHOOD" name={data.childhoodName} />
               <StoryCard label="ADULTHOOD" name={data.adulthoodName} />
+            </Section>
+          </Stack.Item>
+          <Stack.Item>
+            <Section
+              title="Xenotype"
+              className="Psychology__section"
+              buttons={
+                <Button
+                  compact
+                  icon={showXenotype ? 'chevron-up' : 'eye'}
+                  disabled={!data.xenotype}
+                  onClick={() => setShowXenotype((open) => !open)}
+                >
+                  {showXenotype ? 'Hide details' : 'View details'}
+                </Button>
+              }
+            >
+              {data.xenotype ? (
+                <>
+                  <Stack align="center">
+                    <Stack.Item>
+                      <XenotypeIcon xenotype={data.xenotype} />
+                    </Stack.Item>
+                    <Stack.Item grow>
+                      <Box bold>{data.xenotype.name}</Box>
+                      <Box color="label">{data.xenotype.species}</Box>
+                    </Stack.Item>
+                  </Stack>
+                  {showXenotype && <XenotypeDetails xenotype={data.xenotype} />}
+                </>
+              ) : (
+                <Box color="label">No xenotype data is recorded.</Box>
+              )}
             </Section>
           </Stack.Item>
           <Stack.Item grow>
@@ -258,6 +312,62 @@ function CharacterTab({ data }: { data: PsychologyData }) {
         </Section>
       </Stack.Item>
     </Stack>
+  );
+}
+
+function pngSource(value?: string | null) {
+  if (!value) return '';
+  return value.startsWith('data:') ? value : `data:image/png;base64,${value}`;
+}
+
+function XenotypeIcon({ xenotype }: { xenotype: XenotypeData }) {
+  const background = xenotype.icon?.background;
+  const foreground = xenotype.icon?.src;
+  return (
+    <span className="Psychology__xenotypeIcon">
+      {!!background && <img src={pngSource(background)} alt="" />}
+      {!!foreground && <img src={pngSource(foreground)} alt="" />}
+      {!background && !foreground && <Icon name="dna" />}
+    </span>
+  );
+}
+
+function XenotypeDetails({ xenotype }: { xenotype: XenotypeData }) {
+  const categories = new Map<string, XenotypeGene[]>();
+  for (const gene of xenotype.genes || []) {
+    const list = categories.get(gene.category) || [];
+    list.push(gene);
+    categories.set(gene.category, list);
+  }
+  return (
+    <div className="Psychology__xenotypeDetails">
+      <Box color="label" mb={0.6}>
+        {xenotype.description || 'No description.'}
+      </Box>
+      {[...categories.entries()].map(([category, genes]) => (
+        <div className="Psychology__xenotypeCategory" key={category}>
+          <Box className="Psychology__eyebrow">{category}</Box>
+          {genes.map((gene) => (
+            <div
+              className="Psychology__xenotypeGene"
+              key={gene.id}
+              title={gene.desc}
+            >
+              <span className="Psychology__xenotypeGeneIcon">
+                {!!gene.iconBgSrc && (
+                  <img src={pngSource(gene.iconBgSrc)} alt="" />
+                )}
+                {!!gene.iconSrc && <img src={pngSource(gene.iconSrc)} alt="" />}
+                {!gene.iconBgSrc && !gene.iconSrc && (
+                  <Icon name="circle" size={0.6} />
+                )}
+              </span>
+              <span>{gene.name}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 

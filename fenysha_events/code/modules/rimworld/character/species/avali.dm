@@ -44,6 +44,7 @@
 		BODY_ZONE_R_LEG = /obj/item/bodypart/leg/right/mutant/teshari,
 	)
 	rw_label = "Avali"
+	rw_default_xenotype_id = "baseline_avali"
 	rw_innate_xenogenes = list(
 		RW_XENOGENE_AVALI_EYES,
 		RW_XENOGENE_EARS,

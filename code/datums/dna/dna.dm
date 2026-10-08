@@ -122,6 +122,8 @@ GLOBAL_LIST_INIT(total_uf_len_by_block, populate_total_uf_len_by_block())
 				continue
 			new_dna.add_mutation(mutation, valid_sources)
 	//FENYSHA EDIT ADDITION BEGIN - RW_CHARACTER
+	QDEL_NULL(new_dna.rw_xenotype)
+	new_dna.rw_xenotype = rw_xenotype?.make_copy()
 	if(new_dna.holder)
 		new_dna.apply_rw_xenogenes()
 	//FENYSHA EDIT ADDITION END

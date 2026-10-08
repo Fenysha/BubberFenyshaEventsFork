@@ -17,6 +17,8 @@
 	var/list/supported_species
 
 	var/list/skill_bonuses
+	/// Trait ids granted while this gene is active; these are derived, not purchased.
+	var/list/forces_traits
 
 	/// RimWorld-style gene complexity. Summed on the colonist.
 	var/complexity = 1
@@ -164,6 +166,8 @@
 
 	if(skill_bonuses)
 		instance.skill_bonuses = skill_bonuses.Copy()
+	if(forces_traits)
+		instance.forces_traits = forces_traits.Copy()
 	if(incompatible_with)
 		instance.incompatible_with = incompatible_with.Copy()
 	instance.inheritable = inheritable
@@ -340,6 +344,10 @@
 	return ..()
 
 
+// =============================================================================
+// Abstract category types
+// =============================================================================
+
 /datum/rw_xenogene/cosmetic
 	abstract_type = /datum/rw_xenogene/cosmetic
 	category = RW_XENOGENE_CATEGORY_COSMETIC
@@ -414,189 +422,43 @@
 	abstract_type = /datum/rw_xenogene/ability
 	category = RW_XENOGENE_CATEGORY_ABILITY
 
-/datum/rw_xenogene/cosmetic/hair
-	id = RW_XENOGENE_HAIR
-	name = "Hair"
-	desc = "Grows scalp hair. Style is chosen in Persona."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	// Copy this onto another gene after adding a 64x64 state to xenogenes.dmi:
-	ui_icon = RW_XENOGENE_ICON_FILE
-	icon_bg = "bg"
-	icon_state = "hair"
+/datum/rw_xenogene/archite
+	abstract_type = /datum/rw_xenogene/archite
+	category = RW_XENOGENE_CATEGORY_ARCHITE
+	complexity = 3
 
-/datum/rw_xenogene/cosmetic/smooth_skin
-	id = RW_XENOGENE_SMOOTH_SKIN
-	name = "Smooth skin"
-	desc = "Typical human skin. Uses skin tones."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_SKIN
+/datum/rw_xenogene/aptitude
+	abstract_type = /datum/rw_xenogene/aptitude
+	category = RW_XENOGENE_CATEGORY_APTITUDE
 
-/datum/rw_xenogene/cosmetic/human_eyes
-	id = RW_XENOGENE_HUMAN_EYES
-	name = "Human eyes"
-	desc = "Round primate eyes. Color is chosen in Persona."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_EYES
+/datum/rw_xenogene/mood
+	abstract_type = /datum/rw_xenogene/mood
+	category = RW_XENOGENE_CATEGORY_MOOD
 
-/datum/rw_xenogene/cosmetic/lizard_eyes
-	id = RW_XENOGENE_LIZARD_EYES
-	name = "Lizard eyes"
-	desc = "Slit reptilian eyes. Color is chosen in Persona."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_EYES
+/datum/rw_xenogene/movement
+	abstract_type = /datum/rw_xenogene/movement
+	category = RW_XENOGENE_CATEGORY_MOVEMENT
 
-/datum/rw_xenogene/cosmetic/avali_eyes
-	id = RW_XENOGENE_AVALI_EYES
-	name = "Avali eyes"
-	desc = "Large avian eyes. Color is chosen in Persona."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_EYES
+/datum/rw_xenogene/temperature
+	abstract_type = /datum/rw_xenogene/temperature
+	category = RW_XENOGENE_CATEGORY_TEMPERATURE
 
-/datum/rw_xenogene/cosmetic/scaled_skin
-	id = RW_XENOGENE_SCALED_SKIN
-	name = "Scaled skin"
-	desc = "Overlapping scales. Uses mutant colors instead of skin tones."
-	option_kind = RW_XENOGENE_OPTION_NONE
-	incompatibility_group = RW_XENOGENE_GROUP_SKIN
+/datum/rw_xenogene/resistance
+	abstract_type = /datum/rw_xenogene/resistance
+	category = RW_XENOGENE_CATEGORY_RESISTANCE
 
-/datum/rw_xenogene/stat/cold_blooded
-	id = RW_XENOGENE_COLD_BLOODED
-	name = "Cold-blooded"
-	desc = "Poor internal temperature regulation. Hungrier in the cold."
-	metabolic_efficiency = -1
+/datum/rw_xenogene/healing
+	abstract_type = /datum/rw_xenogene/healing
+	category = RW_XENOGENE_CATEGORY_HEALING
 
-/datum/rw_xenogene/cosmetic/ears
-	id = RW_XENOGENE_EARS
-	name = "Ears"
-	desc = "External ears. Right-click to pick a style."
-	option_key = FEATURE_EARS
-	default_option = "Fox"
-	toggle_pref_type = /datum/preference/toggle/mutant_toggle/ears
-	value_pref_type = /datum/preference/choiced/mutant_choice/ears
+/datum/rw_xenogene/psychic
+	abstract_type = /datum/rw_xenogene/psychic
+	category = RW_XENOGENE_CATEGORY_PSYCHIC
 
-/datum/rw_xenogene/cosmetic/tail
-	id = RW_XENOGENE_TAIL
-	name = "Tail"
-	desc = "A tail. Right-click to pick a style."
-	option_key = FEATURE_TAIL_GENERIC
-	default_option = "Smooth"
-	toggle_pref_type = /datum/preference/toggle/mutant_toggle/tail
-	value_pref_type = /datum/preference/choiced/mutant_choice/tail
+/datum/rw_xenogene/hemogen
+	abstract_type = /datum/rw_xenogene/hemogen
+	category = RW_XENOGENE_CATEGORY_HEMOGEN
 
-/datum/rw_xenogene/cosmetic/wings
-	id = RW_XENOGENE_WINGS
-	name = "Wings"
-	desc = "A pair of wings. Right-click to pick a style."
-	option_key = FEATURE_WINGS
-	toggle_pref_type = /datum/preference/toggle/mutant_toggle/wings
-	value_pref_type = /datum/preference/choiced/mutant_choice/wings
-
-/datum/rw_xenogene/cosmetic/fluff
-	id = RW_XENOGENE_FLUFF
-	name = "Body fur"
-	desc = "Fluff, fur or down covering the body. Right-click to pick a style."
-	option_key = FEATURE_FLUFF
-	toggle_pref_type = /datum/preference/toggle/mutant_toggle/fluff
-	value_pref_type = /datum/preference/choiced/mutant_choice/fluff
-
-/datum/rw_xenogene/cosmetic/legs
-	id = RW_XENOGENE_LEGS
-	name = "Leg type"
-	desc = "Plantigrade or digitigrade legs."
-	option_kind = RW_XENOGENE_OPTION_CHOICED
-	option_key = FEATURE_LEGS
-	option_choices = list(NORMAL_LEGS, DIGITIGRADE_LEGS)
-	default_option = NORMAL_LEGS
-	value_pref_type = /datum/preference/choiced/digitigrade_legs
-
-/datum/rw_xenogene/cosmetic/legs/apply_to_preferences(datum/rimworld_preferences/prefs, enabled, value)
-	if(!prefs || !value_pref_type)
-		return
-	prefs.rw_set_pref(value_pref_type, enabled ? sanitize_option(value) : NORMAL_LEGS, force = TRUE)
-
-/datum/rw_xenogene/cosmetic/legs/apply_visual(mob/living/new_holder, adding, forced_style)
-	if(!ishuman(new_holder))
-		return
-	var/mob/living/carbon/human/human_holder = new_holder
-	if(!human_holder.dna)
-		return
-	var/style_name = adding ? sanitize_option(isnull(forced_style) ? option_value : forced_style) : NORMAL_LEGS
-	if(human_holder.dna.features[FEATURE_LEGS] == style_name)
-		return
-	human_holder.dna.features[FEATURE_LEGS] = style_name
-	if(istype(human_holder, /mob/living/carbon/human/dummy))
-		return
-	if(style_name == DIGITIGRADE_LEGS)
-		if(human_holder.dna.species)
-			human_holder.dna.species.try_make_digitigrade(human_holder)
-		return
-	if(!human_holder.dna.species)
-		return
-	var/datum/species/reset_species = new human_holder.dna.species.type
-	human_holder.dna.species.bodypart_overrides = reset_species.bodypart_overrides
-	qdel(reset_species)
-	human_holder.dna.species.replace_body(human_holder, human_holder.dna.species)
-
-/datum/rw_xenogene/stat/body_size
-	id = RW_XENOGENE_BODY_SIZE
-	name = "Body size"
-	desc = "Overall scale. Right-click to set a size."
-	xenogen_flags = RW_XENOGEN_VISUAL
-	option_kind = RW_XENOGENE_OPTION_NUMERIC
-	default_option = RESIZE_DEFAULT_SIZE
-	option_min = BODY_SIZE_MIN
-	option_max = BODY_SIZE_MAX
-	option_step = 0.01
-	value_pref_type = /datum/preference/numeric/body_size
-
-/datum/rw_xenogene/stat/body_size/apply_to_preferences(datum/rimworld_preferences/prefs, enabled, value)
-	if(!prefs || !value_pref_type)
-		return
-	prefs.rw_set_pref(value_pref_type, enabled ? sanitize_option(value) : RESIZE_DEFAULT_SIZE, force = TRUE)
-
-/datum/rw_xenogene/cosmetic/mutant_colors
-	id = RW_XENOGENE_MUTANT_COLORS
-	name = "Mutant colors"
-	desc = "Three colors used by xenogene parts. Right-click to paint them."
-	option_kind = RW_XENOGENE_OPTION_TRICOLOR
-	default_option = list("#C0965F", "#C0965F", "#C0965F")
-	value_pref_type = /datum/preference/tri_color/mutant_colors
-
-/datum/rw_xenogene/cosmetic/mutant_colors/apply_visual(mob/living/new_holder, adding, forced_style)
-	if(!adding || !ishuman(new_holder))
-		return
-	var/mob/living/carbon/human/human_holder = new_holder
-	if(!human_holder.dna)
-		return
-	var/list/colors = sanitize_option(isnull(forced_style) ? option_value : forced_style)
-	if(!islist(human_holder.dna.features))
-		human_holder.dna.features = list()
-	human_holder.dna.features[FEATURE_MUTANT_COLOR] = colors[1]
-	human_holder.dna.features[FEATURE_MUTANT_COLOR_TWO] = colors[2]
-	human_holder.dna.features[FEATURE_MUTANT_COLOR_THREE] = colors[3]
-
-/datum/rw_xenogene/cosmetic/snout
-	id = RW_XENOGENE_SNOUT
-	name = "Snout"
-	desc = "A muzzle. Right-click to pick a style."
-	option_key = FEATURE_SNOUT
-	default_option = "Sharp + Light"
-	toggle_pref_type = /datum/preference/toggle/mutant_toggle/snout
-	value_pref_type = /datum/preference/choiced/mutant_choice/snout
-
-/datum/rw_xenogene/cosmetic/horns
-	id = RW_XENOGENE_HORNS
-	name = "Horns"
-	desc = "Head horns. Right-click to pick a style."
-	option_key = FEATURE_HORNS
-	default_option = "Simple"
-	toggle_pref_type = /datum/preference/toggle/mutant_toggle/horns
-	value_pref_type = /datum/preference/choiced/mutant_choice/horns
-
-/datum/rw_xenogene/stat/frail
-	id = RW_XENOGENE_FRAIL
-	name = "Frail"
-	desc = "Test negative gene. Weak constitution."
-	negative = TRUE
-	complexity = 1
-	metabolic_efficiency = -1
+/datum/rw_xenogene/misc
+	abstract_type = /datum/rw_xenogene/misc
+	category = RW_XENOGENE_CATEGORY_MISC

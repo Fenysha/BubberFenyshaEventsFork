@@ -44,6 +44,7 @@
 	// drops visual organs / overlays that were added by the gene.
 	if(target.dna && hascall(target.dna, "set_rw_xenogenes"))
 		target.dna.set_rw_xenogenes(xenogenes, xenogene_values, TRUE)
+		target.dna.set_rw_xenotype(xenogenes, xenogene_values, rw_species(), xenotype_name, xenotype_description, xenotype_icon_gene, xenotype_id)
 		if(islist(target.dna.rw_xenogenes))
 			for(var/gene_id in target.dna.rw_xenogenes)
 				var/datum/rw_xenogene/live_gene = target.dna.rw_xenogenes[gene_id]

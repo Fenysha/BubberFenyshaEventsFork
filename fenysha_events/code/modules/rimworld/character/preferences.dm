@@ -23,6 +23,10 @@
 	var/list/xenogene_values
 	/// gene ids on this colonist that are inheritable (gray). Empty = none; genes start not inheritable.
 	var/list/xenogene_inheritable
+	var/xenotype_id
+	var/xenotype_name = "Custom xenotype"
+	var/xenotype_description = "A unique combination of xenogenes."
+	var/xenotype_icon_gene
 	var/childhood_id = "childhood_none"
 	var/adulthood_id = "adulthood_none"
 	/// SKILL_ID -> bought levels (0-10)
@@ -45,6 +49,10 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	xenogenes = list()
 	xenogene_values = list()
 	xenogene_inheritable = list()
+	xenotype_id = null
+	xenotype_name = "Custom xenotype"
+	xenotype_description = "A unique combination of xenogenes."
+	xenotype_icon_gene = null
 	skills = list()
 	passions = list()
 	traits = list()
@@ -63,6 +71,36 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	else if(owner && owner.is_localhost())
 		load_and_save = FALSE
 
+/datum/rimworld_preferences/proc/set_race_default_xenotype()
+	var/datum/species/species = GLOB.species_prototypes[rw_species()]
+	var/default_id = species?.rw_default_xenotype_id
+	var/list/default = default_id ? SSxenogenes?.saved_xenotypes[default_id] : null
+	if(!islist(default))
+		mark_xenotype_custom()
+		return
+	xenotype_id = default_id
+	xenotype_name = default["name"]
+	xenotype_description = default["description"]
+	xenotype_icon_gene = default["iconGene"]
+
+/datum/rimworld_preferences/proc/sync_xenotype_identity()
+	if(xenotype_id)
+		var/list/saved = SSxenogenes?.saved_xenotypes[xenotype_id]
+		if(islist(saved))
+			xenotype_name = saved["name"]
+			xenotype_description = saved["description"]
+			xenotype_icon_gene = saved["iconGene"]
+			return
+		mark_xenotype_custom()
+	var/datum/species/species = GLOB.species_prototypes[rw_species()]
+	var/list/baseline = species?.rw_default_xenotype_id ? SSxenogenes?.saved_xenotypes[species.rw_default_xenotype_id] : null
+	if(!islist(baseline) || length(xenogenes) != length(baseline["genes"]))
+		return
+	for(var/gene_id in xenogenes)
+		if(!(gene_id in baseline["genes"]))
+			return
+	set_race_default_xenotype()
+
 /datum/rimworld_preferences/Destroy(force)
 	parent = null
 	QDEL_NULL(character_preview_view)
@@ -75,6 +113,44 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	if(!islist(source))
 		return list()
 	return source.Copy()
+
+/datum/rimworld_preferences/proc/has_xenogene(gene_id)
+	var/datum/species/species = GLOB.species_prototypes[rw_species()]
+	return (gene_id in xenogenes) || (islist(species?.rw_innate_xenogenes) && (gene_id in species.rw_innate_xenogenes))
+
+/datum/rimworld_preferences/proc/effective_trait_ids()
+	var/list/effective = copy_list(traits)
+	for(var/trait_id in forced_xenogene_trait_ids())
+		if(!(trait_id in effective))
+			effective += trait_id
+	return effective
+
+/datum/rimworld_preferences/proc/forced_xenogene_trait_ids()
+	var/list/forced = list()
+	for(var/gene_id in xenogenes)
+		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(!islist(gene?.forces_traits))
+			continue
+		for(var/trait_id in gene.forces_traits)
+			if(GLOB.all_rw_traits[trait_id] && !(trait_id in forced))
+				forced += trait_id
+	return forced
+
+/datum/rimworld_preferences/proc/is_xenogene_forced_trait(trait_id)
+	return trait_id in forced_xenogene_trait_ids()
+
+/datum/rimworld_preferences/proc/mark_xenotype_custom()
+	xenotype_id = null
+	xenotype_name = "Custom xenotype"
+	xenotype_description = "A unique combination of xenogenes."
+	if(!(xenotype_icon_gene in xenogenes))
+		xenotype_icon_gene = null
+
+/datum/rimworld_preferences/proc/ensure_hair_preferences()
+	if(has_xenogene(RW_XENOGENE_HAIR))
+		return
+	rw_set_pref(/datum/preference/choiced/hairstyle, "Bald", force = TRUE)
+	rw_set_pref(/datum/preference/choiced/facial_hairstyle, "Shaved", force = TRUE)
 
 /datum/rimworld_preferences/proc/rebuild_real_name()
 	real_name = trim("[first_name] [last_name]")
@@ -151,6 +227,7 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	xenogene_values = list()
 	xenogene_inheritable = list()
 	sync_species_xenogenes()
+	set_race_default_xenotype()
 	childhood_id = "childhood_none"
 	adulthood_id = "adulthood_none"
 	skills = list()
@@ -163,24 +240,30 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 
 /datum/rimworld_preferences/proc/sync_species_xenogenes()
 	var/datum/species/proto = GLOB.species_prototypes[rw_species()]
-	var/list/innate = proto?.rw_innate_xenogenes
-	if(!islist(innate))
-		innate = list()
-	if(!islist(xenogene_values))
-		xenogene_values = list()
+	var/list/old_genes = copy_list(xenogenes)
+	var/list/old_values = copy_list(xenogene_values)
+	var/list/baseline = proto?.rw_default_xenotype_id ? SSxenogenes?.saved_xenotypes[proto.rw_default_xenotype_id] : null
+	var/list/baseline_genes = islist(baseline?["genes"]) ? baseline["genes"] : proto?.rw_innate_xenogenes
+	if(!islist(baseline_genes))
+		baseline_genes = list()
+	var/list/baseline_values = islist(baseline?["values"]) ? baseline["values"] : proto?.rw_innate_xenogene_values
 	var/list/kept = list()
-	for(var/gene_id in xenogenes)
+	var/list/clean_values = list()
+	for(var/gene_id in baseline_genes)
 		if(!GLOB.all_rw_xenogenes[gene_id])
 			continue
 		kept += gene_id
-	for(var/gene_id in innate)
-		if(!(gene_id in kept))
-			kept += gene_id
+		if(islist(baseline_values) && !isnull(baseline_values[gene_id]))
+			clean_values[gene_id] = baseline_values[gene_id]
+	for(var/gene_id in old_genes)
+		if(!GLOB.all_rw_xenogenes[gene_id] || (gene_id in kept))
+			continue
+		kept += gene_id
 	xenogenes = kept
-	if(islist(proto?.rw_innate_xenogene_values))
-		for(var/gene_id in proto.rw_innate_xenogene_values)
-			if(isnull(xenogene_values[gene_id]))
-				xenogene_values[gene_id] = proto.rw_innate_xenogene_values[gene_id]
+	for(var/gene_id in old_values)
+		if(!(gene_id in baseline_genes) && (gene_id in xenogenes))
+			clean_values[gene_id] = old_values[gene_id]
+	xenogene_values = clean_values
 	for(var/gene_id in xenogenes)
 		ensure_xenogene_value(gene_id)
 	prune_xenogene_inheritable()

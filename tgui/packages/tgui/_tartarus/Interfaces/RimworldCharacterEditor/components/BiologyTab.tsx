@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Dropdown,
+  Input,
   NumberInput,
   Stack,
 } from 'tgui-core/components';
@@ -24,6 +25,22 @@ import {
   toPngSrc,
 } from '../utils';
 import { ColorPick } from './shared';
+
+const XENOGENE_CATEGORIES = [
+  'cosmetic',
+  'stat',
+  'ability',
+  'archite',
+  'aptitude',
+  'mood',
+  'movement',
+  'temperature',
+  'resistance',
+  'healing',
+  'psychic',
+  'hemogen',
+  'misc',
+];
 
 export function BiologyTab() {
   const [subTab, setSubTab] = useState<'race' | 'xenogenes'>('race');
@@ -495,11 +512,18 @@ export function RacePane() {
 }
 
 export function XenogenePane() {
-  const { data } = useBackend<RimworldCharacterEditorData>();
+  const { act, data } = useBackend<RimworldCharacterEditorData>();
   const innateIds = data.innateXenogenes || [];
   const equippedIds = data.xenogenes || [];
   const inheritableIds = data.xenogeneInheritable || [];
   const [inspectedId, setInspectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [xenotypeName, setXenotypeName] = useState('');
+  const [xenotypeDescription, setXenotypeDescription] = useState('');
+  const [xenotypeIconGene, setXenotypeIconGene] = useState(
+    data.xenotypeIconGene || '',
+  );
 
   const fromRace = genesFromIds(data.xenogeneDefs, innateIds);
   const equipped = genesFromIds(data.xenogeneDefs, equippedIds).filter(
@@ -508,6 +532,22 @@ export function XenogenePane() {
   const available = data.xenogeneDefs.filter(
     (gene) => !equippedIds.includes(gene.id) && !innateIds.includes(gene.id),
   );
+  const needle = search.trim().toLowerCase();
+  const filteredAvailable = available.filter((gene) => {
+    if (category !== 'all' && gene.category !== category) return false;
+    if (!needle) return true;
+    return [
+      gene.id,
+      gene.name,
+      gene.desc,
+      gene.category,
+      ...(gene.effects || []),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(needle);
+  });
   const allActive = [...fromRace, ...equipped];
 
   const inspected =
@@ -519,6 +559,43 @@ export function XenogenePane() {
   return (
     <Stack fill>
       <Stack.Item grow className="RimworldCharacterEditor__scrollPane">
+        <Stack mb={1} align="center" wrap>
+          <Stack.Item grow>
+            <Box className="RimworldCharacterEditor__sectionTitle">
+              Xenogene catalog
+            </Box>
+          </Stack.Item>
+          <Stack.Item>
+            <Button
+              icon="book-open"
+              onClick={() => act('open_xenotype_browser')}
+            >
+              Browse xenotypes
+            </Button>
+          </Stack.Item>
+        </Stack>
+        <Stack mb={0.5} align="center">
+          <Stack.Item grow>
+            <Input
+              fluid
+              placeholder="Search xenogenes by name, effect, or category..."
+              value={search}
+              onChange={setSearch}
+            />
+          </Stack.Item>
+        </Stack>
+        <div className="RimworldCharacterEditor__filterChips">
+          {['all', ...XENOGENE_CATEGORIES].map((entry) => (
+            <Button
+              key={entry}
+              compact
+              selected={category === entry}
+              onClick={() => setCategory(entry)}
+            >
+              {entry === 'all' ? 'All' : entry}
+            </Button>
+          ))}
+        </div>
         <Box className="RimworldCharacterEditor__sectionTitle">From race</Box>
         {fromRace.length ? (
           <div className="RimworldCharacterEditor__geneGrid">
@@ -561,11 +638,11 @@ export function XenogenePane() {
           </Box>
         )}
         <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
-          Available
+          Available ({filteredAvailable.length})
         </Box>
-        {available.length ? (
+        {filteredAvailable.length ? (
           <div className="RimworldCharacterEditor__geneGrid">
-            {available.map((gene) => {
+            {filteredAvailable.map((gene) => {
               const conflicted =
                 conflictingGeneIds(gene, innateIds, data.xenogeneDefs).length >
                 0;
@@ -585,9 +662,81 @@ export function XenogenePane() {
             })}
           </div>
         ) : (
-          <Box color="label">None</Box>
+          <Box color="label">
+            {available.length
+              ? 'No xenogenes match the current search and category.'
+              : 'None'}
+          </Box>
         )}
         <GeneStats genes={allActive} />
+        <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
+          Save current xenotype
+        </Box>
+        <Input
+          fluid
+          maxLength={512}
+          mt={0.5}
+          placeholder="Xenotype description"
+          value={xenotypeDescription || data.xenotypeDescription || ''}
+          onChange={setXenotypeDescription}
+        />
+        <Stack mt={0.5} align="center">
+          <Stack.Item>
+            <Box color="label">Icon gene</Box>
+          </Stack.Item>
+          <Stack.Item grow>
+            <Dropdown
+              width="100%"
+              selected={xenotypeIconGene || data.xenotypeIconGene || ''}
+              options={[
+                '',
+                ...data.xenogeneDefs
+                  .filter((gene) => gene.iconSrc || gene.iconBgSrc)
+                  .map((gene) => gene.id),
+              ]}
+              onSelected={setXenotypeIconGene}
+            />
+          </Stack.Item>
+        </Stack>
+        <Stack>
+          <Stack.Item grow>
+            <Input
+              fluid
+              maxLength={48}
+              placeholder="Xenotype name"
+              value={xenotypeName}
+              onChange={setXenotypeName}
+              onEnter={() => {
+                if (!xenotypeName.trim()) return;
+                act('save_xenotype', {
+                  name: xenotypeName.trim(),
+                  description:
+                    xenotypeDescription || data.xenotypeDescription || '',
+                  iconGene: xenotypeIconGene || data.xenotypeIconGene || '',
+                });
+                setXenotypeName('');
+              }}
+            />
+          </Stack.Item>
+          <Stack.Item>
+            <Button
+              icon="save"
+              disabled={!xenotypeName.trim()}
+              onClick={() => {
+                if (!xenotypeName.trim()) return;
+                act('save_xenotype', {
+                  name: xenotypeName.trim(),
+                  description:
+                    xenotypeDescription || data.xenotypeDescription || '',
+                  iconGene: xenotypeIconGene || data.xenotypeIconGene || '',
+                });
+                setXenotypeName('');
+              }}
+            >
+              Save
+            </Button>
+          </Stack.Item>
+        </Stack>
       </Stack.Item>
       <Stack.Item basis="220px" className="RimworldCharacterEditor__scrollPane">
         <GeneInspector

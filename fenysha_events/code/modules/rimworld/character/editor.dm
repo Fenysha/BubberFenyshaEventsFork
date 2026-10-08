@@ -366,9 +366,17 @@
 	data["xenogeneInheritable"] = xenogene_inheritable || list()
 	var/datum/species/xenogene_species = GLOB.species_prototypes[rw_species()]
 	data["innateXenogenes"] = xenogene_species?.rw_innate_xenogenes || list()
+	data["isXenotypeAdmin"] = check_rights_for(user?.client, R_ADMIN)
+	data["hasHairGene"] = has_xenogene(RW_XENOGENE_HAIR)
+	data["xenotypeId"] = xenotype_id || ""
+	data["xenotypeName"] = xenotype_name
+	data["xenotypeDescription"] = xenotype_description
+	data["xenotypeIconGene"] = xenotype_icon_gene || ""
 	data["childhood"] = childhood_id
 	data["adulthood"] = adulthood_id
 	data["traits"] = traits
+	var/list/effective_traits = effective_trait_ids()
+	data["forcedTraits"] = forced_xenogene_trait_ids()
 	data["loadout"] = loadout
 	data["usesSkintones"] = uses_skintones()
 	data["budgetSpent"] = points_spent()
@@ -376,11 +384,13 @@
 
 	var/list/skill_rows = list()
 	for(var/skill_id in GLOB.all_rw_skills)
+		var/source_bonus = rw_psychology_get_skill_bonus(skill_id, childhood_id, adulthood_id, effective_traits, xenogenes)
 		skill_rows += list(list(
 			"id" = skill_id,
 			"bought" = skills[skill_id] || 0,
-			"bonus" = rw_psychology_get_skill_bonus(skill_id, childhood_id, adulthood_id, traits, xenogenes),
-			"level" = rw_psychology_get_skill_level(skill_id, skills[skill_id] || 0, childhood_id, adulthood_id, traits, xenogenes),
+			"bonus" = source_bonus,
+			"sourceLevel" = clamp(source_bonus, 0, RW_SKILL_MAX),
+			"level" = rw_psychology_get_skill_level(skill_id, skills[skill_id] || 0, childhood_id, adulthood_id, effective_traits, xenogenes),
 			"passion" = passions[skill_id] || RW_PASSION_NONE,
 		))
 	data["skills"] = skill_rows
@@ -492,9 +502,17 @@
 				if(!(gene_id in old_innate))
 					acquired += gene_id
 			xenogenes = acquired
+			for(var/gene_id in old_innate)
+				xenogene_values -= gene_id
 			sync_species_xenogenes()
+			ensure_hair_preferences()
+			if(length(acquired))
+				mark_xenotype_custom()
+			else
+				set_race_default_xenotype()
 			save_character()
 			update_preview()
+			update_static_data(user, ui, TRUE)
 			return TRUE
 		if("set_hairstyle")
 			return apply_clothing_choice("hairstyle", params["value"])
@@ -588,8 +606,31 @@
 						xenogene_values -= conflict_id
 				xenogenes += gene_id
 				ensure_xenogene_value(gene_id)
+			ensure_hair_preferences()
+			mark_xenotype_custom()
 			save_character()
 			update_preview()
+			update_static_data(user, ui, TRUE)
+			return TRUE
+		if("save_xenotype")
+			var/preset_name = trim("[params["name"]]")
+			if(!SSxenogenes?.save_from_preferences(src, user, preset_name, params["description"], params["iconGene"]))
+				to_chat(user, span_warning("Could not save this xenotype. Use a name and keep within the shared preset limit."))
+			return TRUE
+		if("open_xenotype_browser")
+			SSxenogenes?.open_browser(user)
+			return TRUE
+		if("apply_xenotype")
+			if(!SSxenogenes?.apply_to_preferences(src, params["id"]))
+				to_chat(user, span_warning("This xenotype could not be applied; it may exceed your character point budget."))
+			return TRUE
+		if("delete_xenotype")
+			if(check_rights_for(user?.client, R_ADMIN))
+				SSxenogenes?.delete_xenotype(params["id"])
+			return TRUE
+		if("toggle_xenotype_favorite")
+			if(check_rights_for(user?.client, R_ADMIN))
+				SSxenogenes?.toggle_xenotype_favorite(params["id"])
 			return TRUE
 		if("set_xenogene_option")
 			var/gene_id = params["id"]
@@ -611,6 +652,7 @@
 				xenogene_values[gene_id] = gene.sanitize_option(colors)
 			else
 				xenogene_values[gene_id] = gene.sanitize_option(params["value"])
+			mark_xenotype_custom()
 			save_character()
 			update_preview()
 			return TRUE
@@ -678,9 +720,11 @@
 			var/datum/rw_trait/trait = GLOB.all_rw_traits[trait_id]
 			if(!trait)
 				return TRUE
+			if(is_xenogene_forced_trait(trait_id))
+				return TRUE
 			if(trait_id in traits)
 				traits -= trait_id
-			else if(length(traits) >= RW_TRAIT_MAX)
+			else if(length(effective_trait_ids()) >= RW_TRAIT_MAX)
 				return TRUE
 			else if(can_afford(trait.cost))
 				traits += trait_id
@@ -790,6 +834,9 @@
 	id = "[id]"
 	value = "[value]"
 	if(!length(id) || !length(value))
+		return TRUE
+	if((id == "hairstyle" || id == "facial") && !has_xenogene(RW_XENOGENE_HAIR))
+		ensure_hair_preferences()
 		return TRUE
 	var/preference_type = clothing_choice_pref(id)
 	if(!preference_type)

@@ -1,8 +1,35 @@
 /datum/dna
+	/// Rimworld xenotype identity, separate from the physical species datum.
+	var/datum/rw_xenotype/rw_xenotype
 	/// Rimworld xenogenes belonging specifically to this DNA.
 	/// Key = xenogene id
 	/// Value = unique /datum/rw_xenogene instance
 	var/list/rw_xenogenes
+
+/datum/dna/Destroy()
+	QDEL_NULL(rw_xenotype)
+	return ..()
+
+/datum/dna/proc/set_rw_xenotype(list/gene_ids, list/option_values = null, new_species_path, new_name = null, new_description = null, new_icon_gene = null, new_id = null)
+	QDEL_NULL(rw_xenotype)
+	rw_xenotype = new /datum/rw_xenotype
+	rw_xenotype.genes = list()
+	if(islist(gene_ids))
+		for(var/gene_id in gene_ids)
+			if(GLOB.all_rw_xenogenes[gene_id])
+				rw_xenotype.genes += gene_id
+	rw_xenotype.gene_values = list()
+	if(islist(option_values))
+		for(var/gene_id in option_values)
+			var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+			if(gene && (gene_id in rw_xenotype.genes))
+				rw_xenotype.gene_values[gene_id] = gene.sanitize_option(option_values[gene_id])
+	rw_xenotype.species_path = "[new_species_path]"
+	rw_xenotype.name = new_name || "Custom xenotype"
+	rw_xenotype.description = new_description || "A unique combination of xenogenes."
+	rw_xenotype.icon_gene = new_icon_gene
+	rw_xenotype.id = new_id
+	return rw_xenotype
 
 
 /datum/dna/proc/set_rw_xenogenes(list/new_ids, list/option_values = null, apply = TRUE)

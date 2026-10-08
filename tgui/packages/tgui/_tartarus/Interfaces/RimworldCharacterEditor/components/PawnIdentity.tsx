@@ -89,7 +89,11 @@ export function PawnIdentity(props: {
   useEffect(() => {
     setPicked({});
   }, [data.activeSlot]);
-  const choosers = mergeChoosers(data.clothingDefs);
+  const choosers = mergeChoosers(data.clothingDefs).filter(
+    (chooser) =>
+      data.hasHairGene !== false ||
+      (chooser.id !== 'hairstyle' && chooser.id !== 'facial'),
+  );
   return (
     <div className="RimworldCharacterEditor__identity">
       <div className="RimworldCharacterEditor__nameBlock">

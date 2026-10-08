@@ -17,7 +17,11 @@ export function FeaturesTab() {
   const childhoods = data.childhoods || [];
   const adulthoods = data.adulthoods || [];
   const traits = data.traitDefs || [];
-  const pickedTraits = traits.filter((trait) => data.traits.includes(trait.id));
+  const forcedTraits = data.forcedTraits || [];
+  const pickedTraits = traits.filter(
+    (trait) =>
+      data.traits.includes(trait.id) || forcedTraits.includes(trait.id),
+  );
   const openTraits = traits.filter((trait) => {
     if (pickedTraits.some((picked) => picked.id === trait.id)) {
       return false;
@@ -29,7 +33,7 @@ export function FeaturesTab() {
   });
 
   const addTrait = (id: string) => {
-    if (pickedTraits.length >= MAX_TRAITS) {
+    if (pickedTraits.length >= MAX_TRAITS || forcedTraits.includes(id)) {
       return;
     }
     const trait = traits.find((t) => t.id === id);
@@ -104,7 +108,11 @@ export function FeaturesTab() {
             {pickedTraits.map((trait) => (
               <div
                 key={trait.id}
-                className="RimworldCharacterEditor__traitPicked"
+                className={
+                  forcedTraits.includes(trait.id)
+                    ? 'RimworldCharacterEditor__traitPicked RimworldCharacterEditor__traitForced'
+                    : 'RimworldCharacterEditor__traitPicked'
+                }
               >
                 <ChoiceCard
                   name={trait.name}
@@ -114,14 +122,20 @@ export function FeaturesTab() {
                   cost={trait.cost}
                   positive={trait.positive}
                   selected
-                  onClick={() => removeTrait(trait.id)}
+                  onClick={() => {
+                    if (!forcedTraits.includes(trait.id)) {
+                      removeTrait(trait.id);
+                    }
+                  }}
                 />
-                <Button
-                  compact
-                  icon="times"
-                  tooltip="Remove"
-                  onClick={() => removeTrait(trait.id)}
-                />
+                {!forcedTraits.includes(trait.id) && (
+                  <Button
+                    compact
+                    icon="times"
+                    tooltip="Remove"
+                    onClick={() => removeTrait(trait.id)}
+                  />
+                )}
               </div>
             ))}
             {pickedTraits.length < MAX_TRAITS && (

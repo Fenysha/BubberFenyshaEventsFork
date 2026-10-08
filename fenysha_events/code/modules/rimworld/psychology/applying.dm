@@ -58,7 +58,7 @@
 	var/list/persona_data = list(
 		"childhood" = childhood_id,
 		"adulthood" = adulthood_id,
-		"traits" = copy_list(traits),
+		"traits" = effective_trait_ids(),
 		"skills" = copy_list(skills),
 		"passions" = copy_list(passions),
 		"xenogenes" = copy_list(xenogenes),
@@ -96,6 +96,8 @@
 	if(ishuman(owner))
 		var/mob/living/carbon/human/H = owner
 		data["speciesName"] = H.dna?.species?.name || "Human"
+		if(H.dna?.rw_xenotype)
+			data["xenotype"] = H.dna.rw_xenotype.compile_ui_data()
 	if(GLOB.all_rw_backstories)
 		var/datum/rw_backstory/child = GLOB.all_rw_backstories[childhood_id]
 		var/datum/rw_backstory/adult = GLOB.all_rw_backstories[adulthood_id]

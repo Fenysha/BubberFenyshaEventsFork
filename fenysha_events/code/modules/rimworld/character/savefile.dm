@@ -36,6 +36,10 @@
 		"xenogenes" = copy_list(xenogenes),
 		"xenogene_values" = copy_list(xenogene_values),
 		"xenogene_inheritable" = copy_list(xenogene_inheritable),
+		"xenotype_id" = xenotype_id,
+		"xenotype_name" = xenotype_name,
+		"xenotype_description" = xenotype_description,
+		"xenotype_icon_gene" = xenotype_icon_gene,
 		"childhood" = childhood_id,
 		"adulthood" = adulthood_id,
 		"skills" = copy_list(skills),
@@ -65,6 +69,10 @@
 	xenogenes = copy_list(data["xenogenes"])
 	xenogene_values = copy_list(data["xenogene_values"])
 	xenogene_inheritable = copy_list(data["xenogene_inheritable"])
+	xenotype_id = data["xenotype_id"]
+	xenotype_name = data["xenotype_name"] || "Custom xenotype"
+	xenotype_description = data["xenotype_description"] || "A unique combination of xenogenes."
+	xenotype_icon_gene = data["xenotype_icon_gene"]
 	childhood_id = data["childhood"] || "childhood_none"
 	adulthood_id = data["adulthood"] || "adulthood_none"
 	skills = copy_list(data["skills"])
@@ -106,8 +114,6 @@
 	if(!(rw_species() in GLOB.rw_base_species))
 		rw_set_species(/datum/species/human)
 	if(!(childhood_id in GLOB.all_rw_backstories))
-		childhood_id = "childhood_none"
-	if(!(adulthood_id in GLOB.all_rw_backstories))
 		adulthood_id = "adulthood_none"
 	var/datum/rw_backstory/childhood = GLOB.all_rw_backstories[childhood_id]
 	if(childhood && childhood.slot != RW_BACKSTORY_CHILDHOOD)
@@ -122,6 +128,8 @@
 			valid_genes += gene_id
 	xenogenes = valid_genes
 	sync_species_xenogenes()
+	sync_xenotype_identity()
+	ensure_hair_preferences()
 	var/list/valid_traits = list()
 	for(var/trait_id in traits)
 		if(GLOB.all_rw_traits[trait_id])
@@ -152,6 +160,8 @@
 		xenogenes = kept_genes
 		xenogene_inheritable = list()
 		sync_species_xenogenes()
+		sync_xenotype_identity()
+		ensure_hair_preferences()
 
 /datum/rimworld_preferences/proc/migrate_legacy_xenogenes()
 	if(!islist(xenogenes))
