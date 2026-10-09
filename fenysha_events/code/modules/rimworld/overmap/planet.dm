@@ -137,6 +137,8 @@
 	var/slider_temperature = RW_SLIDER_DEFAULT
 	/// Used for settlement generation, not by the terrain generator itself.
 	var/slider_population = RW_SLIDER_DEFAULT
+	/// Maximum length of a generated road segment in tile steps. 0 uses the grid-scaled default.
+	var/road_segment_limit = 0
 
 	// Derived seeds (currently unused by Rust; kept for future / compatibility)
 	var/terrain_seed
@@ -151,6 +153,9 @@
 	var/list/layer_files = list()
 	/// Simple cache: "layer:x:y" -> value
 	var/list/cell_cache = list()
+	/// Recent routes by endpoints and movement flags. The cache is invalidated when layers change.
+	var/list/path_cache = list()
+	var/list/path_cache_order = list()
 
 	var/list/objects = list()
 	var/list/settlements = list()
@@ -378,6 +383,8 @@
 
 	generated_layers = list()
 	layer_files = list()
+	cell_cache = list()
+	clear_path_cache()
 
 	for(var/list/layer in exported_layers)
 		var/layer_name = layer["name"]
@@ -440,13 +447,33 @@
 	return value
 
 /**
+ * Returns a layer value only when it is already cached. Never reads the layer file.
+ */
+/datum/rimworld_planet/proc/get_cached_layer_value(layer_name, x, y)
+	if(!is_valid_coordinate(x, y))
+		return null
+	return cell_cache["[layer_name]:[x]:[y]"]
+
+/**
+ * Returns cached climate information only. Use get_tile_climate() when a cache miss may be read.
+ */
+/datum/rimworld_planet/proc/get_cached_tile_climate(x, y)
+	if(!is_valid_coordinate(x, y))
+		return null
+	return cell_cache["climate:[x]:[y]"]
+
+/**
  * Bitmask of the neighbours a river connects this tile to (0 for no river); bits follow
  * get_neighbors_with_bits().
  */
 /datum/rimworld_planet/proc/get_river_mask(x, y)
 	if(!is_valid_coordinate(x, y))
 		return 0
-	return get_layer_value("rivers", x, y) || 0
+	var/value = get_layer_value("rivers", x, y)
+	if(isnull(value))
+		return 0
+	var/numeric_value = text2num("[value]")
+	return isnull(numeric_value) ? 0 : numeric_value
 
 /datum/rimworld_planet/proc/has_river(x, y)
 	return get_river_mask(x, y) != 0
@@ -466,7 +493,10 @@
 /datum/rimworld_planet/proc/generate_roads(list/settlement_points)
 	var/list/settlements_json = list()
 	for(var/list/point in settlement_points)
-		settlements_json += list(list("x" = point["x"], "y" = point["y"], "tier" = point["tier"] || RW_ROAD_DIRT))
+		var/tier = point["tier"]
+		if(isnull(tier))
+			tier = RW_ROAD_DIRT
+		settlements_json += list(list("x" = point["x"], "y" = point["y"], "tier" = tier))
 
 	var/list/config = list(
 		"seed" = seed,
@@ -474,6 +504,7 @@
 		"output_dir" = "data/rimworld_planets/[seed]",
 		"settlements" = settlements_json,
 	)
+	config["max_road_length"] = road_segment_limit > 0 ? road_segment_limit : max(1, round(grid_frequency * 0.60))
 
 	var/result = rustg_tp_planet_generate_roads(json_encode(config))
 	if(!result || findtext(result, "ERROR:") == 1)
@@ -496,6 +527,7 @@
 			generated_layers[layer["name"]] = TRUE
 			layer_files[layer["name"]] = layer["path"]
 	cell_cache = list()
+	clear_path_cache()
 
 	log_world("[name] generated roads: [decoded["edges"]] segments, [decoded["road_tiles"]] tiles, [decoded["networks"]] networks, [decoded["skipped_settlements"]] settlements skipped.")
 	return TRUE
@@ -530,6 +562,13 @@
 
 /// Overland route as list(list(x, y), ...) from start to end inclusive, or null when there is none.
 /datum/rimworld_planet/proc/find_path(from_x, from_y, to_x, to_y, use_roads = TRUE)
+	if(!is_valid_coordinate(from_x, from_y) || !is_valid_coordinate(to_x, to_y))
+		return null
+	var/cache_key = "path:[generation_revision]:[from_x]:[from_y]:[to_x]:[to_y]:[!!use_roads]"
+	if(!isnull(path_cache[cache_key]))
+		var/list/cached = path_cache[cache_key]
+		return islist(cached) ? cached.Copy() : null
+
 	var/list/config = list(
 		"seed" = seed,
 		"frequency" = grid_frequency,
@@ -541,11 +580,73 @@
 	var/result = rustg_tp_planet_find_path(json_encode(config))
 	if(!result || findtext(result, "ERROR:") == 1)
 		log_world("[name] path [from_x],[from_y] -> [to_x],[to_y] failed: [result]")
+		cache_path_result(cache_key, null)
 		return null
-	var/list/decoded = json_decode(result)
+	var/list/decoded
+	try
+		decoded = json_decode(result)
+	catch
+		cache_path_result(cache_key, null)
+		return null
 	if(decoded["status"] != "ok")
+		cache_path_result(cache_key, null)
 		return null
-	return normalize_rust_path(decoded["path"])
+	var/list/path = normalize_rust_path(decoded["path"])
+	cache_path_result(cache_key, path)
+	return path.Copy()
+
+/// Terrain-aware route used by caravans. Rust applies biome passability and road grade costs.
+/datum/rimworld_planet/proc/find_caravan_path(from_x, from_y, to_x, to_y, datum/rimworld_caravan/caravan)
+	if(!caravan || !is_valid_coordinate(from_x, from_y) || !is_valid_coordinate(to_x, to_y))
+		return null
+	var/can_traverse_impassable = caravan.can_traverse_impassable()
+	var/cache_key = "caravan:[generation_revision]:[from_x]:[from_y]:[to_x]:[to_y]:[can_traverse_impassable]"
+	if(!isnull(path_cache[cache_key]))
+		var/list/cached = path_cache[cache_key]
+		return islist(cached) ? cached.Copy() : null
+
+	var/list/config = list(
+		"seed" = seed,
+		"frequency" = grid_frequency,
+		"output_dir" = "data/rimworld_planets/[seed]",
+		"from" = list(from_x, from_y),
+		"to" = list(to_x, to_y),
+		"use_roads" = TRUE,
+		"can_traverse_impassable" = !!can_traverse_impassable,
+	)
+	var/result = rustg_tp_planet_find_caravan_path(json_encode(config))
+	if(!result || findtext(result, "ERROR:") == 1)
+		log_world("[name] caravan path [from_x],[from_y] -> [to_x],[to_y] failed: [result]")
+		cache_path_result(cache_key, null)
+		return null
+	var/list/decoded
+	try
+		decoded = json_decode(result)
+	catch
+		cache_path_result(cache_key, null)
+		return null
+	if(decoded["status"] != "ok")
+		cache_path_result(cache_key, null)
+		return null
+	var/list/path = normalize_rust_path(decoded["path"])
+	cache_path_result(cache_key, path)
+	return path.Copy()
+
+/// A short name for callers that only need the cheapest route between two cells.
+/datum/rimworld_planet/proc/get_shortest_path(from_x, from_y, to_x, to_y, use_roads = TRUE)
+	return find_path(from_x, from_y, to_x, to_y, use_roads)
+
+/datum/rimworld_planet/proc/cache_path_result(cache_key, list/path)
+	path_cache[cache_key] = islist(path) ? path.Copy() : FALSE
+	path_cache_order += cache_key
+	while(length(path_cache_order) > 128)
+		var/oldest_key = path_cache_order[1]
+		path_cache_order.Cut(1, 2)
+		path_cache -= oldest_key
+
+/datum/rimworld_planet/proc/clear_path_cache()
+	path_cache = list()
+	path_cache_order = list()
 
 /// json_decode of [[x, y], ...] into list(list(x, y), ...). Drops malformed steps.
 /datum/rimworld_planet/proc/normalize_rust_path(list/raw)
@@ -569,16 +670,50 @@
 /datum/rimworld_planet/proc/get_road_mask(x, y)
 	if(!is_valid_coordinate(x, y))
 		return 0
-	return get_layer_value("roads", x, y) || 0
+	var/value = get_layer_value("roads", x, y)
+	if(isnull(value))
+		return 0
+	var/numeric_value = text2num("[value]")
+	return isnull(numeric_value) ? 0 : numeric_value
 
 /// RW_ROAD_* grade of the road on this tile; meaningless where has_road() is false
 /datum/rimworld_planet/proc/get_road_type(x, y)
 	if(!is_valid_coordinate(x, y))
 		return RW_ROAD_DIRT
-	return get_layer_value("road_types", x, y) || RW_ROAD_DIRT
+	var/value = get_layer_value("road_types", x, y)
+	if(isnull(value))
+		return RW_ROAD_DIRT
+	var/numeric_value = text2num("[value]")
+	return isnull(numeric_value) ? RW_ROAD_DIRT : numeric_value
+
+/datum/rimworld_planet/proc/get_road_speed_cost(grade)
+	switch(grade)
+		if(RW_ROAD_STONE)
+			return 0.70
+		if(RW_ROAD_ASPHALT)
+			return 0.52
+		if(RW_ROAD_HIGHWAY)
+			return 0.34
+	return 0.85
 
 /datum/rimworld_planet/proc/has_road(x, y)
 	return get_road_mask(x, y) != 0
+
+/// Travel discount for a road edge, 1.0 when these tiles are not connected by a road.
+/datum/rimworld_planet/proc/get_road_step_cost(from_x, from_y, to_x, to_y)
+	if(!is_valid_coordinate(from_x, from_y) || !is_valid_coordinate(to_x, to_y))
+		return 1.0
+	var/mask = get_road_mask(from_x, from_y)
+	if(!mask)
+		return 1.0
+	for(var/list/neighbor as anything in get_neighbors_with_bits(from_x, from_y))
+		if(neighbor[1] != to_x || neighbor[2] != to_y)
+			continue
+		if(!(mask & (1 << neighbor[3])) || !has_road(to_x, to_y))
+			return 1.0
+		var/grade = max(get_road_type(from_x, from_y), get_road_type(to_x, to_y))
+		return get_road_speed_cost(grade)
+	return 1.0
 
 /datum/rimworld_planet/proc/get_road_connections(x, y)
 	var/mask = get_road_mask(x, y)

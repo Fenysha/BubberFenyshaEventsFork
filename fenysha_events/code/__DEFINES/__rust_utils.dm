@@ -626,7 +626,20 @@
 
 	return rustg_raw_tp_planet_bake_surface(config_json)
 
+#define rustg_raw_tp_planet_find_path(config_json) \
+	RUSTG_CALL(RUST_UTILS, "tp_planet_find_path")(config_json)
+
+#define rustg_raw_tp_planet_find_caravan_path(config_json) \
+	RUSTG_CALL(RUST_UTILS, "tp_planet_find_caravan_path")(config_json)
 
 
+/**
+ * Finds a caravan route using terrain passability, biome travel costs and road grade costs.
+ * `can_traverse_impassable` must only be enabled for movement types allowed to cross such tiles.
+ */
+/proc/rustg_tp_planet_find_caravan_path(config_json)
+	if(!istext(config_json) || !length(config_json))
+		return "ERROR: config_json must be a non-empty string"
+	return rustg_raw_tp_planet_find_caravan_path(config_json)
 
 

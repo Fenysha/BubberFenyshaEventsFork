@@ -20,6 +20,72 @@
 
 	return cells[get_cell_key(cell_x, cell_y)]
 
+
+/**
+ * Returns a cached runtime cell without creating it or triggering generation.
+ * Use this for frequent lookups where a missing cell should stay unloaded.
+ */
+/datum/rimworld_planet/proc/get_cell_fast(cell_x, cell_y)
+	if(!is_valid_coordinate(cell_x, cell_y))
+		return null
+	return cells["[cell_x]:[cell_y]"]
+
+/**
+ * Returns a settlement located at the given tile, or null.
+ */
+/datum/rimworld_planet/proc/get_settlement_at(tile_x, tile_y, faction_id = null)
+	for(var/settlement_id in settlements)
+		var/datum/rimworld_planet_object/settlement/settlement = settlements[settlement_id]
+		if(!settlement || settlement.x != tile_x || settlement.y != tile_y)
+			continue
+		if(!isnull(faction_id) && settlement.data["faction"] != faction_id)
+			continue
+		return settlement
+	return null
+
+/**
+ * Returns the closest eligible settlement. A max_distance of 0 means no distance limit.
+ */
+/datum/rimworld_planet/proc/get_nearest_settlement(tile_x, tile_y, max_distance = 0, faction_id = null, include_player_settlements = TRUE)
+	if(!is_valid_coordinate(tile_x, tile_y))
+		return null
+	var/datum/rimworld_planet_object/settlement/nearest
+	var/nearest_distance = INFINITY
+	for(var/settlement_id in settlements)
+		var/datum/rimworld_planet_object/settlement/settlement = settlements[settlement_id]
+		if(!settlement || !is_valid_coordinate(settlement.x, settlement.y))
+			continue
+		if(!isnull(faction_id) && settlement.data["faction"] != faction_id)
+			continue
+		if(!include_player_settlements && settlement.is_player_settlement())
+			continue
+		var/distance = get_tile_distance(tile_x, tile_y, settlement.x, settlement.y)
+		if(max_distance > 0 && distance > max_distance)
+			continue
+		if(distance < nearest_distance)
+			nearest = settlement
+			nearest_distance = distance
+	return nearest
+
+/**
+ * Returns settlements within a geodesic tile radius, optionally filtered by faction.
+ */
+/datum/rimworld_planet/proc/get_settlements_in_radius(tile_x, tile_y, radius, faction_id = null, include_player_settlements = TRUE)
+	var/list/result = list()
+	if(!is_valid_coordinate(tile_x, tile_y) || radius < 0)
+		return result
+	for(var/settlement_id in settlements)
+		var/datum/rimworld_planet_object/settlement/settlement = settlements[settlement_id]
+		if(!settlement || !is_valid_coordinate(settlement.x, settlement.y))
+			continue
+		if(!isnull(faction_id) && settlement.data["faction"] != faction_id)
+			continue
+		if(!include_player_settlements && settlement.is_player_settlement())
+			continue
+		if(get_tile_distance(tile_x, tile_y, settlement.x, settlement.y) <= radius)
+			result += list(settlement)
+	return result
+
 /**
  * Loads a single runtime planet cell.
  */
