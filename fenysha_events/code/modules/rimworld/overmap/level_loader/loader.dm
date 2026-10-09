@@ -604,6 +604,12 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		if(generator.rimworld_area)
 			SSmapping.reg_in_areas_in_z(list(generator.rimworld_area))
 		generator.turfs_initialized = TRUE
+
+		// Ore veins + surface rock chunks (noise-based)
+		var/list/ore_stats = generator.generate_ores_and_chunks()
+		if(ore_stats)
+			log_world("RW ore gen cell [cell.x],[cell.y]: veins=[ore_stats["ore_veins"]] tiles=[ore_stats["ore_tiles"]] chunks=[ore_stats["chunks"]]")
+
 		smooth_index = 1
 		phase = RW_CELL_JOB_SMOOTH
 	else
@@ -864,9 +870,13 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	cell.refresh_from_planet()
 	cell.place_edge_markers()
+	cell.bind_areas_to_cell()
 
 	qdel(generator)
 	generator = null
+
+	// Climate-driven ambient weather for the loaded cell
+	cell.on_loaded_start_weather()
 
 	return TRUE
 

@@ -50,6 +50,10 @@
 	if(!planet || !viewer?.client || isnull(target_x) || isnull(target_y))
 		return FALSE
 
+	var/site_error = planet.validate_player_settlement_site(target_x, target_y)
+	if(site_error)
+		return fail_loading(site_error)
+
 	var/datum/planet_cell/cell = planet.get_or_create_cell(
 		target_x,
 		target_y,
@@ -93,6 +97,9 @@
 	player_faction.desc = faction_desc
 	player_faction.color = faction_color
 	player_faction.icon_state = faction_icon
+	player_faction.join_mode = join_mode
+	player_faction.join_password = (join_mode == RW_JOIN_PASSWORD) ? join_password : ""
+	player_faction.visible_on_map = visible_on_map
 
 	var/mob/living/carbon/human/owner = prepare_character()
 	if(!owner)
@@ -109,9 +116,13 @@
 		qdel(owner)
 		return fail_loading("Unable to create settlement.")
 
+	apply_create_policy(player_faction, settlement, cell, owner)
+
 	settlement.set_faction(player_faction.id)
 	settlement.set_population(1)
-
+	settlement.data["join_mode"] = join_mode
+	settlement.data["visible"] = visible_on_map
+	settlement.data["scenario"] = scenario_id
 
 	addtimer(CALLBACK(src, PROC_REF(finish_and_close)), 1)
 
@@ -120,6 +131,19 @@
 		return FALSE
 
 	launch_rimworld_pod(cell, list(owner))
+
+	// Scenario starting gear near the first colonist
+	addtimer(CALLBACK(src, PROC_REF(spawn_scenario_gear), cell, owner), 2 SECONDS)
+
+	// Ambient weather for the newly loaded cell
+	cell.on_loaded_start_weather()
+
+
+/datum/settlement_setup/proc/spawn_scenario_gear(datum/planet_cell/cell, mob/living/carbon/human/owner)
+	if(QDELETED(owner) || !cell)
+		return
+	var/datum/rimworld_scenario/S = get_rimworld_scenario(scenario_id)
+	S?.spawn_starting_gear(cell, owner)
 
 
 /datum/settlement_setup/proc/do_join()
@@ -132,8 +156,17 @@
 		return FALSE
 
 	var/faction_id = sett.data["faction"]
-	var/datum/rw_faction/fac = faction_id ? SSfactions.get_faction(faction_id) : null
-	if(!fac || !fac.player_faction)
+	var/datum/rw_faction/player/fac = faction_id ? SSfactions.get_faction(faction_id) : null
+	if(!istype(fac) || !fac.player_faction)
+		return FALSE
+
+	if(!fac.can_join_from_map(join_attempt_password))
+		if(fac.join_mode == RW_JOIN_CLOSED)
+			to_chat(viewer, span_warning("This settlement is closed to new members."))
+		else if(fac.join_mode == RW_JOIN_PASSWORD)
+			to_chat(viewer, span_warning("Incorrect password."))
+		else
+			to_chat(viewer, span_warning("Cannot join this settlement."))
 		return FALSE
 
 	var/mob/living/carbon/human/owner = prepare_character()
@@ -156,4 +189,3 @@
 		return FALSE
 	launch_rimworld_pod(cell, list(owner))
 	return TRUE
-

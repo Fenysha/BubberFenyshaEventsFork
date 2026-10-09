@@ -15,6 +15,12 @@ import {
 } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
+type ScenarioOption = {
+  id: string;
+  name: string;
+  desc: string;
+};
+
 type SettlementSetupData = {
   isJoin: boolean;
   targetX: number;
@@ -36,9 +42,26 @@ type SettlementSetupData = {
   iconChoices?: string[];
   factionIdeology: string;
 
+  // Join policy (found only)
+  joinMode?: string;
+  joinPassword?: string;
+  visibleOnMap?: BooleanLike;
+  scenarioId?: string;
+  scenarios?: ScenarioOption[];
+
+  // Join attempt (join only)
+  joinAttemptPassword?: string;
+  settlementJoinMode?: string; // free / password / closed from server
+
   settlementName?: string;
   population?: number;
 };
+
+const JOIN_MODES = [
+  { id: 'free', label: 'Free', desc: 'Anyone can join' },
+  { id: 'password', label: 'Password', desc: 'Requires password' },
+  { id: 'closed', label: 'Closed', desc: 'No one can join' },
+];
 
 export const SettlementSetup = () => {
   const { act, data } = useBackend<SettlementSetupData>();
@@ -59,8 +82,13 @@ export const SettlementSetup = () => {
     : hasError
       ? 350
       : isJoin
-        ? 340
-        : 520;
+        ? 400
+        : 640;
+
+  const joinMode = data.joinMode || 'free';
+  const scenarioId = data.scenarioId || 'crashlanding';
+  const scenarios = data.scenarios || [];
+  const settlementJoinMode = data.settlementJoinMode || 'free';
 
   return (
     <Window
@@ -148,9 +176,7 @@ export const SettlementSetup = () => {
               <Section title="Generation Failed">
                 <Stack vertical>
                   <Stack.Item>
-                    <NoticeBox>
-                      {data.loadingError}
-                    </NoticeBox>
+                    <NoticeBox>{data.loadingError}</NoticeBox>
                   </Stack.Item>
 
                   <Stack.Item>
@@ -218,9 +244,34 @@ export const SettlementSetup = () => {
                             inline
                             width="14px"
                             height="14px"
-                            style={{ background: data.factionColor || '#ffffff' }}
+                            style={{
+                              background: data.factionColor || '#ffffff',
+                            }}
                           />
                         </LabeledList.Item>
+                        <LabeledList.Item label="Access">
+                          <Box color="label">
+                            {settlementJoinMode === 'closed'
+                              ? 'Closed'
+                              : settlementJoinMode === 'password'
+                                ? 'Password required'
+                                : 'Open'}
+                          </Box>
+                        </LabeledList.Item>
+                        {settlementJoinMode === 'password' && (
+                          <LabeledList.Item label="Password">
+                            <Input
+                              fluid
+                              value={data.joinAttemptPassword || ''}
+                              placeholder="Enter password"
+                              onChange={(value) =>
+                                act('set_join_attempt_password', {
+                                  password: value,
+                                })
+                              }
+                            />
+                          </LabeledList.Item>
+                        )}
                       </>
                     )}
 
@@ -316,7 +367,9 @@ export const SettlementSetup = () => {
                             value={data.factionIdeology}
                             disabled={isLoading}
                             onChange={(value) =>
-                              act('set_faction_ideology', { ideology: value })
+                              act('set_faction_ideology', {
+                                ideology: value,
+                              })
                             }
                           />
                         </LabeledList.Item>
@@ -325,6 +378,97 @@ export const SettlementSetup = () => {
                   </LabeledList>
                 </Section>
               </Stack.Item>
+
+              {!isJoin && (
+                <>
+                  <Stack.Item>
+                    <Section title="Join Policy">
+                      <LabeledList>
+                        <LabeledList.Item label="Access">
+                          <Stack>
+                            {JOIN_MODES.map((m) => (
+                              <Stack.Item key={m.id} grow>
+                                <Button
+                                  fluid
+                                  selected={joinMode === m.id}
+                                  disabled={isLoading}
+                                  tooltip={m.desc}
+                                  onClick={() =>
+                                    act('set_join_mode', { mode: m.id })
+                                  }
+                                >
+                                  {m.label}
+                                </Button>
+                              </Stack.Item>
+                            ))}
+                          </Stack>
+                        </LabeledList.Item>
+                        {joinMode === 'password' && (
+                          <LabeledList.Item label="Password">
+                            <Input
+                              fluid
+                              value={data.joinPassword || ''}
+                              disabled={isLoading}
+                              placeholder="Set join password"
+                              onChange={(value) =>
+                                act('set_join_password', {
+                                  password: value,
+                                })
+                              }
+                            />
+                          </LabeledList.Item>
+                        )}
+                        <LabeledList.Item label="Visibility">
+                          <Button
+                            fluid
+                            icon={data.visibleOnMap ? 'eye' : 'eye-slash'}
+                            selected={!!data.visibleOnMap}
+                            disabled={isLoading}
+                            onClick={() =>
+                              act('set_visibility', {
+                                visible: !data.visibleOnMap,
+                              })
+                            }
+                          >
+                            {data.visibleOnMap
+                              ? 'Visible on map'
+                              : 'Hidden on map'}
+                          </Button>
+                        </LabeledList.Item>
+                      </LabeledList>
+                    </Section>
+                  </Stack.Item>
+
+                  <Stack.Item>
+                    <Section title="Starting Scenario">
+                      <Stack vertical>
+                        {scenarios.map((s) => (
+                          <Stack.Item key={s.id}>
+                            <Button
+                              fluid
+                              selected={scenarioId === s.id}
+                              disabled={isLoading}
+                              onClick={() =>
+                                act('set_scenario', { id: s.id })
+                              }
+                            >
+                              <Box bold>{s.name}</Box>
+                              <Box color="label" fontSize="0.85rem">
+                                {s.desc}
+                              </Box>
+                            </Button>
+                          </Stack.Item>
+                        ))}
+                        {!scenarios.length && (
+                          <Box color="label">
+                            Default crashlanding scenario will be used.
+                          </Box>
+                        )}
+                      </Stack>
+                    </Section>
+                  </Stack.Item>
+                </>
+              )}
 
               <Stack.Item grow />
 
@@ -335,7 +479,10 @@ export const SettlementSetup = () => {
                       fluid
                       color="good"
                       icon={isJoin ? 'users' : 'flag'}
-                      disabled={isLoading}
+                      disabled={
+                        isLoading ||
+                        (isJoin && settlementJoinMode === 'closed')
+                      }
                       onClick={() => act('confirm')}
                     >
                       {isJoin ? 'Join Settlement' : 'Found Settlement'}
@@ -390,7 +537,11 @@ function hexToRgb(hex: string) {
   };
 }
 
-function SettlementMark(props: { icon?: string; color?: string; size?: number }) {
+function SettlementMark(props: {
+  icon?: string;
+  color?: string;
+  size?: number;
+}) {
   const src = props.icon ? markerSrc(props.icon) : '';
   const size = props.size ?? 24;
   const [painted, setPainted] = useState('');
@@ -418,7 +569,8 @@ function SettlementMark(props: { icon?: string; color?: string; size?: number })
         if (pixels[i + 3] < 8) {
           continue;
         }
-        const whiteness = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / (255 * 3);
+        const whiteness =
+          (pixels[i] + pixels[i + 1] + pixels[i + 2]) / (255 * 3);
         pixels[i] = tint.r * whiteness;
         pixels[i + 1] = tint.g * whiteness;
         pixels[i + 2] = tint.b * whiteness;

@@ -252,6 +252,10 @@
 
 
 
+#define RW_JOIN_FREE "free"
+#define RW_JOIN_PASSWORD "password"
+#define RW_JOIN_CLOSED "closed"
+
 /datum/rw_faction/player
 	player_faction = TRUE
 	name = "Player Faction"
@@ -264,6 +268,13 @@
 	var/datum/faction_leadership_vote/active_vote
 
 	var/leader_can_research = TRUE
+
+	/// How new players may join settlements of this faction (free / password / closed).
+	var/join_mode = RW_JOIN_FREE
+	/// Password required when join_mode == RW_JOIN_PASSWORD.
+	var/join_password = ""
+	/// Whether settlements of this faction are shown on the planet map to outsiders.
+	var/visible_on_map = TRUE
 
 /datum/rw_faction/player/New(faction_id, faction_name)
 	. = ..()
@@ -451,6 +462,48 @@
 		return GLOB.not_incapacitated_state
 	return GLOB.never_state
 
+/**
+ * Returns TRUE if the given password is accepted for joining.
+ */
+/datum/rw_faction/player/proc/check_join_password(attempt)
+	if(join_mode != RW_JOIN_PASSWORD)
+		return TRUE
+	if(!join_password || !length(join_password))
+		return FALSE
+	return ("[attempt]" == join_password)
+
+/**
+ * Whether an outsider may attempt to join via the planet map UI.
+ */
+/datum/rw_faction/player/proc/can_join_from_map(attempt_password = null)
+	switch(join_mode)
+		if(RW_JOIN_CLOSED)
+			return FALSE
+		if(RW_JOIN_PASSWORD)
+			return check_join_password(attempt_password)
+		if(RW_JOIN_FREE)
+			return TRUE
+	return FALSE
+
+/datum/rw_faction/player/proc/set_join_mode(mob/living/user, new_mode, new_password = null)
+	if(!can_manage_members(user))
+		return FALSE
+	if(!(new_mode in list(RW_JOIN_FREE, RW_JOIN_PASSWORD, RW_JOIN_CLOSED)))
+		return FALSE
+	join_mode = new_mode
+	if(new_mode == RW_JOIN_PASSWORD)
+		if(istext(new_password) && length(new_password))
+			join_password = new_password
+	else
+		join_password = ""
+	return TRUE
+
+/datum/rw_faction/player/proc/set_visible_on_map(mob/living/user, visible)
+	if(!can_manage_members(user))
+		return FALSE
+	visible_on_map = !!visible
+	return TRUE
+
 /datum/rw_faction/player/ui_data(mob/user)
 	ensure_valid_leader()
 	var/list/data = list()
@@ -465,6 +518,9 @@
 	data["user_role"] = get_role(user)
 	data["can_research"] = can_manage_research(user)
 	data["user_ref"] = REF(user)
+	data["join_mode"] = join_mode
+	data["has_password"] = (join_mode == RW_JOIN_PASSWORD && length(join_password) > 0)
+	data["visible_on_map"] = visible_on_map
 
 
 	data["has_active_vote"] = !!active_vote
@@ -611,6 +667,12 @@
 				to_chat(M, span_notice("<b>[leaver_name]</b> voluntarily left the faction."))
 
 			return TRUE
+
+		if("set_join_mode")
+			return set_join_mode(user, params["mode"], params["password"])
+
+		if("set_visibility")
+			return set_visible_on_map(user, params["visible"])
 
 	return FALSE
 

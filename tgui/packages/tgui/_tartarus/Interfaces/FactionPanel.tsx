@@ -47,6 +47,9 @@ type FactionPanelData = {
   user_voted?: boolean;
   time_left?: number;
   members: MemberEntry[];
+  join_mode?: string;
+  has_password?: boolean;
+  visible_on_map?: boolean;
 };
 
 const roleLabel = (role: string) => {
@@ -127,6 +130,78 @@ export const FactionPanel = () => {
                   Leave Faction
                 </Button>
               </Box>
+            </Section>
+          </Stack.Item>
+
+          {/* Join policy */}
+          <Stack.Item>
+            <Section title="Join Policy">
+              <LabeledList>
+                <LabeledList.Item label="Access">
+                  {data.can_manage ? (
+                    <Stack>
+                      {(
+                        [
+                          { id: 'free', label: 'Free' },
+                          { id: 'password', label: 'Password' },
+                          { id: 'closed', label: 'Closed' },
+                        ] as const
+                      ).map((m) => (
+                        <Stack.Item key={m.id} grow>
+                          <Button
+                            fluid
+                            selected={(data.join_mode || 'free') === m.id}
+                            onClick={() => {
+                              if (m.id === 'password') {
+                                const pw = window.prompt('Join password', '');
+                                if (pw === null) return;
+                                act('set_join_mode', {
+                                  mode: m.id,
+                                  password: pw,
+                                });
+                              } else {
+                                act('set_join_mode', { mode: m.id });
+                              }
+                            }}
+                          >
+                            {m.label}
+                          </Button>
+                        </Stack.Item>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Box>
+                      {(data.join_mode || 'free') === 'closed'
+                        ? 'Closed'
+                        : (data.join_mode || 'free') === 'password'
+                          ? 'Password'
+                          : 'Free'}
+                    </Box>
+                  )}
+                </LabeledList.Item>
+                <LabeledList.Item label="Visibility">
+                  {data.can_manage ? (
+                    <Button
+                      fluid
+                      icon={data.visible_on_map ? 'eye' : 'eye-slash'}
+                      selected={!!data.visible_on_map}
+                      onClick={() =>
+                        act('set_visibility', {
+                          visible: !data.visible_on_map,
+                        })
+                      }
+                    >
+                      {data.visible_on_map
+                        ? 'Visible on map'
+                        : 'Hidden on map'}
+                    </Button>
+                  ) : (
+                    <Box>
+                      {data.visible_on_map ? 'Visible' : 'Hidden'}
+                    </Box>
+                  )}
+                </LabeledList.Item>
+              </LabeledList>
             </Section>
           </Stack.Item>
 

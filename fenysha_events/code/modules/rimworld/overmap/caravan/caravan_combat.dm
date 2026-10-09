@@ -180,10 +180,12 @@
 		unregister_participant(source)
 		// Returning to overmap: re-open caravan if they still have one
 		if(source.rimworld_caravan)
-			source.rimworld_caravan.move_member_to_holding(source)
-			source.rimworld_caravan.open_map_for(source)
+			INVOKE_ASYNC(src, PROC_REF(ensure_source), source)
 		check_empty()
 
+/datum/rimworld_caravan_arena/proc/ensure_source(mob/living/source)
+	source.rimworld_caravan.move_member_to_holding(source)
+	source.rimworld_caravan.open_map_for(source)
 
 /datum/rimworld_caravan_arena/proc/check_empty()
 	if(cleaning)

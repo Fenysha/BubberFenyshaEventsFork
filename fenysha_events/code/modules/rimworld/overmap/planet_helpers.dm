@@ -257,6 +257,94 @@
 		return null
 	return object
 
+// ---------------------------------------------------------------------------
+// Player settlement placement rules
+// ---------------------------------------------------------------------------
+
+#define RW_PLAYER_SETTLE_MIN_NPC_DIST 3
+#define RW_PLAYER_SETTLE_MIN_PLAYER_DIST 8
+
+/**
+ * Returns TRUE if the tile biome is water / sea and thus uninhabitable for a colony.
+ */
+/datum/rimworld_planet/proc/is_water_tile(x, y)
+	if(!is_valid_coordinate(x, y))
+		return TRUE
+	var/biome_key = get_biome(x, y)
+	return biome_key in list(
+		RW_BIOME_OCEAN,
+		RW_BIOME_COAST,
+		RW_BIOME_LAKE,
+	)
+
+/**
+ * Returns TRUE if the biome is impassable / not loadable for founding.
+ */
+/datum/rimworld_planet/proc/is_impassable_founding_tile(x, y)
+	if(!is_valid_coordinate(x, y))
+		return TRUE
+	var/biome_key = get_biome(x, y)
+	var/list/biomes = get_possible_biomes()
+	var/datum/biome/rimworld/B = biomes[biome_key]
+	if(!B)
+		return TRUE
+	if(!B.loadable)
+		return TRUE
+	if(!B.passable)
+		return TRUE
+	return FALSE
+
+/**
+ * Hex / grid distance between two planet cells.
+ */
+/datum/rimworld_planet/proc/settlement_cell_distance(x1, y1, x2, y2)
+	if(hascall(src, "get_tile_distance"))
+		return get_tile_distance(x1, y1, x2, y2)
+	var/dx = x1 - x2
+	var/dy = y1 - y2
+	return sqrt(dx * dx + dy * dy)
+
+/**
+ * Validates whether a player may found a settlement at (x, y).
+ * Returns null on success, or an error string on failure.
+ */
+/datum/rimworld_planet/proc/validate_player_settlement_site(x, y)
+	if(!is_valid_coordinate(x, y))
+		return "Invalid coordinates."
+
+	if(is_water_tile(x, y))
+		return "Cannot found a settlement on water."
+
+	if(is_impassable_founding_tile(x, y))
+		return "Cannot found a settlement on impassable terrain."
+
+	for(var/object_id in settlements)
+		var/datum/rimworld_planet_object/settlement/sett = settlements[object_id]
+		if(!sett)
+			continue
+		if(sett.x == x && sett.y == y)
+			return "A settlement already exists on this tile."
+
+	var/min_npc = RW_PLAYER_SETTLE_MIN_NPC_DIST
+	var/min_player = RW_PLAYER_SETTLE_MIN_PLAYER_DIST
+
+	for(var/object_id in settlements)
+		var/datum/rimworld_planet_object/settlement/sett = settlements[object_id]
+		if(!sett)
+			continue
+		var/dist = settlement_cell_distance(x, y, sett.x, sett.y)
+		if(sett.is_player_settlement())
+			if(dist < min_player)
+				return "Too close to another player settlement (need at least [min_player] cells)."
+		else
+			if(dist < min_npc)
+				return "Too close to an NPC settlement (need at least [min_npc] cells)."
+
+	return null
+
+/datum/rimworld_planet/proc/can_found_player_settlement(x, y)
+	return isnull(validate_player_settlement_site(x, y))
+
 /**
  * Creates and registers a new point of interest.
  */

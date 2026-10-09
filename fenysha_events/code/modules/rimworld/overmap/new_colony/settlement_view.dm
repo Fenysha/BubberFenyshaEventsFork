@@ -51,8 +51,12 @@
 			var/faction_id = sett.data["faction"]
 			if(!faction_id)
 				continue
-			var/datum/rw_faction/fac = SSfactions.get_faction(faction_id)
-			if(!fac || !fac.player_faction)
+			var/datum/rw_faction/player/fac = SSfactions.get_faction(faction_id)
+			if(!istype(fac) || !fac.player_faction)
+				continue
+
+			// Hidden settlements are not listed for outsiders
+			if(!fac.visible_on_map)
 				continue
 
 			var/datum/planet_cell/cell = planet.get_cell(sett.x, sett.y)
@@ -68,6 +72,7 @@
 				"faction" = fac.name,
 				"icon" = sett.icon,
 				"color" = sett.color || fac.color,
+				"join_mode" = fac.join_mode,
 			))
 
 		data["playerSettlements"] = player_settlements
@@ -158,6 +163,11 @@
 	if(join_settlement_id)
 		return FALSE
 
+	var/site_error = planet?.validate_player_settlement_site(start_x, start_y)
+	if(site_error)
+		to_chat(viewer, span_warning("[site_error]"))
+		return FALSE
+
 	var/datum/settlement_setup/setup = new(viewer, planet, src, start_x, start_y, null)
 	setup.ui_interact(viewer)
 	return TRUE
@@ -221,6 +231,17 @@
 	var/faction_icon = RW_PLANET_CELL_TOWN
 	var/faction_color = "#ffffff"
 	var/faction_ideology = "placeholder"
+
+	/// Join mode chosen at foundation (free / password / closed)
+	var/join_mode = RW_JOIN_FREE
+	/// Password when join_mode == password
+	var/join_password = ""
+	/// Whether the settlement is visible on the planet map
+	var/visible_on_map = TRUE
+	/// Scenario id for starting gear
+	var/scenario_id = "crashlanding"
+	/// Password entered by a joining player
+	var/join_attempt_password = ""
 
 	var/datum/planet_cell/loading_cell
 	var/loading_error
@@ -291,6 +312,15 @@
 
 
 /datum/settlement_setup/ui_data(mob/user)
+	var/list/scenario_options = list()
+	for(var/sid in get_rimworld_scenarios())
+		var/datum/rimworld_scenario/S = get_rimworld_scenario(sid)
+		scenario_options += list(list(
+			"id" = S.id,
+			"name" = S.name,
+			"desc" = S.desc,
+		))
+
 	var/list/data = list(
 		"isJoin" = !!join_settlement_id,
 		"isLoading" = parent_view?.loading || FALSE,
@@ -304,6 +334,13 @@
 		"factionColor" = faction_color,
 		"iconChoices" = settlement_icon_choices(),
 		"factionIdeology" = faction_ideology,
+
+		"joinMode" = join_mode,
+		"joinPassword" = join_password,
+		"visibleOnMap" = visible_on_map,
+		"scenarioId" = scenario_id,
+		"scenarios" = scenario_options,
+		"joinAttemptPassword" = "",
 
 		"loadingProgress" = 0,
 		"loadingStage" = "Preparing",
@@ -332,13 +369,14 @@
 			data["population"] = sett.data["population"] || 0
 
 			var/faction_id = sett.data["faction"]
-			var/datum/rw_faction/fac = faction_id ? SSfactions.get_faction(faction_id) : null
+			var/datum/rw_faction/player/fac = faction_id ? SSfactions.get_faction(faction_id) : null
 
-			if(fac)
+			if(istype(fac))
 				data["factionName"] = fac.name
 				data["factionDesc"] = fac.desc || ""
 				data["factionIcon"] = fac.icon_state || sett.icon
 				data["factionColor"] = fac.color || sett.color
+				data["settlementJoinMode"] = fac.join_mode
 
 	return data
 
@@ -351,9 +389,141 @@
 	if(parent_view && !QDELETED(parent_view))
 		SStgui.update_uis(src)
 
+
+/**
+ * Extended ui_data — merge these keys into existing SettlementSetup data.
+ */
+/datum/settlement_setup/proc/get_policy_ui_data()
+	var/list/scenario_options = list()
+	for(var/id in get_rimworld_scenarios())
+		var/datum/rimworld_scenario/S = get_rimworld_scenario(id)
+		scenario_options += list(list(
+			"id" = S.id,
+			"name" = S.name,
+			"desc" = S.desc,
+		))
+
+	return list(
+		"joinMode" = join_mode,
+		"joinPassword" = join_password,
+		"visibleOnMap" = visible_on_map,
+		"scenarioId" = scenario_id,
+		"scenarios" = scenario_options,
+		"joinAttemptPassword" = "",
+	)
+
+/**
+ * Validate site before create. Call at the start of do_create().
+ */
+/datum/settlement_setup/proc/validate_create_site()
+	if(!planet)
+		return "No planet."
+	var/err = planet.validate_player_settlement_site(target_x, target_y)
+	return err
+
+/**
+ * Apply policy + scenario after faction & settlement exist.
+ */
+/datum/settlement_setup/proc/apply_create_policy(datum/rw_faction/player/player_faction, datum/rimworld_planet_object/settlement/settlement, datum/planet_cell/cell, mob/living/carbon/human/owner)
+	if(!player_faction)
+		return
+
+	player_faction.join_mode = join_mode
+	player_faction.join_password = (join_mode == RW_JOIN_PASSWORD) ? join_password : ""
+	player_faction.visible_on_map = visible_on_map
+
+	if(settlement)
+		settlement.data["join_mode"] = join_mode
+		settlement.data["visible"] = visible_on_map
+		settlement.data["scenario"] = scenario_id
+
+
+/**
+ * Join gate: checks faction policy + password.
+ * Call at the start of do_join(). Returns error string or null.
+ */
+/datum/settlement_setup/proc/validate_join()
+	if(!planet || !join_settlement_id)
+		return "Invalid settlement."
+	var/datum/rimworld_planet_object/settlement/sett = planet.get_object(join_settlement_id)
+	if(!sett)
+		return "Settlement not found."
+	var/faction_id = sett.data["faction"]
+	var/datum/rw_faction/player/fac = faction_id ? SSfactions.get_faction(faction_id) : null
+	if(!istype(fac))
+		return "Not a player faction."
+	if(!fac.can_join_from_map(join_attempt_password))
+		if(fac.join_mode == RW_JOIN_CLOSED)
+			return "This settlement is closed to new members."
+		if(fac.join_mode == RW_JOIN_PASSWORD)
+			return "Incorrect password."
+		return "Cannot join this settlement."
+	return null
+
+
+/datum/settlement_setup/proc/handle_policy_act(action, list/params)
+	switch(action)
+		if("set_join_mode")
+			if(join_settlement_id)
+				return FALSE
+			var/mode = params["mode"]
+			if(!(mode in list(RW_JOIN_FREE, RW_JOIN_PASSWORD, RW_JOIN_CLOSED)))
+				return FALSE
+			join_mode = mode
+			return TRUE
+
+		if("set_join_password")
+			if(join_settlement_id)
+				return FALSE
+			join_password = copytext("[params["password"]]", 1, 64)
+			return TRUE
+
+		if("set_visibility")
+			if(join_settlement_id)
+				return FALSE
+			visible_on_map = !!params["visible"]
+			return TRUE
+
+		if("set_scenario")
+			if(join_settlement_id)
+				return FALSE
+			var/sid = params["id"]
+			if(!get_rimworld_scenario(sid))
+				return FALSE
+			scenario_id = sid
+			return TRUE
+
+		if("set_join_attempt_password")
+			if(!join_settlement_id)
+				return FALSE
+			join_attempt_password = copytext("[params["password"]]", 1, 64)
+			return TRUE
+
+	return null
+
+
+/**
+ * Filter player settlements by visibility for the start map.
+ * Use inside get_view_data() when building playerSettlements.
+ */
+/datum/planetmap_view/settlement/proc/settlement_visible_to_viewer(datum/rimworld_planet_object/settlement/sett)
+	if(!sett)
+		return FALSE
+	var/faction_id = sett.data["faction"]
+	var/datum/rw_faction/player/fac = faction_id ? SSfactions.get_faction(faction_id) : null
+	if(!istype(fac))
+		return FALSE
+	if(fac.visible_on_map)
+		return TRUE
+	return FALSE
+
+
 /datum/settlement_setup/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
 	if(.)
+		return
+
+	if(handle_policy_act(action, params))
 		return
 
 	switch(action)
@@ -393,6 +563,42 @@
 			faction_ideology = params["ideology"] || "placeholder"
 			return TRUE
 
+		if("set_join_mode")
+			if(join_settlement_id)
+				return FALSE
+			var/mode = params["mode"]
+			if(!(mode in list(RW_JOIN_FREE, RW_JOIN_PASSWORD, RW_JOIN_CLOSED)))
+				return FALSE
+			join_mode = mode
+			return TRUE
+
+		if("set_join_password")
+			if(join_settlement_id)
+				return FALSE
+			join_password = copytext("[params["password"]]", 1, 64)
+			return TRUE
+
+		if("set_visibility")
+			if(join_settlement_id)
+				return FALSE
+			visible_on_map = !!params["visible"]
+			return TRUE
+
+		if("set_scenario")
+			if(join_settlement_id)
+				return FALSE
+			var/sid = params["id"]
+			if(!get_rimworld_scenario(sid))
+				return FALSE
+			scenario_id = sid
+			return TRUE
+
+		if("set_join_attempt_password")
+			if(!join_settlement_id)
+				return FALSE
+			join_attempt_password = copytext("[params["password"]]", 1, 64)
+			return TRUE
+
 		if("confirm")
 			if(join_settlement_id)
 				return do_join()
@@ -417,3 +623,4 @@
 
 	SStgui.close_uis(src)
 	qdel(src)
+

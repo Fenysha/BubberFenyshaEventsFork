@@ -295,6 +295,11 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	/// Time until next weather change (in deciseconds)
 	var/weather_timer = 0
 
+	/// Active /datum/weather instance for this cell's z-level (if any)
+	var/datum/weather/active_weather
+	/// Forced weather override (admin / scenario); null = climate-driven
+	var/forced_weather_type = null
+
 	/// Zones / areas
 
 	/// List of active zones inside the cell (stub for now)
