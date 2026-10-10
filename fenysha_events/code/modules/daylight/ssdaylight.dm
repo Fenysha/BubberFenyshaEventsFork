@@ -10,25 +10,32 @@
  * ============================================================================
  */
 
+
 // ── Render / plane ──────────────────────────────────────────────────────────
+
 
 /// Animated wash publishes here; per-turf overlays render_source-mirror it.
 #define DAYLIGHT_WASH_RENDER_TARGET "*DAYLIGHT_WASH"
+
 
 /// Anchor plane so the wash source is on each client's screen. Must not collide
 /// with planes in code/__DEFINES/layers.dm (gap between WEATHER_GLOW 26 and PIPECRAWL 30).
 #define RENDER_PLANE_DAYLIGHT 27
 
+
 /// Round-start offset on the 24h clock (12 HOURS = noon).
 #define DAYLIGHT_CLOCK_OFFSET (12 HOURS)
 
+
 /// Alpha per leak ring (nearest outdoor first).
 GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
+
 
 /atom
 	/// The exact daylight wash mutable_appearance currently applied to this atom
 	/// (turf or its lighting_object), so it can be cut precisely instead of guessed.
 	var/mutable_appearance/daylight_wash_applied
+
 
 /area
 	var/daylight = FALSE
@@ -61,6 +68,7 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 	if(daylight)
 		SSdaylight.daylight_areas -= src
 	clear_daylight_overlay()
+
 
 /// Full wash on every turf in this area, then feather into adjacent indoors.
 /area/proc/apply_daylight_overlay()
@@ -218,7 +226,6 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 	return wash
 
 
-
 /turf/AfterChange(flags, oldType)
 	. = ..()
 	if(istype(loc, /area/rimworld))
@@ -247,39 +254,44 @@ GLOBAL_LIST_INIT(daylight_leak_falloff, list(165, 120, 90, 45))
 
 /datum/daylight_phase/dawn
 	name = "Dawn"
-	color = "#31211b"
+	color = "#74605A"
 	start_time = 4 HOURS
-	target_intensity = 0.2
+	target_intensity = 0.30
+
 
 /datum/daylight_phase/sunrise
 	name = "Sunrise"
-	color = "#F598AB"
+	color = "#F2B5A4"
 	start_time = 5 HOURS
-	target_intensity = 0.55
+	target_intensity = 0.62
+
 
 /datum/daylight_phase/daytime
 	name = "Daytime"
-	color = "#FFFFFF"
+	color = "#FFF5E8"
 	start_time = 5.5 HOURS
 	target_intensity = 1
 
+
 /datum/daylight_phase/sunset
 	name = "Sunset"
-	color = "#ff8a63"
+	color = "#F1A07C"
 	start_time = 19 HOURS
-	target_intensity = 0.45
+	target_intensity = 0.58
+
 
 /datum/daylight_phase/dusk
 	name = "Dusk"
-	color = "#2b2842"
+	color = "#526B98"
 	start_time = 19.5 HOURS
-	target_intensity = 0.18
+	target_intensity = 0.50
+
 
 /datum/daylight_phase/midnight
 	name = "Midnight"
-	color = "#101c3b"
+	color = "#3F5C8C"
 	start_time = 20 HOURS
-	target_intensity = 0.08
+	target_intensity = 0.42
 
 
 SUBSYSTEM_DEF(daylight)
@@ -292,9 +304,11 @@ SUBSYSTEM_DEF(daylight)
 		/datum/controller/subsystem/lighting,
 	)
 
+
 	/// Outdoor areas that receive the wash.
 	var/static/list/daylight_areas = list()
 	var/static/list/obj/effect/light_emitter/daylight/all_emitters = list()
+
 
 	/// Shared source mirrored by every station turf overlay.
 	var/obj/daylight_wash_source/wash_source
@@ -302,6 +316,7 @@ SUBSYSTEM_DEF(daylight)
 	var/list/rimworld_plates = list()
 	/// TRUE after the first full lighting pass in Initialize.
 	var/setup_complete = FALSE
+
 
 	// Current / target lighting state
 	var/current_intensity = 1
@@ -314,17 +329,21 @@ SUBSYSTEM_DEF(daylight)
 	var/transition_steps = 0
 	var/const/TRANSITION_STEPS = 6
 
+
 	/// Fraction of the day treated as "day" for night-start signal (station only).
 	var/daylight_fraction = 0.77
 	/// Minimum cycle_progress delta before a phase update (station only).
 	var/delta_cycle_progress = 0.05
+
 
 	var/cycle_locked = FALSE
 	var/time_locked = FALSE
 	/// If >= 0, overrides automatic clock (0–1 progress). -1 = auto.
 	var/manual_time = -1
 
+
 	var/flashing = FALSE
+
 
 	var/last_cycle_progress = -1
 	var/datum/daylight_phase/current_phase
@@ -332,10 +351,12 @@ SUBSYSTEM_DEF(daylight)
 	var/list/daylight_phases
 	var/last_phase_name
 
+
 	/// Station: compress 24h into this many real minutes (default 60 → 24×).
 	var/daylight_cycle = 60
 	var/daylight_update_cooldown = 12 SECONDS
 	COOLDOWN_DECLARE(daylight_update_cd)
+
 
 	// Rimworld / planet
 	var/use_planet_time = FALSE
@@ -344,6 +365,7 @@ SUBSYSTEM_DEF(daylight)
 	var/rimworld_emitter_alpha = -1
 	var/rimworld_emitter_color
 	COOLDOWN_DECLARE(rimworld_daylight_cd)
+
 
 	// Optional visual weather particles (station flavour)
 	var/list/phase_particle_weights
@@ -369,10 +391,12 @@ SUBSYSTEM_DEF(daylight)
 		"Midnight" = list(/particles/daylight_weather/snow = 7, /particles/daylight_weather/mist = 2),
 	)
 
+
 	if(SSmapping.current_map?.rimworld_map)
 		use_planet_time = TRUE
 		if(SSrimworld_planetmap)
 			RegisterSignal(SSrimworld_planetmap, COMSIG_RIMWORLD_PLANET_DAY_PASSED, PROC_REF(on_planet_day_passed))
+
 
 	current_rgb = hex2rgb(current_color)
 	var/list/phase_state = get_phase_light_state()
@@ -380,17 +404,21 @@ SUBSYSTEM_DEF(daylight)
 	current_color = phase_state["color"]
 	last_cycle_progress = get_cycle_progress()
 
+
 	wash_source = new()
 	wash_source.color = current_color
 	wash_source.alpha = round(clamp(current_intensity, 0, 1) * 255, 1)
 	for(var/mob/viewer as anything in GLOB.player_list)
-		viewer.hud_used?.register_reuse(wash_source)
+		register_sources_for_viewer(viewer)
+
 
 	update_current(current_intensity, current_color, force = TRUE)
+
 
 	for(var/area/daylit as anything in daylight_areas)
 		daylit.apply_daylight_overlay()
 		CHECK_TICK
+
 
 	setup_complete = TRUE
 	return SS_INIT_SUCCESS
@@ -406,11 +434,14 @@ SUBSYSTEM_DEF(daylight)
 		)
 		transition_steps--
 
+
 	if(use_planet_time)
 		process_rimworld_daylight()
 		return
 
+
 	process_station_daylight()
+
 
 /**
  * Interpolate night↔day colour for a 0–1 manual intensity (admin forced time).
@@ -439,18 +470,22 @@ SUBSYSTEM_DEF(daylight)
 		count++
 	return count
 
+
 /datum/controller/subsystem/daylight/proc/process_station_daylight()
 	if(!COOLDOWN_FINISHED(src, daylight_update_cd))
 		return
 	COOLDOWN_START(src, daylight_update_cd, daylight_update_cooldown)
 
+
 	if(manual_time >= 0 || time_locked || cycle_locked)
 		return
+
 
 	var/cycle_progress = get_cycle_progress()
 	if(last_cycle_progress < 0)
 		last_cycle_progress = cycle_progress
 		return
+
 
 	if(cycle_progress < last_cycle_progress - 0.01)
 		message_admins("A new day has dawned on the station!")
@@ -460,33 +495,41 @@ SUBSYSTEM_DEF(daylight)
 		message_admins("Night has fallen on the station.")
 		SEND_SIGNAL(src, COMSIG_DAYLIGHT_NIGHT_START)
 
+
 	if(abs(cycle_progress - last_cycle_progress) < delta_cycle_progress)
 		return
+
 
 	resolve_phase()
 	if(current_phase?.name != last_phase_name)
 		last_phase_name = current_phase?.name
 
+
 	var/list/phase_state = get_phase_light_state()
 	set_target(phase_state["intensity"], phase_state["color"])
 	last_cycle_progress = cycle_progress
+
 
 /datum/controller/subsystem/daylight/proc/process_rimworld_daylight()
 	if(!COOLDOWN_FINISHED(src, rimworld_daylight_cd))
 		return
 	COOLDOWN_START(src, rimworld_daylight_cd, RIMWORLD_DAYLIGHT_UPDATE_INTERVAL)
 
+
 	if(!SSrimworld_planetmap)
 		return
 
+
 	var/angle = SSrimworld_planetmap.rotation_angle
 	last_planet_rotation = angle
+
 
 	// Plates carry the sun. Do not animate the shared wash or restart the
 	// transition: that called update_light() every second and sawed the tick.
 	for(var/area/rimworld/A as anything in GLOB.rimworld_areas)
 		if(A.daylight)
 			A.update_rimworld_daylight()
+
 
 	if(!length(all_emitters) || manual_time >= 0 || time_locked)
 		return
@@ -580,6 +623,7 @@ SUBSYSTEM_DEF(daylight)
 		local_current = daylight_phases[length(daylight_phases)]
 		local_next = daylight_phases[1]
 
+
 	var/full_day = 24 HOURS
 	var/duration = local_next.start_time - local_current.start_time
 	if(duration <= 0)
@@ -596,7 +640,7 @@ SUBSYSTEM_DEF(daylight)
 	var/intensity = lerp(from_phase.target_intensity, to_phase.target_intensity, mix)
 	if(from_phase.name == "Dusk" || from_phase.name == "Midnight" || to_phase.name == "Midnight")
 		var/moonlight_ratio = clamp(1 - intensity, 0, 1)
-		color = color_interpolate(color, "#6f86b6", moonlight_ratio * 0.4)
+		color = color_interpolate(color, "#91ACDA", moonlight_ratio * 0.5)
 		intensity = max(intensity, 0.06)
 	return list(
 		"color" = color,
@@ -663,6 +707,7 @@ SUBSYSTEM_DEF(daylight)
 		refreshed_areas[loaded_area] = TRUE
 		loaded_area.update_base_lighting()
 
+
 	var/list/rimworld_attached = list()
 	for(var/turf/loaded_turf in turfs)
 		if(!isturf(loaded_turf))
@@ -687,6 +732,7 @@ SUBSYSTEM_DEF(daylight)
 		apply_daylight_wash(loaded_turf, 255)
 		CHECK_TICK
 
+
 	if(rebuild_leaks)
 		rebuild_daylight_leaks()
 
@@ -698,6 +744,7 @@ SUBSYSTEM_DEF(daylight)
 	if(isnull(holder))
 		return
 	clear_daylight_wash(changed)
+
 
 	if(changed.has_roof())
 		return
@@ -740,6 +787,28 @@ SUBSYSTEM_DEF(daylight)
 	return null
 
 
+/datum/controller/subsystem/daylight/proc/register_source_for_viewer(mob/viewer, source)
+	if(!viewer || QDELETED(viewer) || !viewer.client || !viewer.hud_used || !source)
+		return FALSE
+	var/datum/hud/viewer_hud = viewer.hud_used
+	for(var/datum/weakref/source_ref as anything in viewer_hud.asset_refs_for_reuse)
+		if(source_ref?.resolve() == source)
+			viewer.client.screen += source
+			return TRUE
+	viewer_hud.register_reuse(source)
+	return TRUE
+
+
+/datum/controller/subsystem/daylight/proc/register_sources_for_viewer(mob/viewer)
+	if(!viewer || QDELETED(viewer) || !viewer.hud_used)
+		return FALSE
+	if(wash_source)
+		register_source_for_viewer(viewer, wash_source)
+	for(var/obj/rimworld_daylight_plate/plate as anything in rimworld_plates)
+		register_source_for_viewer(viewer, plate)
+	return TRUE
+
+
 /datum/controller/subsystem/daylight/proc/register_rimworld_plate(obj/rimworld_daylight_plate/plate)
 	if(!plate || QDELETED(plate) || (plate in rimworld_plates))
 		return
@@ -747,7 +816,7 @@ SUBSYSTEM_DEF(daylight)
 	// A render_target only fills while a client draws it, so the plate goes on every screen like wash_source.
 	// The leading * on its render_target keeps it invisible there.
 	for(var/mob/viewer as anything in GLOB.player_list)
-		viewer.hud_used?.register_reuse(plate)
+		register_source_for_viewer(viewer, plate)
 
 
 /datum/controller/subsystem/daylight/proc/unregister_rimworld_plate(obj/rimworld_daylight_plate/plate)
@@ -815,6 +884,7 @@ SUBSYSTEM_DEF(daylight)
 	var/steps_down = steps_up
 	var/hold_steps = max(0, round(duration / step_wait, 1) - steps_up - steps_down)
 
+
 	set_target(1, color, transition_time)
 	for(var/i in 1 to steps_up)
 		fire()
@@ -829,6 +899,7 @@ SUBSYSTEM_DEF(daylight)
 		sleep(step_wait)
 		CHECK_TICK
 	flashing = FALSE
+
 
 /datum/controller/subsystem/daylight/proc/get_weather_particle_type()
 	switch(visual_weather_override)
@@ -869,6 +940,7 @@ SUBSYSTEM_DEF(daylight)
 /proc/rimworld_daylight_alpha_bucket(intensity)
 	return round(clamp(intensity, 0, 1) * 255 / RW_DAYLIGHT_LEVEL_STEP) * RW_DAYLIGHT_LEVEL_STEP
 
+
 /proc/rimworld_quantize_daylight_color(color)
 	var/list/rgb = hex2rgb(color)
 	return rgb(
@@ -876,6 +948,7 @@ SUBSYSTEM_DEF(daylight)
 		round(rgb[2] / RW_DAYLIGHT_LEVEL_STEP) * RW_DAYLIGHT_LEVEL_STEP,
 		round(rgb[3] / RW_DAYLIGHT_LEVEL_STEP) * RW_DAYLIGHT_LEVEL_STEP,
 	)
+
 
 /proc/color_interpolate(color1, color2, ratio)
 	var/list/c1 = hex2rgb(color1)
@@ -936,20 +1009,18 @@ SUBSYSTEM_DEF(daylight)
 
 /atom/movable/screen/plane_master/daylight_anchor/show_to(mob/mymob)
 	. = ..()
-	if(offset != 0 || !mymob || !SSdaylight?.wash_source)
+	if(offset != 0 || !mymob || !SSdaylight)
 		return
-	mymob.hud_used?.register_reuse(SSdaylight.wash_source)
-	for(var/obj/rimworld_daylight_plate/plate as anything in SSdaylight.rimworld_plates)
-		mymob.hud_used?.register_reuse(plate)
+	SSdaylight.register_sources_for_viewer(mymob)
 
 
 /atom/movable/screen/plane_master/daylight_anchor/hide_from(mob/oldmob)
 	. = ..()
-	if(offset != 0 || !oldmob || !SSdaylight?.wash_source)
+	if(offset != 0 || !oldmob || !SSdaylight)
 		return
-	oldmob.hud_used?.unregister_reuse(SSdaylight.wash_source)
-	for(var/obj/rimworld_daylight_plate/plate as anything in SSdaylight.rimworld_plates)
-		oldmob.hud_used?.unregister_reuse(plate)
+	// Render sources are HUD-wide assets, not children of this plane master.
+	// Re-register them after plane refreshes so clearing/rebuilding the screen cannot leave them missing.
+	SSdaylight.register_sources_for_viewer(oldmob)
 
 
 /obj/effect/light_emitter
@@ -958,9 +1029,9 @@ SUBSYSTEM_DEF(daylight)
 
 /obj/effect/light_emitter/daylight
 	set_luminosity = 2
-	set_cap = 0.5
+	set_cap = 0.75
 	var/initial_lum = 2
-	var/initial_cap = 0.5
+	var/initial_cap = 0.75
 
 
 /obj/effect/light_emitter/daylight/Initialize(mapload)
@@ -983,7 +1054,6 @@ SUBSYSTEM_DEF(daylight)
 	update_light()
 
 
-
 /particles/daylight_weather
 	icon = 'icons/effects/particles/generic.dmi'
 	width = 480
@@ -997,6 +1067,7 @@ SUBSYSTEM_DEF(daylight)
 	drift = generator(GEN_CIRCLE, 0, 2)
 	friction = 0.25
 
+
 /particles/daylight_weather/rain
 	icon_state = list("drop" = 4, "dot" = 1)
 	color = "#b0d8ff"
@@ -1006,6 +1077,7 @@ SUBSYSTEM_DEF(daylight)
 	fade = 0.5 SECONDS
 	gravity = list(0, -4.4)
 	drift = generator(GEN_CIRCLE, 0, 1)
+
 
 /particles/daylight_weather/snow
 	icon_state = list("dot" = 3, "cross" = 2)
@@ -1018,6 +1090,7 @@ SUBSYSTEM_DEF(daylight)
 	drift = generator(GEN_CIRCLE, 0, 3)
 	spin = generator(GEN_NUM, -8, 8)
 
+
 /particles/daylight_weather/dust
 	icon_state = list("dot" = 4, "cross" = 1)
 	color = "#c59a6f"
@@ -1028,6 +1101,7 @@ SUBSYSTEM_DEF(daylight)
 	gravity = list(-1.2, -0.4)
 	drift = generator(GEN_CIRCLE, 0, 4)
 	spin = generator(GEN_NUM, -6, 6)
+
 
 /particles/daylight_weather/mist
 	icon_state = list("dot" = 4)

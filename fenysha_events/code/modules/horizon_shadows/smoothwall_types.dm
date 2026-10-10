@@ -8,16 +8,34 @@ SUBSYSTEM_DEF(shadow)
 	ss_flags = SS_TICKER | SS_NO_INIT
 
 	var/list/queue = list()
+	/// assoc lookup for `queue`, makes dedupe O(1) (it used to be `A in queue`, O(n))
+	var/list/queued_lookup = list()
 	var/list/door_queue = list()
+	var/list/door_lookup = list()
+
+	/// Every atom that currently owns a USE_ICON_STATE shadow, used by the resync sweeps
+	var/list/casters = list()
+	/// Resync sweeps still to do. Walls get smoothed AFTER they are initialized, so we re-read their icon_state
+	/// once smoothing has surely settled (safety net on top of the smoothing hook).
+	var/resync_sweeps_left = 2
+	var/next_resync = 0
 
 /datum/controller/subsystem/shadow/fire()
 	if(SSatoms.initializing_something())
 		return
 
+	// Safety net for map load: re-read every wall's icon_state after icon smoothing finished
+	if(resync_sweeps_left && SSicon_smooth.initialized && world.time >= next_resync)
+		resync_sweeps_left--
+		next_resync = world.time + 10 SECONDS
+		for(var/atom/caster as anything in casters)
+			queue_shadow(caster)
+
 	var/list/cache = queue
 	while(length(cache))
 		var/atom/A = cache[length(cache)]
 		cache.len--
+		queued_lookup -= A
 
 		if(QDELETED(A) || !(A.shadow_flags & ATOM_SHADOW_USE_ICON_STATE) || !A.shadow)
 			continue
@@ -31,6 +49,7 @@ SUBSYSTEM_DEF(shadow)
 	while(length(cache))
 		var/obj/machinery/door/D = cache[length(cache)]
 		cache.len--
+		door_lookup -= D
 
 		if(QDELETED(D))
 			continue
@@ -40,24 +59,28 @@ SUBSYSTEM_DEF(shadow)
 		if(MC_TICK_CHECK)
 			return
 
-	if(!length(queue) && !length(door_queue))
+	if(!length(queue) && !length(door_queue) && !resync_sweeps_left)
 		can_fire = FALSE
 
 /datum/controller/subsystem/shadow/proc/queue_shadow(atom/A)
-	if(!(A.shadow_flags & ATOM_SHADOW_USE_ICON_STATE))
+	if(!(A.shadow_flags & ATOM_SHADOW_USE_ICON_STATE) || queued_lookup[A])
 		return
-	if(A in queue)
-		return
+	queued_lookup[A] = TRUE
 	queue += A
-	if(!can_fire)
-		can_fire = TRUE
+	can_fire = TRUE
+
+/datum/controller/subsystem/shadow/proc/unqueue_shadow(atom/A)
+	casters -= A
+	if(queued_lookup[A])
+		queued_lookup -= A
+		queue -= A
 
 /datum/controller/subsystem/shadow/proc/queue_door(obj/machinery/door/D)
-	if(D in door_queue)
+	if(door_lookup[D])
 		return
+	door_lookup[D] = TRUE
 	door_queue += D
-	if(!can_fire)
-		can_fire = TRUE
+	can_fire = TRUE
 
 
 /atom
@@ -65,20 +88,23 @@ SUBSYSTEM_DEF(shadow)
 	var/shadow_base_icon_state = "shadow_mask"
 	var/atom/movable/atom_shadow/shadow
 
+// NOTE: /turf/Initialize used to call give_shadow() a second time, it is redundant (atom/Initialize already does it)
 /atom/Initialize(mapload, ...)
-	. = ..()
-	if(shadow_flags & ATOM_CAST_SHADOW)
-		give_shadow()
-
-/turf/Initialize(mapload)
 	. = ..()
 	if(shadow_flags & ATOM_CAST_SHADOW)
 		give_shadow()
 
 /atom/Destroy(force)
 	. = ..()
+	if(shadow_flags & ATOM_SHADOW_USE_ICON_STATE)
+		SSshadow.unqueue_shadow(src)
 	if(shadow)
 		remove_shadow()
+
+/turf/Initialize(mapload)
+	. = ..()
+	if(shadow_flags & ATOM_CAST_SHADOW)
+		give_shadow()
 
 /atom/proc/give_shadow()
 	if(shadow)
@@ -102,21 +128,34 @@ SUBSYSTEM_DEF(shadow)
 	if(shadow_flags & ATOM_SHADOW_USE_ICON_STATE)
 		shadow.icon_state = "[shadow_base_icon_state]-0"
 		shadow.smoothing_flags = NONE
+		SSshadow.casters += src
+		register_shadow_smoothing()
 		SSshadow.queue_shadow(src)
 	else if(istype(shadow, /atom/movable/atom_shadow/door))
 		shadow.icon_state = icon_state
 		shadow.dir = dir
 
 	if(shadow_flags & ATOM_SHADOW_ABSOLUTE)
-		shadow.enable_ghost_override()
+		shadow.mark_absolute()
+
+/// Make the shadow follow the icon smoothing of its owner (fixes shadows not "catching" walls smoothed after init)
+/atom/proc/register_shadow_smoothing()
+	RegisterSignal(src, COMSIG_ATOM_SMOOTHED_ICON, PROC_REF(on_shadow_owner_smoothed), override = TRUE)
+
+/atom/proc/on_shadow_owner_smoothed(datum/source)
+	SIGNAL_HANDLER
+	SSshadow.queue_shadow(src)
+
 
 /atom/proc/update_shadow_from_icon_state()
 	if(!(shadow_flags & ATOM_SHADOW_USE_ICON_STATE) || QDELETED(shadow))
 		return
 
-	var/junction = get_shadow_junction_from_icon()
-	shadow.icon_state = "[shadow_base_icon_state]-[junction]"
-	shadow.sync_ghost_override()
+	var/new_state = "[shadow_base_icon_state]-[get_shadow_junction_from_icon()]"
+	// don't touch the appearance when nothing changed - every set is a client-side appearance update
+	if(shadow.icon_state == new_state)
+		return
+	shadow.icon_state = new_state
 
 /atom/proc/remove_shadow()
 	QDEL_NULL(shadow)
@@ -164,70 +203,27 @@ SUBSYSTEM_DEF(shadow)
 
 	base_icon_state = "shadow_mask"
 
-	var/atom/movable/atom_shadow/ghost_override_shadow
 
+/// Tints the mask (invisibly) so the cordon chain (cordon_chain.dm) can pick it out.
+/atom/movable/atom_shadow/proc/mark_absolute()
+	color = CORDON_MARK_COLOR
 
-/atom/movable/atom_shadow/Initialize(mapload)
-	. = ..()
-	if(ghost_override_shadow)
-		sync_ghost_override()
-
-/atom/movable/atom_shadow/Destroy()
-	ghost_override_shadow?.Destroy()
-	ghost_override_shadow = null
-	return ..()
-
+// Old names, kept so nothing else breaks
 /atom/movable/atom_shadow/proc/enable_ghost_override()
-	if(ghost_override_shadow)
-		return
-	ghost_override_shadow = new /atom/movable/atom_shadow/ghost_override(loc)
-	sync_ghost_override()
-
+	return
 /atom/movable/atom_shadow/proc/disable_ghost_override()
-	ghost_override_shadow?.Destroy()
-	ghost_override_shadow = null
-
+	return
 /atom/movable/atom_shadow/proc/sync_ghost_override()
-	if(!ghost_override_shadow)
-		return
-	ghost_override_shadow.icon = icon
-	ghost_override_shadow.icon_state = icon_state
-	ghost_override_shadow.dir = dir
-	ghost_override_shadow.pixel_x = pixel_x
-	ghost_override_shadow.pixel_y = pixel_y
-	// Do NOT copy alpha/color from the normal shadow.
-	// This shadow is outside the WALL_FOV pipeline.
-	ghost_override_shadow.alpha = 255
-	ghost_override_shadow.color = null
+	return
 
 /atom/movable/atom_shadow/proc/handle_icon_junction(junction)
 	icon_state = "[base_icon_state]-[junction]"
-	sync_ghost_override()
 
 /atom/movable/atom_shadow/door
 	icon = 'fenysha_events/icons/shadows/airlock_mask.dmi'
 
 /atom/movable/atom_shadow/door/handle_icon_junction(junction)
 	return
-
-// MARK: Ghost shadow
-/atom/movable/atom_shadow/ghost_override
-	name = "ghost shadow"
-
-	plane = ATOMS_FOV_SHADOWS_PLANE
-
-	invisibility = INVISIBILITY_OBSERVER
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	anchored = TRUE
-	density = FALSE
-
-	alpha = 255
-	color = null
-
-	smoothing_flags = NONE
-	smoothing_groups = null
-	canSmoothWith = null
-
 
 // MARK: WALL
 /turf/closed/wall

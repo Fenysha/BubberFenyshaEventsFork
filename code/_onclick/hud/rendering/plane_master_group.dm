@@ -91,7 +91,7 @@
 
 /// Returns a list of all the plane master types we want to create
 /datum/plane_master_group/proc/get_plane_types()
-	return subtypesof(/atom/movable/screen/plane_master) - /atom/movable/screen/plane_master/rendering_plate
+	return subtypesof(/atom/movable/screen/plane_master) - /atom/movable/screen/plane_master/rendering_plate - /atom/movable/screen/plane_master/wall_fov/cordon_stage
 
 /// Actually generate our plane masters, in some offset range (where offset is the z layers to render to, because each "layer" in a multiz stack gets its own plane master cube)
 /datum/plane_master_group/proc/build_plane_masters(starting_offset, ending_offset)

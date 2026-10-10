@@ -24,6 +24,7 @@
 #include "code\_experiments.dm"
 #include "code\world.dm"
 #include "code\___fenysha_modular\_compile_options.dm"
+#include "code\___fenysha_modular\__DEFINES\shadows.dm"
 #include "code\__DEFINES\__globals.dm"
 #include "code\__DEFINES\_atoms.dm"
 #include "code\__DEFINES\_bitfields.dm"

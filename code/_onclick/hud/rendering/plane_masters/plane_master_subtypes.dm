@@ -642,6 +642,10 @@
 
 /atom/movable/screen/plane_master/rendering_plate/masked_game_hub/proc/update_wall_fov(mob/source)
 	SIGNAL_HANDLER
+	// ghosts have no normal shadow chain (see shadows_plane/update_shadow_modes), so there is nothing to mask with
+	if(isobserver(source))
+		remove_filter("wall_fov_mask")
+		return
 	add_filter("wall_fov_mask", 1, alpha_mask_filter(render_source = OFFSET_RENDER_TARGET(WALLS_FOV_PLANE_11_RENDER_TARGET, offset), flags = MASK_INVERSE))
 
 // MARK: Shadow-Planes
@@ -654,27 +658,80 @@
 	render_relay_planes = list()
 	color = list(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,2)
 
-/*
-// Под дебаг теней / For debug shadows
-/atom/movable/screen/plane_master/wall_fov/show_to(mob/mymob)
-	..()
-	if(!isobserver(mymob))
-		return
-	hide_from(mymob)
-*/
 
-// Тут есть проблема, в том как тени в Plane Controls отображаются / There is a problem here, in how shadows are displayed in Plane Controls
-/atom/movable/screen/plane_master/wall_fov/proc/set_displace_offset(dx, dy, duration)
+// Replace the existing wall_fov displacement proc with this implementation.
+/atom/movable/screen/plane_master/wall_fov/proc/set_displace_offset(dx, dy, duration = 1, easing = LINEAR_EASING, instant = FALSE)
 	var/filter = get_filter("wall_displace")
 	if(!filter)
 		return
-	animate(filter, duration, x = dx, y = dy, easing = LINEAR_EASING)
+
+	if(instant)
+		// Stop only the displacement animation, then set an exact position.
+		animate(filter, tag = "shadow_displace_origin")
+		filter:x = dx
+		filter:y = dy
+		return
+
+	animate(filter, x = dx, y = dy, time = duration, easing = easing, tag = "shadow_displace_origin")
+
+/// A freshly shown plane must pick up the camera offset the client already has (mob swap, relog)
+/atom/movable/screen/plane_master/wall_fov/show_to(mob/mymob)
+	. = ..()
+	if(!.)
+		return
+	var/client/C = mymob?.canon_client
+	if(C)
+		set_displace_offset(SHADOW_ORIGIN_SIGN * C.view_offset_x, SHADOW_ORIGIN_SIGN * C.view_offset_y, instant = TRUE)
 
 /atom/movable/screen/plane_master/wall_fov/shadows_plane
 	name = "Wall Fov Shadows Plane"
 	plane = ATOMS_FOV_SHADOWS_PLANE
 	render_target = ATOMS_FOV_SHADOWS_RENDER_TARGET
 	render_relay_planes = list()
+
+/// The source plane is the only part that is always shown, so it decides which chain a viewer gets:
+/// - normal player: normal shadows only, no cordon chain (it does not even exist)
+/// - mesons:        normal shadows (dimmed) + cordon chain
+/// - ghost:         NO normal shadows, cordon chain only
+/// Hidden planes are not rendered at all and the cordon chain is only built when needed, so each viewer only pays for what they see.
+/atom/movable/screen/plane_master/wall_fov/shadows_plane/show_to(mob/mymob)
+	. = ..()
+	if(!. || !mymob)
+		return
+	// every player can hold RMB to look around (lives here because the other shadow planes can be hidden)
+	if(mymob.client)
+		mymob.LoadComponent(/datum/component/look_around)
+	RegisterSignal(mymob, SIGNAL_ADDTRAIT(TRAIT_MESON_VISION), PROC_REF(update_shadow_modes), override = TRUE)
+	RegisterSignal(mymob, SIGNAL_REMOVETRAIT(TRAIT_MESON_VISION), PROC_REF(update_shadow_modes), override = TRUE)
+	update_shadow_modes(mymob)
+
+/atom/movable/screen/plane_master/wall_fov/shadows_plane/proc/update_shadow_modes(mob/source)
+	SIGNAL_HANDLER
+	if(!source || !home)
+		return
+	var/is_ghost = isobserver(source)
+	var/cordon_wanted = is_ghost || HAS_TRAIT(source, TRAIT_MESON_VISION)
+	for(var/plane_key in home.plane_masters)
+		var/atom/movable/screen/plane_master/wall_fov/other = home.plane_masters[plane_key]
+		if(!istype(other) || other == src || other.offset != offset)
+			continue
+		if(istype(other, /atom/movable/screen/plane_master/wall_fov/cordon_stage))
+			continue
+		if(!istype(other, /atom/movable/screen/plane_master/wall_fov/shadow_mask) && !other.get_filter("wall_displace"))
+			continue
+		if(other.force_hidden == is_ghost)
+			continue
+		if(is_ghost)
+			other.hide_plane(source)
+		else
+			other.unhide_plane(source)
+
+	// the cordon chain is built on demand and thrown away again, normal players never have it
+	var/has_chain = home.has_cordon_chain(offset)
+	if(cordon_wanted && !has_chain)
+		home.add_cordon_chain(offset, source)
+	else if(!cordon_wanted && has_chain)
+		home.remove_cordon_chain(offset, source)
 
 /atom/movable/screen/plane_master/wall_fov/plane0
 	name = "Wall Fov - plane0"
@@ -808,6 +865,8 @@
 	add_filter("wall_underlay", 1, list(type = "layer", render_source = OFFSET_RENDER_TARGET(WALLS_FOV_PLANE_10_RENDER_TARGET, offset), flags = FILTER_UNDERLAY))
 	add_filter("wall_displace", 2, list(type = "displace", icon = icon(FOV_WALL_ICON, "9"), size = 256))
 	add_filter("wall_overlay", 3, list(type = "layer", render_source = OFFSET_RENDER_TARGET(WALLS_FOV_PLANE_10_RENDER_TARGET, offset)))
+	// Smooths the stair-steps of the displace chain. Also softens the edge that hides objects (masked_game_hub uses this plane)
+	add_filter("wall_soften", 4, list(type = "blur", size = SHADOW_BLUR_BASE))
 
 /atom/movable/screen/plane_master/wall_fov/plane11/set_home(datum/plane_master_group/home)
 	. = ..()
@@ -817,7 +876,9 @@
 	hud_changed(null, null, home.our_hud)
 
 /atom/movable/screen/plane_master/wall_fov/plane11/show_to(mob/mymob)
-	..()
+	. = ..()
+	if(!. || !mymob)
+		return
 	if(!isobserver(mymob))
 		return
 	set_alpha(100)
@@ -845,10 +906,13 @@
 	// The safe lookup: the lobby runs this before SSmapping has filled the z offset table
 	var/viewed_z_offset = GET_TURF_PLANE_OFFSET(eye_turf)
 	var/mob_z_offset = GET_TURF_PLANE_OFFSET(our_mob)
+	var/atom/movable/screen/plane_master/cordon_visual = home?.get_plane(GET_NEW_PLANE(CORDON_FOV_PLANE(WALLS_FOV_PLANE_12), offset))
 	if(offset == mob_z_offset || offset == viewed_z_offset)
 		enable_alpha()
+		cordon_visual?.enable_alpha()
 	else
 		disable_alpha()
+		cordon_visual?.disable_alpha()
 
 /atom/movable/screen/plane_master/wall_fov/shadow_mask
 	name = "Wall Fov - shadow mask (visuals)"
@@ -857,13 +921,16 @@
 	render_relay_planes = list(RENDER_PLANE_GAME)
 	color = null
 
+/// Cascade of small blurs instead of one big one: BYOND's blur bands/grains at large sizes, several soft passes give a smooth falloff.
+/// halo = wide soft penumbra, core = the dense part of the shadow, blurred a bit so it has no hard edge either.
 /atom/movable/screen/plane_master/wall_fov/shadow_mask/Initialize(mapload, datum/hud/hud_owner, datum/plane_master_group/home, offset)
 	. = ..()
 	var/offset_target = OFFSET_RENDER_TARGET(WALLS_FOV_PLANE_11_RENDER_TARGET, offset)
-	filters += filter(type = "layer", render_source = offset_target, flags = FILTER_UNDERLAY)
-	filters += filter(type = "blur", size = 5)
-	filters += filter(type = "layer", render_source = offset_target)
-	filters += filter(type = "blur", size = 1)
+	add_filter("shadow_halo", 1, list(type = "layer", render_source = offset_target, flags = FILTER_UNDERLAY))
+	add_filter("shadow_halo_blur_a", 2, list(type = "blur", size = SHADOW_BLUR_HALO_A))
+	add_filter("shadow_halo_blur_b", 3, list(type = "blur", size = SHADOW_BLUR_HALO_B))
+	add_filter("shadow_core", 4, list(type = "layer", render_source = offset_target))
+	add_filter("shadow_core_blur_a", 5, list(type = "blur", size = SHADOW_BLUR_CORE_A))
 
 /atom/movable/screen/plane_master/wall_fov/shadow_mask/show_to(mob/mymob)
 	. = ..()
@@ -873,12 +940,21 @@
 	RegisterSignal(mymob, SIGNAL_REMOVETRAIT(TRAIT_MESON_VISION), PROC_REF(update_mesons), override = TRUE)
 	update_mesons(mymob)
 
+/// Mesons weaken the mask by scaling the alpha of the mask LAYERS, not of the whole plane.
+/// The plane stays at alpha 255 so things drawn straight onto it (the cordon "absolute" shadow) stay black and opaque for everyone.
 /atom/movable/screen/plane_master/wall_fov/shadow_mask/proc/update_mesons(mob/source)
 	SIGNAL_HANDLER
-	if(HAS_TRAIT(source, TRAIT_MESON_VISION))
-		set_alpha(150)
-	else
-		set_alpha(255)
+	var/strength = HAS_TRAIT(source, TRAIT_MESON_VISION) ? SHADOW_MESON_STRENGTH : 1
+	var/list/mask_color = list(
+		0,0,0,0,
+		0,0,0,0,
+		0,0,0,0,
+		0,0,0,strength,
+		0,0,0,0
+	)
+
+	modify_filter("shadow_halo", list(color = mask_color))
+	modify_filter("shadow_core", list(color = mask_color))
 
 #undef FOV_WALL_ICON
 // [/HORIZON-SHADOWS]

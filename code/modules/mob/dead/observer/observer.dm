@@ -353,7 +353,7 @@ GAME_VERB_DESC(/mob/eye, ghost, "Ghost", "Relinquish your life and enter the lan
 		else if((direct & WEST) && x > 1)
 			destination = get_step(destination, WEST)
 
-		if(destination && istype(destination, /turf/cordon/absolute) && !client?.holder) // Fenysha events edit: real border for ghosts
+		if(destination && istype(destination, /turf/cordon/absolute)) // Fenysha events edit: real border for ghosts
 			return FALSE
 
 		abstract_move(destination)//Get out of closets and such as a ghost

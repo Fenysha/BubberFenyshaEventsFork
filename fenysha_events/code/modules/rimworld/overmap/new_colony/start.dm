@@ -124,6 +124,7 @@
 	settlement.data["visible"] = visible_on_map
 	settlement.data["scenario"] = scenario_id
 
+
 	addtimer(CALLBACK(src, PROC_REF(finish_and_close)), 1)
 
 	if(!transfer_to_character(owner))
@@ -131,9 +132,7 @@
 		return FALSE
 
 	launch_rimworld_pod(cell, list(owner))
-
-	// Scenario starting gear near the first colonist
-	addtimer(CALLBACK(src, PROC_REF(spawn_scenario_gear), cell, owner), 2 SECONDS)
+	spawn_scenario_gear(cell, owner)
 
 	// Ambient weather for the newly loaded cell
 	cell.on_loaded_start_weather()
@@ -143,7 +142,7 @@
 	if(QDELETED(owner) || !cell)
 		return
 	var/datum/rimworld_scenario/S = get_rimworld_scenario(scenario_id)
-	S?.spawn_starting_gear(cell, owner)
+	addtimer(CALLBACK(S, TYPE_PROC_REF(/datum/rimworld_scenario, spawn_starting_gear), cell, owner), 2 SECONDS)
 
 
 /datum/settlement_setup/proc/do_join()

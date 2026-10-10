@@ -31,7 +31,7 @@
 
 
 /datum/turf_reservation/sub_level
-	turf_type = /turf/cordon
+	turf_type = /turf/cordon/absolute
 
 	var/id = 0
 	var/name = "Sub-Level"
@@ -179,7 +179,7 @@
 	if(new_loc)
 		var/turf/T = get_turf(new_loc)
 
-		if(T && istype(T, /turf/cordon/absolute) && !client?.holder)
+		if(T && istype(T, /turf/cordon/absolute))
 			return FALSE
 
 	return ..()
@@ -187,11 +187,16 @@
 
 /turf/cordon/absolute
 
+	name = "Border"
 	icon = 'fenysha_events/icons/turf/floors/floors.dmi'
 	icon_state = "black"
 	invisibility = INVISIBILITY_NONE
 	space_lit = FALSE
+	baseturfs = /turf/cordon/absolute
 
+/turf/cordon/absolute/examine(mob/user)
+	SHOULD_CALL_PARENT(FALSE)
+	return list()
 
 /turf/cordon/absolute/CanPass(atom/movable/mover, border_dir)
 	SHOULD_CALL_PARENT(FALSE)
