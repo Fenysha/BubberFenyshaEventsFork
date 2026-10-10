@@ -784,7 +784,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 		if(
 			processed >= RW_SUBLEVEL_SMOOTH_BUDGET \
-			|| TICK_CHECK
+			|| (!ignore_lag && TICK_CHECK)
 		)
 			return RW_CELL_LOAD_CONTINUE
 
@@ -871,6 +871,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	cell.refresh_from_planet()
 	cell.place_edge_markers()
 	cell.bind_areas_to_cell()
+	cell.setup_rust_zones()
 
 	qdel(generator)
 	generator = null

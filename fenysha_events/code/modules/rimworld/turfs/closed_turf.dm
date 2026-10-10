@@ -21,6 +21,7 @@
 	baseturfs = /turf/open/bottom_or_region
 
 	flags_ricochet = RICOCHET_HARD
+	area_grid_flags = AREA_GRID_BOUNDARY
 
 	smoothing_flags = SMOOTH_BITMASK
 	smoothing_groups = SMOOTH_GROUP_RWWALLS + SMOOTH_GROUP_CLOSED_TURFS

@@ -400,7 +400,7 @@
 		return
 	if(user.client)
 	// [HORIZON-SHADOWS]
-		if(!isobserver(user) && !can_see(user, src, 7))
+		if(!isobserver(user) && !rust_can_see(user, src))
 			src.balloon_alert(user, "сan't see, get closer")
 			return
 	// [/HORIZON-SHADOWS]

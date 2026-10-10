@@ -576,6 +576,7 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	if(!is_generated && !reservation)
 		return TRUE
 
+	teardown_rust_zones()
 	return unload_local_content()
 
 /datum/planet_cell/proc/load(poi_name = null, datum/callback/post_load_callback = null)

@@ -643,3 +643,209 @@
 	return rustg_raw_tp_planet_find_caravan_path(config_json)
 
 
+#define rustg_raw_tp_area_init_z(z, width, height) \
+	CALL_LIB(RUST_UTILS, "tp_area_init_z")("[z]", "[width]", "[height]")
+
+#define rustg_raw_tp_area_set_tile(x, y, z, is_boundary, opaque, dense, kind, type_path) \
+	CALL_LIB(RUST_UTILS, "tp_area_set_tile")("[x]", "[y]", "[z]", "[is_boundary]", "[opaque]", "[dense]", kind, type_path)
+
+#define rustg_raw_tp_area_get_area_id(x, y, z) \
+	CALL_LIB(RUST_UTILS, "tp_area_get_area_id")("[x]", "[y]", "[z]")
+
+#define rustg_raw_tp_area_tile_info(x, y, z) \
+	CALL_LIB(RUST_UTILS, "tp_area_tile_info")("[x]", "[y]", "[z]")
+
+#define rustg_raw_tp_area_area_exists(area_id, z) \
+	CALL_LIB(RUST_UTILS, "tp_area_area_exists")("[area_id]", "[z]")
+
+#define rustg_raw_tp_area_force_rebuild(z) \
+	CALL_LIB(RUST_UTILS, "tp_area_force_rebuild")("[z]")
+
+#define rustg_raw_tp_area_set_tiles_batch(config_json) \
+	CALL_LIB(RUST_UTILS, "tp_area_set_tiles_batch")(config_json)
+
+#define rustg_raw_tp_area_get_area_tiles(area_id, z) \
+	CALL_LIB(RUST_UTILS, "tp_area_get_area_tiles")("[area_id]", "[z]")
+
+#define rustg_raw_tp_area_get_area_bounds(area_id, z) \
+	CALL_LIB(RUST_UTILS, "tp_area_get_area_bounds")("[area_id]", "[z]")
+
+#define rustg_raw_tp_area_get_neighbors(area_id, z) \
+	CALL_LIB(RUST_UTILS, "tp_area_get_neighbors")("[area_id]", "[z]")
+
+#define rustg_raw_tp_area_get_stats(z) \
+	CALL_LIB(RUST_UTILS, "tp_area_get_stats")("[z]")
+
+
+/proc/rustg_area_init_z(z, width, height)
+	if(!isnum(z) || !isnum(width) || !isnum(height))
+		return FALSE
+	var/result = rustg_raw_tp_area_init_z(z, width, height)
+	if(findtext(result, "ERROR:") == 1)
+		stack_trace("rustg_area_init_z failed: [result]")
+		return FALSE
+	return TRUE
+
+/**
+ * Update a single tile. Returns new area_id or null on failure.
+ *
+ * is_boundary / opaque / dense — truthy values become "1", else "0".
+ */
+/proc/rustg_area_set_tile(x, y, z, is_boundary, opaque, dense, kind = "other", type_path = "")
+	if(!isnum(x) || !isnum(y) || !isnum(z))
+		return null
+	var/result = rustg_raw_tp_area_set_tile(x, y, z, is_boundary ? "1" : "0", opaque ? "1" : "0", dense ? "1" : "0", kind || "other", type_path || "")
+	if(findtext(result, "ERROR:") == 1)
+		stack_trace("rustg_area_set_tile failed: [result]")
+		return null
+	return text2num(result)
+
+/**
+ * Batch update + full rebuild. tiles = list of assoc lists with keys:
+ *   x, y, is_boundary, opaque, dense, kind, type_path
+ */
+/proc/rustg_area_set_tiles_batch(z, list/tiles)
+	if(!isnum(z) || !islist(tiles))
+		return FALSE
+	// Normalise bools to 0/1 so Rust deserializer is happy
+	var/list/normalised = list()
+	for(var/list/t in tiles)
+		normalised += list(list(
+			"x" = t["x"],
+			"y" = t["y"],
+			"is_boundary" = t["is_boundary"] ? 1 : 0,
+			"opaque" = t["opaque"] ? 1 : 0,
+			"dense" = t["dense"] ? 1 : 0,
+			"kind" = t["kind"] || "other",
+			"type_path" = t["type_path"] || "",
+		))
+	var/list/payload = list("z" = z, "tiles" = normalised)
+	var/result = rustg_raw_tp_area_set_tiles_batch(json_encode(payload))
+	if(findtext(result, "ERROR:") == 1)
+		stack_trace("rustg_area_set_tiles_batch failed: [result]")
+		return FALSE
+	return TRUE
+
+/proc/rustg_area_get_area_id(x, y, z)
+	var/result = rustg_raw_tp_area_get_area_id(x, y, z)
+	if(findtext(result, "ERROR:") == 1)
+		return null
+	return text2num(result)
+
+/**
+ * Returns assoc: is_boundary, opaque, dense, area_id, kind, type_hash
+ * Packed format from Rust: "b,o,d,aid,kind,hash"
+ */
+/proc/rustg_area_tile_info(x, y, z)
+	var/result = rustg_raw_tp_area_tile_info(x, y, z)
+	if(findtext(result, "ERROR:") == 1)
+		return null
+	var/list/parts = splittext(result, ",")
+	if(length(parts) < 6)
+		return null
+	return list(
+		"is_boundary" = text2num(parts[1]),
+		"opaque" = text2num(parts[2]),
+		"dense" = text2num(parts[3]),
+		"area_id" = text2num(parts[4]),
+		"kind" = text2num(parts[5]),
+		"type_hash" = text2num(parts[6]),
+	)
+
+/proc/rustg_area_area_exists(area_id, z)
+	var/result = rustg_raw_tp_area_area_exists(area_id, z)
+	if(findtext(result, "ERROR:") == 1)
+		return FALSE
+	return result == "1"
+
+/proc/rustg_area_force_rebuild(z)
+	var/result = rustg_raw_tp_area_force_rebuild(z)
+	if(findtext(result, "ERROR:") == 1)
+		stack_trace("rustg_area_force_rebuild failed: [result]")
+		return FALSE
+	return TRUE
+
+/proc/rustg_area_get_area_tiles(area_id, z)
+	var/result = rustg_raw_tp_area_get_area_tiles(area_id, z)
+	if(findtext(result, "ERROR:") == 1)
+		return null
+	var/list/decoded = json_decode(result)
+	return decoded?["tiles"]
+
+/proc/rustg_area_get_area_bounds(area_id, z)
+	var/result = rustg_raw_tp_area_get_area_bounds(area_id, z)
+	if(findtext(result, "ERROR:") == 1)
+		return null
+	var/list/decoded = json_decode(result)
+	if(!decoded || decoded["status"] != "ok")
+		return null
+	return list(
+		"min_x" = decoded["min_x"],
+		"min_y" = decoded["min_y"],
+		"max_x" = decoded["max_x"],
+		"max_y" = decoded["max_y"],
+		"size" = decoded["size"],
+	)
+
+/proc/rustg_area_get_neighbors(area_id, z)
+	var/result = rustg_raw_tp_area_get_neighbors(area_id, z)
+	if(findtext(result, "ERROR:") == 1)
+		return null
+	var/list/decoded = json_decode(result)
+	return decoded?["neighbors"]
+
+/proc/rustg_area_get_stats(z)
+	var/result = rustg_raw_tp_area_get_stats(z)
+	if(findtext(result, "ERROR:") == 1)
+		return null
+	return json_decode(result)
+
+
+#define rustg_raw_tp_area_same_room(x1, y1, z1, x2, y2, z2) \
+	CALL_LIB(RUST_UTILS, "tp_area_same_room")("[x1]", "[y1]", "[z1]", "[x2]", "[y2]", "[z2]")
+
+#define rustg_raw_tp_area_can_see(x1, y1, z1, x2, y2, z2, see_thru, max_dist) \
+	CALL_LIB(RUST_UTILS, "tp_area_can_see")("[x1]", "[y1]", "[z1]", "[x2]", "[y2]", "[z2]", "[see_thru]", "[max_dist]")
+
+#define rustg_raw_tp_area_can_see_many(ox, oy, z, see_thru, max_dist, targets_json) \
+	CALL_LIB(RUST_UTILS, "tp_area_can_see_many")("[ox]", "[oy]", "[z]", "[see_thru]", "[max_dist]", targets_json)
+
+/proc/rustg_area_same_room(x1, y1, z1, x2, y2, z2)
+	var/result = rustg_raw_tp_area_same_room(x1, y1, z1, x2, y2, z2)
+	if(findtext(result, "ERROR:") == 1)
+		return null
+	return result == "1"
+
+/**
+ * Structural LOS using the DM step-towards path and opaque-turf state.
+ * see_thru truthy ignores opaque turfs but never absolute cordons.
+ * max_dist 0 = unlimited (Chebyshev).
+ */
+/proc/rustg_area_can_see(x1, y1, z1, x2, y2, z2, see_thru = FALSE, max_dist = 0)
+	var/result = rustg_raw_tp_area_can_see(x1, y1, z1, x2, y2, z2, see_thru ? "1" : "0", max_dist)
+	if(findtext(result, "ERROR:") == 1)
+		return null
+	return result == "1"
+
+/**
+ * Bulk LOS. targets = list of list(x, y) or list("x"=, "y"=).
+ * Returns list of 0/1 in the same order, or null on error.
+ */
+/proc/rustg_area_can_see_many(ox, oy, z, list/targets, see_thru = FALSE, max_dist = 0)
+	if(!islist(targets))
+		return null
+	var/list/packed = list()
+	for(var/entry in targets)
+		if(islist(entry))
+			var/list/e = entry
+			var/tx = e["x"]
+			var/ty = e["y"]
+			if(isnull(tx))
+				tx = e[1]
+				ty = e[2]
+			packed += list(list(tx, ty))
+	var/result = rustg_raw_tp_area_can_see_many(ox, oy, z, see_thru ? "1" : "0", max_dist, json_encode(packed))
+	if(findtext(result, "ERROR:") == 1)
+		return null
+	var/list/decoded = json_decode(result)
+	return decoded?["results"]
