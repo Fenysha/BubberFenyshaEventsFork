@@ -730,11 +730,6 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	return TRUE
 
 
-/**
- * ------------------------------------------------------------------
- * Utilities
- * ------------------------------------------------------------------
- */
 
 /**
  * Returns distance to another cell (or coordinates).

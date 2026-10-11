@@ -732,6 +732,7 @@
 			neighbor_icon,
 			edge_state,
 			new_turf.layer + 0.01 + (initial(neighbor.edge_priority) * 0.0001),
+			offset_spokesman = new_turf,
 			appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 		)
 		edge.color = neighbor_color

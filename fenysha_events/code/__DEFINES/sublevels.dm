@@ -64,7 +64,7 @@
  * ============================================================================
  */
 
-#define RW_SUBLEVEL_MAX_PARALLEL_LOADS 1
+#define RW_SUBLEVEL_MAX_PARALLEL_LOADS 3
 
 #define RW_CELL_LOAD_CONTINUE 0
 #define RW_CELL_LOAD_COMPLETE 1

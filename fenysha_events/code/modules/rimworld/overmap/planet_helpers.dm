@@ -284,8 +284,7 @@
 	if(!is_valid_coordinate(x, y))
 		return TRUE
 	var/biome_key = get_biome(x, y)
-	var/list/biomes = get_possible_biomes()
-	var/datum/biome/rimworld/B = biomes[biome_key]
+	var/datum/biome/rimworld/B = get_biome_datum(biome_key)
 	if(!B)
 		return TRUE
 	if(!B.loadable)
@@ -385,14 +384,27 @@
 	return result
 
 
+/// Returns biome_key -> biome typepath. Abstract biomes (no biome_key, e.g. land/water) are skipped.
+/// NOTE: these are typepaths, not instances - never qdel() them and read vars with initial() or get_biome_datum().
 /datum/rimworld_planet/proc/get_possible_biomes()
 	RETURN_TYPE(/list)
 	if(!possible_biomes)
 		possible_biomes = list()
 		for(var/type in subtypesof(/datum/biome/rimworld))
-			var/datum/biome/rimworld/b = type
-			if(!b:biome_key)
-				qdel(b)
+			var/datum/biome/rimworld/biome_path = type
+			var/key = initial(biome_path.biome_key)
+			if(!key)
 				continue
-			possible_biomes[b:biome_key] = b
+			possible_biomes[key] = type
 	return possible_biomes.Copy()
+
+/// Returns the shared biome instance for a biome key (or null).
+/datum/rimworld_planet/proc/get_biome_datum(biome_key)
+	RETURN_TYPE(/datum/biome/rimworld)
+	var/biome_type = get_possible_biomes()[biome_key]
+	if(!biome_type)
+		return null
+	var/datum/biome/rimworld/instance = SSmapping.biomes[biome_type]
+	if(!istype(instance, /datum/biome/rimworld))
+		return null
+	return instance

@@ -297,8 +297,7 @@ GLOBAL_LIST_EMPTY(rimworld_caravans)
 
 	var/list/cached_climate = planet.get_cached_tile_climate(x, y)
 	var/biome_key = cached_climate ? cached_climate["biome"] : planet.get_biome(x, y)
-	var/list/biomes = planet.get_possible_biomes()
-	var/biome_type = biomes?[biome_key]
+	var/datum/biome/rimworld/biome_type = planet.get_biome_datum(biome_key)
 	if(!biome_type)
 		// Unknown biome — treat as normal land.
 		var/fallback_cost = 1 / max(0.05, get_move_speed())
@@ -307,10 +306,10 @@ GLOBAL_LIST_EMPTY(rimworld_caravans)
 		return fallback_cost
 
 	// Ocean etc.: passable = FALSE, passable_flying = TRUE
-	if(!biome_type:passable && !(biome_type:passable_flying && can_traverse_impassable()))
+	if(!biome_type.passable && !(biome_type.passable_flying && can_traverse_impassable()))
 		return null
 
-	var/speed_mod = biome_type:speed_modifier
+	var/speed_mod = biome_type.speed_modifier
 	if(!speed_mod || speed_mod <= 0)
 		speed_mod = 1
 

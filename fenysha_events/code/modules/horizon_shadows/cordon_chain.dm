@@ -47,7 +47,7 @@
 		instance.show_to(viewer)
 	// the visual stage must follow the same "only the viewed z level" alpha rule as the normal mask
 	var/atom/movable/screen/plane_master/wall_fov/plane11/mask_base = get_plane(GET_NEW_PLANE(WALLS_FOV_PLANE_11, offset))
-	if(mask_base)
+	if(mask_base && istype(mask_base))
 		mask_base?.offset_change(0)
 
 /// Removes the cordon chain of one z offset again, so the planes cost nothing for a viewer that does not need them

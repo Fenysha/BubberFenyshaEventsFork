@@ -97,7 +97,6 @@
 		'fenysha_events/icons/turf/closed/ore_fragments.dmi',
 		fragment_state,
 		layer = layer + 0.1,
-		plane = plane,
 		appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 	)
 	ore_overlay.color = initial(ore_type.rimworld_mat.color)

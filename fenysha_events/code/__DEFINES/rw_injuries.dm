@@ -1,6 +1,8 @@
-
 // Injury severity
 
+/// Severity a given injury typepath would have (initial() needs a typed var).
+/proc/initial_injury_severity(datum/injury/path)
+	return initial(path.severity)
 
 #define INJURY_SEVERITY_MINOR         1
 #define INJURY_SEVERITY_MODERATE      2
@@ -237,6 +239,45 @@
 #define INJURY_CONSCIOUSNESS_PER_SEVERITY 1.5
 #define INJURY_CONSCIOUSNESS_PAIN_FACTOR 0.035
 #define INJURY_HEAD_CONSCIOUSNESS_MULT 2.0
+
+
+// Body tempeture
+
+/// Core temperature stage thresholds (C).
+#define RW_CORE_NORMAL 37
+#define RW_HYPO_MILD 33
+#define RW_HYPO_MODERATE 30
+#define RW_HYPO_SEVERE 28
+#define RW_HYPO_CRITICAL 25
+#define RW_HYPER_MILD 38.5
+#define RW_HYPER_MODERATE 40
+#define RW_HYPER_SEVERE 41.5
+#define RW_HYPER_CRITICAL 43
+
+
+/// Core change in C/s per degree of stress, when exposed.
+#define RW_CORE_DRIFT_PER_STRESS 0.0004
+/// Max drift speed (C/s) however extreme it is outside.
+#define RW_CORE_DRIFT_MAX 0.02
+/// Recovery speed (C/s) while inside the comfort range.
+#define RW_CORE_RECOVERY 0.015
+
+
+/// Series ids shared by the injuries.
+#define RW_SERIES_HYPOTHERMIA "hypothermia"
+#define RW_SERIES_HEATSTROKE "heatstroke"
+#define RW_SERIES_FROSTBITE "frostbite"
+
+
+/// Limbs that can freeze, and how exposed (0..1) each is relative to the whole body protection.
+/// Extremities get frostbite first.
+GLOBAL_LIST_INIT(rw_frostbite_zones, list(
+	BODY_ZONE_HEAD,
+	BODY_ZONE_L_ARM,
+	BODY_ZONE_R_ARM,
+	BODY_ZONE_L_LEG,
+	BODY_ZONE_R_LEG,
+))
 
 
 

@@ -50,33 +50,15 @@
 	if(flags & RUST_SEE_THRU)
 		return TRUE
 
-	// Match los_check(): same get_line() path, turf density check, border
-	// blockers on the origin, and CanPass() on every tile including the target.
-	var/obj/dummy = new(user_turf)
-	dummy.pass_flags |= PASSTABLE|PASSGLASS|PASSGRILLE
-	var/turf/previous_step = user_turf
-	var/first_step = TRUE
+	// Mirrors the Rust check: sight is blocked by solid turfs and by opaque things only.
+	// Dense-but-transparent objects (trees, bushes, crates, furniture) must NOT block vision,
+	// so CanPass() is deliberately not used here.
 	for(var/turf/next_step as anything in line)
-		if(next_step == user_turf)
+		if(next_step == user_turf || next_step == target_turf)
 			continue
-		if(first_step)
-			for(var/obj/blocker in user_turf)
-				if(!blocker.density || !(blocker.flags_1 & ON_BORDER_1))
-					continue
-				if(blocker.CanPass(dummy, get_dir(user_turf, next_step)))
-					continue
-				qdel(dummy)
-				return FALSE
-			first_step = FALSE
-		if(next_step.density)
-			qdel(dummy)
+		var/list/state = get_turf_area_state(next_step)
+		if(state && (state["opaque"] || (state["dense"] && state["is_boundary"])))
 			return FALSE
-		for(var/atom/movable/movable as anything in next_step)
-			if(!movable.CanPass(dummy, get_dir(next_step, previous_step)))
-				qdel(dummy)
-				return FALSE
-		previous_step = next_step
-	qdel(dummy)
 	return TRUE
 
 /proc/rust_can_see(atom/source, atom/target, flags = RUST_SEE_DEFAULT, max_dist = 0)

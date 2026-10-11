@@ -304,6 +304,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	var/ignore_lag = TRUE
 
 	var/phase = RW_CELL_JOB_PREPARE
+	/// Key of this job's loading region in SSarea_rust (null = none registered).
+	var/rust_region_key
 
 	var/local_x = 1
 	var/local_y = 1
@@ -554,6 +556,11 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		return RW_CELL_LOAD_FAILED
 
 	var/processed = 0
+
+	// Tell the Rust area grid this region is loading: hooks skip it, setup_rust_zones() sends it once.
+	if(!rust_region_key)
+		rust_region_key = "rw_cell_[REF(src)]"
+		SSarea_rust.begin_region_load(rust_region_key, generator.origin_z, generator.origin_x, generator.origin_y, generator.origin_x + generator.width - 1, generator.origin_y + generator.height - 1)
 
 	if(generator.has_stamp && !mapload_source)
 		mapload_source = "rw_cell_[cell.x]_[cell.y]_[REF(src)]"
@@ -857,27 +864,34 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(cancel_requested)
 		return FALSE
 
-	cell.reservation = reservation
-	cell.sub_level_id = reservation.id
+	// Keep a local reference: this job may be qdel'd (and `cell` nulled) while the steps below run.
+	var/datum/planet_cell/loaded_cell = cell
+
+	loaded_cell.reservation = reservation
+	loaded_cell.sub_level_id = reservation.id
 
 	reservation = null
 
 	if(generator.rimworld_area)
 		generator.rimworld_area.cell_loading = FALSE
-	cell.is_generated = TRUE
-	cell.is_generating = FALSE
-	cell.loading_job = null
+	loaded_cell.is_generated = TRUE
+	loaded_cell.is_generating = FALSE
+	loaded_cell.loading_job = null
 
-	cell.refresh_from_planet()
-	cell.place_edge_markers()
-	cell.bind_areas_to_cell()
-	cell.setup_rust_zones()
+	loaded_cell.refresh_from_planet()
+	loaded_cell.place_edge_markers()
+	loaded_cell.bind_areas_to_cell()
+	loaded_cell.setup_rust_zones()
+	if(rust_region_key)
+		SSarea_rust.end_region_load(rust_region_key)
+		rust_region_key = null
 
 	qdel(generator)
 	generator = null
 
 	// Climate-driven ambient weather for the loaded cell
-	cell.on_loaded_start_weather()
+	if(!QDELETED(loaded_cell))
+		loaded_cell.on_loaded_start_weather()
 
 	return TRUE
 
@@ -1020,6 +1034,10 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 /datum/rimworld_sublevel_load_job/Destroy()
 	end_initialization(FALSE)
+
+	if(rust_region_key)
+		SSarea_rust.end_region_load(rust_region_key)
+		rust_region_key = null
 
 	if(reservation)
 		qdel(reservation)

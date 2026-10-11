@@ -26,7 +26,7 @@
 		return FALSE
 
 	// Body temperature stability and damage
-	dna.species.handle_body_temperature(src, seconds_per_tick)
+	handle_rw_thermal(seconds_per_tick)
 	if(stat == DEAD)
 		return FALSE
 

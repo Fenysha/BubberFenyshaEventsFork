@@ -58,14 +58,11 @@
 			parent = T.loc
 			break
 
-	// A batch rebuild can change component IDs outside this cell, so resync the
-	// whole Z-level whenever it already had a Rust grid before this load.
 	if(full_zone_resync)
 		if(SSarea_rust.open_tiles_cache)
 			SSarea_rust.open_tiles_cache -= "[z]"
-		resync_rimworld_zones_on_z(z, parent)
-	else
-		resync_rimworld_zones_on_z(z, parent, turfs)
+		rekey_rimworld_zones_on_z(z)
+	resync_rimworld_zones_on_z(z, parent, turfs)
 
 	SSarea_rust.zone_sync_enabled = was_sync
 	return TRUE

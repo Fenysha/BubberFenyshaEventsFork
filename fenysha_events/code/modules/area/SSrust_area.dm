@@ -6,12 +6,19 @@
  */
 SUBSYSTEM_DEF(area_rust)
 	name = "Area Rust"
-	ss_flags = SS_NO_FIRE || SS_NO_INIT
+	ss_flags = SS_NO_FIRE | SS_NO_INIT
 	init_stage = INITSTAGE_MAX
 	wait = 0
 
 	/// z → TRUE once that Z has been initialised in Rust
 	var/list/initialised_z = list()
+
+	/// z → list(width, height) of the grid currently allocated in Rust
+	var/list/grid_size = list()
+
+	/// key → list(z, min_x, min_y, max_x, max_y) of sub-levels that are being loaded right now.
+	/// Hooks never push per-turf updates inside these; setup_rust_zones() sends the whole cell once.
+	var/list/loading_regions = list()
 
 	/// Pending batch of tile updates keyed by z (used only during init)
 	var/list/pending_batches = list()
@@ -31,17 +38,42 @@ SUBSYSTEM_DEF(area_rust)
  * Ensure a Z grid exists in Rust. Safe to call multiple times.
  */
 /datum/controller/subsystem/area_rust/proc/ensure_z(z, width, height)
+	var/key = "[z]"
+	var/list/size = grid_size[key]
+	// Never shrink: other sub-levels on this Z still live inside the existing grid.
+	if(size)
+		if(width <= size[1] && height <= size[2])
+			return TRUE
+		width = max(width, size[1])
+		height = max(height, size[2])
 	// Rust preserves an existing grid and grows it when a later cell needs more space.
-	if(initialised_z["[z]"])
-		if(!rustg_area_init_z(z, width, height))
-			stack_trace("SSarea_rust.ensure_z failed to resize z=[z] ([width]x[height])")
-			return FALSE
-		return TRUE
 	if(!rustg_area_init_z(z, width, height))
 		stack_trace("SSarea_rust.ensure_z failed z=[z] ([width]x[height])")
 		return FALSE
-	initialised_z["[z]"] = TRUE
+	grid_size[key] = list(width, height)
+	initialised_z[key] = TRUE
 	return TRUE
+
+/datum/controller/subsystem/area_rust/proc/begin_region_load(key, z, min_x, min_y, max_x, max_y)
+	loading_regions[key] = list(z, min_x, min_y, max_x, max_y)
+
+/datum/controller/subsystem/area_rust/proc/end_region_load(key)
+	loading_regions -= key
+
+/// TRUE if T lies inside a sub-level that is still loading.
+/datum/controller/subsystem/area_rust/proc/turf_in_loading_region(turf/T)
+	if(!length(loading_regions))
+		return FALSE
+	for(var/key in loading_regions)
+		var/list/r = loading_regions[key]
+		if(T.z == r[1] && T.x >= r[2] && T.x <= r[4] && T.y >= r[3] && T.y <= r[5])
+			return TRUE
+	return FALSE
+
+/// TRUE if T lies inside the grid Rust currently has for its Z.
+/datum/controller/subsystem/area_rust/proc/turf_in_grid(turf/T)
+	var/list/size = grid_size["[T.z]"]
+	return !!size && T.x <= size[1] && T.y <= size[2]
 
 /**
  * Walk turfs and push one batch update (no zone assignment).
@@ -75,6 +107,15 @@ SUBSYSTEM_DEF(area_rust)
 /datum/controller/subsystem/area_rust/proc/update_turf(turf/T)
 	if(!T || !initialised_z["[T.z]"])
 		return
+
+	if(!batch_mode)
+		if(turf_in_loading_region(T))
+			return
+		var/area/rimworld/loading_area = T.loc
+		if(istype(loading_area) && loading_area.cell_loading)
+			return
+		if(!turf_in_grid(T))
+			return
 
 	var/list/state = get_turf_area_state(T)
 	if(!state)
@@ -158,6 +199,8 @@ SUBSYSTEM_DEF(area_rust)
 /datum/controller/subsystem/area_rust/proc/resync_turf_after_change(turf/T)
 	if(!T || !initialised_z["[T.z]"])
 		return
+	if(turf_in_loading_region(T))
+		return
 	update_turf(T)
 	var/list/dm_state = get_turf_area_state(T)
 	var/list/rust_state = rustg_area_tile_info(T.x, T.y, T.z)
@@ -194,7 +237,7 @@ SUBSYSTEM_DEF(area_rust)
 	var/turf/new_turf = .
 	if(!new_turf || old_type == new_turf.type || !ispath(old_type, /turf/closed) || !istype(new_turf, /turf/open))
 		return new_turf
-	if(SSarea_rust?.initialised_z["[new_turf.z]"] && !SSarea_rust.batch_mode)
+	if(SSarea_rust?.initialised_z["[new_turf.z]"] && !SSarea_rust.batch_mode && !SSarea_rust.turf_in_loading_region(new_turf))
 		// ChangeTurf restores/recalculates parts of turf state after AfterChange.
 		// Re-read the final live turf one tick later, including deferred changes.
 		addtimer(CALLBACK(SSarea_rust, TYPE_PROC_REF(/datum/controller/subsystem/area_rust, resync_turf_after_change), new_turf), 1)
