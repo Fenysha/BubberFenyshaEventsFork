@@ -89,7 +89,7 @@
 
 	// Brute/burn + pain bleed into the same overlay channel
 	var/total_pain = get_pain()
-	if(total_pain)
+	if(total_pain >= 10)
 		var/severity = 0
 		switch(total_pain)
 			if(10 to 40)

@@ -3,8 +3,8 @@
  * Projectile damage application.
  */
 /mob/living/proc/apply_projectile_effects(obj/projectile/proj, def_zone, armor_check)
-	if(proj.is_hostile_projectile() && try_dodge(proj.firer, "\the [proj]", PROJECTILE_ATTACK))
-		return
+	// Projectile collision / accuracy is resolved by the projectile itself.
+	// A living mob cannot dodge a bullet after it has already hit them.
 
 	var/damage_dealt = apply_damage(
 		damage = proj.damage,

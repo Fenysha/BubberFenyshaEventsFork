@@ -2,8 +2,9 @@
 /mob/living/carbon/proc/apply_shock_impulse(amount, source = null)
 	if(amount <= 0)
 		return
-	shock_base = clamp(shock_base + amount, 0, SHOCK_MAX * 2)
+	shock_base = clamp(shock_base + amount * SHOCK_IMPULSE_MULT, 0, SHOCK_MAX * 2)
 	recalculate_medical_state()
+	refresh_medical_feedback()
 
 /// Shock that cannot recover while the mob is hypovolemic.
 /mob/living/carbon/proc/get_hypovolemic_shock_floor()

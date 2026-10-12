@@ -14,6 +14,7 @@
 	/// TRUE while the heart is in ventricular fibrillation.
 	/// In VF the myocardium quivers without coordinated ejection — cardiac output is effectively zero.
 	var/fibrillating = FALSE
+	var/fibrillation_start_time = 0
 
 	/// Prevents spam of "heart stopping" messages.
 	var/last_stop_message = 0
@@ -62,7 +63,9 @@
 	if(!is_beating() || (organ_flags & (ORGAN_FAILING|ORGAN_EMP)))
 		return 0
 
-	return clamp((maxHealth - damage) / maxHealth, 0, 1)
+	var/damage_ratio = clamp(damage / maxHealth, 0, 1)
+	// Moderate damage reduces output gradually; efficiency falls sharply only as damage becomes catastrophic.
+	return clamp(1 - (damage_ratio * sqrt(damage_ratio)), 0, 1)
 
 
 /// Preload factor from circulating blood volume (Frank-Starling approximation).
@@ -205,7 +208,7 @@
 
 /**
  * Chance (0-100) that the current conditions will precipitate ventricular fibrillation.
- * Driven by severe hypovolemia, extreme tachycardia and myocardial damage.
+ * Driven by severe hypovolemia and extreme tachycardia, not direct organ damage.
  */
 /obj/item/organ/heart/proc/get_fibrillation_chance(seconds_per_tick)
 	if(!owner || fibrillating || !beating)
@@ -218,21 +221,15 @@
 
 	// Severe hypovolemia is the primary driver
 	if(blood_ratio < 0.45)
-		chance += (0.45 - blood_ratio) * 40   // up to ~18 at ratio 0
+		chance += (0.45 - blood_ratio) * 18   // up to ~18 at ratio 0
 
 	// Extreme rate further destabilises the myocardium
 	if(rate > 160)
-		chance += (rate - 160) * 0.15
-
-	// Only substantial myocardial damage adds arrhythmia risk; scale it instead of
-	// giving a sudden fibrillation chance for barely crossing a damage threshold.
-	if(damage > high_threshold)
-		var/damage_range = max(maxHealth - high_threshold, 1)
-		chance += clamp((damage - high_threshold) / damage_range, 0, 1) * 12
+		chance += (rate - 160) * 0.1
 
 	// Very low volume + high rate is especially dangerous
-	if(blood_ratio < 0.30 && rate > 140)
-		chance += 12
+	if(blood_ratio < 0.25 && rate > 150)
+		chance += 5
 
 	return chance * seconds_per_tick
 
@@ -248,6 +245,7 @@
 	fibrillating = TRUE
 	beating = TRUE          // still "electrically active", but chaotic
 	rate = rand(200, 280)   // monitor shows high irregular rate
+	fibrillation_start_time = world.time
 	beat = BEAT_NONE
 	owner?.stop_sound_channel(CHANNEL_HEARTBEAT)
 	update_appearance()
@@ -267,6 +265,8 @@
 
 	// Already in VF — no coordinated rate control
 	if(fibrillating)
+		if(world.time < fibrillation_start_time + 1.5 MINUTES)
+			return
 		// Small chance of spontaneous deterioration into full asystole
 		if(SPT_PROB(1, seconds_per_tick))
 			Stop()
@@ -306,12 +306,9 @@
 		)
 
 		if(rate > 180 && damage > low_threshold && owner.can_heartattack() && SPT_PROB(3, seconds_per_tick))
-			// Prefer fibrillation over instant asystole when volume is still present
-			if(owner.get_blood_ratio() > 0.25 && prob(90))
-				enter_fibrillation()
-			else if(beating)
-				Stop()
-				to_chat(owner, span_userdanger("Your heart flutters wildly and then stops!"))
+			// A damaged, overstrained myocardium may stop, but direct damage cannot trigger ventricular fibrillation.
+			if(beating && Stop())
+				to_chat(owner, span_userdanger("Your overstrained heart suddenly stops!"))
 
 
 /**

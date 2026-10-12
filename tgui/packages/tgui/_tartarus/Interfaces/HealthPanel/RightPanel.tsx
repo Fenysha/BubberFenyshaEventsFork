@@ -11,6 +11,7 @@ import {
 import { TOOLTIPS } from './tooltips';
 import type {
   BodypartData,
+  BodypartMap,
   HealthPanelData,
   InjuryData,
   OrganData,
@@ -20,7 +21,7 @@ import type {
 
 type Props = {
   selectedZone: string | null;
-  bodyparts: Record<string, BodypartData>;
+  bodyparts: BodypartMap;
   organs: {
     brain: OrganData;
     heart: OrganData;
@@ -70,11 +71,21 @@ function toPngSrc(value: string) {
   return `data:image/png;base64,${value}`;
 }
 
+// Organ get_status_text() may return legacy BYOND markup. TGUI renders strings
+// as text, so strip tags before showing the status instead of exposing the markup.
+function plainStatusText(value?: string | null) {
+  return (value ?? '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .trim();
+}
+
 export const RightPanel = (props: Props) => {
   const { selectedZone, bodyparts, organs } = props;
   const { data } = useBackend<HealthPanelData>();
-  const canTreat = data.can_treat === true;
-  const canSeeFull = data.can_see_full === true;
+  // BYOND booleans can arrive as 0/1; normalise before using them in JSX.
+  const canTreat = Boolean(data.can_treat);
+  const canSeeFull = Boolean(data.can_see_full);
   const viewerAccess = data.viewer_access ?? 0;
 
   if (!selectedZone) {
@@ -147,6 +158,7 @@ const LimbStatus = ({
   }
 
   const showIntegrity = viewerAccess >= 1 || canSeeFull;
+  const injuries = Array.isArray(data.injuries) ? data.injuries : [];
 
   return (
     <Section title={data.name} fill>
@@ -181,7 +193,7 @@ const LimbStatus = ({
         {(data.disabled || data.bleed_rate > 0) && (
           <Stack.Item>
             <Stack>
-              {data.disabled && (
+              {Boolean(data.disabled) && (
                 <Stack.Item grow>
                   <Box color="bad" bold>
                     Disabled
@@ -199,19 +211,21 @@ const LimbStatus = ({
           </Stack.Item>
         )}
 
-        <Stack.Item>
+        <Stack.Item grow>
           <Box bold>Active injuries</Box>
-          {data.injuries.length === 0 && (
-            <Box color="label">No visible injuries.</Box>
-          )}
-          {data.injuries.map((injury) => (
-            <InjuryEntry
-              key={injury.id}
-              injury={injury}
-              canTreat={canTreat}
-              canSeeFull={canSeeFull}
-            />
-          ))}
+          <Box className="HealthPanel__injury-list">
+            {injuries.length === 0 && (
+              <Box color="label">No visible injuries.</Box>
+            )}
+            {injuries.map((injury) => (
+              <InjuryEntry
+                key={injury.id}
+                injury={injury}
+                canTreat={canTreat}
+                canSeeFull={canSeeFull}
+              />
+            ))}
+          </Box>
         </Stack.Item>
       </Stack>
     </Section>
@@ -242,8 +256,8 @@ const OrganStatus = ({
   if (viewerAccess < 1 && !canSeeFull) {
     return (
       <Section title={name} fill>
-        <Box color="label">{data.status}</Box>
-        {data.failing && (
+        <Box color="label">{plainStatusText(data.status)}</Box>
+        {Boolean(data.failing) && (
           <Box color="bad" bold>
             Appears compromised
           </Box>
@@ -277,6 +291,7 @@ const HeartStatus = ({ data }: { data: OrganData }) => {
     data.state === 'missing' ||
     data.rhythm === 'asystole';
   const failing = data.state === 'failing';
+  const supplementalStatus = plainStatusText(data.status);
 
   let statusText = 'Heart beating';
   let statusColor: string = 'good';
@@ -337,16 +352,19 @@ const HeartStatus = ({ data }: { data: OrganData }) => {
           </LabeledList>
         </Stack.Item>
 
-        {data.cpr && (
+        {Boolean(data.cpr) && (
           <Stack.Item>
             <Box color="average">
               External circulation currently supported by CPR.
             </Box>
           </Stack.Item>
         )}
-        <Stack.Item>
-          <Box color="label">{data.status}</Box>
-        </Stack.Item>
+        {supplementalStatus &&
+          supplementalStatus.toLowerCase() !== statusText.toLowerCase() && (
+            <Stack.Item>
+              <Box color="label">{supplementalStatus}</Box>
+            </Stack.Item>
+          )}
       </Stack>
     </Section>
   );
@@ -389,7 +407,7 @@ const BrainStatus = ({ data }: { data: OrganData }) => {
           </LabeledList>
         </Stack.Item>
 
-        {data.failing && (
+        {Boolean(data.failing) && (
           <Stack.Item>
             <Box color="bad" bold>
               Failing
@@ -398,7 +416,7 @@ const BrainStatus = ({ data }: { data: OrganData }) => {
         )}
 
         <Stack.Item>
-          <Box color="label">{data.status}</Box>
+          <Box color="label">{plainStatusText(data.status)}</Box>
         </Stack.Item>
       </Stack>
     </Section>
@@ -459,7 +477,7 @@ const LungStatus = ({ data }: { data: OrganData }) => {
           </LabeledList>
         </Stack.Item>
 
-        {data.failing && (
+        {Boolean(data.failing) && (
           <Stack.Item>
             <Box color="bad" bold>
               Failing
@@ -468,7 +486,7 @@ const LungStatus = ({ data }: { data: OrganData }) => {
         )}
 
         <Stack.Item>
-          <Box color="label">{data.status}</Box>
+          <Box color="label">{plainStatusText(data.status)}</Box>
         </Stack.Item>
       </Stack>
     </Section>
@@ -534,8 +552,13 @@ const InjuryEntry = ({
       ? injury.name
       : injury.undiagnosed_name;
 
+  const injuryCanTreat =
+    injury.can_treat === undefined ||
+    injury.can_treat === null ||
+    Boolean(injury.can_treat);
   const treatOptions =
     canTreat &&
+    injuryCanTreat &&
     Array.isArray(injury.treat_options) &&
     injury.treat_options.length > 0
       ? injury.treat_options
@@ -544,6 +567,25 @@ const InjuryEntry = ({
   return (
     <Box className="HealthPanel__injury">
       <Stack align="center" className="HealthPanel__injury-header">
+        <Stack.Item>
+          {injury.iconSrc ? (
+            <img
+              className="HealthPanel__injury-icon"
+              src={toPngSrc(injury.iconSrc)}
+              alt={displayName}
+              title={displayName}
+              draggable={false}
+              loading="lazy"
+            />
+          ) : (
+            <span
+              className="HealthPanel__injury-icon HealthPanel__injury-icon--fallback"
+              title={injury.icon_state || displayName}
+            >
+              !
+            </span>
+          )}
+        </Stack.Item>
         <Stack.Item grow>
           <Box bold>
             {displayName}{' '}
@@ -552,12 +594,13 @@ const InjuryEntry = ({
             </Box>
           </Box>
         </Stack.Item>
-        {treatOptions.length > 0 && (
-          <Stack.Item>
-            <TreatButtons injuryId={injury.id} options={treatOptions} />
-          </Stack.Item>
-        )}
       </Stack>
+
+      {treatOptions.length > 0 && (
+        <Box className="HealthPanel__injury-actions">
+          <TreatButtons injuryId={injury.id} options={treatOptions} />
+        </Box>
+      )}
 
       <Box
         className="HealthPanel__injury-toggle"
@@ -587,7 +630,7 @@ const InjuryEntry = ({
                 <Box color="average">Pain: {Math.round(injury.pain)}</Box>
               </Stack.Item>
             )}
-            {injury.disabling && (
+            {Boolean(injury.disabling) && (
               <Stack.Item>
                 <Box color="bad">Disabling</Box>
               </Stack.Item>
@@ -597,7 +640,7 @@ const InjuryEntry = ({
           <Box fontSize="0.85em" color="label">
             {treatmentLabel(injury.treatment_quality)}
             {healing > 0.05 && ` · healing ${Math.round(healing * 100)}%`}
-            {treated && healing <= 0.05 && ' · stabilizing'}
+            {Boolean(treated) && healing <= 0.05 && ' · stabilizing'}
           </Box>
 
           {healing > 0.05 && (

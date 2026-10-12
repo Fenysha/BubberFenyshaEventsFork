@@ -6,6 +6,8 @@
 
 /datum/injury/thermal
 	name = "Thermal stress"
+	// Temperature conditions affect the whole body, not only the limb they are attached to.
+	ui_body_zone = "all"
 	series = "thermal"
 	severity = INJURY_SEVERITY_MINOR
 	injury_flags = INJURY_FLAG_INTERNAL

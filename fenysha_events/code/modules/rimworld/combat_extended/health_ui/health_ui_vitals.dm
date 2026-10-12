@@ -1,4 +1,28 @@
 #ifndef OLD_COMBAT_SYSTEM
+
+/**
+ * Body temperatures are stored in Kelvin by the simulation; HealthPanel displays Celsius.
+ * Prefer custom coretemperature on humans and fall back to legacy bodytemperature otherwise.
+ */
+/datum/health_ui/proc/get_temperature_data()
+	if(!owner)
+		return list("core_celsius" = null, "source" = "unavailable")
+
+	var/temperature_kelvin = owner.bodytemperature
+	var/source = "body"
+	if(ishuman(owner))
+		var/mob/living/carbon/human/H = owner
+		if(H.coretemperature >= 200)
+			temperature_kelvin = H.coretemperature
+			source = "core"
+
+	if(isnull(temperature_kelvin) || temperature_kelvin <= 0)
+		return list("core_celsius" = null, "source" = "unavailable")
+
+	return list(
+		"core_celsius" = round(temperature_kelvin - 273.15, 0.1),
+		"source" = source,
+	)
 /datum/health_ui/proc/get_heartbeat_data()
 	var/obj/item/organ/heart/heart = owner.get_organ_slot(ORGAN_SLOT_HEART)
 	if(!heart)

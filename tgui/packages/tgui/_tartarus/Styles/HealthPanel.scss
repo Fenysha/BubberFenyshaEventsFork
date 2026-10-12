@@ -39,6 +39,14 @@
     }
   }
 
+  &__temperature {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 2px;
+  }
+
   &__lungs {
     padding: 0;
     width: 100%;
@@ -293,50 +301,52 @@
     pointer-events: none;
   }
 
+  /* Position is set per-zone via inline style (see BODY_DOLL_INDICATOR_OFFSETS). */
   &__doll-bleed {
     position: absolute;
-    top: 4px;
-    right: 4px;
-
-    width: 7px;
-    height: 7px;
-
+    width: 8px;
+    height: 8px;
+    margin: 0;
     border-radius: 50%;
     background: #ff3f3f;
-    box-shadow: 0 0 8px rgba(255, 45, 45, 0.8);
-
+    box-shadow: 0 0 8px rgba(255, 45, 45, 0.85);
     pointer-events: none;
+    z-index: 4;
   }
 
   &__doll-disabled {
     position: absolute;
-    top: 4px;
-    left: 4px;
-
     width: 14px;
     height: 14px;
+    margin: 0;
     line-height: 14px;
-
     text-align: center;
     border-radius: 50%;
-
     background: rgba(255, 120, 50, 0.9);
     color: #fff;
-
     font-size: 10px;
     font-weight: bold;
-
     pointer-events: none;
+    z-index: 4;
   }
 
   &__doll-organs {
     gap: 4px;
+    padding-top: 0;
   }
 
   &__doll-organ {
     min-width: 0 !important;
+    min-height: 28px;
     padding: 2px 7px !important;
-    font-size: 0.78em;
+    border-radius: 4px;
+    font-size: 0.82em;
+    letter-spacing: 0.02em;
+
+    &--selected {
+      outline: 1px solid rgba(110, 210, 255, 0.9);
+      outline-offset: 1px;
+    }
   }
 
   &__doll--shake-light {
@@ -357,45 +367,84 @@
   }
 
   &__injury {
-    margin-top: 5px;
-    padding: 5px 6px;
-    border-bottom: 1px solid var(--color-border);
-
-    &:last-child {
-      border-bottom: none;
-    }
+    margin: 5px 0;
+    padding: 7px;
+    border: 1px solid rgba(130, 150, 170, 0.22);
+    border-left: 3px solid rgba(215, 105, 75, 0.72);
+    border-radius: 4px;
+    background: rgba(20, 26, 32, 0.42);
   }
 
   &__injury-header {
     width: 100%;
+    min-width: 0;
+    gap: 7px;
+  }
+
+  &__injury-list {
+    max-height: 290px;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-gutter: stable;
+  }
+
+  &__injury-actions {
+    min-width: 0;
+    margin: 4px 0 0 55px;
+  }
+
+  &__injury-icon {
+    display: block;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    border-radius: 3px;
+
+    &--fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e3b1a4;
+      background: rgba(130, 50, 40, 0.18);
+      border: 1px solid rgba(200, 100, 80, 0.3);
+      font-size: 1.2em;
+      font-weight: 700;
+    }
   }
 
   &__injury-toggle {
-    font-size: 0.75em;
-    color: var(--color-label);
+    font-size: 0.82em;
+    color: #9eb0c0;
     cursor: pointer;
     user-select: none;
-    margin-top: 2px;
+    margin-top: 3px;
 
     &:hover {
-      color: var(--color-text);
+      color: #e4edf5;
     }
   }
 
   &__injury-body {
-    margin-top: 4px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(130, 150, 170, 0.18);
   }
 
   &__treat-row {
     gap: 3px;
     flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   &__treat-btn {
-    min-width: 28px !important;
-    min-height: 28px !important;
-    width: 28px !important;
-    height: 28px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
     padding: 2px !important;
     display: inline-flex !important;
     align-items: center;
@@ -403,17 +452,20 @@
   }
 
   &__treat-icon {
-    width: 24px;
-    height: 24px;
+    display: block;
+    width: 25px;
+    height: 25px;
     object-fit: contain;
     image-rendering: pixelated;
     pointer-events: none;
   }
 
   &__treat-fallback {
-    font-size: 0.65em;
+    max-width: 62px;
+    font-size: 0.72em;
     line-height: 1.1;
     text-align: center;
+    white-space: normal;
   }
 }
 
@@ -478,4 +530,66 @@
   75% {
     transform: translate(1.4px, 0.9px);
   }
+}
+
+/* Full-panel alert for critical cerebral failure and persistent death state.
+   No whole-panel blink — intensity is driven by --critical-intensity (0..1).
+   Death state is a static grey wash. */
+.HealthPanel__critical-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  pointer-events: none;
+  /* Default intensity; overridden inline from React */
+  --critical-intensity: 0.75;
+  background: rgba(40, 0, 0, calc(0.35 + var(--critical-intensity) * 0.5));
+  transition: background 0.4s ease;
+}
+
+.HealthPanel__critical-overlay-label {
+  max-width: 100%;
+  padding: 14px 22px;
+  border: 2px solid
+    rgba(255, 60, 60, calc(0.45 + var(--critical-intensity) * 0.5));
+  border-radius: 2px;
+  background: rgba(36, 0, 0, calc(0.55 + var(--critical-intensity) * 0.35));
+  color: #ff4d4d;
+  /* Pixel-style monospace look used across SS13/tgui HUDs */
+  font-family:
+    'PxPlus IBM VGA8', 'Perfect DOS VGA 437', 'MS Sans Serif', monospace;
+  font-size: clamp(1.1rem, 3.6vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1.15;
+  text-align: center;
+  text-transform: uppercase;
+  image-rendering: pixelated;
+  text-shadow: 0 0 10px
+    rgba(255, 0, 0, calc(0.35 + var(--critical-intensity) * 0.45));
+  box-shadow: 0 0 20px
+    rgba(160, 0, 0, calc(0.2 + var(--critical-intensity) * 0.3));
+  transition:
+    border-color 0.4s ease,
+    background 0.4s ease,
+    text-shadow 0.4s ease,
+    box-shadow 0.4s ease;
+}
+
+/* Death: static grey, no pulse, no red glow */
+.HealthPanel__critical-overlay--death {
+  background: rgba(18, 18, 18, 0.88);
+  transition: none;
+}
+
+.HealthPanel__critical-overlay--death .HealthPanel__critical-overlay-label {
+  border-color: rgba(120, 120, 120, 0.75);
+  background: rgba(28, 28, 28, 0.92);
+  color: #c8c8c8;
+  text-shadow: none;
+  box-shadow: none;
+  letter-spacing: 0.22em;
 }

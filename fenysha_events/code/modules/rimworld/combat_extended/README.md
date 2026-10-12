@@ -44,7 +44,7 @@ BP.take_penetrating_hit()
 
 - **Sharp armor / AP** is measured in mm RHA, following the Combat Extended approach.
 - **Blunt armor / AP** is measured in MPa.
-- If `sharp_armor > sharp_ap`, the attack fully deflects. Only blunt trauma from the stopped energy remains.
+- If `sharp_armor >= sharp_ap`, the sharp component is fully deflected. Only blunt trauma from the stopped energy remains.
 - Otherwise, damage is multiplied by `RemainingAP / AP`, while the stopped portion is converted into blunt damage.
 
 Macros (see `rw_combat_extended.dm`):
@@ -56,20 +56,66 @@ PEN_SHARP_DEFLECTED(ap, armor)
 PEN_BLUNT_DAMAGE_FROM_AP(blunt_ap)
 ```
 
-### 2.3. Organ Damage on Full Penetration
+### 2.3. Practical Armor-Penetration Tuning
+
+The values below are **game-balance starting points**, not claims about real-world armor ratings. Keep every `sharp` value in mm RHA and every `blunt` value in MPa; do not mix either with the legacy 0–100 armor percentages.
+
+| In-game protection class | Suggested sharp rating | Intended use |
+| ------------------------ | ---------------------: | ------------ |
+| Unprotected / ordinary clothing | 0–1.5 mm RHA | Little or no resistance to a sharp hit |
+| Padded or light soft armor | 2–4 mm RHA | Stops weak points and reduces low-AP rounds |
+| Medium protection | 5–10 mm RHA | Often stops handgun / low-AP attacks; intermediate rounds retain damage |
+| Hard plate | 10–25 mm RHA | Requires a strong rifle round or dedicated AP ammunition |
+| Heavy plate / powered armor | 25–40+ mm RHA | Intended to stop ordinary rifle ammunition |
+
+For one sharp armor layer, the current model uses:
+
+```text
+remaining_AP = max(AP - armor, 0)
+sharp_damage_multiplier = remaining_AP / AP
+```
+
+If `armor >= AP`, the sharp component is deflected. Otherwise, the sharp part retains `remaining_AP / AP` of its damage and the stopped component can create a separate blunt impact. For stacked layers, each layer consumes AP in sequence; add the layer ratings to estimate the total sharp resistance, then inspect each layer if a special armor or damage type changes the result. Blunt AP is reduced independently and must be balanced separately.
+
+To target a desired retained sharp-damage fraction `f` against a single armor rating `A`, use this estimate:
+
+```text
+required_AP ≈ A / (1 - f)
+```
+
+| Target result | AP estimate against 4 mm RHA | AP estimate against 10 mm RHA |
+| ------------- | ---------------------------: | ----------------------------: |
+| Barely penetrate (~25% sharp damage) | 5.3 mm RHA | 13.3 mm RHA |
+| Retain ~50% sharp damage | 8 mm RHA | 20 mm RHA |
+| Retain ~70% sharp damage | 13.3 mm RHA | 33.3 mm RHA |
+| Fully stopped | 4 mm RHA or less | 10 mm RHA or less |
+
+For a quick check against the current ammunition examples: `.303 British FMJ` has `6 mm RHA` sharp AP, so a 2 mm layer retains about 67% of its sharp component, a 4 mm layer about 33%, and a 6 mm layer deflects it. `5.56 mm FMJ` at `12 mm RHA` retains about 67% against 4 mm and about 17% against 10 mm. These are sharp-component estimates before blunt transfer and body-tissue density; do not read them as exact final damage.
+
+Recommended workflow when adding armor or ammunition:
+
+1. Set explicit `sharp` and `blunt` ratings on `/datum/armor` when it needs deliberate behavior; the fallback getters derive approximate values from legacy `bullet`, `melee`, and `bomb` ratings.
+2. Give ammunition explicit `rw_ap_sharp`, `rw_ap_blunt`, and `rw_soft_damage_mult` values. AP ammunition should generally trade soft-tissue damage for penetration; hollow-point ammunition should trade penetration for a larger soft-tissue multiplier.
+3. Test each round against no armor, soft armor, and a plate. A successful sharp penetration should leave a puncture / laceration; a round stopped by armor should not create a sharp wound through the plate, though the remaining blunt impact may still injure the wearer.
+4. Avoid making a round's AP equal to a plate's rating if you expect reliable penetration: this implementation deflects when `armor >= AP`.
+
+### 2.4. Organ Damage on Full Penetration
 
 After passing through the body's tissue density, any remaining AP can be transferred to internal organs.
 
 - Preferred targets:
   - Brain for head hits
   - Heart / lungs for chest hits
-- The damage multiplier depends on the remaining AP:
-  - Base: ~0.55
-  - High AP: up to 0.95–1.35
-  - Head + brain: an additional ×1.6–×2.2
-- Significant organ damage immediately generates additional shock and a consciousness impulse.
+- The AP scaling curve has diminishing returns:
+  - Base multiplier: `0.30`
+  - Higher residual AP: `0.45` to `0.65`
+  - Head + brain: up to ×`1.25`, with a smaller additional high-AP bonus
+- External organ damage is additionally multiplied by `ORGAN_EXTERNAL_DAMAGE_MULT` (`0.55`). Internal physiological damage, such as prolonged cerebral hypoxia, does not use this external-hit multiplier.
+- Brain and heart have an anti-one-shot guard with a 5-minute per-organ cooldown. It reduces the incoming damage to 80% and caps it just below the fatal threshold; the guard plays `ORGAN_LETHAL_GUARD_SOUND` when triggered.
+- Heart contractility and lung ventilation use a nonlinear damage curve, so moderate organ damage is less disabling while near-total damage remains critical.
+- Direct heart trauma no longer directly triggers ventricular fibrillation. Severe hypovolemia and extreme tachycardia can still cause it.
 
-**Practical effect:** a shot to the head that penetrates the helmet and skull can destroy the brain within fractions of a second and immediately send the victim into severe shock or unconsciousness.
+**Practical effect:** penetrating head and chest hits remain dangerous, but a single ordinary hit should no longer multiply into an immediate brain/heart one-shot. Repeated hits, severe residual penetration, or existing organ damage can still produce a critical state.
 
 ---
 
@@ -109,9 +155,12 @@ They:
 `try_generate_injuries()` is called after damage is dealt and evaluates:
 
 1. **Accumulated physical ratio** = `brute_dam / max_damage`
-2. **Kinetic impact energy** = `(brute + burn) / max_damage`
+2. **Single-hit ratio** = `hit brute / max_damage` (weighted into the injury ratio)
+3. **Kinetic impact energy** = `(brute + burn) / max_damage`
 
-Heavy individual hits can therefore produce severe injuries even when the victim has only accumulated a moderate amount of total damage.
+A penetrating edged hit can create a laceration without waiting for the limb to accumulate 8% damage. A point hit (including custom ballistic projectiles) creates a puncture when its sharp component reaches the body. Sharp injuries are only generated when sharp AP remains after worn armor; an armor-stopped hit may still cause blunt trauma.
+
+`CANT_WOUND` suppresses the legacy wound system only. It must not suppress this injury system for projectiles. Ballistic hits also receive a stronger single-impact weight; chest hits can roll for rib fractures and deeper trauma at lower severity thresholds than ordinary blunt impacts.
 
 Thresholds depend on the affected zone — head, chest, or limbs — as well as the sharpness/type of the weapon.
 
@@ -168,7 +217,7 @@ Thresholds based on `PAIN_MAX = 200`:
 | `PAIN_CRIT_THRESHOLD`         |   150 | Severe loss of consciousness                |
 | `PAIN_DROP_THRESHOLD`         |   140 | Further impairment                          |
 | `PAIN_UNCONSCIOUS_THRESHOLD`  |   160 | Near-blackout state                         |
-| `PAIN_FIBRILLATION_THRESHOLD` |   180 | Risk of ventricular fibrillation            |
+| `PAIN_FIBRILLATION_THRESHOLD` |   180 | Legacy threshold; direct pain/heart trauma no longer triggers fibrillation |
 
 ### 4.2. Shock
 
@@ -247,7 +296,7 @@ The heart tracks:
 
 `get_brain_perfusion()` determines how much blood actually reaches the brain.
 
-When perfusion falls to or below `PERFUSION_SYNCOPE`, the physiological consciousness ceiling drops to zero.
+Only critically low perfusion at or below `PERFUSION_SYNCOPE` forces syncope. Above that threshold, cerebral perfusion lowers the consciousness ceiling gradually, with a continuous curve across low blood pressures. Mild hypoxia above `BRAIN_O2_HYPOXIA` does not reduce the ceiling; moderate hypoxia lowers it gradually, and severe hypoxia remains dangerous.
 
 ### 5.3. Brain and Oxygen
 
@@ -334,6 +383,7 @@ Important default values:
 ```text
 PAIN_MAX                 = 200
 SHOCK_MAX                = 100
+SHOCK_IMPULSE_MULT       = 0.5    // one-off impact / injury impulses
 CONSCIOUSNESS_MAX        = 100
 CONSCIOUSNESS_BLACKOUT   = 8
 CONSCIOUSNESS_WAKE       = 20

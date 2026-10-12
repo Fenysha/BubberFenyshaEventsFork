@@ -18,15 +18,14 @@
 /**
  * Generates injuries from the resulting condition of the bodypart.
  *
- * The current bodypart state determines severity, while the latest hit
- * determines how that state was produced.
- *
- * This allows injuries to accumulate over multiple hits instead of being
- * determined exclusively by the size of a single damage instance.
+ * Accumulated damage sets the baseline severity, while the latest hit adds
+ * impact weight so one strong strike can cause an injury immediately.
+ * Repeated hits still upgrade or intensify injuries through their series.
  */
 /obj/item/bodypart/proc/try_generate_injuries(brute = 0, burn = 0, sharpness = NONE, attack_direction = null, damage_source, wound_bonus = 0, exposed_wound_bonus = 0)
-	if(wound_bonus == CANT_WOUND)
-		return
+	var/is_projectile_hit = isprojectile(damage_source)
+	var/is_ballistic_hit = is_penetrating_projectile(damage_source)
+	var/injury_wound_bonus = wound_bonus == CANT_WOUND ? 0 : wound_bonus
 
 	if(!is_woundable())
 		return
@@ -39,12 +38,16 @@
 	var/structural_hit = brute > 0
 	var/thermal_hit = burn > 0
 
-	// Kinetic energy factor: larger single hits relative to limb health are far more likely
-	// to produce severe injuries even if accumulated damage is still moderate.
+	// A single hard hit can injure tissue even while total stored damage is low.
+	// Ballistic impacts carry enough concentrated energy to raise the trauma baseline.
+	var/hit_ratio = 0
 	var/hit_energy = 0
 	if(max_damage > 0)
+		hit_ratio = clamp(brute / max_damage, 0, 1)
 		hit_energy = clamp((brute + burn) / max_damage, 0, 2.5)
-	var/energy_bonus = hit_energy * 35 // added to chance rolls
+	var/hit_ratio_mult = is_ballistic_hit ? 1.25 : is_projectile_hit ? 1.0 : 0.75
+	physical_ratio = max(physical_ratio, hit_ratio * hit_ratio_mult)
+	var/energy_bonus = hit_energy * (is_ballistic_hit ? 45 : 35) // added to chance rolls
 
 	/*
 	 * ------------------------------------------------------------
@@ -70,18 +73,24 @@
 	 */
 
 	if(structural_hit && (sharpness & SHARP_EDGED))
+		// A penetrating edged hit always has a chance to cut; do not require accumulated limb damage first.
+		var/cut_chance = clamp(100 + injury_wound_bonus + exposed_wound_bonus, 25, 100)
 		if(physical_ratio >= 0.70)
-			apply_generated_injury(/datum/injury/laceration/critical, attack_direction, damage_source)
+			apply_generated_injury(/datum/injury/laceration/critical, attack_direction, damage_source, cut_chance)
 		else if(physical_ratio >= 0.35)
-			apply_generated_injury(/datum/injury/laceration/severe, attack_direction, damage_source)
-		else if(physical_ratio >= 0.08)
-			apply_generated_injury(/datum/injury/laceration, attack_direction, damage_source)
+			apply_generated_injury(/datum/injury/laceration/severe, attack_direction, damage_source, cut_chance)
+		else
+			apply_generated_injury(/datum/injury/laceration, attack_direction, damage_source, cut_chance)
 
 	if(structural_hit && (sharpness & SHARP_POINTY))
 		if(physical_ratio >= 0.65 && brute >= max_damage * 0.20)
 			apply_generated_injury(/datum/injury/avulsion, attack_direction, damage_source)
 		else
-			apply_generated_injury(/datum/injury/puncture, attack_direction, damage_source, clamp(40 + physical_ratio * 100 + energy_bonus, 40, 100))
+			var/puncture_chance = clamp(60 + physical_ratio * 100 + energy_bonus + injury_wound_bonus + exposed_wound_bonus, 60, 100)
+			// A penetrating point projectile necessarily leaves a puncture; it should not roll against CANT_WOUND.
+			if(is_projectile_hit)
+				puncture_chance = 100
+			apply_generated_injury(/datum/injury/puncture, attack_direction, damage_source, puncture_chance)
 
 	/*
 	 * ------------------------------------------------------------
@@ -153,17 +162,30 @@
 
 	if(structural_hit && body_zone == BODY_ZONE_CHEST)
 		var/chest_severity = physical_ratio
+		var/rib_threshold = is_ballistic_hit ? 0.14 : 0.22
 
-		if(chest_severity >= 0.22)
-			apply_generated_injury(/datum/injury/rib_fracture, attack_direction, damage_source, clamp(40 + chest_severity * 70 + energy_bonus, 40, 100))
+		if(chest_severity >= rib_threshold)
+			var/rib_chance
+			if(is_ballistic_hit)
+				rib_chance = clamp(60 + chest_severity * 70 + energy_bonus, 70, 100)
+			else
+				rib_chance = clamp(40 + chest_severity * 70 + energy_bonus, 40, 100)
+			apply_generated_injury(/datum/injury/rib_fracture, attack_direction, damage_source, rib_chance)
 
 		if(chest_severity >= 0.58)
 			apply_generated_injury(/datum/injury/rib_fracture/flail, attack_direction, damage_source, clamp((chest_severity - 0.50) * 180 + energy_bonus * 0.7, 25, 90))
 
-		if(chest_severity >= 0.40)
-			apply_generated_injury(/datum/injury/internal_bleeding, attack_direction, damage_source, clamp((chest_severity - 0.30) * 130 + energy_bonus, 20, 85))
+		var/internal_bleed_threshold = is_ballistic_hit ? 0.28 : 0.40
+		if(chest_severity >= internal_bleed_threshold)
+			var/internal_bleed_chance
+			if(is_ballistic_hit)
+				internal_bleed_chance = clamp(35 + (chest_severity - 0.25) * 130 + energy_bonus, 35, 95)
+			else
+				internal_bleed_chance = clamp((chest_severity - 0.30) * 130 + energy_bonus, 20, 85)
+			apply_generated_injury(/datum/injury/internal_bleeding, attack_direction, damage_source, internal_bleed_chance)
 
-		if(chest_severity >= 0.32 && (sharpness & SHARP_POINTY))
+		var/pneumothorax_threshold = is_ballistic_hit ? 0.20 : 0.32
+		if(chest_severity >= pneumothorax_threshold && (sharpness & SHARP_POINTY))
 			apply_generated_injury(/datum/injury/pneumothorax, attack_direction, damage_source, clamp(60 + chest_severity * 50 + energy_bonus, 60, 100))
 		else if(chest_severity >= 0.60)
 			apply_generated_injury(/datum/injury/pneumothorax, attack_direction, damage_source, clamp((chest_severity - 0.50) * 140 + energy_bonus * 0.6, 15, 70))

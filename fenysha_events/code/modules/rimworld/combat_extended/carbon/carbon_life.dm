@@ -12,7 +12,7 @@
 		damageoverlaytemp = 0
 		update_damage_hud()
 
-	if(!HAS_TRAIT(src, TRAIT_STASIS))
+	if(stat != DEAD && !HAS_TRAIT(src, TRAIT_STASIS))
 		for(var/datum/injury/injury as anything in all_injuries)
 			if(injury.processes)
 				injury.handle_process(seconds_per_tick)
@@ -99,6 +99,10 @@
  * Pure recalculation: does not advance time and has no side effects,
  * so it is safe to call from impulses, modifiers and limb updates.
  */
+/mob/living/carbon/proc/refresh_medical_feedback()
+	update_pain_movespeed()
+	update_damage_hud()
+
 /mob/living/carbon/proc/recalculate_medical_state()
 	pain = clamp(
 		(pain_base + pain_misc + acute_pain) * pain_mod,

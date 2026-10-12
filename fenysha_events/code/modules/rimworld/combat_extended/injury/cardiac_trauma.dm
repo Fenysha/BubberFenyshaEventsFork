@@ -1,7 +1,7 @@
 /datum/injury/cardiac_trauma
 	name = "Cardiac Trauma"
 	undiagnosed_name = "chest trauma"
-	desc = "Blunt or penetrating trauma to the heart region. Arrhythmia and arrest risk."
+	desc = "Blunt or penetrating trauma to the heart region, causing pain and palpitations."
 	examine_desc = "has catastrophic trauma over the heart"
 	series = "cardiac_trauma"
 	upgrade_path = null
@@ -20,7 +20,6 @@
 		/obj/item/stack/medical/medicine/medkit/indusrtial = INJURY_TREATMENT_EFFECTIVENESS_NORMAL,
 	)
 
-	var/fibrillation_chance = 1.5
 
 	COOLDOWN_DECLARE(palpitation_cd)
 
@@ -50,9 +49,6 @@
 		owner.apply_consciousness_impulse(45, src)
 		COOLDOWN_START(src, palpitation_cd, 5 SECONDS)
 
-	// The bruised myocardium can fall into ventricular fibrillation.
-	if(heart.is_beating() && !heart.fibrillating && SPT_PROB(fibrillation_chance * scale_by_treatment(1), seconds_per_tick))
-		heart.enter_fibrillation()
 
 /datum/injury/cardiac_trauma/get_visible_signs(mob/user)
 	if(!owner || treatment_quality >= INJURY_TREATMENT_ADEQUATE)

@@ -56,8 +56,10 @@
 	data["can_see_full"] = can_see_full
 	data["can_treat"] = can_treat
 	data["is_self"] = (user == owner)
+	data["is_dead"] = owner?.stat == DEAD
 	data["subject_name"] = owner?.name
 
+	data["temperature"] = get_temperature_data()
 	data["parameters"] = list(
 		"consciousness" = clamp(owner.consciousness, 0, CONSCIOUSNESS_MAX),
 		"pain" = clamp(owner.pain, 0, PAIN_MAX),
@@ -95,17 +97,15 @@
 	return FALSE
 
 /**
- * Attempt to treat a specific injury with an item currently held by the user.
- * item_type is a typepath string from the UI treat button.
+ * Attempt to treat a specific injury with an item in the user's carried inventory.
+ * item_type is the typepath string sent by a treatment button.
  */
 /datum/health_ui/proc/try_treat_injury(mob/living/user, injury_id, item_type_text)
-	if(!user || !injury_id || !item_type_text)
-		return FALSE
-	if(isobserver(user))
+	if(!user || !owner || !injury_id || !item_type_text || isobserver(user))
 		return FALSE
 
 	var/item_type = text2path(item_type_text)
-	if(!ispath(item_type))
+	if(!ispath(item_type, /obj/item))
 		return FALSE
 
 	var/datum/injury/target
@@ -114,21 +114,23 @@
 			target = injury
 			break
 
-	if(!target || !target.limb)
+	if(!target || !target.limb || target.owner != owner)
 		return FALSE
 
-	// Prefer active hand, then other hand
+	// Prefer hands for predictable behaviour; otherwise use a matching carried item.
 	var/obj/item/tool
 	var/obj/item/active = user.get_active_held_item()
 	var/obj/item/inactive = user.get_inactive_held_item()
 
-	if(istype(active, item_type))
+	if(istype(active, item_type) && target.item_can_treat(active, user))
 		tool = active
-	else if(istype(inactive, item_type))
+	else if(istype(inactive, item_type) && target.item_can_treat(inactive, user))
 		tool = inactive
+	else
+		tool = find_inventory_treatment_item(user, item_type, target, user)
 
 	if(!tool)
-		to_chat(user, span_warning("You need to hold the right tool in your hand."))
+		to_chat(user, span_warning("You need the right treatment item in your inventory."))
 		return FALSE
 
 	if(!target.item_can_treat(tool, user))
@@ -136,4 +138,29 @@
 		return FALSE
 
 	return target.try_treat(tool, user)
+
+/**
+ * Search all items carried by the user, including items inside bags and storage.
+ * The visited list prevents loops in malformed containment trees.
+ */
+/datum/health_ui/proc/find_inventory_treatment_item(atom/container, item_type, datum/injury/target, mob/living/user, list/visited)
+	if(!container || !ispath(item_type, /obj/item) || !target)
+		return null
+
+	if(!visited)
+		visited = list()
+	if(container in visited)
+		return null
+	visited += container
+
+	for(var/obj/item/item in container.contents)
+		if(istype(item, item_type) && target.item_can_treat(item, user))
+			return item
+
+		var/obj/item/nested_item = find_inventory_treatment_item(item, item_type, target, user, visited)
+		if(nested_item)
+			return nested_item
+
+	return null
+
 #endif

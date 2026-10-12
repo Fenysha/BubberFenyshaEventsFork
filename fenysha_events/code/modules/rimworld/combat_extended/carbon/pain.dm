@@ -2,11 +2,13 @@
 /mob/living/carbon/proc/set_pain(new_pain)
 	pain_base = max(new_pain, 0)
 	recalculate_medical_state()
+	refresh_medical_feedback()
 
 /mob/living/carbon/proc/adjust_pain(amount)
 	// pain_base is rebuilt from limbs; non-injury pain lives in its own variable.
 	pain_misc = max(pain_misc + amount, 0)
 	recalculate_medical_state()
+	refresh_medical_feedback()
 
 /mob/living/carbon/proc/update_pain_from_limb(obj/item/bodypart/source_limb)
 	var/total = 0
@@ -17,8 +19,10 @@
 /mob/living/carbon/proc/apply_acute_pain(amount)
 	if(amount <= 0)
 		return
-	acute_pain = clamp(acute_pain + amount, 0, PAIN_MAX * 2)
+	var/scale = 1 - clamp(acute_pain / (PAIN_MAX * 1.2), 0, 0.7)
+	acute_pain = clamp(acute_pain + amount * scale, 0, PAIN_MAX * 1.5)
 	recalculate_medical_state()
+	refresh_medical_feedback()
 
 /**
  * Returns the current pain level.
@@ -71,20 +75,6 @@
  * all chances are per second and scaled by seconds_per_tick.
  */
 /mob/living/carbon/proc/process_pain_effects(seconds_per_tick = 1)
-	if(pain >= PAIN_FIBRILLATION_THRESHOLD && needs_heart())
-		var/obj/item/organ/heart/heart = get_organ_slot(ORGAN_SLOT_HEART)
-		if(heart && heart.damage > heart.high_threshold && !heart.fibrillating && heart.is_beating())
-			var/cardiac_damage_factor = clamp(
-				(heart.damage - heart.high_threshold) / max(heart.maxHealth - heart.high_threshold, 1),
-				0,
-				1,
-			)
-			var/fib_chance = abs((pain - PAIN_FIBRILLATION_THRESHOLD) * 0.01) * cardiac_damage_factor
-			if(SPT_PROB(fib_chance, seconds_per_tick))
-				if(heart.enter_fibrillation())
-					to_chat(src, span_userdanger("Agony tears through your chest — your heart stumbles into chaos!"))
-					visible_message(span_danger("[src] clutches at [src.p_their()] chest, face contorted in pure agony!"))
-
 	if(consciousness_blackout)
 		clear_fullscreen("pain_spots")
 		update_pain_movespeed()

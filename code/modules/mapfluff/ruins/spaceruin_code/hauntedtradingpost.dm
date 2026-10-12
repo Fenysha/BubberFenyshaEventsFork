@@ -165,7 +165,7 @@
 	if(suicide_pact && suicide_pact_id != null)
 		SSqueuelinks.add_to_queue(src, suicide_pact_id)
 		. = INITIALIZE_HINT_LATELOAD
-	var/static/list/loc_connections = list(
+	var/list/loc_connections = list(
 	COMSIG_ATOM_ENTERED = PROC_REF(on_entered),
 	)
 	AddElement(/datum/element/connect_loc, loc_connections)

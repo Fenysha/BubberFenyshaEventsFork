@@ -20,15 +20,22 @@
 	if(needs_heart())
 		var/obj/item/organ/heart/heart = get_organ_slot(ORGAN_SLOT_HEART)
 		output = heart ? heart.get_cardiac_output() : 0
-	blood_pressure = round(BP_NORMAL * output * (get_blood_ratio() ** 1.5), 0.1)
+	blood_pressure = round(BP_NORMAL * output * (get_blood_ratio() ** 1.15), 0.1)
 
 /// 0..1.2: how well the brain is being supplied with blood.
 /mob/living/carbon/proc/get_brain_perfusion()
 	if(blood_pressure <= BP_PERFUSION_NONE)
 		return 0
 	if(blood_pressure >= BP_PERFUSION_MIN)
-		return clamp(blood_pressure / BP_NORMAL, PERFUSION_SYNCOPE, 1.2)
-	return clamp((blood_pressure - BP_PERFUSION_NONE) / (BP_PERFUSION_MIN - BP_PERFUSION_NONE), 0, 1) * PERFUSION_SYNCOPE
+		return clamp(blood_pressure / BP_NORMAL, 0, 1.2)
+
+	// Keep the curve continuous at BP_PERFUSION_MIN (45 mmHg).
+	var/low_pressure_ratio = clamp(
+		(blood_pressure - BP_PERFUSION_NONE) / (BP_PERFUSION_MIN - BP_PERFUSION_NONE),
+		0,
+		1,
+	)
+	return low_pressure_ratio * (BP_PERFUSION_MIN / BP_NORMAL)
 
 /mob/living/carbon/proc/handle_lungless_oxygenation(seconds_per_tick)
 	if(HAS_TRAIT(src, TRAIT_NOBREATH))

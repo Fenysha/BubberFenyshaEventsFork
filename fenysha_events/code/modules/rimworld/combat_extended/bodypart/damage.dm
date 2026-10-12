@@ -98,8 +98,11 @@
 	 * Recalculate pain, bleeding and future damage modifiers after the
 	 * newly generated injuries have been applied.
 	 */
-	if(owner && impact_brute > 0)
+	var/mob/living/carbon/damage_owner = owner
+	if(damage_owner && impact_brute > 0)
 		if(try_dismember_from_damage(impact_brute, impact_burn, sharpness))
+			if(!QDELETED(damage_owner))
+				damage_owner.updatehealth()
 			return TRUE
 	update_injuries()
 
@@ -116,7 +119,7 @@
  * Applies an already-resolved penetration packet to this limb, then
  * processes body density and any internal organs.
  */
-/obj/item/bodypart/proc/take_penetrating_hit(list/packet, sharpness = NONE, wound_bonus = 0, attack_direction, damage_source)
+/obj/item/bodypart/proc/take_penetrating_hit(list/packet, sharpness = NONE, wound_bonus = 0, attack_direction, damage_source, exposed_wound_bonus = 0)
 	if(!packet || !owner)
 		return
 
@@ -126,8 +129,11 @@
 	if(dealt > 0)
 		var/brute = (damage_type == BRUTE) ? dealt : 0
 		var/burn = (damage_type == BURN) ? dealt : 0
+		var/resolved_sharpness = sharpness
+		if(packet["sharp_ap"] <= PENETRATION_MIN)
+			resolved_sharpness = NONE
 
-		receive_damage(brute = brute, burn = burn, blocked = 0, forced = TRUE, wound_bonus = wound_bonus, sharpness = sharpness, attack_direction = attack_direction, damage_source = damage_source)
+		receive_damage(brute = brute, burn = burn, blocked = 0, forced = TRUE, wound_bonus = wound_bonus, exposed_wound_bonus = exposed_wound_bonus, sharpness = resolved_sharpness, attack_direction = attack_direction, damage_source = damage_source)
 
 	pen_apply_body_density(packet, density_sharp, density_blunt)
 
@@ -164,36 +170,34 @@
 	if(remaining_sharp_ap <= 0.5 && remaining_blunt_ap <= 1)
 		return
 
-	// Remaining kinetic energy / AP after tissue determines organ trauma severity.
-	var/remaining_damage = packet["damage"]
-	var/ap_factor = 1.0 + max(remaining_sharp_ap, remaining_blunt_ap) * 0.08
+	// Residual energy matters, but AP must not turn one external hit into several times the raw damage.
+	var/remaining_damage = max(packet["damage"], 0)
+	var/ap_factor = clamp(1.0 + max(remaining_sharp_ap, remaining_blunt_ap) * 0.035, 1.0, 1.65)
 
-	// Full penetration (high residual AP) transfers far more energy into organs.
-	var/base_mult = 0.55
+	// Internal tissue absorbs much of the impact. High AP increases severity, but with diminishing returns.
+	var/base_mult = 0.30
 	if(remaining_sharp_ap > 4 || remaining_blunt_ap > 6)
-		base_mult = 0.95
+		base_mult = 0.45
 	if(remaining_sharp_ap > 8 || remaining_blunt_ap > 12)
-		base_mult = 1.35
+		base_mult = 0.65
 
-	// Headshots that fully defeat protection are especially lethal to the brain.
+	// A hit to the brain remains dangerous, without the old multiplicative one-shot spike.
 	if(body_zone == BODY_ZONE_HEAD && istype(target, /obj/item/organ/brain))
-		base_mult *= 1.6
-		// High-velocity / high-AP rounds can instantly cripple or destroy the brain.
+		base_mult *= 1.25
 		if(remaining_sharp_ap > 6)
-			base_mult *= 1.4
+			base_mult *= 1.15
 
 	var/organ_damage = remaining_damage * base_mult * ap_factor
 
 	if(organ_damage < 0.5)
 		return
 
-	target.apply_organ_damage(organ_damage)
-	target.on_external_damage(organ_damage, packet, null)
+	var/actual_organ_damage = target.apply_external_combat_damage(organ_damage, packet, null)
 
-	// Extra shock / consciousness impulse for deep organ trauma, especially brain.
-	if(owner && organ_damage >= 8)
-		var/extra_shock = organ_damage * 0.35
-		var/extra_consc = organ_damage * 0.25
+	// Extra shock / consciousness impulse is based on the damage actually applied after organ protection.
+	if(owner && actual_organ_damage >= 8)
+		var/extra_shock = actual_organ_damage * 0.35
+		var/extra_consc = actual_organ_damage * 0.25
 		if(istype(target, /obj/item/organ/brain))
 			extra_shock *= 1.8
 			extra_consc *= 2.2

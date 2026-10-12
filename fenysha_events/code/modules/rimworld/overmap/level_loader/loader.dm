@@ -422,20 +422,24 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 
 /datum/rimworld_sublevel_load_job/proc/prepare()
-	if(!cell || !cell.is_valid())
+	var/datum/planet_cell/target_cell = cell
+	if(!target_cell || QDELETED(target_cell) || !target_cell.is_valid())
 		return FALSE
 
 	reservation = SSsub_levels.create_sub_level(
 		RW_SUBLEVEL_INNER_WIDTH,
 		RW_SUBLEVEL_INNER_HEIGHT,
 		0,
-		poi_name || "Cell ([cell.x],[cell.y])"
+		poi_name || "Cell ([target_cell.x],[target_cell.y])"
 	)
 
 	if(!reservation)
 		log_world(
-			"RimWorld loader: failed to allocate sub-level for cell [cell.x],[cell.y]."
+			"RimWorld loader: failed to allocate sub-level for cell [target_cell.x],[target_cell.y]."
 		)
+		return FALSE
+
+	if(QDELETED(src) || cancel_requested || QDELETED(target_cell))
 		return FALSE
 
 	var/turf/BL = reservation.get_inner_bottom_left_turf()
@@ -443,7 +447,7 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	if(!BL || !TR)
 		log_world(
-			"RimWorld loader: reservation for cell [cell.x],[cell.y] contains invalid bounds."
+			"RimWorld loader: reservation for cell [target_cell.x],[target_cell.y] contains invalid bounds."
 		)
 		return FALSE
 
@@ -451,21 +455,27 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 
 	if(!generator)
 		log_world(
-			"RimWorld loader: failed to create generator for cell [cell.x],[cell.y]."
+			"RimWorld loader: failed to create generator for cell [target_cell.x],[target_cell.y]."
 		)
 		return FALSE
 
+	if(QDELETED(src) || cancel_requested || QDELETED(target_cell))
+		return FALSE
+
 	generator.setup_planet_context(
-		cell.planet,
-		cell.x,
-		cell.y,
-		cell
+		target_cell.planet,
+		target_cell.x,
+		target_cell.y,
+		target_cell
 	)
 
 	if(!generator.prepare_sub_level_terrain(reservation))
 		log_world(
-			"RimWorld loader: terrain preparation failed for cell [cell.x],[cell.y]."
+			"RimWorld loader: terrain preparation failed for cell [target_cell.x],[target_cell.y]."
 		)
+		return FALSE
+
+	if(QDELETED(src) || cancel_requested || QDELETED(target_cell))
 		return FALSE
 
 	local_x = 1
@@ -1056,7 +1066,8 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		if(cell.is_generating)
 			cell.is_generating = FALSE
 
-	cell = null
+	// `cell` is intentionally NOT nulled: Destroy() can run while process()/prepare() is suspended
+	// mid-yield, and those frames still read it. The cell is owned elsewhere, so this cannot leak it.
 
 	return ..()
 

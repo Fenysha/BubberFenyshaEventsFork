@@ -5,6 +5,7 @@
 		return
 	consciousness = max(consciousness - amount * consciousness_mod, 0)
 	update_blackout_state()
+	refresh_medical_feedback()
 
 /**
  * Consciousness is derived in two layers:
@@ -14,6 +15,7 @@
  * 2) Continuous LOSS from pain and shock under that cap.
  *
  * Pain is counted exactly once (in the loss layer, never in the cap).
+ * Critical loss of brain perfusion can independently cause syncope.
  */
 /mob/living/carbon/proc/get_consciousness_target()
 	var/target = get_physiological_consciousness_cap() - get_consciousness_soft_loss() * consciousness_mod
@@ -25,6 +27,7 @@
 		consciousness_blackout = FALSE
 		return
 
+	var/old_consciousness = consciousness
 	var/delta = get_consciousness_target() - consciousness
 	var/max_step = (delta < 0 ? CONSCIOUSNESS_FALL_RATE : CONSCIOUSNESS_RISE_RATE) * seconds_per_tick
 	consciousness = clamp(
@@ -34,6 +37,8 @@
 	)
 
 	update_blackout_state()
+	if(round(old_consciousness / 5) != round(consciousness / 5))
+		update_damage_hud()
 
 /mob/living/carbon/proc/update_blackout_state()
 	if(stat == DEAD)
@@ -55,50 +60,51 @@
 
 /**
  * How awake the brain is *allowed* to be given O2 and perfusion.
- * A ceiling, not a subtraction. There are no floors: zero oxygen or zero
- * perfusion drives the ceiling to PERFUSION_CONSCIOUSNESS_MIN(default 40)
+ * A ceiling, not a subtraction. Moderate hypoxia and low perfusion lower the
+ * ceiling gradually; only critically low perfusion or near-zero brain oxygen forces syncope.
  */
 /mob/living/carbon/proc/get_physiological_consciousness_cap()
 	var/cap = CONSCIOUSNESS_MAX
 
 	var/brain_o2 = get_brain_oxygen()
-	if(brain_o2 < BRAIN_O2_MAX)
-		var/o2_ratio = clamp(brain_o2 / BRAIN_O2_MAX, 0, 1)
-		var/o2_factor = o2_ratio * o2_ratio * (3 - 2 * o2_ratio)
-		if(brain_o2 < BRAIN_O2_SEVERE)
-			o2_factor *= 0.6 + 0.4 * (brain_o2 / BRAIN_O2_SEVERE)
+	if(brain_o2 < 25)
+		var/o2_factor
+		if(brain_o2 >= 12)
+			o2_factor = ce_curve_lerp(brain_o2, 12, 25, 0.55, 1.0)
+		else
+			o2_factor = ce_curve_lerp(brain_o2, 0, 12, 0.15, 0.55)
 		cap = min(cap, CONSCIOUSNESS_MAX * o2_factor)
 
-	// Perfusion curve. Syncope perfusion = cap 0 (blackout).
 	var/perfusion = get_brain_perfusion()
-	var/perf_cap = CONSCIOUSNESS_MAX
 	if(perfusion <= PERFUSION_SYNCOPE)
-		perf_cap = 0
+		return 0
+
+	var/perf_cap = CONSCIOUSNESS_MAX
+	if(perfusion <= 0.35)
+		perf_cap = ce_curve_lerp(perfusion, PERFUSION_SYNCOPE, 0.35, 0, 35)
 	else if(perfusion <= 0.55)
-		perf_cap = ce_curve_lerp(perfusion, PERFUSION_SYNCOPE, 0.55, 0, 25)
-	else if(perfusion <= 0.70)
-		perf_cap = ce_curve_lerp(perfusion, 0.55, 0.70, 25, 65)
-	else if(perfusion < 0.85)
-		perf_cap = ce_curve_lerp(perfusion, 0.70, 0.85, 65, CONSCIOUSNESS_MAX)
+		perf_cap = ce_curve_lerp(perfusion, 0.35, 0.55, 35, 70)
+	else if(perfusion < 0.80)
+		perf_cap = ce_curve_lerp(perfusion, 0.55, 0.80, 70, CONSCIOUSNESS_MAX)
 	cap = min(cap, perf_cap)
 
-	return clamp(cap, PERFUSION_CONSCIOUSNESS_MIN, CONSCIOUSNESS_MAX)
+	return clamp(cap, 0, CONSCIOUSNESS_MAX)
 
 /**
  * Consciousness lost to pain, continuous (no steps) and monotonic:
- *   pain 45 -> 0, 70 -> 20, 90 -> 45, 110 -> 65, 140 -> 100 (= blackout).
+ *   pain 130 -> 0, 140 -> 20, 150 -> 45, 160 -> 100 (= blackout).
  */
 /mob/living/carbon/proc/get_pain_consciousness_loss()
 	if(pain <= PAIN_SHOCK_THRESHOLD)
 		return 0
-	if(pain <= PAIN_SHOCK_PUSH_THRESHOLD)
-		return ce_curve_lerp(pain, PAIN_SHOCK_THRESHOLD, PAIN_SHOCK_PUSH_THRESHOLD, 0, 20)
-	if(pain <= PAIN_CRIT_THRESHOLD)
-		return ce_curve_lerp(pain, PAIN_SHOCK_PUSH_THRESHOLD, PAIN_CRIT_THRESHOLD, 20, 45)
 	if(pain <= PAIN_DROP_THRESHOLD)
-		return ce_curve_lerp(pain, PAIN_CRIT_THRESHOLD, PAIN_DROP_THRESHOLD, 45, 65)
+		return ce_curve_lerp(pain, PAIN_SHOCK_THRESHOLD, PAIN_DROP_THRESHOLD, 0, 20)
+
+	var/critical_threshold = max(PAIN_SHOCK_PUSH_THRESHOLD, PAIN_CRIT_THRESHOLD)
+	if(pain <= critical_threshold)
+		return ce_curve_lerp(pain, PAIN_DROP_THRESHOLD, critical_threshold, 20, 45)
 	if(pain <= PAIN_UNCONSCIOUS_THRESHOLD)
-		return ce_curve_lerp(pain, PAIN_DROP_THRESHOLD, PAIN_UNCONSCIOUS_THRESHOLD, 65, 100)
+		return ce_curve_lerp(pain, critical_threshold, PAIN_UNCONSCIOUS_THRESHOLD, 45, 100)
 	return 100 + (pain - PAIN_UNCONSCIOUS_THRESHOLD)
 
 /**

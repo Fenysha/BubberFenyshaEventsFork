@@ -138,6 +138,18 @@ export const LeftPanel = (props: Props) => {
   const liters = bloodLiters(circulation.blood_volume, circulation.blood_ratio);
   const pressure = formatBloodPressure(circulation.blood_pressure);
   const bleedPerMin = bloodLossLitersPerMinute(parameters.bleed_rate);
+  const coreTemperature = props.data.temperature?.core_celsius;
+  let temperatureText = 'Unavailable';
+  let temperatureColor: 'label' | 'good' | 'average' | 'bad' = 'label';
+  if (typeof coreTemperature === 'number' && Number.isFinite(coreTemperature)) {
+    temperatureText = `${coreTemperature.toFixed(1)} °C`;
+    temperatureColor =
+      coreTemperature < 32 || coreTemperature >= 40
+        ? 'bad'
+        : coreTemperature < 35 || coreTemperature >= 38
+          ? 'average'
+          : 'good';
+  }
 
   return (
     <Stack vertical fill>
@@ -158,6 +170,19 @@ export const LeftPanel = (props: Props) => {
                 max={200}
                 color={riskColor(parameters.pain, 45, 90)}
               />
+            </Stack.Item>
+            <Stack.Item>
+              <div
+                className="HealthPanel__temperature"
+                title={TOOLTIPS.bodyTemperature}
+              >
+                <Box color="label" fontSize="0.85em">
+                  Core temperature
+                </Box>
+                <Box color={temperatureColor} bold>
+                  {temperatureText}
+                </Box>
+              </div>
             </Stack.Item>
           </Stack>
         </Section>

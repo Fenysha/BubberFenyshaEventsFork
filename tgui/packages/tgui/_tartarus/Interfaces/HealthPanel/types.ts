@@ -4,6 +4,14 @@ export type TreatOption = {
   iconSrc?: string | null;
 };
 
+export type BodypartZone =
+  | 'head'
+  | 'chest'
+  | 'l_arm'
+  | 'r_arm'
+  | 'l_leg'
+  | 'r_leg';
+
 export type InjuryData = {
   id: string;
   name: string;
@@ -16,6 +24,12 @@ export type InjuryData = {
   pain: number;
   disabling: boolean;
   can_treat?: boolean;
+  /** DMI state name used by the injury icon sheet. */
+  icon_state?: string | null;
+  /** PNG data URL or raw base64, matching the limb icon contract. */
+  iconSrc?: string | null;
+  /** Specific body zone, or 'all' for a whole-body condition. */
+  body_zone?: string | null;
   series?: string;
   treatment_quality?: number;
   treatment_effectiveness?: number;
@@ -25,7 +39,7 @@ export type InjuryData = {
 };
 
 export type BodypartData = {
-  zone: string;
+  zone: BodypartZone;
   name: string;
   present: boolean;
 
@@ -46,6 +60,11 @@ export type BodypartData = {
   limb_gender?: 'm' | 'f' | string;
 
   injuries: InjuryData[];
+};
+
+/** The backend always emits the six standard body zones; other lookups may miss. */
+export type BodypartMap = Record<BodypartZone, BodypartData> & {
+  [zone: string]: BodypartData | undefined;
 };
 
 export type OrganData = {
@@ -142,7 +161,16 @@ export type LungsData = {
 
 export type ViewerAccess = 0 | 1 | 2 | 3;
 
+export type TemperatureData = {
+  /** Core temperature in degrees Celsius. */
+  core_celsius?: number | null;
+  /** Current legacy/skin temperature in degrees Celsius, when available. */
+  skin_celsius?: number | null;
+  source?: string;
+};
+
 export type HealthPanelData = {
+  temperature?: TemperatureData;
   parameters: {
     consciousness: number;
     pain: number;
@@ -161,7 +189,7 @@ export type HealthPanelData = {
   cardiogram: CardiogramData;
   lungs: LungsData;
 
-  bodyparts: Record<string, BodypartData>;
+  bodyparts: BodypartMap;
 
   organs: {
     brain: OrganData;
@@ -174,6 +202,8 @@ export type HealthPanelData = {
   /** False for ghosts — hide treat buttons */
   can_treat: boolean;
   is_self: boolean;
+  /** True while the examined carbon is dead; keeps the death warning visible. */
+  is_dead?: boolean;
   /** Name of the person being examined */
   subject_name?: string;
 };

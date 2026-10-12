@@ -17,7 +17,8 @@
 	if(received_pressure_mult <= 0)
 		return 0
 
-	var/health_factor = clamp((maxHealth - damage) / maxHealth, 0, 1)
+	var/damage_ratio = clamp(damage / maxHealth, 0, 1)
+	var/health_factor = clamp(1 - (damage_ratio * sqrt(damage_ratio)), 0, 1)
 	var/fluid_ratio = clamp(fluid / LUNG_FLUID_MAX, 0, 1)
 	var/fluid_factor = 1 - (fluid_ratio ** 1.35)
 	if(fluid > LUNG_FLUID_SEVERE)

@@ -3,6 +3,9 @@
  * Dodge chance 0-100 against attacker for the given attack_type.
  */
 /mob/living/proc/get_melee_dodge_chance(atom/attacker, attack_type = MELEE_ATTACK)
+	// Bullets are resolved by projectile collision and accuracy, not by melee dodge.
+	if(attack_type == PROJECTILE_ATTACK)
+		return 0
 	if(body_position == LYING_DOWN)
 		return 0
 	if(HAS_TRAIT(src, TRAIT_IMMOBILIZED) || HAS_TRAIT(src, TRAIT_KNOCKEDOUT))

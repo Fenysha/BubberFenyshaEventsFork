@@ -59,8 +59,7 @@ export const HealthPanel = () => {
 
   const brainCritical =
     !data.organs.brain.present ||
-    data.organs.brain.health <= 25 ||
-    (data.organs.brain.oxygen ?? 100) < 30;
+    data.organs.brain.health <= 25
 
   const bleeding = data.parameters.bleed_rate > 3;
 
@@ -146,6 +145,48 @@ export const HealthPanel = () => {
             </Stack>
           </Stack.Item>
         </Stack>
+
+        {(() => {
+          const brainMissing = !data.organs.brain.present;
+          const brainHealth = data.organs.brain.health ?? 100;
+          const brainOxygen = data.organs.brain.oxygen ?? 100;
+          const isCriticalBrain =
+            brainMissing || brainHealth <= 15 || brainOxygen <= 15;
+
+          if (!data.is_dead && !isCriticalBrain) {
+            return null;
+          }
+
+          // 0 → barely critical, 1 → total failure / missing
+          const intensity = data.is_dead
+            ? 1
+            : brainMissing
+              ? 1
+              : Math.max(
+                  1 - Math.min(brainHealth, brainOxygen) / 15,
+                  0.35,
+                );
+
+          return (
+            <div
+              className={`HealthPanel__critical-overlay${
+                data.is_dead ? ' HealthPanel__critical-overlay--death' : ''
+              }`}
+              style={
+                data.is_dead
+                  ? undefined
+                  : ({
+                      '--critical-intensity': intensity,
+                    } as CSSProperties)
+              }
+              aria-live="assertive"
+            >
+              <div className="HealthPanel__critical-overlay-label">
+                {data.is_dead ? 'DEATH' : 'CRITICAL BRAIN FAILURE'}
+              </div>
+            </div>
+          );
+        })()}
       </Window.Content>
     </Window>
   );

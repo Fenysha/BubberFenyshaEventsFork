@@ -6,6 +6,7 @@
 		"damage_type" = damage_type,
 		"deflected" = FALSE,
 		"limb_damage" = 0,
+		"exposed_wound_bonus" = 0,
 	)
 
 /// Applies one armor layer. Sharp AP can penetrate or be deflected into blunt trauma;
@@ -85,10 +86,12 @@
 
 	var/sharp_ap = 0
 	var/blunt_ap = 0
+	var/has_explicit_sharp_ap = FALSE
 
 	if(proj)
 		sharp_ap = proj.rw_ap_sharp
 		blunt_ap = proj.rw_ap_blunt
+		has_explicit_sharp_ap = sharp_ap > 0
 		if(!sharp_ap && !blunt_ap && proj.armour_penetration)
 			if(proj.sharpness & (SHARP_EDGED | SHARP_POINTY))
 				sharp_ap = proj.armour_penetration * 0.1
@@ -98,6 +101,7 @@
 	else if(weapon)
 		sharp_ap = weapon.rw_ap_sharp
 		blunt_ap = weapon.rw_ap_blunt
+		has_explicit_sharp_ap = sharp_ap > 0
 		if(!sharp_ap && !blunt_ap && weapon.armour_penetration)
 			if(sharpness & (SHARP_EDGED | SHARP_POINTY))
 				sharp_ap = weapon.armour_penetration * 0.1
@@ -106,6 +110,9 @@
 				blunt_ap = weapon.armour_penetration * 0.1
 
 	if(sharpness & (SHARP_EDGED | SHARP_POINTY))
+		// Legacy AP is a percentage, not mm RHA. Keep a useful floor for sharp weapons unless they define explicit RHA AP.
+		if(!has_explicit_sharp_ap)
+			sharp_ap = max(sharp_ap, max(damage * 0.25, 1.5))
 		if(!sharp_ap)
 			sharp_ap = max(damage * 0.15, 1)
 		if(!blunt_ap)

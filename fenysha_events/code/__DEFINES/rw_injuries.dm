@@ -64,7 +64,7 @@
 #define PAIN_SPOTS_MAX_SEVERITY        6
 
 /// Shock gained per second per point of pain above PAIN_SHOCK_PUSH_THRESHOLD.
-#define PAIN_SHOCK_RATE                0.12
+#define PAIN_SHOCK_RATE                0.06
 
 
 
@@ -87,6 +87,9 @@
 #define SHOCK_BLOOD_FLOOR_MAX          80
 
 #define SHOCK_RECOVERY_RATE            7.0
+
+/// Reduce one-off impact / injury shock impulses without masking true exsanguination.
+#define SHOCK_IMPULSE_MULT             0.5
 
 
 
@@ -154,11 +157,11 @@
 /// Below this, effective perfusion is nearly absent.
 #define BP_PERFUSION_NONE              15
 
-/// Syncope occurs below this normalized perfusion level.
-#define PERFUSION_SYNCOPE              0.45
+/// Syncope only occurs when cerebral perfusion is critically low.
+#define PERFUSION_SYNCOPE              0.10
 
-/// The lowest consciousness score that a poor perfusion score can result in
-#define PERFUSION_CONSCIOUSNESS_MIN		40
+/// Consciousness ceiling at the low end of gradual hypoperfusion (0.55).
+#define PERFUSION_CONSCIOUSNESS_MIN    40
 
 #define CIRCULATION_TRAIT              "circulation"
 
@@ -180,7 +183,7 @@
 /// At 50% perfusion and 100% SpO2, oxygen supply equals consumption.
 #define BRAIN_O2_SUPPLY_MULT           2
 
-#define BRAIN_O2_RATE                  1.2
+#define BRAIN_O2_RATE                  0.9
 
 /// Recovery is slower than oxygen depletion.
 #define BRAIN_O2_RECOVERY_MULT         0.5
@@ -214,16 +217,16 @@
 
 
 #define IMPACT_PAIN_THRESHOLD          2.0
-#define IMPACT_PAIN_MULT               0.85
+#define IMPACT_PAIN_MULT               0.45
 
 #define IMPACT_SHOCK_MULT              0.65
 
-#define IMPACT_CONSCIOUSNESS_THRESHOLD 5.0
+#define IMPACT_CONSCIOUSNESS_THRESHOLD 4.0
 #define IMPACT_CONSCIOUSNESS_MULT      0.85
 
-#define IMPACT_HEAD_MULT               2.25
-#define IMPACT_CHEST_MULT              0.75
-#define IMPACT_LIMB_MULT               0.45
+#define IMPACT_HEAD_MULT               1.3
+#define IMPACT_CHEST_MULT              0.65
+#define IMPACT_LIMB_MULT               0.4
 
 
 

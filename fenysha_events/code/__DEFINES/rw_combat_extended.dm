@@ -25,6 +25,15 @@
 /// Blunt armor / AP units (MPa equivalent)
 #define PENETRATION_MIN 0.01
 
+/// External attacks transfer only part of their resolved damage into internal organs.
+#define ORGAN_EXTERNAL_DAMAGE_MULT 0.55
+/// Critical-organ lethal-hit protection: reduce a lethal external hit and prevent immediate destruction.
+#define ORGAN_LETHAL_GUARD_DAMAGE_MULT 0.80
+#define ORGAN_LETHAL_GUARD_COOLDOWN (5 MINUTES)
+#define ORGAN_LETHAL_GUARD_SOUND 'sound/items/weapons/thudswoosh.ogg'
+/// Global multiplier for natural injury healing. Medical treatment still applies its own multiplier.
+#define INJURY_GLOBAL_HEALING_RATE_MULT 0.50
+
 /**
  * Remaining AP after one armor layer.
  */
@@ -37,9 +46,9 @@
 	((ap) <= PENETRATION_MIN ? 0 : clamp(PEN_REMAINING_AP(ap, armor) / (ap), 0, 1))
 
 /**
- * Sharp fully deflected when armor exceeds AP.
+ * Sharp component is deflected when armor meets or exceeds AP.
  */
-#define PEN_SHARP_DEFLECTED(ap, armor) ((armor) > (ap))
+#define PEN_SHARP_DEFLECTED(ap, armor) ((armor) >= (ap))
 
 /**
  * Blunt damage from stopped sharp energy.
@@ -207,3 +216,7 @@ GLOBAL_LIST_INIT(rw_attachment_slots, list(
 #define RW_CALIBER_308      	".308 Win"
 
 
+/proc/is_penetrating_projectile(obj/projectile/rimworld/HP)
+	if(!HP || QDELETED(HP) || !istype(HP, /obj/projectile/rimworld))
+		return FALSE
+	return HP.rw_ap_sharp > PENETRATION_MIN

@@ -15,6 +15,13 @@
 	var/desc = ""
 	var/examine_desc = "is injured"
 
+	/// Optional explicit DMI state for the HealthPanel injury icon.
+	/// If unset, get_ui_icon_state() derives a state from the datum typepath.
+	var/ui_icon_state
+
+	/// Display classification for HealthPanel. Null follows limb.body_zone; "all" appears on every limb.
+	var/ui_body_zone
+
 	/// INJURY_VISIBILITY_*
 	var/visibility = INJURY_VISIBILITY_SELF
 
@@ -85,6 +92,33 @@
 
 	/// Set by promote() for intermediate tiers so a multi-tier upgrade applies the shock response only once.
 	var/skip_initial_response = FALSE
+
+
+/**
+ * Returns the injury icon state shown by HealthPanel.
+ * Explicit ui_icon_state wins; otherwise /datum/injury/laceration/severe maps to "laceration_severe".
+ */
+/datum/injury/proc/get_ui_icon_state()
+	if(ui_icon_state)
+		return ui_icon_state
+
+	var/path_text = "[type]"
+	var/path_prefix = "/datum/injury/"
+	if(findtext(path_text, path_prefix) == 1)
+		path_text = copytext(path_text, length(path_prefix) + 1)
+
+	return replacetext(path_text, "/", "_")
+
+/**
+ * Returns the UI body zone for this injury.
+ * Set ui_body_zone = "all" on systemic injuries to show them on every limb.
+ */
+/datum/injury/proc/get_ui_body_zone()
+	if(ui_body_zone)
+		return ui_body_zone
+	if(limb)
+		return limb.body_zone
+	return "all"
 
 /datum/injury/New()
 	unique_id = REF(src)
@@ -327,18 +361,21 @@
 	qdel(src)
 
 /datum/injury/proc/handle_process(seconds_per_tick)
+	if(!owner || owner.stat == DEAD || HAS_TRAIT(owner, TRAIT_STASIS))
+		return
+
 	process_healing(seconds_per_tick)
-	if(QDELETED(src) || !owner)
+	if(QDELETED(src) || !owner || owner.stat == DEAD || HAS_TRAIT(owner, TRAIT_STASIS))
 		return
 	process_internal_bleeding(seconds_per_tick)
-	if(owner.stat != DEAD)
+	if(owner.stat != DEAD && !HAS_TRAIT(owner, TRAIT_STASIS))
 		process_effects(seconds_per_tick)
 
 /**
  * Advances healing progress. When progress reaches 1.0 the injury is removed.
  */
 /datum/injury/proc/process_healing(seconds_per_tick)
-	if(healing_progress >= 1)
+	if(!owner || owner.stat == DEAD || HAS_TRAIT(owner, TRAIT_STASIS) || healing_progress >= 1)
 		return
 
 	var/rate = base_healing_rate
@@ -354,6 +391,9 @@
 
 	if(rate <= 0)
 		return
+
+	// A single shared modifier keeps every injury's natural recovery rate consistent.
+	rate *= INJURY_GLOBAL_HEALING_RATE_MULT
 
 	if(owner)
 		rate *= owner.get_rw_wound_heal_mult()

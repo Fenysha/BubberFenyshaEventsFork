@@ -2,6 +2,7 @@ export const TOOLTIPS = {
   consciousness:
     'Current level of wakefulness and awareness. Severe hypoperfusion, hypoxia, shock, or pain can drive it toward unconsciousness.',
   pain: 'Current acute and injury-derived pain. Persistent pain contributes to shock and impaired consciousness.',
+  bodyTemperature: 'Current core body temperature. Below 35 °C indicates hypothermia; 38 °C and above indicates fever or hyperthermia.',
   shock:
     'Systemic physiological stress caused by pain, hemorrhage, and poor circulation. Higher values impair consciousness and recovery. Shown as tremor on the body map.',
   heartbeat:

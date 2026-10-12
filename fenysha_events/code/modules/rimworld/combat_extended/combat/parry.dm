@@ -7,7 +7,6 @@
 	alert_type = /atom/movable/screen/alert/status_effect/rw_parrying
 	tick_interval = STATUS_EFFECT_NO_TICK
 	var/perfect_window_end = 0
-	var/strike_received = FALSE
 
 /datum/status_effect/rw_parrying/on_creation(mob/living/new_owner)
 	perfect_window_end = world.time + RW_PERFECT_PARRY_WINDOW
@@ -24,10 +23,6 @@
 /datum/status_effect/rw_parrying/on_remove()
 	owner.remove_traits(list(TRAIT_IMMOBILIZED, TRAIT_HANDS_BLOCKED), TRAIT_STATUS_EFFECT(id))
 	owner.cut_overlay(mutable_appearance('icons/effects/effects.dmi', "mech_sparks", -BODY_LAYER))
-	if(!strike_received)
-		owner.Stun(RW_PARRY_FAIL_STUN)
-		owner.visible_message(span_warning("[owner] lowers [owner.p_their()] guard too late and is left vulnerable!"), \
-			span_userdanger("You hold your guard too long and leave yourself vulnerable!"))
 	return ..()
 
 /datum/status_effect/rw_parrying/proc/is_perfect()
@@ -85,7 +80,6 @@
 		return FAILED_BLOCK
 
 	var/was_perfect = parry.is_perfect()
-	parry.strike_received = TRUE
 	remove_status_effect(/datum/status_effect/rw_parrying)
 
 	if(was_perfect)
@@ -94,19 +88,19 @@
 		visible_message(span_warning("[src] partially deflects [attack_text]!"), span_userdanger("You partially deflect [attack_text]!"))
 	playsound(src, 'fenysha_events/sounds/effects/parry.ogg', 65, TRUE)
 
+	apply_status_effect(/datum/status_effect/rw_parry_cooldown)
 	if(was_perfect)
-		remove_status_effect(/datum/status_effect/rw_parry_cooldown)
 		apply_status_effect(/datum/status_effect/rw_perfect_parry, 1.0, attacker)
 		create_floating_combat_text(src, "Perfect Parry", "#73FF9A")
-		attacker.Stun(1.2 SECONDS)
+		if(attacker)
+			attacker.Stun(1.2 SECONDS)
 		to_chat(src, span_nicegreen("Perfect parry!"))
 	else
-		apply_status_effect(/datum/status_effect/rw_parry_cooldown)
 		create_floating_combat_text(src, "Parry", "#A7D8FF")
 
 	if(client)
 		rw_train_skill(src, RW_SKILL_MELEE, was_perfect ? RW_SKILL_POINTS_NORMAL : RW_SKILL_POINTS_MINOR)
-	if(attacker.client)
+	if(attacker && attacker.client)
 		rw_train_skill(attacker, RW_SKILL_MELEE, RW_SKILL_POINTS_MINOR)
 
 	return was_perfect ? SUCCESSFUL_BLOCK : RW_PARRY_PARTIAL_BLOCK

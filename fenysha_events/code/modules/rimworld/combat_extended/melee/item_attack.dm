@@ -89,6 +89,10 @@
 		user.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 
 	if(user != src)
+		// Resolve an active parry before ordinary blocking or dodge can consume the strike.
+		var/parry_result = try_parry_attack(user, final_force, "\the [attacking_item]")
+		if(parry_result == SUCCESSFUL_BLOCK)
+			return ATTACK_FAILED
 		if(check_block(
 			attacking_item,
 			final_force,
@@ -99,14 +103,10 @@
 		))
 			return ATTACK_FAILED
 
-		if(try_dodge(user, "\the [attacking_item]", MELEE_ATTACK))
-			return ATTACK_FAILED
-
-		var/parry_result = try_parry_attack(user, final_force, "\the [attacking_item]")
-		if(parry_result == SUCCESSFUL_BLOCK)
-			return ATTACK_FAILED
 		if(parry_result == RW_PARRY_PARTIAL_BLOCK)
 			final_force *= (1 - RW_PARRY_PARTIAL_DAMAGE_REDUCTION)
+		else if(try_dodge(user, "\the [attacking_item]", MELEE_ATTACK))
+			return ATTACK_FAILED
 
 	SEND_SIGNAL(attacking_item, COMSIG_ITEM_ATTACK_ZONE, src, user, targeting)
 

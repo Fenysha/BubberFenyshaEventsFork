@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Box, Button, Stack } from 'tgui-core/components';
-import { type BodyDollZone, getBodyDollOffset } from './bodyDollOffsets';
-import type { BodypartData, OrganData } from './types';
+import {
+  type BodyDollZone,
+  getBodyDollIndicatorOffset,
+  getBodyDollOffset,
+} from './bodyDollOffsets';
+import type { BodypartData, BodypartMap, OrganData } from './types';
 
 type Props = {
-  bodyparts: Record<string, BodypartData>;
+  bodyparts: BodypartMap;
   organs: {
     brain: OrganData;
     heart: OrganData;
@@ -31,10 +35,20 @@ const getPartState = (
     return 'missing';
   }
 
-  const structuralDamage = 1 - data.structural_integrity / 100;
-  const skinDamage = 1 - data.skin_integrity / 100;
+  const structuralIntegrity =
+    typeof data.structural_integrity === 'number' &&
+    Number.isFinite(data.structural_integrity)
+      ? data.structural_integrity
+      : 0;
+  const skinIntegrity =
+    typeof data.skin_integrity === 'number' && Number.isFinite(data.skin_integrity)
+      ? data.skin_integrity
+      : 0;
+  const structuralDamage = 1 - structuralIntegrity / 100;
+  const skinDamage = 1 - skinIntegrity / 100;
 
-  const severeInjury = data.injuries.some((injury) => injury.severity >= 3);
+  const injuries = Array.isArray(data.injuries) ? data.injuries : [];
+  const severeInjury = injuries.some((injury) => injury.severity >= 3);
 
   if (data.bleed_rate >= 3 || structuralDamage >= 0.75 || severeInjury) {
     return 'bad';
@@ -278,7 +292,7 @@ const shockClass = (shock = 0): string => {
 };
 
 function BodypartArt(props: {
-  data?: BodypartData;
+  data: BodypartData;
   state: ReturnType<typeof getPartState>;
   selected: boolean;
 }) {
@@ -355,7 +369,11 @@ export const BodyDoll = (props: Props) => {
       </Stack.Item>
 
       <Stack.Item>
-        <Stack className="HealthPanel__doll-organs" justify="center">
+        <Stack
+          className="HealthPanel__doll-organs"
+          justify="center"
+          style={{ marginTop: 10 }}
+        >
           <Stack.Item>
             <OrganButton
               label="Brain"
@@ -403,13 +421,14 @@ export const BodyDoll = (props: Props) => {
 
 const ZoneButton = (props: {
   zone: BodyDollZone;
-  data?: BodypartData;
+  data: BodypartData;
   selected: boolean;
   onSelect: (zone: string) => void;
 }) => {
   const { zone, data, selected, onSelect } = props;
 
   const offset = getBodyDollOffset(data?.sprite_id, data?.limb_gender, zone);
+  const indicator = getBodyDollIndicatorOffset(zone);
 
   const state = getPartState(data);
 
@@ -428,6 +447,14 @@ const ZoneButton = (props: {
   const clipPath = useAlphaClipPath(iconSrc, width, height);
 
   const selectedClass = selected ? 'HealthPanel__doll-part--selected' : '';
+
+  // Marker sits on the visible limb mass, not the empty corner of the DMI box.
+  const markerStyle = {
+    left: `${indicator.x * 100}%`,
+    top: `${indicator.y * 100}%`,
+    right: 'auto' as const,
+    transform: 'translate(-50%, -50%)',
+  };
 
   return (
     <Box
@@ -462,12 +489,14 @@ const ZoneButton = (props: {
 
       <BodypartArt data={data} state={state} selected={selected} />
 
-      {data?.present && data.bleed_rate > 0 && (
-        <span className="HealthPanel__doll-bleed" />
+      {Boolean(data?.present) && data.bleed_rate > 0 && (
+        <span className="HealthPanel__doll-bleed" style={markerStyle} />
       )}
 
-      {data?.present && data.disabled && (
-        <span className="HealthPanel__doll-disabled">!</span>
+      {Boolean(data?.present) && Boolean(data.disabled) && (
+        <span className="HealthPanel__doll-disabled" style={markerStyle}>
+          !
+        </span>
       )}
     </Box>
   );
@@ -480,16 +509,20 @@ const OrganButton = (props: {
   critical: boolean;
   onClick: () => void;
 }) => {
-  const { label, data, critical, onClick } = props;
+  const { label, data, critical, selected, onClick } = props;
 
   const warning = !critical && (data.health < 50 || data.failing);
 
   return (
     <Button
-      className="HealthPanel__doll-organ"
+      className={[
+        'HealthPanel__doll-organ',
+        selected ? 'HealthPanel__doll-organ--selected' : '',
+      ].filter(Boolean).join(' ')}
       color={critical ? 'bad' : warning ? 'average' : 'good'}
       onClick={onClick}
       tooltip={data.status}
+      style={{ minWidth: '68px', padding: '4px 9px' }}
     >
       {label}
     </Button>

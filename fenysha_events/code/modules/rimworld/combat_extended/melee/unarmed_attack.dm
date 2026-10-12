@@ -115,18 +115,20 @@
 	if(user != target)
 		user.apply_status_effect(/datum/status_effect/rw_melee_recoil, 1)
 
+	var/parry_result = FAILED_BLOCK
+	if(user != target)
+		// An active parry has priority so the stance cannot be bypassed by dodge/block order.
+		parry_result = target.try_parry_attack(user, damage, "bare hands")
+		if(parry_result == SUCCESSFUL_BLOCK)
+			return ATTACK_FAILED
+
 	if(target.check_block(user, damage, "[user]'s [atk_verb]", UNARMED_ATTACK, 0, BRUTE))
 		return FALSE
 
-	if(target.try_dodge(user, "[user]'s [atk_verb]", UNARMED_ATTACK))
+	if(parry_result == RW_PARRY_PARTIAL_BLOCK)
+		damage *= (1 - RW_PARRY_PARTIAL_DAMAGE_REDUCTION)
+	else if(target.try_dodge(user, "[user]'s [atk_verb]", UNARMED_ATTACK))
 		return FALSE
-
-	if(user != target)
-		var/parry_result = target.try_parry_attack(user, damage, "bare hands")
-		if(parry_result == SUCCESSFUL_BLOCK)
-			return ATTACK_FAILED
-		if(parry_result == RW_PARRY_PARTIAL_BLOCK)
-			damage *= (1 - RW_PARRY_PARTIAL_DAMAGE_REDUCTION)
 
 	var/armor_block = target.run_armor_check(affecting, MELEE, silent = TRUE)
 	if(armor_block >= 100)

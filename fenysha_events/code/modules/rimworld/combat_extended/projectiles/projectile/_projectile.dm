@@ -4,6 +4,7 @@
 	icon_state = "bullet"
 	damage = 20
 	damage_type = BRUTE
+	sharpness = SHARP_POINTY
 	armor_flag = BULLET
 	speed = 5
 
@@ -23,7 +24,7 @@
 	rw_ap_sharp = 4 MM_RHA
 	/// Blunt penetration / kinetic transfer in MPa
 	rw_ap_blunt = 18 MPA
-	/// Extra damage multiplier vs soft tissue when sharp is stopped (HP bias)
+	/// Damage multiplier transferred into soft tissue after a sharp component penetrates armor.
 	var/rw_soft_damage_mult = 1
 	/// Caliber tag
 	var/rw_caliber = RW_CALIBER_9MM

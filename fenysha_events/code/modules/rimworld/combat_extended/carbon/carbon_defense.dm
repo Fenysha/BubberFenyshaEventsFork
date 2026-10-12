@@ -12,6 +12,7 @@
 	wound_bonus = 0,
 	attack_direction,
 	damage_source,
+	exposed_wound_bonus = 0,
 )
 	if(damage <= 0)
 		return 0
@@ -30,7 +31,11 @@
 			used_sharpness = proj.sharpness
 
 	var/list/packet = pen_packet_from_attack(damage, used_sharpness, weapon, proj, damage_type)
+	packet["exposed_wound_bonus"] = exposed_wound_bonus
 	packet = run_armor_penetration(BP, packet)
+	if(istype(proj, /obj/projectile/rimworld) && packet["sharp_ap"] > PENETRATION_MIN)
+		var/obj/projectile/rimworld/rw_proj = proj
+		packet = pen_finalize_soft_damage(packet, rw_proj.rw_soft_damage_mult)
 
 	var/limb_damage = packet["damage"]
 	packet["limb_damage"] = limb_damage
@@ -45,7 +50,10 @@
 		wound_bonus,
 		attack_direction,
 		damage_source || weapon || proj,
+		exposed_wound_bonus = exposed_wound_bonus,
 	)
+	if(limb_damage <= 0)
+		updatehealth()
 	return packet["limb_damage"]
 
 /**
@@ -130,6 +138,7 @@
 				weapon = attacking_item,
 				proj = istype(attacking_item, /obj/projectile) ? attacking_item : null,
 				wound_bonus = wound_bonus,
+				exposed_wound_bonus = exposed_wound_bonus,
 				attack_direction = attack_direction,
 				damage_source = attacking_item,
 			)

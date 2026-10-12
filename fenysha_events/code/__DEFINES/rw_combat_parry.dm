@@ -2,7 +2,6 @@
 #define RW_PARRY_DURATION (1 SECONDS)
 #define RW_PERFECT_PARRY_WINDOW (0.75 SECONDS)
 #define RW_PARRY_COOLDOWN (4.5 SECONDS)
-#define RW_PARRY_FAIL_STUN (0.6 SECONDS)
 /// Fraction of an attack absorbed by a late, non-perfect parry.
 #define RW_PARRY_PARTIAL_DAMAGE_REDUCTION 0.35
 /// Distinguishes a partial parry from SUCCESSFUL_BLOCK (which completely cancels an attack).
