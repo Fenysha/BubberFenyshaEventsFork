@@ -150,14 +150,6 @@ body.onmap {
       }
     }
 
-    &.click-reveal:not(.frameless-visible) {
-      .ChatMessage,
-      .ChatMessage--recent,
-      .ChatMessage--fading {
-        opacity: 0;
-      }
-    }
-
     &.frameless-visible {
       .Window {
         background-color: var(--color-base);

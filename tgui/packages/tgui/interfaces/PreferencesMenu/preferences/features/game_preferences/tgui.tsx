@@ -57,9 +57,10 @@ export const tgui_say_light_mode: FeatureToggle = {
 
 // FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
 export const say_popup_on_map: FeatureToggle = {
-  name: 'Say: Popup over the map',
+  name: 'Say: Popup over the map on overlay chat mode',
   category: 'UI',
-  description: 'Speech keys open the popup, not the floating chat input.',
+  description:
+    'Speech keys open the say popup separate of the chat input, if you have overlay chat enabled.',
   component: CheckboxInput,
 };
 // FENYSHA EDIT ADDITION END
