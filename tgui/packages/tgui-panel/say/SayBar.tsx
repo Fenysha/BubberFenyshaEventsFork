@@ -8,10 +8,13 @@ import {
   useState,
 } from 'react';
 import { debounce, throttle } from 'tgui-core/timer';
-import { type Channel, ChannelIterator } from '../../tgui-say/ChannelIterator';
-import { ChatHistory } from '../../tgui-say/ChatHistory';
-import { RADIO_PREFIXES } from '../../tgui-say/constants';
-import { getPrefix } from '../../tgui-say/helpers';
+import {
+  type Channel,
+  ChannelIterator,
+} from '../../tartarus-say/ChannelIterator';
+import { ChatHistory } from '../../tartarus-say/ChatHistory';
+import { RADIO_PREFIXES } from '../../tartarus-say/constants';
+import { getPrefix } from '../../tartarus-say/helpers';
 import {
   commandBarSeedAtom,
   sayCloseAtom,

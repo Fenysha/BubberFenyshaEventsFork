@@ -27,3 +27,10 @@
 /datum/preference/choiced/tgpanel_layout/apply_to_client_updated(client/updated, value)
 	if(updated.tgui_panel && updated.tgui_panel.current_layout != value)
 		updated.tgui_panel.create_browser(value)
+
+/// Speech hotkeys open the say popup even while the chat floats over the map
+/datum/preference/toggle/say_popup_on_map
+	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
+	savefile_key = "say_popup_on_map"
+	savefile_identifier = PREFERENCE_PLAYER
+	default_value = FALSE

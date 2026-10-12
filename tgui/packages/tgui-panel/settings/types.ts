@@ -8,6 +8,7 @@ const viewSchema = z.object({
 
 export const settingsSchema = z.object({
   adminMusicVolume: z.number(),
+  chatClickReveal: z.boolean(), // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
   chatCorner: z.string(),
   chatFrameless: z.boolean(),
   chatMessageBg: z.boolean(),

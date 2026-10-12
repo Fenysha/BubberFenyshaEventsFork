@@ -451,6 +451,8 @@
 #include "code\modules\robust_ai\generic_abilities\heal_target.dm"
 #include "code\modules\robust_ai\generic_abilities\knockdown_target.dm"
 #include "code\modules\robust_ai\generic_abilities\throw_grenade.dm"
+#include "code\modules\say_verbs\say_verb_input.dm"
+#include "code\modules\say_verbs\say_window.dm"
 #include "code\modules\silentstation\mist.dm"
 #include "code\modules\silentstation\silentstation_event.dm"
 #include "code\modules\silentstation\map_content\areas.dm"

@@ -4,6 +4,9 @@ import type { HighlightSetting, HighlightState, SettingsState } from './types';
 
 export const defaultSettings: SettingsState = {
   adminMusicVolume: 0.5,
+  // FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+  chatClickReveal: false,
+  // FENYSHA EDIT ADDITION END
   chatCorner: 'top-right',
   chatFrameless: true,
   chatMessageBg: false,

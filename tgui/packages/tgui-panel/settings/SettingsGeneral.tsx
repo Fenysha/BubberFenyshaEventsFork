@@ -80,6 +80,19 @@ export function SettingsGeneral(props: { isOnMap?: boolean }) {
                 }
               />
             </LabeledList.Item>
+            <LabeledList.Item label="Hide until clicked">
+              <Button
+                selected={settings.chatClickReveal}
+                color="transparent"
+                icon={settings.chatClickReveal ? 'eye-slash' : 'eye'}
+                tooltip="Double click the chat to show it, again to hide."
+                onClick={() =>
+                  updateSettings({ chatClickReveal: !settings.chatClickReveal })
+                }
+              >
+                {settings.chatClickReveal ? 'Enabled' : 'Disabled'}
+              </Button>
+            </LabeledList.Item>
             {settings.chatFrameless && (
               <LabeledList.Item label="Message backdrop">
                 <Button

@@ -29,6 +29,8 @@ export default defineConfig({
     tgui: './packages/tgui',
     'tgui-panel': './packages/tgui-panel',
     'tgui-say': './packages/tgui-say',
+    // FENYSHA EDIT ADDITION - TARTARUS_SAY - our fork of the say popup, loaded by tgui_say
+    'tartarus-say': './packages/tartarus-say',
     'tgui-chat-dark': './packages/tgui-chat-dark',
     'tgui-escape-menu': './packages/tgui-escape-menu',
   },

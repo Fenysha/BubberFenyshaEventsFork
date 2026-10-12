@@ -4,6 +4,14 @@ import {
   isTextArg,
   isTypepathArg,
 } from 'common/verb-constants';
+// FENYSHA EDIT CHANGE - SAY_VERB_INPUT - shared with the say popup's verb input
+import {
+  isInQuotedArg,
+  parseArgs,
+  serializeInput,
+  suffixForArg,
+  toKebab,
+} from 'common/verb-input';
 import { useAtomValue } from 'jotai';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { commandBarSeedAtom } from '../say/atoms'; // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
@@ -19,65 +27,6 @@ import {
   type Verb,
   type VerbArg,
 } from './atoms';
-
-function toKebab(name: string): string {
-  return name.replaceAll(' ', '-');
-}
-
-function parseArgs(raw: string): string[] {
-  const result: string[] = [];
-  let i = 0;
-  while (i < raw.length) {
-    if (raw[i] === ' ') {
-      i++;
-      continue;
-    }
-    if (raw[i] === '"') {
-      const end = raw.indexOf('"', i + 1);
-      if (end === -1) {
-        result.push(raw.slice(i + 1));
-        break;
-      }
-      result.push(raw.slice(i + 1, end));
-      i = end + 1;
-    } else {
-      const end = raw.indexOf(' ', i);
-      if (end === -1) {
-        result.push(raw.slice(i));
-        break;
-      }
-      result.push(raw.slice(i, end));
-      i = end;
-    }
-  }
-  return result;
-}
-
-function isInQuotedArg(raw: string): boolean {
-  let inQuote = false;
-  for (let i = 0; i < raw.length; i++) {
-    if (raw[i] === '"') {
-      inQuote = !inQuote;
-    }
-  }
-  return inQuote;
-}
-
-function serializeInput(verb: Verb, filled: string[], suffix = ''): string {
-  const kebab = toKebab(verb.name);
-  if (filled.length === 0) return kebab + suffix;
-  const parts = filled.map((a, i) => {
-    const arg = verb.args[i];
-    return arg && isTextArg(arg) ? `"${a}"` : a;
-  });
-  return `${kebab} ${parts.join(' ')}${suffix}`;
-}
-
-function suffixForArg(arg: VerbArg | undefined): string {
-  if (!arg) return '';
-  if (isTextArg(arg)) return ' "';
-  return ' ';
-}
 
 const MODES = ['Command', 'Say', 'Me', 'OOC'] as const;
 type Mode = (typeof MODES)[number];

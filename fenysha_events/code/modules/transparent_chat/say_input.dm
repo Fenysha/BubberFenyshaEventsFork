@@ -6,8 +6,14 @@
 	/// Whether the overlay chat's input bar is standing in for the modal right now
 	var/panel_input = FALSE
 
-/client/tgui_say_create_open_command(channel)
+/// Whether the overlay chat's input bar stands in for the say popup right now.
+/client/proc/say_input_in_chat()
 	if(tgui_panel?.current_layout != TGPANEL_ONMAP)
+		return FALSE
+	return !prefs?.read_preference(/datum/preference/toggle/say_popup_on_map)
+
+/client/tgui_say_create_open_command(channel)
+	if(!say_input_in_chat())
 		return ..()
 	var/message = TGUI_CREATE_MESSAGE("say/open", list("channel" = channel))
 	// The chat also keeps claiming focus for a moment, since BYOND hands it back to the map
@@ -17,7 +23,7 @@
 /// The speech keybinds' focus step. Over the map the open command has already focused the
 /// chat, and focusing the hidden modal here would steal it straight back.
 /client/proc/focus_say_input()
-	if(tgui_panel?.current_layout == TGPANEL_ONMAP)
+	if(say_input_in_chat())
 		return
 	winset(src, SKIN_TGUISAY_BROWSER, "focus=true")
 

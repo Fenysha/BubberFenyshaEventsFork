@@ -5,7 +5,7 @@
  */
 
 import { useAtom, useAtomValue } from 'jotai';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Pane } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
 import { visibleAtom } from './audio/atoms';
@@ -46,7 +46,11 @@ export function Panel(props) {
   const { isOnMap, isPopup, chatCorner } = useChatPlacement();
   useKeepAlive();
 
-  const frameless = isOnMap && settings.chatFrameless;
+  // FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT
+  // const frameless = isOnMap && settings.chatFrameless; - FENYSHA EDIT ORIGINAL
+  const clickReveal = isOnMap && settings.chatClickReveal;
+  const frameless = isOnMap && (settings.chatFrameless || clickReveal);
+  // FENYSHA EDIT CHANGE END
 
   // FENYSHA EDIT ADDITION BEGIN - VERB_SEARCH - Don't reopen on the next switch back to overlay
   useEffect(() => {
@@ -58,6 +62,8 @@ export function Panel(props) {
   const chatTop = frameless && chatCorner.startsWith('top');
   const messageBg = frameless && settings.chatMessageBg;
 
+  const revealedRef = useRef(false); // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
+
   // Frameless chat is invisible until the mouse is over it, so the body carries the state
   useEffect(() => {
     const body = document.body;
@@ -65,6 +71,7 @@ export function Panel(props) {
       body.classList.remove(
         'frameless',
         'frameless-visible',
+        'click-reveal', // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
         'chat-message-bg',
         'chat-top',
       );
@@ -76,26 +83,67 @@ export function Panel(props) {
     }
 
     body.classList.add('frameless');
+    body.classList.toggle('click-reveal', clickReveal); // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
     body.classList.toggle('chat-message-bg', !!messageBg);
     body.classList.toggle('chat-top', chatTop);
-    // FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - closing a panel or turning frameless on
-    // with the mouse over the chat hid it, and no mouseenter comes to show it again
+    // FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - no mouseenter fires when the mouse is
+    // already over the chat
     body.classList.toggle(
       'frameless-visible',
-      body.matches(':hover') || settingsVisible || searchOpen || sayOpen,
+      (clickReveal ? revealedRef.current : body.matches(':hover')) ||
+        settingsVisible ||
+        searchOpen ||
+        sayOpen,
     );
     // FENYSHA EDIT CHANGE END
     chatRenderer.setFrameless(true);
 
     const show = () => {
+      revealedRef.current = clickReveal; // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
       body.classList.add('frameless-visible');
       chatRenderer.scrollToBottom();
     };
     const hide = () => {
+      revealedRef.current = false; // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
       if (!settingsVisible && !searchOpen && !sayOpen) {
         body.classList.remove('frameless-visible');
       }
     };
+
+    // FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+    if (clickReveal) {
+      const isVisible = () => body.classList.contains('frameless-visible');
+      // The uncovering double click shouldn't also select a word of hidden chat
+      const onMouseDown = (e: MouseEvent) => {
+        if (e.detail > 1 && !isVisible()) {
+          e.preventDefault();
+        }
+      };
+      const toggle = () => {
+        if (isVisible()) {
+          hide();
+          return;
+        }
+        show();
+        window.getSelection()?.removeAllRanges();
+      };
+      const onKeyDown = (e: globalThis.KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          hide();
+        }
+      };
+      body.addEventListener('mousedown', onMouseDown);
+      body.addEventListener('dblclick', toggle);
+      body.addEventListener('keydown', onKeyDown);
+      return () => {
+        body.removeEventListener('mousedown', onMouseDown);
+        body.removeEventListener('dblclick', toggle);
+        body.removeEventListener('keydown', onKeyDown);
+        clearClasses();
+        chatRenderer.setFrameless(false);
+      };
+    }
+    // FENYSHA EDIT ADDITION END
 
     body.addEventListener('mouseenter', show);
     body.addEventListener('mouseleave', hide);
@@ -106,7 +154,15 @@ export function Panel(props) {
       clearClasses();
       chatRenderer.setFrameless(false);
     };
-  }, [frameless, messageBg, chatTop, settingsVisible, searchOpen, sayOpen]);
+  }, [
+    frameless,
+    clickReveal,
+    messageBg,
+    chatTop,
+    settingsVisible,
+    searchOpen,
+    sayOpen,
+  ]);
 
   // The on-map chat has no titlebar either, so its header doubles as one.
   // tgui's Button and Tabs render as divs, so match their classes rather than <button>.
