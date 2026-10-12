@@ -5,7 +5,7 @@
  */
 
 import { useAtom, useAtomValue } from 'jotai';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pane } from 'tgui/layouts';
 import { Button, Section, Stack } from 'tgui-core/components';
 import { visibleAtom } from './audio/atoms';
@@ -43,7 +43,17 @@ export function Panel(props) {
   const [searchOpen, setSearchOpen] = useAtom(verbSearchOpenAtom); // FENYSHA EDIT ADDITION - VERB_SEARCH
   const sayOpen = !!useAtomValue(saySessionAtom); // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
   useChatPersistence();
-  const { isOnMap, isPopup, chatCorner } = useChatPlacement();
+  // FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT
+  // const { isOnMap, isPopup, chatCorner } = useChatPlacement(); - FENYSHA EDIT ORIGINAL
+  const [revealed, setRevealed] = useState(false);
+  const { isOnMap, isPopup, chatCorner } = useChatPlacement(
+    settings.chatClickReveal &&
+      !revealed &&
+      !settingsVisible &&
+      !searchOpen &&
+      !sayOpen,
+  );
+  // FENYSHA EDIT CHANGE END
   useKeepAlive();
 
   // FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT
@@ -61,8 +71,6 @@ export function Panel(props) {
   // FENYSHA EDIT ADDITION END
   const chatTop = frameless && chatCorner.startsWith('top');
   const messageBg = frameless && settings.chatMessageBg;
-
-  const revealedRef = useRef(false); // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
 
   // Frameless chat is invisible until the mouse is over it, so the body carries the state
   useEffect(() => {
@@ -90,7 +98,7 @@ export function Panel(props) {
     // already over the chat
     body.classList.toggle(
       'frameless-visible',
-      (clickReveal ? revealedRef.current : body.matches(':hover')) ||
+      (clickReveal ? revealed : body.matches(':hover')) ||
         settingsVisible ||
         searchOpen ||
         sayOpen,
@@ -99,12 +107,12 @@ export function Panel(props) {
     chatRenderer.setFrameless(true);
 
     const show = () => {
-      revealedRef.current = clickReveal; // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
+      setRevealed(clickReveal); // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
       body.classList.add('frameless-visible');
       chatRenderer.scrollToBottom();
     };
     const hide = () => {
-      revealedRef.current = false; // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
+      setRevealed(false); // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
       if (!settingsVisible && !searchOpen && !sayOpen) {
         body.classList.remove('frameless-visible');
       }
@@ -112,20 +120,11 @@ export function Panel(props) {
 
     // FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
     if (clickReveal) {
-      const isVisible = () => body.classList.contains('frameless-visible');
-      // The uncovering double click shouldn't also select a word of hidden chat
       const onMouseDown = (e: MouseEvent) => {
-        if (e.detail > 1 && !isVisible()) {
-          e.preventDefault();
+        const bar = (e.target as HTMLElement)?.closest('.Panel__inputBar');
+        if (bar) {
+          show();
         }
-      };
-      const toggle = () => {
-        if (isVisible()) {
-          hide();
-          return;
-        }
-        show();
-        window.getSelection()?.removeAllRanges();
       };
       const onKeyDown = (e: globalThis.KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -133,11 +132,9 @@ export function Panel(props) {
         }
       };
       body.addEventListener('mousedown', onMouseDown);
-      body.addEventListener('dblclick', toggle);
       body.addEventListener('keydown', onKeyDown);
       return () => {
         body.removeEventListener('mousedown', onMouseDown);
-        body.removeEventListener('dblclick', toggle);
         body.removeEventListener('keydown', onKeyDown);
         clearClasses();
         chatRenderer.setFrameless(false);
@@ -163,6 +160,23 @@ export function Panel(props) {
     searchOpen,
     sayOpen,
   ]);
+
+  // FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+  const wasSayOpen = useRef(false);
+  useEffect(() => {
+    if (
+      clickReveal &&
+      wasSayOpen.current &&
+      !sayOpen &&
+      !settingsVisible &&
+      !searchOpen
+    ) {
+      setRevealed(false);
+      document.body.classList.remove('frameless-visible');
+    }
+    wasSayOpen.current = sayOpen;
+  }, [sayOpen, clickReveal, settingsVisible, searchOpen]);
+  // FENYSHA EDIT ADDITION END
 
   // The on-map chat has no titlebar either, so its header doubles as one.
   // tgui's Button and Tabs render as divs, so match their classes rather than <button>.
@@ -316,7 +330,7 @@ export function Panel(props) {
           </Stack.Item>
         )}
         {/* FENYSHA EDIT ADDITION END */}
-        <Stack.Item>
+        <Stack.Item className="Panel__inputBar">
           {/* FENYSHA EDIT CHANGE BEGIN - TRANSPARENT_CHAT - Speech hotkeys take over the input bar */}
           {/* <CommandBar /> - FENYSHA EDIT ORIGINAL */}
           <SayBar />

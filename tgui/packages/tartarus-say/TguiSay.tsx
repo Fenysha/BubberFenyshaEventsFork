@@ -19,6 +19,7 @@ const SUGGESTION_HEIGHT = 17;
 
 type ByondOpen = {
   channel: Channel;
+  verbs?: BooleanLike;
 };
 
 type ByondProps = {
@@ -43,8 +44,6 @@ export function TguiSay() {
   const [size, setSize] = useState(WindowSize.Small);
   const [value, setValue] = useState('');
   // FENYSHA EDIT ADDITION BEGIN - SAY_VERB_INPUT
-  // A ref: the Byond subscriptions below are registered once and would keep a stale value
-  const verbInput = useRef(false);
   const [verbMode, setVerbMode] = useState(false);
   const verbs = useVerbInput({
     value,
@@ -298,12 +297,13 @@ export function TguiSay() {
 
     setCurrentPrefix(null);
     // FENYSHA EDIT ADDITION BEGIN - SAY_VERB_INPUT
-    setVerbMode(verbInput.current);
+    const asVerbs = !!data.verbs;
+    setVerbMode(asVerbs);
     verbs.reset();
-    if (verbInput.current) {
+    if (asVerbs) {
       Byond.sendMessage('verbs/request');
       setButtonContent('Cmd');
-      windowOpen(channelIterator.current.current(), scale.current);
+      windowOpen(channelIterator.current.current(), scale.current, true);
       innerRef.current?.focus();
       return;
     }
@@ -316,10 +316,6 @@ export function TguiSay() {
   }
 
   // FENYSHA EDIT ADDITION BEGIN - SAY_VERB_INPUT
-  function handleVerbInput(data: { enabled: BooleanLike }): void {
-    verbInput.current = !!data.enabled;
-  }
-
   function handleVerbs(data: {
     verbs: Parameters<typeof verbs.setVerbs>[0];
   }): void {
@@ -357,7 +353,6 @@ export function TguiSay() {
     Byond.subscribeTo('save', handleSaveText);
     Byond.subscribeTo('close', handleClose);
     // FENYSHA EDIT ADDITION BEGIN - SAY_VERB_INPUT
-    Byond.subscribeTo('verbinput', handleVerbInput);
     Byond.subscribeTo('verbs', handleVerbs);
     Byond.subscribeTo('verbs/targets', handleTargets);
     Byond.subscribeTo('verbs/typepaths', handleTypepaths);

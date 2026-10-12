@@ -55,6 +55,46 @@ body.onmap {
     margin-top: auto;
   }
 
+  &.click-reveal {
+    .Panel__inputBar {
+      order: -1;
+      position: relative;
+      z-index: 2;
+    }
+
+    .CommandBar__suggestions {
+      top: 100%;
+      bottom: auto;
+      border-radius: 0 0 var(--dropdown-menu-border-radius)
+        var(--dropdown-menu-border-radius);
+    }
+
+    &:not(.frameless-visible) {
+      #chat-pane,
+      .ChatMessage {
+        pointer-events: auto;
+      }
+
+      .ChatMessage:not(.ChatMessage--recent):not(.ChatMessage--fading) {
+        display: none;
+      }
+
+      .Chat {
+        display: flex;
+        flex-direction: column-reverse;
+        justify-content: flex-end;
+      }
+    }
+
+    .Chat {
+      margin-top: 0;
+    }
+
+    #chat-pane {
+      justify-content: flex-start;
+    }
+  }
+
   // Frameless: nothing is drawn until you mouse over, messages fade in and out on their own
   &.frameless {
     .Window {
