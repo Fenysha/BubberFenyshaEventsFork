@@ -70,6 +70,8 @@
 
 	var/default_unlocked = FALSE
 
+	var/market_value = 0
+
 /datum/building_blueprint/proc/is_multiblock()
 	return !!multiblock_layout_id
 

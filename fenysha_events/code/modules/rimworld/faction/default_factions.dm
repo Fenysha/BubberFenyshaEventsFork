@@ -120,6 +120,16 @@
 	player_faction = FALSE
 	color = "#A67C2D"
 	icon_state = RW_PLANET_CELL_TOWN
+	can_raid = TRUE
+	raid_id = "fierce_tribe"
+	raid_kinds = list(/datum/raid_pawn_kind/tribal_warrior, /datum/raid_pawn_kind/tribal_hunter, /datum/raid_pawn_kind/tribal_berserker)
+	raid_strategy = RAID_STRATEGY_ASSAULT
+	raid_retreat_fraction = 0.7
+	raid_faction_tag = "rw_raiders_tribe"
+	raid_announce_text = "Tribal warriors are charging from the %DIR%!"
+	raid_retreat_text = "The tribesmen retreat into the wilderness."
+	raid_defeat_text = "The tribal raid has been beaten back."
+	base_tech_level = 0
 
 
 /datum/rw_faction/fierce_tribes/generate_name()
@@ -160,6 +170,15 @@
 	player_faction = FALSE
 	color = "#B52B35"
 	icon_state = RW_PLANET_CELL_TOWN
+	can_raid = TRUE
+	raid_id = "savage_tribe"
+	raid_kinds = list(/datum/raid_pawn_kind/tribal_warrior, /datum/raid_pawn_kind/tribal_berserker)
+	raid_strategy = RAID_STRATEGY_ASSAULT
+	raid_retreat_fraction = 0
+	raid_faction_tag = "rw_raiders_savage"
+	raid_announce_text = "Savages are howling in the %DIR%! They are coming for you!"
+	raid_defeat_text = "The savage horde has been destroyed."
+	base_tech_level = 0
 
 /datum/rw_faction/savage_tribes/generate_name()
 	var/list/words = list(
@@ -196,6 +215,18 @@
 	player_faction = FALSE
 	color = "#C41E3A"
 	icon_state = RW_PLANET_CELL_TOWN
+	can_raid = TRUE
+	raid_id = "pirates"
+	raid_kinds = list(/datum/raid_pawn_kind/pirate_grunt, /datum/raid_pawn_kind/pirate_gunner, /datum/raid_pawn_kind/pirate_heavy)
+	raid_strategy = RAID_STRATEGY_STAGE
+	raid_retreat_fraction = 0.6
+	raid_max_duration = 10 MINUTES
+	raid_faction_tag = "rw_raiders_pirates"
+	raid_announce_text = "A band of pirates is approaching from the %DIR%! They are gathering for an assault."
+	raid_staged_text = "The pirates charge the colony!"
+	raid_retreat_text = "The pirates have lost their nerve and are fleeing."
+	raid_defeat_text = "The pirate raid has been crushed."
+	base_tech_level = 2
 
 /datum/rw_faction/pirates/generate_name()
 	var/list/prefixes = list(
@@ -234,6 +265,17 @@
 	player_faction = FALSE
 	color = "#708090"
 	icon_state = RW_PLANET_CELL_TOWN
+	can_raid = TRUE
+	raid_id = "mechanoids"
+	raid_kinds = list(/datum/raid_pawn_kind/mech_light, /datum/raid_pawn_kind/mech_heavy)
+	raid_min_points = 60
+	raid_strategy = RAID_STRATEGY_ASSAULT
+	raid_retreat_fraction = 0
+	raid_max_duration = 0
+	raid_faction_tag = "rw_raiders_mechanoid"
+	raid_announce_text = "Mechanoid signatures detected to the %DIR%. They are heading for the colony!"
+	raid_defeat_text = "The mechanoid cluster has been disabled."
+	base_tech_level = 3
 
 /datum/rw_faction/mechanoids/generate_name()
 	var/list/prefixes = list(
@@ -273,6 +315,16 @@
 	player_faction = FALSE
 	color = "#556B2F"
 	icon_state = RW_PLANET_CELL_TOWN
+	can_raid = TRUE
+	raid_id = "insectoids"
+	raid_kinds = list(/datum/raid_pawn_kind/insect_small, /datum/raid_pawn_kind/insect_large)
+	raid_strategy = RAID_STRATEGY_ASSAULT
+	raid_retreat_fraction = 0
+	raid_max_duration = 0
+	raid_faction_tag = "rw_raiders_insect"
+	raid_announce_text = "Something is skittering out of the %DIR%... insectoids!"
+	raid_defeat_text = "The insectoid swarm has been exterminated."
+	base_tech_level = 1
 
 /datum/rw_faction/insectoids/generate_name()
 	var/list/prefixes = list(

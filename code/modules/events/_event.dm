@@ -68,8 +68,10 @@
 	SHOULD_CALL_PARENT(TRUE)
 	if(occurrences >= max_occurrences)
 		return FALSE
-	if(!(roundstart ^ SSticker.HasRoundStarted())) // BUBBER EDIT: Roundstart checks added
+	/*
+	if(!(roundstart ^ SSticker.HasRoundStarted()))
 		return FALSE
+	*/
 	if(weight == 0) // BUBBER EDIT: Weight check added
 		return FALSE
 	if(!allow_magic && wizardevent != SSevents.wizardmode)

@@ -55,12 +55,13 @@
 		initial_state_text += sorted_rankings.Join(", ") + "\n"
 
 	log_dynamic(initial_state_text, initial_state_data)
+	/*
 	if(istype(src, /datum/vote/storyteller))
 		SSgamemode.vote_datum = new
 		SSgamemode.vote_datum.choices = choices.Copy()
 		SSgamemode.vote_datum.choices_by_ckey = choices_by_ckey.Copy()
 		SSgamemode.vote_datum.ranked_winner_threshold = ranked_winner_threshold
-
+	*/
 	// If no one voted, return empty list
 	if(total_voters == 0)
 		return list()
@@ -92,8 +93,10 @@
 			log_dynamic("Victory threshold ([victory_threshold]) reached! Winner(s): [highest_choices.Join(", ")] with [highest_votes] votes",
 				list("winners" = highest_choices, "votes" = highest_votes))
 			elimination_results += "[highest_choices[1]] wins by threshold victory with [highest_votes]/[total_voters] votes!"
+			/*
 			if(istype(src, /datum/vote/storyteller))
 				SSgamemode.vote_datum.elimination_results = elimination_results.Copy()
+			*/
 			return highest_choices
 
 		// Find lowest vote count to eliminate
@@ -202,8 +205,10 @@
 	if(length(choices) == 1)
 		log_dynamic("Only one option remains: [choices[1]] is the winner!", list("winner" = choices[1]))
 		elimination_results += "[choices[1]]"
+		/*
 		if(istype(src, /datum/vote/storyteller))
 			SSgamemode.vote_datum.elimination_results = elimination_results.Copy()
+		*/
 		return list(choices[1])
 
 	// This should never happen but just in case

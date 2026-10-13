@@ -1,3 +1,4 @@
+/* RIMWORLD EDIT: Storytellers
 #define GRACE_PERIOD 45 MINUTES
 #define LONEOP_DELAY 3
 
@@ -43,3 +44,4 @@
 
 #undef GRACE_PERIOD
 #undef LONEOP_DELAY
+*/

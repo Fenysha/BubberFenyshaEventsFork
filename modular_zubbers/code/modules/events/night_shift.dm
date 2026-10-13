@@ -1,3 +1,4 @@
+/*
 /datum/round_event_control/nightshift
 	track = EVENT_TRACK_MUNDANE
 	weight = 75
@@ -25,3 +26,4 @@
 
 /datum/round_event/nightshift
 	end_when = 1400
+*/

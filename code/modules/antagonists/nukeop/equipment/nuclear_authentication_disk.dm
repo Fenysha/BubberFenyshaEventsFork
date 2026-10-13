@@ -23,7 +23,7 @@
 
 	if(!fake)
 		AddComponent(/datum/component/stationloving, !fake)
-		AddComponent(/datum/component/keep_me_secure, CALLBACK(src, PROC_REF(secured_process)), CALLBACK(src, PROC_REF(unsecured_process)), 20) //BUBBER EDIT: Changed value from 10 to 20 for population
+		AddComponent(/datum/component/keep_me_secure)
 		SSpoints_of_interest.make_point_of_interest(src)
 		add_minimap_blip(src, MINIMAP_NUKEDISK_BLIP, "green_disk_off", 'icons/ui_icons/minimap/map_blips_large.dmi', TRUE)
 	else
@@ -32,7 +32,7 @@
 
 /obj/item/disk/nuclear/setup_reskins()
 	return
-
+/*
 /obj/item/disk/nuclear/proc/secured_process(last_move)
 	var/turf/new_turf = get_turf(src)
 	var/datum/round_event_control/operative/loneop = locate(/datum/round_event_control/operative) in SSgamemode.control //Bubber edit - changed to work with Storyteller
@@ -61,7 +61,7 @@
 					visible_message(span_notice("[src] sleeps soundly. Sleep tight, disky."))
 				message_admins("[src] is unsecured in [ADMIN_VERBOSEJMP(new_turf)]. The weight of Lone Operative is now [loneop.weight].")
 			log_game("[src] was left unsecured in [loc_name(new_turf)]. Weight of the Lone Operative event increased to [loneop.weight].")
-
+*/
 /obj/item/disk/nuclear/examine(mob/user)
 	. = ..()
 	if(!fake)

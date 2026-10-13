@@ -443,6 +443,27 @@ SUBSYSTEM_DEF(factions)
 
 	var/color = "#FFFFFF"
 
+	/// TRUE if this faction can launch storyteller raids.
+	var/can_raid = FALSE
+	/// Raid event id key (also used in GLOB.raid_faction_defs). Defaults to id when empty.
+	var/raid_id
+	/// list of /datum/raid_pawn_kind typepaths this faction may spawn.
+	var/list/raid_kinds = list()
+	var/raid_min_points = STORYTELLER_THREAT_MIN
+	var/raid_max_points = 0
+	var/raid_strategy = RAID_STRATEGY_ASSAULT
+	var/raid_retreat_fraction = 0.5
+	var/raid_max_duration = 10 MINUTES
+	var/raid_requires_settlement = TRUE
+	var/raid_faction_tag = "rw_raiders"
+	var/raid_announce_text = "Raiders are approaching from the %DIR%!"
+	var/raid_staged_text = "The raiders have finished preparing. They are coming!"
+	var/raid_retreat_text = "The raiders are retreating."
+	var/raid_defeat_text = "The raid has been defeated."
+	/// Static tech level used when the faction has no techweb (NPC factions).
+	/// 0 = neolithic … 5 = ultratech. Player factions derive this from researched nodes.
+	var/base_tech_level = 0
+
 
 /datum/rw_faction/New(faction_id, faction_name)
 	..()
@@ -613,3 +634,56 @@ SUBSYSTEM_DEF(factions)
 
 /datum/rw_faction/proc/on_leader_changed(mob/living/old_leader, mob/living/new_leader)
 	return
+
+
+// -------------------------------------------------------------------------
+// Tech level & raid profile helpers
+// -------------------------------------------------------------------------
+
+/// Integer tech level 0–5 for raid scaling / pawn filtering.
+/// Player factions with a techweb take the highest unlocked era; others use base_tech_level.
+/datum/rw_faction/proc/get_tech_level()
+	return base_tech_level
+
+/datum/rw_faction/player/get_tech_level()
+	if(!techweb)
+		return base_tech_level
+	var/highest = base_tech_level
+	var/list/era_rank = list(
+		RW_TECH_ERA_NEOLITHIC = 0,
+		RW_TECH_ERA_MEDIEVAL = 1,
+		RW_TECH_ERA_INDUSTRIAL = 2,
+		RW_TECH_ERA_SPACER = 3,
+		RW_TECH_ERA_ULTRATECH = 4,
+	)
+	for(var/node_id in techweb.researched_nodes)
+		var/datum/techweb_node/rw/node = SSresearch.techweb_node_by_id(node_id)
+		if(!istype(node))
+			continue
+		var/rank = era_rank[node.tech_era]
+		if(!isnull(rank))
+			highest = max(highest, rank)
+	return highest
+
+/// Build a transient /datum/raid_faction_def from this faction's raid profile.
+/datum/rw_faction/proc/build_raid_def()
+	if(!can_raid || !length(raid_kinds))
+		return null
+	var/datum/raid_faction_def/def = new
+	def.id = raid_id || id
+	def.name = name
+	def.faction_id = id
+	def.faction_tag = raid_faction_tag
+	def.kinds = raid_kinds.Copy()
+	def.min_points = raid_min_points
+	def.max_points = raid_max_points
+	def.strategy = raid_strategy
+	def.retreat_fraction = raid_retreat_fraction
+	def.max_duration = raid_max_duration
+	def.requires_settlement = raid_requires_settlement
+	def.announce_text = raid_announce_text
+	def.staged_text = raid_staged_text
+	def.retreat_text = raid_retreat_text
+	def.defeat_text = raid_defeat_text
+	def.source_faction = src
+	return def

@@ -313,8 +313,21 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	/// Whether the cell is marked for deletion
 	var/qdel_pending = FALSE
 
+	/// RimWorld storyteller queue owned by this runtime cell. It survives map unloads.
+	var/datum/storyteller_cell_plan/storyteller_plan
+
 	/// Asynchronous sub-level loading job, if one is currently running.
 	var/datum/rimworld_sublevel_load_job/loading_job
+
+/datum/planet_cell/Destroy(force)
+	QDEL_NULL(storyteller_plan)
+	return ..()
+
+/datum/planet_cell/proc/get_storyteller_plan()
+	RETURN_TYPE(/datum/storyteller_cell_plan)
+	if(!storyteller_plan)
+		storyteller_plan = new(src)
+	return storyteller_plan
 
 // TODO: move to SS code
 /datum/planet_cell/New(

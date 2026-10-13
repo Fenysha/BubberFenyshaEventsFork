@@ -1,3 +1,4 @@
+/*
 GLOBAL_VAR_INIT(rbmk_did_warning, FALSE)
 
 /datum/round_event_control/rbmk_voidcheck //Vibe check
@@ -69,3 +70,4 @@ GLOBAL_VAR_INIT(rbmk_did_warning, FALSE)
 /datum/round_event/rbmk_voidcheck/announce(fake)
 	//We do the announcement stuff in start because it involves checking and setting variables.
 	return
+*/

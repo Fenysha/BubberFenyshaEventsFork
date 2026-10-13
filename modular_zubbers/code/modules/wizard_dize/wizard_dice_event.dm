@@ -1,3 +1,4 @@
+/*
 /// The wizard die of fate event.
 /// The die gets spawned in the hands of a random crewmember, if they roll the dice and get a 1, they die. If they get a 20, they get the wizard antagonist.
 /// Either way, it moves to a new crewmember and repeats 20 times.
@@ -51,3 +52,4 @@
 /datum/round_event/wizard_dice/proc/on_dice_destroy()
 	processing = FALSE //Stop processing the event.
 	kill() //Kill the event.
+*/

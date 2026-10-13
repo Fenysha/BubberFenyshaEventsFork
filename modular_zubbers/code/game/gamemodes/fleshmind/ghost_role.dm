@@ -57,8 +57,8 @@
 	min_players = 35
 	category = EVENT_CATEGORY_INVASION
 	description = "A Wire Priest that works to spread the wireweed currently invading the station."
-	tags = list(TAG_COMBAT, TAG_OUTSIDER_ANTAG)
-	track = EVENT_TRACK_GHOSTSET
+	//tags = list(TAG_COMBAT, TAG_OUTSIDER_ANTAG)
+	//track = EVENT_TRACK_GHOSTSET
 
 /datum/round_event/ghost_role/wire_priest/spawn_role()
 	var/mob/chosen_one = SSpolling.poll_ghost_candidates(check_jobban = ROLE_WIRE_PRIEST, role = ROLE_WIRE_PRIEST, role_name_text = role_name, amount_to_pick = 1, alert_pic = /obj/structure/fleshmind/structure/core)

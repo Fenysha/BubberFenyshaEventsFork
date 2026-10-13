@@ -1,0 +1,87 @@
+[
+  {
+    "id": "mia_chill",
+    "name": "Mia'Chill",
+    "desc": "A calm storyteller who leaves room for exploration, recovery and small discoveries.",
+    "ooc_desc": "A slower storyteller. Positive and neutral incidents are more common, while difficult events are less frequent.",
+    "ooc_difficulty": "Easy",
+    "portrait": "portraits/p_mia.png",
+    "logo": "logos/logo_mia.png",
+    "mood_type": "/datum/storyteller_mood/chill",
+    "average_event_interval_days": 2.5,
+    "welcome_speech": [
+      "May your colony find a little peace."
+    ],
+    "round_speech": [
+      "There is still time to recover."
+    ]
+  },
+  {
+    "id": "cas_classic",
+    "name": "Cas'Classic",
+    "desc": "A balanced storyteller who builds a steady mixture of setbacks and relief.",
+    "ooc_desc": "A classic pace with positive, neutral and negative incidents selected from each cell's local pool.",
+    "ooc_difficulty": "Medium",
+    "portrait": "portraits/p_cas.png",
+    "logo": "logos/logo_cas.png",
+    "mood_type": "/datum/storyteller_mood/classic",
+    "average_event_interval_days": 2.0,
+    "welcome_speech": [
+      "A new story begins."
+    ],
+    "round_speech": [
+      "Every setback leaves room for a response."
+    ]
+  },
+  {
+    "id": "randall_gambit",
+    "name": "Randall's Gambit",
+    "desc": "An unpredictable storyteller who likes sudden turns and unusual incidents.",
+    "ooc_desc": "Event categories are chosen with high variability. Major incidents are possible, but never tied to a faction system.",
+    "ooc_difficulty": "Hard",
+    "portrait": "portraits/p_random.png",
+    "logo": "logos/logo_random.png",
+    "mood_type": "/datum/storyteller_mood/gambit",
+    "average_event_interval_days": 1.8,
+    "welcome_speech": [
+      "Let chance decide what happens next."
+    ],
+    "round_speech": [
+      "No plan survives its encounter with chance."
+    ]
+  },
+  {
+    "id": "catastrophe",
+    "name": "Edd Catastrophe",
+    "desc": "A harsh storyteller who favours difficult and major incidents.",
+    "ooc_desc": "A relentless pace with more severe local incidents and shorter breaks between them.",
+    "ooc_difficulty": "Extreme",
+    "portrait": "portraits/p_edd.png",
+    "logo": "logos/logo_edd.png",
+    "mood_type": "/datum/storyteller_mood/catastrophe",
+    "average_event_interval_days": 1.5,
+    "welcome_speech": [
+      "The quiet will not last forever."
+    ],
+    "round_speech": [
+      "Prepare for difficult weather."
+    ]
+  },
+  {
+    "id": "lovers",
+    "name": "Mia & Edd'Challenge",
+    "desc": "A mixed storyteller whose incidents alternate between relief and serious pressure.",
+    "ooc_desc": "A challenging, mixed pace that can produce major incidents without using faction-driven events.",
+    "ooc_difficulty": "Very Hard",
+    "portrait": "portraits/p_lovers.png",
+    "logo": "logos/logo_lovers.png",
+    "mood_type": "/datum/storyteller_mood/challenge",
+    "average_event_interval_days": 1.8,
+    "welcome_speech": [
+      "A difficult story can still hold moments of peace."
+    ],
+    "round_speech": [
+      "The next turn may bring relief or pressure."
+    ]
+  }
+]
