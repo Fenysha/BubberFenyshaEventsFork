@@ -65,15 +65,6 @@ export const say_popup_on_map: FeatureToggle = {
 };
 // FENYSHA EDIT ADDITION END
 
-// FENYSHA EDIT ADDITION BEGIN - SAY_VERB_INPUT
-export const say_verb_input: FeatureToggle = {
-  name: 'Say: Verb input',
-  category: 'UI',
-  description: 'The say popup takes verbs, with autocomplete.',
-  component: CheckboxInput,
-};
-// FENYSHA EDIT ADDITION END
-
 export const tgpanel_layout: FeatureChoiced = {
   name: 'Chat layout',
   category: 'UI',

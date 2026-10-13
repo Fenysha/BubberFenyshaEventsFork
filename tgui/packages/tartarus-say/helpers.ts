@@ -5,9 +5,13 @@ import { RADIO_PREFIXES, WindowSize } from './constants';
  * Once byond signals this via keystroke, it
  * ensures window size, visibility, and focus.
  */
-export function windowOpen(channel: Channel, scale: boolean): void {
+export function windowOpen(
+  channel: Channel,
+  scale: boolean,
+  verbs = false,
+): void {
   setWindowVisibility(true, scale);
-  Byond.sendMessage('open', { channel });
+  Byond.sendMessage('open', { channel, verbs });
 }
 
 /**

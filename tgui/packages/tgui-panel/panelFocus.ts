@@ -7,9 +7,9 @@
  * @license MIT
  */
 
-import { vecLength, vecSubtract } from 'tgui-core/vector';
 import { focusMap } from 'tgui/focus';
 import { canStealFocus, globalEvents } from 'tgui-core/events';
+import { vecLength, vecSubtract } from 'tgui-core/vector';
 
 // Empyrically determined number for the smallest possible
 // text you can select with the mouse.
@@ -32,18 +32,34 @@ export function setupPanelFocusHacks(): void {
   });
 
   window.addEventListener('mouseup', (e) => {
+    let dragged = false;
     if (clickStartPos) {
       const clickEndPos = [e.screenX, e.screenY];
       const dist = vecLength(vecSubtract(clickEndPos, clickStartPos));
-      if (dist >= MIN_SELECTION_DISTANCE) {
+      dragged = dist >= MIN_SELECTION_DISTANCE;
+      if (dragged) {
         focusStolen = true;
       }
       if (document.activeElement?.className.includes('Button')) {
         focusStolen = true;
       }
     }
+    // FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT - over the map only the input bar keeps
+    // focus, so reading the chat never takes the keyboard off the game. A drag keeps it, or
+    // the selection could not be copied.
+    const target = e.target as HTMLElement | null;
+    if (document.body.classList.contains('onmap') && !dragged) {
+      focusStolen = !!target?.closest?.('.Panel__inputBar');
+    }
+    // FENYSHA EDIT ADDITION END
     if (!focusStolen) {
       deferredFocusMap();
+      return;
+    }
+    // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT - keeping focus means BYOND never sees the key
+    // ups for anything held, which strands movement keys down
+    if (document.body.classList.contains('onmap')) {
+      Byond.command('Reset-Held-Keys');
     }
   });
 

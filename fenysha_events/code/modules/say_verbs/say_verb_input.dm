@@ -1,24 +1,30 @@
-/// Turns the say popup into a verb input with autocomplete; see tartarus-say.
-/datum/preference/toggle/say_verb_input
-	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "say_verb_input"
-	savefile_identifier = PREFERENCE_PLAYER
-	default_value = FALSE
+/// Opens the say popup as a verb input with autocomplete; see tartarus-say.
 
-/datum/preference/toggle/say_verb_input/apply_to_client(client/client)
-	client.tgui_say?.load()
+#define COMSIG_KB_CLIENT_COMMANDINPUT_DOWN "keybinding_client_commandinput_down"
 
-/datum/tgui_say/proc/verb_input_enabled()
-	return client?.prefs?.read_preference(/datum/preference/toggle/say_verb_input)
+/client/proc/command_input_open_command()
+	var/message = TGUI_CREATE_MESSAGE("open", list("channel" = SAY_CHANNEL, "verbs" = TRUE))
+	return "\".output tgui_say.browser:update [message]\""
 
-/datum/tgui_say/load()
+/datum/keybinding/client/command_input
+	hotkey_keys = list("ShiftT")
+	name = "command_input"
+	full_name = "Command Input"
+	description = "Open the say box as a verb input, with autocomplete."
+	keybind_signal = COMSIG_KB_CLIENT_COMMANDINPUT_DOWN
+
+/datum/keybinding/client/command_input/down(client/user, turf/target, mousepos_x, mousepos_y)
 	. = ..()
-	window.send_message("verbinput", list("enabled" = verb_input_enabled()))
+	if(.)
+		return
+	winset(user, null, "command=[user.command_input_open_command()]")
+	winset(user, SKIN_TGUISAY_BROWSER, "focus=true")
+	return TRUE
 
 /datum/tgui_say/open(payload)
 	. = ..()
 	// Typing a verb is not speech
-	if(verb_input_enabled())
+	if(payload?["verbs"])
 		stop_thinking()
 
 /datum/tgui_say/on_message(type, payload)
@@ -112,3 +118,5 @@
 		children += child_text
 
 	window.send_message("verbs/typepaths", list("parent" = parent_text, "paths" = children))
+
+#undef COMSIG_KB_CLIENT_COMMANDINPUT_DOWN

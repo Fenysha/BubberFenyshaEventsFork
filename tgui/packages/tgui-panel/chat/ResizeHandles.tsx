@@ -1,5 +1,6 @@
 import type { ChatCorner } from '../settings/constants';
 import { saveChatRatio } from './chat-ratio';
+import { syncPlacedRect } from './collapse'; // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
 
 const pixelRatio = window.devicePixelRatio ?? 1;
 const MIN_WIDTH = 200;
@@ -121,6 +122,7 @@ function endDragBatch() {
   updateAnchors();
   saveChatRatio();
   sendBounds();
+  syncPlacedRect(); // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
 }
 
 /**

@@ -61,10 +61,9 @@ async function openPopup() {
   const view = render(<TguiSay />);
   await act(async () => {
     listeners.props?.({ maxLength: 1024, lightMode: 0, scale: 0 });
-    listeners.verbinput?.({ enabled: true });
   });
   await act(async () => {
-    listeners.open?.({ channel: 'Say' });
+    listeners.open?.({ channel: 'Say', verbs: true });
   });
   await act(async () => {
     listeners.verbs?.({ verbs: VERBS });
@@ -84,6 +83,39 @@ const labels = (view: any) =>
   [...view.container.querySelectorAll('.suggestion-name')].map(
     (n) => n.textContent,
   );
+
+describe('speech keys, opened without the verb flag', () => {
+  test('the box still speaks, with no verb suggestions', async () => {
+    sent.length = 0;
+    commands.length = 0;
+    const view = render(<TguiSay />);
+    await act(async () => {
+      listeners.props?.({ maxLength: 1024, lightMode: 0, scale: 0 });
+    });
+    await act(async () => {
+      listeners.open?.({ channel: 'Say' });
+    });
+    await act(async () => {
+      listeners.verbs?.({ verbs: VERBS });
+    });
+    expect(view.container.querySelector('button')?.textContent).toBe('Say');
+
+    const input = view.container.querySelector('textarea')!;
+    await act(async () => {
+      fireEvent.input(input, { target: { value: 'say' } });
+    });
+    expect(view.container.querySelectorAll('.suggestion-name').length).toBe(0);
+
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' });
+    });
+    expect(sent.find((m) => m.type === 'entry')?.payload).toMatchObject({
+      channel: 'Say',
+      entry: 'say',
+    });
+    expect(commands).toEqual([]);
+  });
+});
 
 describe('argument hints while typing, as the chat does', () => {
   test('a string argument opens a quote, and so does the next one', async () => {

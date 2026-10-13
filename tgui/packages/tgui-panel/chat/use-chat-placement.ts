@@ -4,6 +4,7 @@ import { settingsAtom } from '../settings/atoms';
 import type { ChatCorner } from '../settings/constants';
 import { setClientTheme } from '../settings/themes';
 import { loadChatRatio, saveChatRatio } from './chat-ratio';
+import { applyCollapse, setAnchors, setPlacedRect } from './collapse';
 import { clampToMap } from './ResizeHandles';
 
 const DEFAULT_W_RATIO = 1 / 3;
@@ -46,26 +47,11 @@ function defaultPosition(
   }
 }
 
-/** Anchors are percentages of the map, so the chat keeps its place when the window resizes. */
-function setAnchors(
-  browserX: number,
-  browserY: number,
-  browserW: number,
-  browserH: number,
-  mapW: number,
-  mapH: number,
-) {
-  Byond.winset('browseroutput', {
-    anchor1: `${((browserX / mapW) * 100).toFixed(2)},${((browserY / mapH) * 100).toFixed(2)}`,
-    anchor2: `${(((browserX + browserW) / mapW) * 100).toFixed(2)},${(((browserY + browserH) / mapH) * 100).toFixed(2)}`,
-  });
-}
-
 /**
  * Positions the chat browser for whichever layout DM put it in, and reports the resulting
  * rect back so the HUD can move its screen objects out of the way.
  */
-export function useChatPlacement() {
+export function useChatPlacement(collapsed = false) {
   const [layout, setLayout] = useState<string | null>(null);
   const settings = useAtomValue(settingsAtom);
   const chatCorner = (settings.chatCorner || 'top-right') as ChatCorner;
@@ -205,10 +191,51 @@ export function useChatPlacement() {
         });
         setAnchors(browserX, browserY, browserW, browserH, mapW, mapH);
         place(browserX, browserY, browserW, browserH);
+        // FENYSHA EDIT ADDITION - TRANSPARENT_CHAT
+        setPlacedRect({
+          x: browserX,
+          y: browserY,
+          w: browserW,
+          h: browserH,
+          mapW,
+          mapH,
+        });
         markOnMap();
       });
     });
   }, [layout, chatCorner, chatPadding, settings.theme]);
+
+  // FENYSHA EDIT ADDITION BEGIN - TRANSPARENT_CHAT
+  useEffect(() => {
+    if (!isOnMap) {
+      return;
+    }
+    applyCollapse(collapsed);
+    if (!collapsed) {
+      return;
+    }
+    const observer = new MutationObserver(() => applyCollapse(true));
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    const timer = setInterval(() => applyCollapse(true), 100);
+    const pane = document.getElementById('chat-pane');
+    const pinScroll = () => {
+      if (pane && pane.scrollTop !== 0) {
+        pane.scrollTop = 0;
+      }
+    };
+    pane?.addEventListener('scroll', pinScroll);
+    return () => {
+      observer.disconnect();
+      clearInterval(timer);
+      pane?.removeEventListener('scroll', pinScroll);
+    };
+  }, [collapsed, isOnMap, layout]);
+  // FENYSHA EDIT ADDITION END
 
   return { isOnMap, isPopup, chatCorner };
 }
