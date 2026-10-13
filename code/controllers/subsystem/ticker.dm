@@ -36,12 +36,12 @@ SUBSYSTEM_DEF(ticker)
 	var/selected_tip // What will be the tip of the day?
 
 	/// Time left until the round starts after all subsystems initialize
-	var/timeLeft = 120 SECONDS
+	var/timeLeft = 300 SECONDS
 	/// value used to initialize `timeLeft` when the master subsystem finishes initializing.
 	/// We do this to allow for the timer to be set manually before all subsystems initialize,
 	/// while also making sure that when the timer does start, it does so at the value we have set.
 	/// This is set to the config value when SSticker initializes, so setting this only makes sense after that point.
-	var/start_at = 120 SECONDS
+	var/start_at = 300 SECONDS
 
 	/// Num of players, used for pregame stats on statpanel
 	var/totalPlayers = 0
@@ -119,7 +119,7 @@ SUBSYSTEM_DEF(ticker)
 	else
 		set_lobby_music("[global.config.directory]/title_music/sounds/[pick(music)]")
 
-	start_at = CONFIG_GET(number/lobby_countdown) * (1 SECONDS)
+	//start_at = CONFIG_GET(number/lobby_countdown) * (1 SECONDS)
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/ticker/fire()
@@ -135,9 +135,6 @@ SUBSYSTEM_DEF(ticker)
 				// BUBBER EDIT CHANGE END - Replace with more rich message
 
 			current_state = GAME_STATE_PREGAME
-			// BUBBERSTATION EDIT START
-			SSstorytellers.start_vote(240 SECONDS)
-			// BUBBERSTATION EDIT END
 			SStitle.change_title_screen() //SKYRAT EDIT ADDITION - Title screen
 			addtimer(CALLBACK(SStitle, TYPE_PROC_REF(/datum/controller/subsystem/title, change_title_screen)), 1 SECONDS) //SKYRAT EDIT ADDITION - Title screen
 			//Everyone who wants to be an observer is now spawned
@@ -155,7 +152,8 @@ SUBSYSTEM_DEF(ticker)
 					++totalPlayersReady
 					if(player.client?.holder)
 						++total_admins_ready
-
+			if(!SSstorytellers.storyteller_chosen && !SSstorytellers.vote_active)
+				SSstorytellers.start_vote(240 SECONDS)
 			job_estimation_list = get_job_estimation(readied_players) //BUBBER EDIT ADDITION
 			if(start_immediately)
 				timeLeft = 0

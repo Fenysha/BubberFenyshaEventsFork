@@ -30,7 +30,7 @@
 
 /// Start a vote automatically once after the round begins.
 #define STORYTELLER_VOTE_AUTO_START FALSE
-#define STORYTELLER_VOTE_AUTO_DELAY (90 SECONDS)
+#define STORYTELLER_VOTE_AUTO_DELAY (300 MINUTES)
 /// How long the results window stays open after the vote ends.
 #define STORYTELLER_VOTE_RESULT_LINGER (30 SECONDS)
 /// Observers (people who have not founded/joined a colony yet) may vote.

@@ -8,11 +8,12 @@ SUBSYSTEM_DEF(storytellers)
 	var/datum/storyteller/active
 	var/list/storyteller_data = list()
 	var/list/events_by_id = list()
+
 	/// ckey -> list("storyteller" = id or null, "difficulty" = number)
 	var/list/vote_ballots = list()
 	/// client -> /datum/storyteller_vote_ui
 	var/list/storyteller_vote_uis = list()
-	var/selected_id = "cas_classic"
+	var/selected_id
 	var/difficulty_multiplier = STORYTELLER_DEFAULT_DIFFICULTY
 	var/vote_active = FALSE
 	var/vote_start_time = 0
@@ -25,6 +26,8 @@ SUBSYSTEM_DEF(storytellers)
 	var/auto_vote_at = 0
 	/// Debug: lifts the player-count requirement on difficulty levels.
 	var/hard_debug = FALSE
+	/// Whether a storyteller was chosen for the round during setup / vote.
+	var/storyteller_chosen = FALSE
 
 /datum/controller/subsystem/storytellers/Initialize()
 	load_storyteller_data()
@@ -54,6 +57,7 @@ SUBSYSTEM_DEF(storytellers)
 			auto_vote_at = world.time + STORYTELLER_VOTE_AUTO_DELAY
 		else if(world.time >= auto_vote_at)
 			start_vote()
+			auto_vote_at = 0
 
 	if(vote_active)
 		if(world.time >= vote_start_time + current_vote_duration)
@@ -233,185 +237,3 @@ SUBSYSTEM_DEF(storytellers)
 	else
 		plan.interval_override_days = clamp(interval_days, STORYTELLER_MIN_INTERVAL_DAYS, STORYTELLER_MAX_INTERVAL_DAYS)
 	return TRUE
-
-// ---------------------------------------------------------------------------
-// Voting
-// ---------------------------------------------------------------------------
-
-/datum/controller/subsystem/storytellers/proc/can_client_vote(client/C)
-	if(!C?.mob)
-		return FALSE
-	if(isnewplayer(C.mob))
-		return FALSE
-	if(!STORYTELLER_OBSERVERS_CAN_VOTE && isobserver(C.mob))
-		return FALSE
-	return TRUE
-
-/datum/controller/subsystem/storytellers/proc/get_eligible_voters()
-	var/list/result = list()
-	for(var/client/C as anything in GLOB.clients)
-		if(can_client_vote(C))
-			result += C
-	return result
-
-/datum/controller/subsystem/storytellers/proc/is_difficulty_allowed(value)
-	if(hard_debug)
-		return TRUE
-	var/list/level = storyteller_snap_level(value)
-	return level && length(get_eligible_voters()) >= level["min_players"]
-
-/// Highest allowed preset that is not above the standard difficulty.
-/datum/controller/subsystem/storytellers/proc/get_default_difficulty()
-	var/result = GLOB.storyteller_difficulty_levels[1]["value"]
-	for(var/list/level as anything in GLOB.storyteller_difficulty_levels)
-		if(level["value"] > STORYTELLER_DEFAULT_DIFFICULTY)
-			break
-		if(is_difficulty_allowed(level["value"]))
-			result = level["value"]
-	return result
-
-/datum/controller/subsystem/storytellers/proc/open_vote_for_new_clients()
-	for(var/client/C as anything in GLOB.clients)
-		if(!C?.mob || storyteller_vote_uis[C])
-			continue
-		var/datum/storyteller_vote_ui/UI = new(C)
-		UI.ui_interact(C.mob)
-
-/datum/controller/subsystem/storytellers/proc/clear_vote_uis()
-	var/list/old_vote_uis = storyteller_vote_uis ? storyteller_vote_uis.Copy() : list()
-	for(var/client/C as anything in old_vote_uis)
-		var/datum/storyteller_vote_ui/old_ui = old_vote_uis[C]
-		if(old_ui)
-			qdel(old_ui)
-
-/datum/controller/subsystem/storytellers/proc/start_vote(duration = STORYTELLER_VOTE_DURATION)
-	if(vote_active)
-		return FALSE
-	clear_vote_uis()
-	current_vote_duration = clamp(duration, 10 SECONDS, 10 MINUTES)
-	vote_start_time = world.time
-	vote_ballots = list()
-	last_vote_result = null
-	vote_active = TRUE
-	storyteller_vote_uis = list()
-	open_vote_for_new_clients()
-	to_chat(world, span_boldnotice("A storyteller vote has started. You have [round(current_vote_duration / 10)] seconds."))
-	message_admins("A RimWorld storyteller vote has started for [round(current_vote_duration / 10)] seconds.")
-	return TRUE
-
-/// Updates a ballot. Either argument may be null to keep the previous value, so the UI can
-/// pick the storyteller and the difficulty separately.
-/datum/controller/subsystem/storytellers/proc/cast_vote(voter_ckey, storyteller_id = null, chosen_difficulty = null)
-	if(!vote_active || !voter_ckey)
-		return FALSE
-
-	var/list/ballot = vote_ballots[voter_ckey]
-	if(!islist(ballot))
-		ballot = list("storyteller" = null, "difficulty" = get_default_difficulty())
-
-	if(!isnull(storyteller_id))
-		if(!istext(storyteller_id) || !storyteller_data[storyteller_id])
-			return FALSE
-		ballot["storyteller"] = storyteller_id
-
-	if(!isnull(chosen_difficulty))
-		var/value = text2num("[chosen_difficulty]")
-		if(isnull(value))
-			return FALSE
-		value = storyteller_snap_difficulty(clamp(value, STORYTELLER_MIN_DIFFICULTY, STORYTELLER_MAX_DIFFICULTY))
-		if(!is_difficulty_allowed(value))
-			return FALSE
-		ballot["difficulty"] = value
-
-	vote_ballots[voter_ckey] = ballot
-	return TRUE
-
-/// Most voted difficulty out of a "value text" -> count list. Ties go to the lower difficulty.
-/datum/controller/subsystem/storytellers/proc/get_mode_difficulty(list/by_value)
-	var/best_value = STORYTELLER_DEFAULT_DIFFICULTY
-	var/best_count = 0
-	for(var/value_text in by_value)
-		var/value = text2num(value_text)
-		var/count = by_value[value_text]
-		if(count > best_count || (count == best_count && value < best_value))
-			best_count = count
-			best_value = value
-	return best_value
-
-/// Per-storyteller tally of the current ballots, best first. Only storytellers with votes are listed.
-/datum/controller/subsystem/storytellers/proc/get_tallies()
-	var/list/counts = list()
-	var/list/difficulty_votes = list()
-	for(var/voter_ckey in vote_ballots)
-		var/list/ballot = vote_ballots[voter_ckey]
-		var/id = ballot["storyteller"]
-		if(!id || !storyteller_data[id])
-			continue
-		counts[id] = (counts[id] || 0) + 1
-		var/list/by_value = difficulty_votes[id]
-		if(!by_value)
-			by_value = list()
-			difficulty_votes[id] = by_value
-		by_value["[ballot["difficulty"]]"] += 1
-
-	var/list/results = list()
-	for(var/id in counts)
-		var/list/profile = storyteller_data[id]
-		results += list(list(
-			"id" = id,
-			"name" = profile["name"],
-			"count" = counts[id],
-			"difficulty" = get_mode_difficulty(difficulty_votes[id]),
-		))
-	sortTim(results, GLOBAL_PROC_REF(cmp_storyteller_tally_dsc))
-	return results
-
-/proc/cmp_storyteller_tally_dsc(list/a, list/b)
-	return b["count"] - a["count"]
-
-/datum/controller/subsystem/storytellers/proc/end_vote()
-	if(!vote_active)
-		return FALSE
-	vote_active = FALSE
-
-	var/list/tallies = get_tallies()
-	var/winner_id
-	var/winner_difficulty = difficulty_multiplier
-	if(length(tallies))
-		var/highest = tallies[1]["count"]
-		var/list/winners = list()
-		for(var/list/entry as anything in tallies)
-			if(entry["count"] == highest)
-				winners += list(entry)
-		var/list/winner = pick(winners)
-		winner_id = winner["id"]
-		winner_difficulty = winner["difficulty"]
-
-	if(winner_id)
-		vote_held = TRUE
-		set_storyteller(winner_id, winner_difficulty)
-		var/list/level = storyteller_snap_level(winner_difficulty)
-		to_chat(world, span_boldnotice("Storyteller vote finished: [active.name] ([level["label"]]) will tell this story."))
-		message_admins("Storyteller vote ended. Selected [active.name] at difficulty [winner_difficulty].")
-	else
-		to_chat(world, span_notice("Storyteller vote finished without ballots; [active?.name || "the current storyteller"] stays."))
-		message_admins("Storyteller vote ended without ballots; the current storyteller remains active.")
-
-	last_vote_result = list(
-		"winner_id" = winner_id,
-		"winner_difficulty" = winner_difficulty,
-		"tallies" = tallies,
-	)
-
-	for(var/client/C as anything in storyteller_vote_uis)
-		var/datum/storyteller_vote_ui/UI = storyteller_vote_uis[C]
-		if(UI)
-			SStgui.update_uis(UI)
-	addtimer(CALLBACK(src, PROC_REF(finish_vote_cleanup)), STORYTELLER_VOTE_RESULT_LINGER)
-	return TRUE
-
-/datum/controller/subsystem/storytellers/proc/finish_vote_cleanup()
-	// A new vote may have started while the results were on screen.
-	if(vote_active)
-		return
-	clear_vote_uis()

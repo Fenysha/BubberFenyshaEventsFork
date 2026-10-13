@@ -95,12 +95,11 @@ export const StorytellerVote = () => {
       title={is_open ? 'Vote for Storyteller' : 'Storyteller Vote Results'}
       width={1000}
       height={700}
-      theme="stortellerVote"
     >
       <Window.Content
         style={{
-          backgroundImage: current
-            ? `url(${resolveAsset(current.portrait_asset || '')})`
+          backgroundImage: current?.portrait_asset
+            ? `url(${resolveAsset(current.portrait_asset)})`
             : undefined,
           backgroundSize: '480px 480px',
           backgroundPositionX: '100%',

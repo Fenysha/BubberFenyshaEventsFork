@@ -42,3 +42,8 @@
 #define COMSIG_MOB_PSYCHOLOGY_BREAK_END "psychology_break_end"
 /// Signal when needs update
 #define COMSIG_MOB_PSYCHOLOGY_NEEDS_UPDATE "psychology_needs_update"
+
+
+
+#define COMSIG_STORYTELLER_VOTE_START "storyteller_vote_start"
+#define COMSIG_STORYTELLER_VOTE_END "storyteller_vote_end"

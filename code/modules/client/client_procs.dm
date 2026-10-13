@@ -322,6 +322,7 @@ GLOBAL_LIST_INIT(unrecommended_builds, list(
 	// The control can only be built once per connection - winset only honours `parent` while
 	// creating one - so the layout is decided here and changes apply on the next connection.
 	tgui_panel.create_browser(prefs.read_preference(/datum/preference/choiced/tgpanel_layout))
+	SSstorytellers.on_client_login(src)
 	// FENYSHA EDIT ADDITION END
 
 	if(fexists(roundend_report_file()))

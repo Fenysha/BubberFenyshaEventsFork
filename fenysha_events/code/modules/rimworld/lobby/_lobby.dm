@@ -64,11 +64,12 @@
 			text-shadow: 1px 1px 0 #000;
 		}
 
+		/* ===== TITLE (улучшенный) ===== */
 		.title_block {
 			position: absolute;
-			top: 9.5vmin;
-			right: 30vmin;
-			width: 42vmin;
+			top: 7.5vmin;
+			right: 26vmin;
+			width: 48vmin;
 			text-align: right;
 			z-index: 1;
 			pointer-events: none;
@@ -76,35 +77,41 @@
 
 		.title_main {
 			font-family: \"Fixedsys\", monospace;
-			font-size: 8.6vmin;
+			font-size: 9.2vmin;
 			font-weight: bold;
-			color: #f4eac8;
+			color: #f8f0d0;
 			text-shadow:
-				0 0 12px rgba(210, 170, 60, 0.65),
-				3px 3px 0 #000,
-				-1px -1px 0 #3a2a10;
-			letter-spacing: 4px;
-			line-height: 1.0;
+				0 0 18px rgba(220, 180, 60, 0.75),
+				0 0 8px rgba(255, 210, 100, 0.4),
+				4px 4px 0 #1a1208,
+				-2px -2px 0 #4a3818,
+				2px -2px 0 #3a2a10;
+			letter-spacing: 5px;
+			line-height: 0.95;
 			margin: 0;
 			white-space: nowrap;
+			filter: drop-shadow(0 0 6px rgba(200, 160, 40, 0.35));
 		}
 
 		.title_sub {
 			font-family: \"Fixedsys\", monospace;
-			font-size: 1.9vmin;
-			color: #c9b87a;
-			text-shadow: 1px 1px 0 #000;
-			margin-top: 0.4vmin;
-			letter-spacing: 1.8px;
+			font-size: 2.05vmin;
+			color: #d4c48a;
+			text-shadow:
+				1px 1px 0 #000,
+				0 0 6px rgba(180, 150, 60, 0.4);
+			margin-top: 0.6vmin;
+			letter-spacing: 2.4px;
+			opacity: 0.95;
 		}
 
 		.container_nav {
 			position: absolute;
 			box-sizing: border-box;
 			width: 34vmin;
-			top: 50%;
-			right: 9vmin;
-			transform: translateY(-50%);
+			top: 56%;
+			right: 13vmin;
+			transform: translateY(-42%);
 			z-index: 1;
 			padding: 0;
 			background: transparent;
@@ -183,6 +190,24 @@
 			color: #e8c060;
 		}
 
+		.menu_button.vote_button {
+			background: #4a3a18;
+			border-top-color: #8a6e28;
+			border-right-color: #8a6e28;
+			border-left-color: #2e2410;
+			border-bottom-color: #2e2410;
+			color: #f0e0a0;
+			margin-top: 1.8vmin;
+		}
+
+		.menu_button.vote_button:hover {
+			background: #6a5220;
+			color: #fff8c0;
+			box-shadow:
+				inset 0 1px 0 rgba(255, 230, 140, 0.3),
+				0 0 14px rgba(200, 160, 40, 0.45);
+		}
+
 		.container_notice {
 			position: absolute;
 			box-sizing: border-box;
@@ -203,7 +228,6 @@
 			border: 1px solid #6a3020;
 		}
 
-		/* ===== STATUS (center-bottom) ===== */
 		.container_status {
 			position: absolute;
 			left: 50%;
@@ -351,8 +375,7 @@
 		dat += {"<div class="container_nav" id="parallax_nav">"}
 
 		if(game_started)
-			dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];join_world=1'>Join world1</a>"}
-			dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];late_join=1'>Join world</a>"}
+			dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];join_world=1'>Join world</a>"}
 
 		dat += {"<a class="menu_button" href='byond://?src=[text_ref(user)];observe=1'>Observer</a>"}
 		dat += {"
@@ -365,6 +388,9 @@
 
 		if(!is_guest_key(user.key))
 			dat += user.playerpolls()
+
+		if(SSstorytellers?.vote_active)
+			dat += {"<a class="menu_button vote_button" href='byond://?src=[text_ref(user)];storyteller_vote=1'>VOTE FOR STORYTELLER</a>"}
 
 		dat += {"
 			<div class="character_display">
@@ -464,3 +490,13 @@
 	. = ..()
 	if(href_list["join_world"])
 		SSrimworld_planetmap.open_settlement_view(user)
+		return
+
+	if(href_list["storyteller_vote"])
+		if(!user?.client)
+			return
+		if(!SSstorytellers?.vote_active)
+			to_chat(user, span_warning("There is no active storyteller vote."))
+			return
+		SSstorytellers.open_vote_ui(user.client)
+		return
