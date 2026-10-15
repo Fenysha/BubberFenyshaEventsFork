@@ -92,6 +92,19 @@
 			"dreamDaemon": true
 		},
 		{
+			"type": "byond",
+			"request": "launch",
+			"name": "Launch Build (no build)",
+			"dmb": "${workspaceFolder}/tgstation.dmb"
+		},
+		{
+			"type": "byond",
+			"request": "launch",
+			"name": "Launch Server (no build)",
+			"dmb": "${workspaceFolder}/tgstation.dmb",
+			"dreamDaemon": true
+		},
+		{
 			"name": "Debug External Libraries",
 			"type": "cppvsdbg",
 			"request": "launch",
