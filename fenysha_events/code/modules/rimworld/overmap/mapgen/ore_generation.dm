@@ -9,20 +9,21 @@
  * before finish().
  */
 
-#define RW_ORE_MIN_VEINS 4
-#define RW_ORE_TARGET_VEINS 8
-#define RW_ORE_CHUNK_CHANCE 0.04
-#define RW_ORE_CHUNK_MIN 12
-#define RW_ORE_CHUNK_TARGET 60
+#define RW_ORE_MIN_VEINS 16
+#define RW_ORE_MAX_VEINS 50
+#define RW_ORE_CHUNK_MIN 80
+#define RW_ORE_CHUNK_MAX 260
+#define RW_ORE_CHUNK_DENSITY 0.018
 
 /// Weighted ore table: path = weight (higher = more common)
 /proc/rw_ore_weighted_table()
 	RETURN_TYPE(/list)
 	return list(
-		/obj/item/stack/ore/rimworld/steel = 40,
-		/obj/item/stack/ore/rimworld/silver = 18,
+		/obj/item/stack/ore/rimworld/iron = 40,
+		/obj/item/stack/ore/rimworld/silver = 16,
 		/obj/item/stack/ore/rimworld/gold = 12,
-		/obj/item/stack/ore/rimworld/plasteel = 10,
+		/obj/item/stack/ore/rimworld/copper = 26,
+		/obj/item/stack/ore/rimworld/coal = 20,
 		/obj/item/stack/ore/rimworld/uranium = 8,
 		/obj/item/stack/ore/rimworld/bioferrite = 12,
 	)
@@ -95,6 +96,7 @@
 	var/noise = rw_generate_ore_noise(seed, width, height, 0.10)
 	var/list/ore_table = rw_ore_weighted_table()
 	var/list/candidates = list()
+	var/target_veins = min(length(rocks), clamp(round(length(rocks) * 0.012), RW_ORE_MIN_VEINS, RW_ORE_MAX_VEINS))
 
 	// Index rocks by flat grid position when possible
 	for(var/turf/closed/rw_wall/rock/R as anything in rocks)
@@ -111,17 +113,16 @@
 		if(noise[idx] == "1")
 			candidates += R
 
-	// Ensure minimum candidate pool
-	if(length(candidates) < RW_ORE_MIN_VEINS && length(rocks) >= RW_ORE_MIN_VEINS)
+	// Ensure there are enough candidate centers to reach the target vein count.
+	if(length(candidates) < min(target_veins * 3, length(rocks)))
 		var/list/shuffled = shuffle(rocks.Copy())
 		for(var/turf/closed/rw_wall/rock/R as anything in shuffled)
 			if(R in candidates)
 				continue
 			candidates += R
-			if(length(candidates) >= RW_ORE_TARGET_VEINS * 2)
+			if(length(candidates) >= target_veins * 3)
 				break
 
-	var/target_veins = clamp(RW_ORE_TARGET_VEINS, RW_ORE_MIN_VEINS, max(RW_ORE_MIN_VEINS, round(length(rocks) * 0.08)))
 	var/veins_placed = 0
 	var/tiles_ore = 0
 	var/list/used = list()
@@ -139,7 +140,7 @@
 		var/min_amt = initial(ore_dummy.min_vein_size) || 1
 		var/max_amt = initial(ore_dummy.max_vein_size) || 2
 		var/amount = rand(min_amt, max_amt)
-		var/radius = 1
+		var/radius = rand(1, 2)
 		var/chance = initial(ore_dummy.spread_chance) || 30
 
 		// Seed the center
@@ -150,7 +151,7 @@
 		veins_placed++
 
 		// Grow a local vein
-		var/grown = R.create_vein(ore_path, radius = radius + (chance >= 40 ? 1 : 0), chance = chance, min_amount = min_amt, max_amount = max_amt)
+		var/grown = R.create_vein(ore_path, radius = radius, chance = chance, min_amount = min_amt, max_amount = max_amt)
 		tiles_ore += grown
 
 		// Mark grown tiles so we don't double-seed
@@ -187,57 +188,87 @@
 	if(!length(open))
 		return result
 
-	var/noise = rw_generate_ore_noise(seed, width, height, RW_ORE_CHUNK_CHANCE)
-	var/chunks = 0
-	var/target = clamp(RW_ORE_CHUNK_TARGET, RW_ORE_CHUNK_MIN, max(RW_ORE_CHUNK_MIN, round(length(open) * RW_ORE_CHUNK_CHANCE * 1.5)))
-
 	var/list/candidates = list()
-	for(var/i in 1 to length(open))
-		var/turf/T = open[i]
+	var/list/eligible_lookup = list()
+	for(var/turf/T as anything in open)
 		if(!T || is_space_or_openspace(T))
 			continue
-		// Prefer rocky / mountain open tiles; still allow general land
-		var/lx = T.x - origin_x
-		var/ly = T.y - origin_y
-		var/on = FALSE
-		if(lx >= 0 && ly >= 0 && lx < width && ly < height)
-			var/idx = ly * width + lx + 1
-			if(idx <= length(noise) && noise[idx] == "1")
-				on = TRUE
-		if(on || prob(RW_ORE_CHUNK_CHANCE * 100 * 0.5))
-			candidates += T
-
-	candidates = shuffle(candidates)
-	for(var/turf/T as anything in candidates)
-		if(chunks >= target)
-			break
 		if(locate(/obj/item/rock_chunk) in T)
 			continue
-		var/obj/item/rock_chunk/chunk = new /obj/item/rock_chunk(T)
-		// Tint with regional material when available
-		if(stamp_rock_material)
-			chunk.material = stamp_rock_material
-			chunk.name = "[stamp_rock_material.name] [chunk.name]"
-			chunk.color = stamp_rock_material.color
-		else if(cell?.material)
-			var/datum/material/rimworld_material/mat = SSmaterials.get_material(RW_MATERIAL_NAME_TO_TYPE[cell.material])
-			if(mat)
-				chunk.material = mat
-				chunk.name = "[mat.name] [chunk.name]"
-				chunk.color = mat.color
-		chunks++
+		if(locate(/obj/structure/rimworld/flora) in T)
+			continue
+		candidates += T
+		eligible_lookup[T] = TRUE
 
-	// Guarantee minimum
-	if(chunks < RW_ORE_CHUNK_MIN)
-		var/list/extra = shuffle(open.Copy())
-		for(var/turf/T as anything in extra)
-			if(chunks >= RW_ORE_CHUNK_MIN)
+	if(!length(candidates))
+		return result
+
+	// RimWorld-like surface chunks: many small clusters spread across the full cell.
+	// Density scales with usable ground, while the clamp guarantees useful starting resources.
+	var/target = clamp(round(length(candidates) * RW_ORE_CHUNK_DENSITY), RW_ORE_CHUNK_MIN, RW_ORE_CHUNK_MAX)
+	var/chunks = 0
+	var/attempts = 0
+	var/max_attempts = target * 20
+	var/list/used_centers = list()
+
+	var/material_path = null
+	if(stamp_rock_material)
+		material_path = stamp_rock_material
+	else if(cell?.material && islist(RW_MATERIAL_NAME_TO_TYPE))
+		material_path = SSmaterials.get_material(RW_MATERIAL_NAME_TO_TYPE[cell.material])
+
+	while(chunks < target && attempts < max_attempts)
+		attempts++
+		var/turf/center = pick(candidates)
+		if(!center || locate(/obj/item/rock_chunk) in center)
+			continue
+
+		var/too_close = FALSE
+		for(var/turf/old_center as anything in used_centers)
+			if(get_dist(center, old_center) < 5)
+				too_close = TRUE
 				break
-			if(is_space_or_openspace(T))
+		if(too_close && prob(80))
+			continue
+
+		used_centers += center
+		var/list/cluster = shuffle(RANGE_TURFS(rand(2, 4), center))
+		var/cluster_target = rand(2, 5)
+		var/cluster_placed = 0
+		for(var/turf/T as anything in cluster)
+			if(chunks >= target || cluster_placed >= cluster_target)
+				break
+			if(!eligible_lookup[T] || locate(/obj/item/rock_chunk) in T)
 				continue
+			if(prob(18) && T != center)
+				continue
+
+			var/obj/item/rock_chunk/chunk = new(T)
+			if(material_path)
+				chunk.material = material_path
+				if(istype(material_path, /datum/material))
+					var/datum/material/mat = material_path
+					chunk.name = "[mat.name] [chunk.name]"
+					chunk.color = mat.color
+			cluster_placed++
+			chunks++
+
+	// Degenerate maps or heavily obstructed cells can prevent the cluster loop from reaching target.
+	// Fill only the remaining shortfall with separated individual chunks on otherwise eligible tiles.
+	if(chunks < min(target, length(candidates)))
+		var/list/extra = shuffle(candidates.Copy())
+		for(var/turf/T as anything in extra)
+			if(chunks >= min(target, length(candidates)))
+				break
 			if(locate(/obj/item/rock_chunk) in T)
 				continue
-			new /obj/item/rock_chunk(T)
+			var/obj/item/rock_chunk/chunk = new(T)
+			if(material_path)
+				chunk.material = material_path
+				if(istype(material_path, /datum/material))
+					var/datum/material/mat = material_path
+					chunk.name = "[mat.name] [chunk.name]"
+					chunk.color = mat.color
 			chunks++
 
 	result["chunks"] = chunks

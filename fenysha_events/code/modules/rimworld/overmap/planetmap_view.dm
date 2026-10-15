@@ -255,7 +255,21 @@
 /datum/planetmap_view/proc/get_selected_tile_payload()
 	if(isnull(selected_x) || isnull(selected_y) || !planet)
 		return null
-	return planet.get_tile_data(selected_x, selected_y)
+	var/list/tile = planet.get_tile_data(selected_x, selected_y)
+	if(!tile)
+		return null
+	tile = tile.Copy()
+	var/datum/planet_cell/cell = planet.get_or_create_cell(selected_x, selected_y, FALSE)
+	if(cell)
+		cell.ensure_climate()
+		tile["temperature"] = cell.get_outdoor_temperature()
+		tile["annualMeanTemperature"] = cell.get_annual_mean_temperature()
+		tile["weatherType"] = cell.weather_type
+		tile["weatherIntensity"] = cell.weather_intensity
+		tile["windSpeed"] = cell.wind_speed
+		tile["windDirection"] = cell.get_wind_direction_name()
+		tile["windStrength"] = cell.get_wind_strength_label()
+	return tile
 
 
 /datum/planetmap_view/proc/get_selected_object_payload()

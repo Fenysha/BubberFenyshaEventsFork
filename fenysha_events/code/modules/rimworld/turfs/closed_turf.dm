@@ -81,16 +81,27 @@
 		'fenysha_events/sounds/effects/rimworld/rw_debris_rock_4.ogg',
 	)
 
+	/// Is that wall using custom material for it's properties and color
+	var/use_material = FALSE
+	/// Material this wall relate to
+	var/datum/material/rimworld_material/material
+	/// Set's wall material and properties if use_material == TRUE
+	var/material_type
+
 	COOLDOWN_DECLARE(damage_number_cd)
 
 
 /turf/closed/rw_wall/Initialize(mapload)
 	. = ..()
 	register_context()
-
+	if(use_material && material_type)
+		apply_material(material_type)
 
 /turf/closed/rw_wall/examine(mob/user)
 	. = ..()
+
+	if(material)
+		. += span_notice("It seems like this wall is made of [material.name].")
 
 	if(can_repair && get_integrity() < max_integrity)
 		. += span_notice("Right-click this wall while not in combat mode to repair it.")
@@ -571,3 +582,25 @@
 	wall_overlay.plane = MUTATE_PLANE(WALL_PLANE, src)
 	wall_overlay.color = color
 	overlays += wall_overlay
+
+/turf/closed/rw_wall/proc/apply_material(datum/material/rimworld_material/path_of_istance)
+	SHOULD_CALL_PARENT(TRUE)
+
+	var/datum/material/rimworld_material/my_mat = null
+	if(ispath(path_of_istance, /datum/material/rimworld_material))
+		my_mat = SSmaterials.get_material(path_of_istance)
+	else if(istype(path_of_istance, /datum/material/rimworld_material))
+		my_mat = path_of_istance
+
+	if(!isnull(my_mat))
+		stack_trace("wall apply_material(): wrong path_of_istance [path_of_istance]!")
+		return FALSE
+
+	set_base_color(my_mat.color)
+	name = "[my_mat.name] [name]"
+	max_integrity = initial(max_integrity) * my_mat.get_hp_factor()
+	brute_damage_multiplier = initial(brute_damage_multiplier) * my_mat.get_armor_blunt()
+	burn_damage_multiplier = initial(burn_damage_multiplier) * my_mat.get_armor_heat()
+
+	material = my_mat
+	return my_mat

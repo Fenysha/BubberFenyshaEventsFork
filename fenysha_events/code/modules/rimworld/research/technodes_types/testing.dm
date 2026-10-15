@@ -31,10 +31,24 @@
 /datum/rw_crafting_recipe/iron_rods
 	id = "rw_iron_rods"
 	name = "Iron Rods"
+	desc = "Shape one sheet of iron into two sturdy rods."
+	category = "Metalworking"
 	result_path = /obj/item/stack/rods
 	result_amount = 2
 	requirements = list(/obj/item/stack/sheet/iron = 1)
 	required_bench = /obj/machinery/rw_workbench/crafting
+
+/// Example category-restricted station. Add this subtype to maps where metalworking is needed.
+/obj/machinery/rw_workbench/crafting/metalworking
+	name = "metalworking station"
+	desc = "A station configured for metalworking recipes."
+	recipe_categories = list("Metalworking")
+
+/// Example ID-restricted station. Only the listed recipe can appear here.
+/obj/machinery/rw_workbench/crafting/rod_maker
+	name = "rod-making station"
+	desc = "A station configured for a single recipe."
+	recipe_ids = list("rw_iron_rods")
 
 /datum/techweb_node/rw/construction_basics
 	id = "RW_CONSTRUCTION_BASICS"

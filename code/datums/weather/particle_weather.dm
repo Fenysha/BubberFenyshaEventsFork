@@ -1,3 +1,4 @@
+/* RIMWORLD REMOVE: Planet weather
 /// Subtype which uses particle systems instead of overlays to display its effects
 /datum/weather/particle
 	abstract_type = /datum/weather/particle
@@ -153,4 +154,4 @@
 		gravity[1] = wind
 	else
 		gravity = list(wind)
-
+*/

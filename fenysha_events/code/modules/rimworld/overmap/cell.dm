@@ -297,6 +297,22 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 
 	/// Active /datum/weather instance for this cell's z-level (if any)
 	var/datum/weather/active_weather
+	/// In-game day on which the current weather should end; survives map unloads.
+	var/weather_end_game_day = 0
+	/// Wind speed is stored in km/h; direction is one of the eight BYOND directions.
+	var/wind_speed = 8
+	var/wind_direction = NORTH
+	var/wind_next_shift_game_day = 0
+	/// Sound loops attached to outdoor turfs while this cell is loaded.
+	var/list/wind_sound_trackers = list()
+	/// Marks this cell as a player's first/start settlement map.
+	var/is_starting_settlement = FALSE
+	/// Persistent relative template placements, reused whenever this cell is reloaded.
+	var/list/structure_placement_plan = list()
+	var/structure_plan_created = FALSE
+	var/structures_generated = FALSE
+	var/ancient_danger_generated = FALSE
+
 	/// Forced weather override (admin / scenario); null = climate-driven
 	var/forced_weather_type = null
 
@@ -320,6 +336,7 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 	var/datum/rimworld_sublevel_load_job/loading_job
 
 /datum/planet_cell/Destroy(force)
+	stop_cell_weather(FALSE)
 	QDEL_NULL(storyteller_plan)
 	return ..()
 
@@ -419,6 +436,7 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
  * (compatible with get_tile_data + extra cell fields).
  */
 /datum/planet_cell/proc/get_data()
+	ensure_climate()
 	return list(
 		"id"                = id,
 		"x"                 = x,
@@ -443,6 +461,11 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 		"subLevelId"        = sub_level_id,
 		"weatherType"       = weather_type,
 		"weatherIntensity"  = weather_intensity,
+		"annualMeanTemperature" = climate_ready ? annual_mean_c : null,
+		"currentTemperature" = climate_ready ? get_outdoor_temperature() : null,
+		"windSpeed" = wind_speed,
+		"windDirection" = get_wind_direction_name(),
+		"windStrength" = get_wind_strength_label(),
 		"localWidth"        = local_width,
 		"localHeight"       = local_height,
 	)
@@ -564,6 +587,14 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 /datum/planet_cell/proc/unload_local_content()
 	if(loading_job)
 		SSrimworld_sublevel_loader.cancel_cell(src)
+
+	// Stop visual weather and sound sources before their z-level is released,
+	// but preserve the cell's weather/wind state and in-game expiration time.
+	stop_cell_weather(TRUE)
+	SSrw_environment.unregister_cell(src)
+	// Structures are part of the released reservation and must be reloaded next time.
+	structures_generated = FALSE
+	ancient_danger_generated = FALSE
 
 	clear_edge_markers()
 	exit_cooldown_until = 0
@@ -687,31 +718,21 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
 /datum/planet_cell/proc/set_weather(new_type, intensity = 0.5, duration = null)
 	weather_type = new_type || "clear"
 	weather_intensity = clamp(intensity, 0, 1)
-
-	if(!isnull(duration))
-		weather_timer = duration
-	else
-		weather_timer = 0
-
+	weather_timer = 0 // legacy real-time timer intentionally unused
+	if(isnum(duration) && duration > 0)
+		weather_end_game_day = rw_get_planet_elapsed_days() + duration
+	else if(weather_type == "clear")
+		weather_end_game_day = 0
 	return TRUE
 
-
-/**
- * Resets weather to clear state.
- */
 /datum/planet_cell/proc/clear_weather()
-	return set_weather("clear", 0, 0)
+	weather_end_game_day = 0
+	return set_weather("clear", 0, null)
 
-
-/**
- * Weather tick (called externally, e.g. by a subsystem).
- * Currently only decrements the timer.
- */
 /datum/planet_cell/proc/process_weather(delta_time = 1)
-	if(weather_timer > 0)
-		weather_timer = max(0, weather_timer - delta_time)
-		if(weather_timer <= 0)
-			clear_weather()
+	// Weather now advances by the planetary calendar, not real world.time.
+	if(weather_end_game_day && rw_get_planet_elapsed_days() >= weather_end_game_day)
+		return TRUE
 	return TRUE
 
 
@@ -787,3 +808,258 @@ GLOBAL_LIST_INIT(rimworld_areas, list())
  */
 /datum/planet_cell/proc/get_sub_biome()
 	return sub_biome || RW_SUBBIOME_PLAINS
+
+
+// ---------------------------------------------------------------------------
+// Map-template placement for ruins and the required starting ancient danger.
+// The template paths are intentionally strings: template classes are supplied
+// by the content pack, so missing templates do not break compilation.
+// ---------------------------------------------------------------------------
+
+GLOBAL_LIST_INIT(rw_cell_structure_definitions, init_rw_cell_structure_definitions())
+
+/proc/init_rw_cell_structure_definitions()
+	var/list/definitions = list()
+	for(var/path in subtypesof(/datum/rw_cell_structure_definition))
+		var/datum/rw_cell_structure_definition/D = new path
+		if(D.id)
+			definitions[D.id] = D
+	return definitions
+
+/datum/rw_cell_structure_definition
+	var/id
+	var/name = "Ruin"
+	/// Type path of a /datum/map_template subclass, stored as text for compile safety.
+	var/template_path
+	var/chance = 50
+	var/min_count = 1
+	var/max_count = 1
+	var/mandatory = FALSE
+	var/starting_only = FALSE
+	var/min_separation = 8
+
+/datum/rw_cell_structure_definition/ancient_danger
+	id = "ancient_danger"
+	name = "Ancient danger"
+	template_path = "/datum/map_template/rw/ancient_danger"
+	chance = 100
+	min_count = 1
+	max_count = 1
+	mandatory = TRUE
+	starting_only = TRUE
+	min_separation = 0
+
+/datum/rw_cell_structure_definition/small_ruin
+	id = "small_ruin"
+	name = "Small ruin"
+	template_path = "/datum/map_template/rw/ruin/small"
+	chance = 70
+	min_count = 1
+	max_count = 2
+	min_separation = 12
+
+/datum/rw_cell_structure_definition/medium_ruin
+	id = "medium_ruin"
+	name = "Medium ruin"
+	template_path = "/datum/map_template/rw/ruin/medium"
+	chance = 35
+	min_count = 1
+	max_count = 1
+	min_separation = 18
+
+/datum/rw_cell_structure_definition/wreckage
+	id = "wreckage"
+	name = "Wreckage"
+	template_path = "/datum/map_template/rw/wreckage"
+	chance = 45
+	min_count = 1
+	max_count = 2
+	min_separation = 10
+
+/datum/planet_cell/proc/create_structure_placement_plan()
+	if(structure_plan_created)
+		return structure_placement_plan
+	structure_plan_created = TRUE
+	structure_placement_plan = list()
+	var/turf/BL = reservation?.get_inner_bottom_left_turf()
+	var/turf/TR = reservation?.get_inner_top_right_turf()
+	var/map_width = (BL && TR) ? (TR.x - BL.x + 1) : local_width
+	var/map_height = (BL && TR) ? (TR.y - BL.y + 1) : local_height
+	var/list/placed_boxes = list()
+	var/list/ordered_ids = list()
+	if(is_starting_settlement && GLOB.rw_cell_structure_definitions["ancient_danger"])
+		ordered_ids += "ancient_danger"
+	for(var/definition_id in GLOB.rw_cell_structure_definitions)
+		if(definition_id != "ancient_danger")
+			ordered_ids += definition_id
+
+	for(var/id in ordered_ids)
+		var/datum/rw_cell_structure_definition/D = GLOB.rw_cell_structure_definitions[id]
+		if(!D || !D.template_path || (D.starting_only && !is_starting_settlement))
+			continue
+		if(!D.mandatory && !prob(D.chance))
+			continue
+
+		var/template_type = text2path(D.template_path)
+		if(!template_type || !ispath(template_type, /datum/map_template))
+			log_world("RW structures: [D.name] template path '[D.template_path]' is missing or invalid; add the template class to enable it.")
+			continue
+
+		var/count = D.mandatory ? max(1, D.min_count) : rand(D.min_count, max(D.min_count, D.max_count))
+		for(var/i in 1 to count)
+			var/datum/map_template/T = new template_type
+			if(!T || T.width <= 0 || T.height <= 0)
+				log_world("RW structures: template '[D.template_path]' has invalid dimensions.")
+				qdel(T)
+				continue
+
+			var/padding = 5
+			if(T.width + padding * 2 > map_width || T.height + padding * 2 > map_height)
+				log_world("RW structures: template '[D.template_path]' ([T.width]x[T.height]) does not fit cell [x],[y].")
+				qdel(T)
+				continue
+
+			var/found_position = FALSE
+			var/place_x = 0
+			var/place_y = 0
+			for(var/attempt in 1 to 80)
+				place_x = rand(padding, map_width - T.width - padding + 1)
+				place_y = rand(padding, map_height - T.height - padding + 1)
+				var/blocked = FALSE
+				for(var/list/box as anything in placed_boxes)
+					var/box_x = box["x"]
+					var/box_y = box["y"]
+					var/box_w = box["w"]
+					var/box_h = box["h"]
+					var/gap = D.min_separation
+					if(place_x < box_x + box_w + gap && place_x + T.width + gap > box_x && place_y < box_y + box_h + gap && place_y + T.height + gap > box_y)
+						blocked = TRUE
+						break
+				if(!blocked)
+					found_position = TRUE
+					break
+
+			if(!found_position)
+				if(D.mandatory)
+					log_world("RW structures: could not place mandatory [D.name] in cell [x],[y]; cell may be too crowded.")
+				qdel(T)
+				continue
+
+			structure_placement_plan += list(list(
+				"id" = D.id,
+				"name" = D.name,
+				"template_path" = D.template_path,
+				"x" = place_x,
+				"y" = place_y,
+				"width" = T.width,
+				"height" = T.height,
+				"mandatory" = D.mandatory
+			))
+			placed_boxes += list(list("x" = place_x, "y" = place_y, "w" = T.width, "h" = T.height))
+			qdel(T)
+	return structure_placement_plan
+
+/datum/planet_cell/proc/place_starting_ancient_danger()
+	if(ancient_danger_generated)
+		return TRUE
+	if(!is_starting_settlement || !is_loaded())
+		return FALSE
+	var/datum/rw_cell_structure_definition/definition = GLOB.rw_cell_structure_definitions["ancient_danger"]
+	var/template_path = definition?.template_path || "/datum/map_template/rw/ancient_danger"
+	var/template_type = text2path(template_path)
+	if(!template_type || !ispath(template_type, /datum/map_template))
+		log_world("RW structures: required starting ancient danger template '[template_path]' is missing.")
+		return FALSE
+	var/datum/map_template/T = new template_type
+	if(!T || T.width <= 0 || T.height <= 0)
+		qdel(T)
+		return FALSE
+	var/turf/BL = reservation.get_inner_bottom_left_turf()
+	var/turf/TR = reservation.get_inner_top_right_turf()
+	if(!BL || !TR)
+		qdel(T)
+		return FALSE
+	var/map_width = TR.x - BL.x + 1
+	var/map_height = TR.y - BL.y + 1
+	if(T.width + 10 > map_width || T.height + 10 > map_height)
+		log_world("RW structures: ancient danger template does not fit starting cell [x],[y].")
+		qdel(T)
+		return FALSE
+	var/found_position = FALSE
+	var/place_x = 0
+	var/place_y = 0
+	for(var/attempt in 1 to 100)
+		place_x = rand(5, map_width - T.width - 4)
+		place_y = rand(5, map_height - T.height - 4)
+		var/blocked = FALSE
+		for(var/list/entry as anything in structure_placement_plan)
+			var/gap = 5
+			if(place_x < entry["x"] + entry["width"] + gap && place_x + T.width + gap > entry["x"] && place_y < entry["y"] + entry["height"] + gap && place_y + T.height + gap > entry["y"])
+				blocked = TRUE
+				break
+		if(!blocked)
+			found_position = TRUE
+			break
+	if(!found_position)
+		qdel(T)
+		log_world("RW structures: could not find a position for the starting ancient danger in cell [x],[y].")
+		return FALSE
+	var/template_width = T.width
+	var/template_height = T.height
+	var/turf/placement = locate(BL.x + place_x - 1, BL.y + place_y - 1, BL.z)
+	var/list/bounds = placement ? T.load(placement, centered = FALSE) : null
+	qdel(T)
+	if(!bounds)
+		log_world("RW structures: failed to load the starting ancient danger in cell [x],[y].")
+		return FALSE
+	ancient_danger_generated = TRUE
+	structure_placement_plan += list(list(
+		"id" = "ancient_danger",
+		"name" = "Ancient danger",
+		"template_path" = template_path,
+		"x" = place_x,
+		"y" = place_y,
+		"width" = template_width,
+		"height" = template_height,
+		"mandatory" = TRUE
+	))
+	return TRUE
+
+/datum/planet_cell/proc/place_cell_structures(datum/turf_reservation/sub_level/target_reservation)
+	if(!target_reservation || QDELETED(target_reservation))
+		return FALSE
+	if(structures_generated)
+		return TRUE
+
+	var/turf/BL = target_reservation.get_inner_bottom_left_turf()
+	if(!BL)
+		log_world("RW structures: cell [x],[y] has no inner placement origin.")
+		return FALSE
+
+	create_structure_placement_plan()
+	var/success_count = 0
+	for(var/list/entry as anything in structure_placement_plan)
+		var/template_type = text2path(entry["template_path"])
+		if(!template_type || !ispath(template_type, /datum/map_template))
+			continue
+		var/datum/map_template/T = new template_type
+		if(!T || T.width <= 0 || T.height <= 0)
+			qdel(T)
+			continue
+		var/turf/placement = locate(BL.x + entry["x"] - 1, BL.y + entry["y"] - 1, BL.z)
+		if(!placement)
+			log_world("RW structures: no turf for '[entry["id"]]' in cell [x],[y].")
+			qdel(T)
+			continue
+		var/list/bounds = T.load(placement, centered = FALSE)
+		if(bounds)
+			success_count++
+			if(entry["id"] == "ancient_danger")
+				ancient_danger_generated = TRUE
+		else
+			log_world("RW structures: failed to load template '[entry["template_path"]]' for cell [x],[y].")
+		qdel(T)
+
+	structures_generated = TRUE
+	log_world("RW structures: loaded [success_count]/[length(structure_placement_plan)] structures in cell [x],[y] (starting=[is_starting_settlement]).")
+	return TRUE

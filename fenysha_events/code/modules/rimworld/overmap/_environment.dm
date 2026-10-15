@@ -37,7 +37,7 @@ SUBSYSTEM_DEF(rw_environment)
 		cells.len--
 		if(QDELETED(cell) || !cell.is_loaded())
 			if(!QDELETED(cell))
-				cell.stop_cell_weather()
+				cell.stop_cell_weather(TRUE)
 			loaded_cells -= cell
 			continue
 		cell.process_environment(delta_ds)

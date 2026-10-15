@@ -6,6 +6,13 @@
 	var/turf/hover_turf
 	var/placement_valid = FALSE
 	var/list/image/ghost_images = list()
+	var/list/image/projection_images = list()
+	var/list/obj/effect/rw_build_projection/projections = list()
+	var/list/turf/projection_targets = list()
+	var/obj/effect/rw_build_cost_panel/cost_panel
+	var/turf/cost_panel_target
+	var/image/cost_panel_image
+	var/list/image/cost_icon_images = list()
 	var/material_path
 
 	var/atom/movable/screen/fullscreen/cursor_catcher/catcher
@@ -93,16 +100,23 @@
 		qdel(src)
 		return
 
-	if(catcher.mouse_params == last_mouse_params)
-		return
-
-	last_mouse_params = catcher.mouse_params
-	if(last_mouse_params)
-		catcher.calculate_params()
+	if(catcher.mouse_params != last_mouse_params)
+		last_mouse_params = catcher.mouse_params
+		if(last_mouse_params)
+			catcher.calculate_params()
 
 	var/turf/under_cursor = catcher.given_turf
-	if(under_cursor && under_cursor != hover_turf)
+	if(!under_cursor)
+		return
+
+	if(under_cursor != hover_turf)
 		set_hover_turf(under_cursor)
+
+	if(mode == RW_BUILD_MODE_CANCEL)
+		return
+
+	update_projection_motion()
+	update_cost_panel_motion()
 
 
 /datum/component/rw_build_plan/proc/on_clicked(atom/source, atom/clicked_on, modifiers)
@@ -221,10 +235,22 @@
 
 /datum/component/rw_build_plan/proc/clear_ghosts()
 	var/mob/living/L = parent
-	if(L?.client)
-		for(var/image/I as anything in ghost_images)
-			L.client.images -= I
+	if(L?.client && length(ghost_images))
+		L.client.images -= ghost_images
 	ghost_images.Cut()
+	projection_images.Cut()
+	cost_icon_images.Cut()
+	cost_panel_image = null
+
+	for(var/obj/effect/rw_build_projection/P as anything in projections)
+		if(!QDELETED(P))
+			qdel(P)
+	projections.Cut()
+	projection_targets.Cut()
+
+	if(cost_panel && !QDELETED(cost_panel))
+		qdel(cost_panel)
+	cost_panel = null
 
 /datum/component/rw_build_plan/proc/check_placement(turf/origin)
 	if(mode == RW_BUILD_MODE_CANCEL)
@@ -255,32 +281,196 @@
 			I.plane = ABOVE_LIGHTING_PLANE
 			ghost_images += I
 			L.client.images |= I
-	else
-		placement_valid = check_placement(T)
-		rebuild_ghosts(T)
-
-/datum/component/rw_build_plan/proc/rebuild_ghosts(turf/origin)
-	clear_ghosts()
-	var/mob/living/L = parent
-	if(!L?.client || !origin || !blueprint)
 		return
 
+	placement_valid = check_placement(T)
+	set_projection_targets(T)
+	update_projection_color()
+
+/datum/component/rw_build_plan/proc/set_projection_targets(turf/origin, force_recreate = FALSE)
+	if(!origin || !blueprint)
+		return
+
+	var/list/raw_entries = blueprint.get_cell_entries(origin, dir)
+	var/list/entries = list()
+	for(var/list/entry as anything in raw_entries)
+		if(entry["turf"])
+			entries += list(entry)
+
+	if(!length(entries))
+		clear_ghosts()
+		return
+
+	if(force_recreate || length(projections) != length(entries))
+		clear_ghosts()
+		var/mob/living/L = parent
+		if(!L?.client)
+			return
+
+		var/datum/material/mat = material_path ? GET_MATERIAL_REF(material_path) : null
+		var/ghost_color = mat?.color ? mat.color : "#ffffff"
+		ghost_color = color_interpolate(ghost_color, placement_valid ? "#4987e4" : "#fa4444", 0.3)
+
+		for(var/list/entry as anything in entries)
+			var/turf/T = entry["turf"]
+			if(!T)
+				continue
+			var/obj/effect/rw_build_projection/P = new(T)
+			P.base_pixel_x = P.pixel_x
+			P.base_pixel_y = P.pixel_y
+			projections += P
+			projection_targets += T
+
+			var/image/I = image(entry["icon"], P, entry["icon_state"], MOB_LAYER + 0.1)
+			I.plane = MOB_PLANE
+			I.dir = dir
+			I.alpha = RW_HOLOGRAM_ALPHA
+			I.color = ghost_color
+			I.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+			projection_images += I
+			ghost_images += I
+			L.client.images |= I
+
+		create_cost_panel(entries)
+		return
+
+	projection_targets.Cut()
+	for(var/list/entry as anything in entries)
+		projection_targets += entry["turf"]
+	set_cost_panel_target(entries)
+
+/datum/component/rw_build_plan/proc/update_projection_color()
 	var/datum/material/mat = material_path ? GET_MATERIAL_REF(material_path) : null
 	var/ghost_color = mat?.color ? mat.color : "#ffffff"
 	ghost_color = color_interpolate(ghost_color, placement_valid ? "#4987e4" : "#fa4444", 0.3)
+	for(var/image/I as anything in projection_images)
+		I.color = ghost_color
 
-	for(var/list/entry as anything in blueprint.get_cell_entries(origin, dir))
+/datum/component/rw_build_plan/proc/update_projection_motion()
+	if(!catcher || !length(projections) || length(projections) != length(projection_targets))
+		return
+
+	for(var/i in 1 to length(projections))
+		var/obj/effect/rw_build_projection/P = projections[i]
+		var/turf/target_turf = projection_targets[i]
+		if(QDELETED(P) || !target_turf)
+			continue
+
+		if(P.loc == target_turf)
+			var/pixel_target_x = P.base_pixel_x + catcher.given_x - world.icon_size / 2
+			var/pixel_target_y = P.base_pixel_y + catcher.given_y - world.icon_size / 2
+			if(P.pixel_x != pixel_target_x || P.pixel_y != pixel_target_y)
+				animate(P, time = 0.2 SECONDS, pixel_x = pixel_target_x, pixel_y = pixel_target_y)
+			continue
+
+		var/turf/turf_to_move = get_step_towards(P, target_turf)
+		if(!turf_to_move)
+			continue
+		var/direction = get_dir(P, turf_to_move)
+		if(!direction || !P.Move(turf_to_move, direction, 4))
+			continue
+
+		var/pixel_x_change = 0
+		var/pixel_y_change = 0
+		if(direction & NORTH)
+			pixel_y_change = world.icon_size / 2
+		else if(direction & SOUTH)
+			pixel_y_change = -world.icon_size / 2
+		if(direction & EAST)
+			pixel_x_change = world.icon_size / 2
+		else if(direction & WEST)
+			pixel_x_change = -world.icon_size / 2
+
+		animate(P, time = 0.1 SECONDS, pixel_x = P.base_pixel_x + pixel_x_change, pixel_y = P.base_pixel_y + pixel_y_change)
+
+/datum/component/rw_build_plan/proc/create_cost_panel(list/entries)
+	var/mob/living/L = parent
+	if(!L?.client || !blueprint || mode == RW_BUILD_MODE_CANCEL)
+		return
+
+	set_cost_panel_target(entries)
+	var/turf/panel_turf = cost_panel_target
+	if(!panel_turf)
+		return
+
+	var/list/needs = blueprint.get_needs(material_path)
+	if(!length(needs))
+		return
+
+	cost_panel = new(panel_turf)
+	cost_panel.base_pixel_x = world.icon_size
+	cost_panel.base_pixel_y = 0
+	var/list/lines = list()
+	var/row_index = 0
+	for(var/path in needs)
+		var/atom/item_type = path
+		var/item_name = ispath(path, /obj/item) ? initial(item_type.name) : "[path]"
+		var/amount = needs[path]
+		lines += "<div style='height:18px; color:#e9f5ff;'>&nbsp;&nbsp;[amount]x [html_encode(item_name)]</div>"
+
+		if(ispath(path, /obj/item) && initial(item_type.icon))
+			var/image/I = image(initial(item_type.icon), cost_panel, initial(item_type.icon_state), MOB_LAYER + 0.2)
+			I.plane = MOB_PLANE
+			I.transform = matrix() * 0.5
+			I.pixel_x = 2
+			I.pixel_y = max(12, (length(needs) * 18 + 24) - 34 - (row_index * 18))
+			I.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+			cost_icon_images += I
+			ghost_images += I
+			L.client.images |= I
+		row_index++
+
+	cost_panel_image = image(null, cost_panel)
+	cost_panel_image.plane = MOB_PLANE
+	cost_panel_image.layer = MOB_LAYER + 0.2
+	cost_panel_image.maptext_width = 196
+	cost_panel_image.maptext_height = max(42, length(needs) * 18 + 24)
+	cost_panel_image.maptext_x = 0
+	cost_panel_image.maptext_y = 0
+	var/resource_lines = jointext(lines, "")
+	cost_panel_image.maptext = "<div style='background-color:#111923; border:1px solid #5186b6; padding:3px;'><div style='font-size:11px; color:#8cc8ff; height:18px;'>REQUIRED RESOURCES</div>[resource_lines]</div>"
+	ghost_images += cost_panel_image
+	L.client.images |= cost_panel_image
+
+/datum/component/rw_build_plan/proc/set_cost_panel_target(list/entries)
+	var/turf/rightmost_turf
+	for(var/list/entry as anything in entries)
 		var/turf/T = entry["turf"]
 		if(!T)
 			continue
-		var/image/I = image(entry["icon"], T, entry["icon_state"], MOB_LAYER + 0.1)
-		I.plane = MOB_PLANE
-		I.dir = dir
-		I.alpha = RW_HOLOGRAM_ALPHA
-		I.color = ghost_color
-		I.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		ghost_images += I
-		L.client.images |= I
+		if(!rightmost_turf || T.x > rightmost_turf.x)
+			rightmost_turf = T
+	cost_panel_target = rightmost_turf
+
+/datum/component/rw_build_plan/proc/update_cost_panel_motion()
+	if(!catcher || !cost_panel || QDELETED(cost_panel) || !cost_panel_target)
+		return
+
+	if(cost_panel.loc == cost_panel_target)
+		var/pixel_target_x = cost_panel.base_pixel_x + catcher.given_x - world.icon_size / 2
+		var/pixel_target_y = cost_panel.base_pixel_y + catcher.given_y - world.icon_size / 2
+		if(cost_panel.pixel_x != pixel_target_x || cost_panel.pixel_y != pixel_target_y)
+			animate(cost_panel, time = 0.2 SECONDS, pixel_x = pixel_target_x, pixel_y = pixel_target_y)
+		return
+
+	var/turf/turf_to_move = get_step_towards(cost_panel, cost_panel_target)
+	if(!turf_to_move)
+		return
+	var/direction = get_dir(cost_panel, turf_to_move)
+	if(!direction || !cost_panel.Move(turf_to_move, direction, 4))
+		return
+
+	var/pixel_x_change = 0
+	var/pixel_y_change = 0
+	if(direction & NORTH)
+		pixel_y_change = world.icon_size / 2
+	else if(direction & SOUTH)
+		pixel_y_change = -world.icon_size / 2
+	if(direction & EAST)
+		pixel_x_change = world.icon_size / 2
+	else if(direction & WEST)
+		pixel_x_change = -world.icon_size / 2
+	animate(cost_panel, time = 0.1 SECONDS, pixel_x = cost_panel.base_pixel_x + pixel_x_change, pixel_y = cost_panel.base_pixel_y + pixel_y_change)
 
 /datum/component/rw_build_plan/proc/rotate()
 	if(mode == RW_BUILD_MODE_CANCEL || !blueprint?.can_rotate)
@@ -290,7 +480,8 @@
 	L?.balloon_alert(L, dir2text(dir))
 	if(hover_turf)
 		placement_valid = check_placement(hover_turf)
-		rebuild_ghosts(hover_turf)
+		set_projection_targets(hover_turf, force_recreate = TRUE)
+		update_projection_color()
 
 /datum/component/rw_build_plan/proc/try_place(turf/target, silent = FALSE)
 	if(mode == RW_BUILD_MODE_CANCEL)
@@ -344,6 +535,32 @@
 	if(L?.client)
 		L.client.images -= region_preview
 	region_preview.Cut()
+
+
+
+/obj/effect/rw_build_projection
+	name = "construction projection"
+	icon = null
+	icon_state = ""
+	anchored = FALSE
+	density = FALSE
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	invisibility = INVISIBILITY_ABSTRACT
+
+	base_pixel_x = 0
+	base_pixel_y = 0
+
+/obj/effect/rw_build_cost_panel
+	name = "construction resource projection"
+	icon = null
+	icon_state = ""
+	anchored = FALSE
+	density = FALSE
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+	invisibility = INVISIBILITY_ABSTRACT
+
+	base_pixel_x = 0
+	base_pixel_y = 0
 
 
 /mob/living/proc/rw_get_build_plan()

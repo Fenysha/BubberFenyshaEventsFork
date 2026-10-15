@@ -406,6 +406,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		if(RW_CELL_JOB_SMOOTH)
 			return process_smoothing()
 
+		if(RW_CELL_JOB_STRUCTURES)
+			return process_structures()
+
 		if(RW_CELL_JOB_LIGHTING)
 			return process_lighting()
 
@@ -805,8 +808,32 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		)
 			return RW_CELL_LOAD_CONTINUE
 
-	phase = RW_CELL_JOB_FINISH
+	phase = RW_CELL_JOB_STRUCTURES
 
+	return RW_CELL_LOAD_CONTINUE
+
+/datum/rimworld_sublevel_load_job/proc/process_structures()
+	if(!generator || QDELETED(generator) || !reservation || QDELETED(reservation))
+		return RW_CELL_LOAD_FAILED
+	if(cancel_requested)
+		return RW_CELL_LOAD_FAILED
+
+	if(cell)
+		cell.create_structure_placement_plan()
+		if(!cell.place_cell_structures(reservation))
+			return RW_CELL_LOAD_FAILED
+
+	// Templates may replace turfs; rebuild the lighting/smoothing source list from the reservation.
+	var/list/current_turfs = reservation.get_all_turfs()
+	if(islist(current_turfs) && length(current_turfs))
+		generator.generated_turfs = current_turfs.Copy()
+		generator.generated_open_turfs = list()
+		for(var/turf/T as anything in current_turfs)
+			if(istype(T, /turf/open) && !is_space_or_openspace(T))
+				generator.generated_open_turfs += T
+
+	lighting_index = 1
+	phase = RW_CELL_JOB_LIGHTING
 	return RW_CELL_LOAD_CONTINUE
 
 
@@ -1012,11 +1039,19 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 			data["total"] = total
 			data["unit"] = "tiles"
 
+		if(RW_CELL_JOB_STRUCTURES)
+			data["progress"] = 0.75
+			data["stage"] = "Placing Structures"
+			data["detail"] = "Placing ruins and settlement landmarks..."
+			data["current"] = 1
+			data["total"] = 1
+			data["unit"] = "stage"
+
 		if(RW_CELL_JOB_LIGHTING)
 			var/total = max(1, generator.get_generated_turf_count())
 			var/current = clamp(lighting_index - 1, 0, total)
 
-			data["progress"] = 0.74 + (current / total) * 0.16
+			data["progress"] = 0.76 + (current / total) * 0.14
 			data["stage"] = "Lighting"
 			data["detail"] = "Preparing static lighting..."
 			data["current"] = current

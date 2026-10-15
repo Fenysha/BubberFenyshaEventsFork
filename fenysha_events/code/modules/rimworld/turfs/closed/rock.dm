@@ -40,9 +40,6 @@
 	var/mine_amout = 20
 	var/mine_amount_affected_by_skill
 
-	/// Material this wall relate to
-	var/datum/material/rimworld_material/material
-	var/material_type
 	var/stamp_visual = FALSE
 
 	/// Path to the ore type this rock contains (null = pure stone)
@@ -66,8 +63,6 @@
 
 /turf/closed/rw_wall/rock/examine(mob/user)
 	. = ..()
-	if(material)
-		. += span_notice("It seems like this rock is made of [material.name].")
 	if(has_ore())
 		var/obj/item/stack/ore/rimworld/dummy = ore_type
 		. += span_notice("You can see veins of [initial(dummy.name)] running through it.")
@@ -229,12 +224,16 @@
 	var/datum/planet_cell/my_cell = get_planet_cell(src)
 	if(!my_cell)
 		return FALSE
-	var/datum/material/rimworld_material/my_mat = SSmaterials.get_material(RW_MATERIAL_NAME_TO_TYPE[my_cell.material])
-	if(!my_mat)
-		return FALSE
-	set_base_color(my_mat.color)
-	name = "[my_mat.name] [name]"
-	max_integrity = max_integrity * my_mat.get_hp_factor()
-	mine_steps = round(mine_steps * my_mat.get_hp_factor())
-	material = my_mat
+	apply_material(RW_MATERIAL_NAME_TO_TYPE[my_cell.material])
 	return TRUE
+
+/turf/closed/rw_wall/rock/auto/apply_material(datum/material/rimworld_material/path_of_istance)
+	. = ..()
+
+	if(!.)
+		return FALSE
+	var/datum/material/rimworld_material/my_mat = .
+
+	mine_steps = round(mine_steps * my_mat.get_hp_factor())
+	return .
+

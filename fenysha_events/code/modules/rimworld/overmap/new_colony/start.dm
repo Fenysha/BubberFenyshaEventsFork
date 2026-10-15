@@ -63,6 +63,18 @@
 	if(!cell)
 		return fail_loading("Unable to create planet cell.")
 
+	// Ancient danger is mandatory only for the initial settlement map.
+	var/was_starting_settlement = cell.is_starting_settlement
+	cell.is_starting_settlement = TRUE
+	if(!was_starting_settlement && !cell.structures_generated)
+		cell.structure_plan_created = FALSE
+		cell.structure_placement_plan.Cut()
+	if(cell.is_loaded())
+		if(cell.structures_generated)
+			cell.place_starting_ancient_danger()
+		else if(!cell.place_cell_structures(cell.reservation))
+			log_world("RW structures: starting settlement structures could not be placed immediately in loaded cell [cell.x],[cell.y].")
+
 	loading_cell = cell
 	loading_error = null
 
@@ -84,6 +96,12 @@
 	return TRUE
 
 /datum/settlement_setup/proc/on_cell_loaded(datum/planet_cell/cell)
+	// The template may have been unavailable while the placement plan was built.
+	// Retry the mandatory ancient danger once the starting cell is fully loaded.
+	if(cell?.is_starting_settlement && !cell.ancient_danger_generated)
+		if(!cell.place_starting_ancient_danger())
+			log_world("RW structures: mandatory ancient danger is not placed in starting cell [cell.x],[cell.y]. Check the configured map template path.")
+
 	var/faction_id = "player_[viewer.ckey || REF(viewer)]"
 	var/datum/rw_faction/player/player_faction = SSfactions.get_or_create_player_faction(
 		faction_id,

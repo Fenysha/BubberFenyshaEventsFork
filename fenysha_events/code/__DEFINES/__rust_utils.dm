@@ -849,3 +849,335 @@
 		return null
 	var/list/decoded = json_decode(result)
 	return decoded?["results"]
+
+
+/**
+ * Low-level call into the Rust object-network graph mutator.
+ *
+ * Intentionally a thin wrapper. Validation belongs to the public proc below.
+ */
+#define rustg_raw_object_net_apply(net_type, ops) \
+	RUSTG_CALL(RUST_UTILS, "object_net_apply")(net_type, ops)
+
+/**
+ * Applies a batch of graph operations to one network type and returns
+ * the set of nodes whose net-id changed.
+ *
+ * Input:
+ *     net_type: string|number
+ *         Network type id. Convention:
+ *
+ *             0 = power
+ *             1 = fluid
+ *             2 = atmos
+ *             3 = data
+ *
+ *         Passed to Rust as a string (e.g. "0").
+ *
+ *     ops: string
+ *         Pipe-separated list of operations. Each op is comma-separated.
+ *
+ *         Add a node:
+ *
+ *             a,<id>,<kind>,<x>,<y>,<z>
+ *
+ *             id:   u32  - unique node id (managed by SSobject_net)
+ *             kind: u8
+ *                 0 = connector (cable / pipe segment) - conducts
+ *                 1 = producer / source               - does not conduct alone
+ *                 2 = store / buffer                  - does not conduct alone
+ *                 3 = switch / valve                  - conducts while present
+ *             x,y,z: i32 - tile coordinates
+ *
+ *         Remove a node:
+ *
+ *             r,<id>
+ *
+ *         Example batch:
+ *
+ *             "a,1,0,100,200,1|a,2,1,101,200,1|r,3"
+ *
+ * Connectivity rules (Rust):
+ *     Two nodes link when they share a tile or are 4-adjacent AND at least
+ *     one of them conducts (kind 0 or 3). Walls are irrelevant.
+ *     Adding merges nets small-into-large. Removing a non-leaf runs BFS
+ *     and splits components; the largest keeps the old net id.
+ *
+ * Output on success:
+ *     Pipe-separated list of changed nodes:
+ *
+ *         "<id>><net_id>|<id>><net_id>|..."
+ *
+ *     Only nodes whose net membership actually changed are listed.
+ *     Empty string if nothing changed or ops was empty.
+ *
+ * On bad input:
+ *     Empty string (Rust silently skips malformed ops).
+ *     The wrapper returns "ERROR: ..." for empty/null arguments.
+ */
+/proc/rustg_object_net_apply(net_type, ops)
+	if(isnull(net_type))
+		return "ERROR: net_type is required"
+	if(!istext(ops) || !length(ops))
+		return "ERROR: ops must be a non-empty string"
+	return rustg_raw_object_net_apply("[net_type]", ops)
+
+// ---------------------------------------------------------------------------
+// object_net_nearest
+// ---------------------------------------------------------------------------
+
+/**
+ * Low-level nearest-node query.
+ */
+#define rustg_raw_object_net_nearest(net_type, args) \
+	RUSTG_CALL(RUST_UTILS, "object_net_nearest")(net_type, args)
+
+/**
+ * Finds the nearest eligible graph node within a radius.
+ *
+ * Used by electrical consumers to locate a cable / producer / store to
+ * attach to (and draw a beam toward).
+ *
+ * Input:
+ *     net_type: string|number
+ *         Network type id (see object_net_apply).
+ *
+ *     args: string
+ *         Comma-separated:
+ *
+ *             <x>,<y>,<z>,<radius>,<kind_mask>
+ *
+ *             x,y,z:  i32 - search origin tile
+ *             radius: i32 - Chebyshev radius (0 = same tile only)
+ *             kind_mask: u32 - bit mask of allowed kinds
+ *
+ *                 bit 0 (1) = connector
+ *                 bit 1 (2) = producer
+ *                 bit 2 (4) = store
+ *                 bit 3 (8) = switch  (ignored - switches are never attach points)
+ *
+ *             Typical attach mask (connector|producer|store):
+ *
+ *                 7   (== (1<<0)|(1<<1)|(1<<2))
+ *
+ * Search order:
+ *     Rings of increasing Chebyshev distance 0 .. radius.
+ *     Within a ring, closest Euclidean distance wins; ties break on lower id.
+ *
+ * Output on success:
+ *     Node id as a decimal string, e.g. "42".
+ *
+ * Output when nothing found / bad args:
+ *     "0"
+ *
+ * On empty args:
+ *     "ERROR: ..."
+ */
+/proc/rustg_object_net_nearest(net_type, args)
+	if(isnull(net_type))
+		return "ERROR: net_type is required"
+	if(!istext(args) || !length(args))
+		return "ERROR: args must be a non-empty string"
+	return rustg_raw_object_net_nearest("[net_type]", args)
+
+// ---------------------------------------------------------------------------
+// object_net_reset
+// ---------------------------------------------------------------------------
+
+/**
+ * Low-level full graph wipe for one net type.
+ */
+#define rustg_raw_object_net_reset(net_type) \
+	RUSTG_CALL(RUST_UTILS, "object_net_reset")(net_type)
+
+/**
+ * Destroys the entire graph for one network type and recreates an empty one.
+ *
+ * Input:
+ *     net_type: string|number
+ *         Network type id to reset.
+ *
+ * Output:
+ *     "ok"
+ *
+ * Side effects:
+ *     All node membership, net ids and power data for that type are gone.
+ *     DM must also clear its own node tables (SSobject_net does this on init).
+ */
+/proc/rustg_object_net_reset(net_type)
+	if(isnull(net_type))
+		return "ERROR: net_type is required"
+	return rustg_raw_object_net_reset("[net_type]")
+
+// ---------------------------------------------------------------------------
+// object_net_stats
+// ---------------------------------------------------------------------------
+
+/**
+ * Low-level graph statistics query.
+ */
+#define rustg_raw_object_net_stats(net_type) \
+	RUSTG_CALL(RUST_UTILS, "object_net_stats")(net_type)
+
+/**
+ * Returns a compact stats string for one network type.
+ *
+ * Input:
+ *     net_type: string|number
+ *
+ * Output:
+ *     "nodes=<N>|nets=<N>|next_net=<N>"
+ *
+ *         nodes:    total registered nodes
+ *         nets:     number of connected components
+ *         next_net: next net-id that will be allocated
+ *
+ * On error:
+ *     "ERROR: ..."
+ */
+/proc/rustg_object_net_stats(net_type)
+	if(isnull(net_type))
+		return "ERROR: net_type is required"
+	return rustg_raw_object_net_stats("[net_type]")
+
+// ---------------------------------------------------------------------------
+// power_net_set
+// ---------------------------------------------------------------------------
+
+/**
+ * Low-level power-slot writer.
+ */
+#define rustg_raw_power_net_set(ops) \
+	RUSTG_CALL(RUST_UTILS, "power_net_set")(ops)
+
+/**
+ * Writes numeric fields into power-domain node data slots.
+ *
+ * Power graph is always net_type 0. Slot layout per node:
+ *
+ *     [0] supply   (W)  - producers
+ *     [1] demand   (W)  - aggregated consumer demand on this node
+ *     [2] capacity (J)  - stores
+ *     [3] charge   (J)  - stores
+ *     [4] max_in   (W)  - store charge rate cap
+ *     [5] max_out  (W)  - store discharge rate cap
+ *     [6] flags         - reserved
+ *     [7] reserved
+ *
+ * Input:
+ *     ops: string
+ *         Pipe-separated slot writes:
+ *
+ *             <id>,<slot>,<value>|<id>,<slot>,<value>|...
+ *
+ *             id:    u32  - node id
+ *             slot:  0..7 - data slot index
+ *             value: f64  - new value
+ *
+ *         Example - set producer 5 to 1500 W and battery 8 charge to 1e6 J:
+ *
+ *             "5,0,1500|8,3,1000000"
+ *
+ * Output:
+ *     Empty string on success.
+ *
+ * On empty ops:
+ *     "ERROR: ..."
+ *
+ * Notes:
+ *     Writing a slot marks the owning net dirty. Actual ratio / charge
+ *     simulation happens in power_net_tick.
+ */
+/proc/rustg_power_net_set(ops)
+	if(!istext(ops) || !length(ops))
+		return "ERROR: ops must be a non-empty string"
+	return rustg_raw_power_net_set(ops)
+
+// ---------------------------------------------------------------------------
+// power_net_tick
+// ---------------------------------------------------------------------------
+
+/**
+ * Low-level power simulation step.
+ */
+#define rustg_raw_power_net_tick(dt) \
+	RUSTG_CALL(RUST_UTILS, "power_net_tick")(dt)
+
+/**
+ * Advances the power simulation by dt seconds for every power net.
+ *
+ * Per net:
+ *     surplus = supply - demand
+ *     If surplus >= 0:
+ *         charge stores (respecting max_in, capacity)
+ *         ratio = 1 if supply > 0 or any store has charge+max_out, else 0
+ *     If surplus < 0:
+ *         discharge stores (respecting max_out, charge)
+ *         ratio = clamp((supply*dt + discharged) / (demand*dt), 0, 1)
+ *     powered = ratio > 0.01
+ *
+ * Input:
+ *     dt: string|number
+ *         Delta time in seconds. Typical value from SSobject_net:
+ *
+ *             max((world.time - last_tick) * 0.1, 0.1)
+ *
+ *         Passed to Rust as a string.
+ *
+ * Output:
+ *     Pipe-separated per-net snapshots:
+ *
+ *         <net_id>><ratio>,<powered>,<supply>,<demand>,<stored>|...
+ *
+ *         net_id:  u32
+ *         ratio:   f64  0..1  (4 decimal places)
+ *         powered: 0|1
+ *         supply:  f64  W
+ *         demand:  f64  W
+ *         stored:  f64  J  (sum of all store charges on the net)
+ *
+ *     Empty string if there are no power nets.
+ *
+ * On bad dt:
+ *     Rust falls back to dt = 1.0. Wrapper returns "ERROR: ..." only if
+ *     the argument is null/empty.
+ */
+/proc/rustg_power_net_tick(dt)
+	if(isnull(dt) || (istext(dt) && !length(dt)))
+		return "ERROR: dt is required"
+	return rustg_raw_power_net_tick("[dt]")
+
+// ---------------------------------------------------------------------------
+// power_net_dump
+// ---------------------------------------------------------------------------
+
+/**
+ * Low-level admin dump of all power nets.
+ */
+#define rustg_raw_power_net_dump(unused) \
+	RUSTG_CALL(RUST_UTILS, "power_net_dump")(unused)
+
+/**
+ * Returns a compact summary of every power net for the admin UI.
+ *
+ * Input:
+ *     none (pass "" to the raw call)
+ *
+ * Output:
+ *     Pipe-separated nets:
+ *
+ *         <net_id>:<supply>,<demand>,<stored>,<capacity>,<n_prod>,<n_store>,<n_conn>,<members>|...
+ *
+ *         supply:    f64  W  - sum of producer outputs
+ *         demand:    f64  W  - sum of demand slots
+ *         stored:    f64  J  - sum of store charges
+ *         capacity:  f64  J  - sum of store capacities
+ *         n_prod:    int     - producer count
+ *         n_store:   int     - store count
+ *         n_conn:    int     - connector + switch count
+ *         members:   int     - total nodes in the net
+ *
+ *     Empty string if no power nets exist.
+ */
+/proc/rustg_power_net_dump()
+	return rustg_raw_power_net_dump("")

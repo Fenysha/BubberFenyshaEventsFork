@@ -132,6 +132,11 @@ export interface PlanetCellData {
 
   weatherType: string;
   weatherIntensity: number;
+  currentTemperature?: number | null;
+  annualMeanTemperature?: number | null;
+  windSpeed?: number;
+  windDirection?: string;
+  windStrength?: string;
 
   localWidth: number;
   localHeight: number;
@@ -149,7 +154,15 @@ export type SelectedPlanetTile = {
   sunIntensity?: number;
 
   elevation?: string;
+  /** Actual current outside-air temperature in degrees Celsius. */
   temperature?: number;
+  /** Long-term mean annual temperature in degrees Celsius. */
+  annualMeanTemperature?: number;
+  weatherType?: string;
+  weatherIntensity?: number;
+  windSpeed?: number;
+  windDirection?: string;
+  windStrength?: string;
   heat?: string;
   humidity?: string;
   biome?: string;

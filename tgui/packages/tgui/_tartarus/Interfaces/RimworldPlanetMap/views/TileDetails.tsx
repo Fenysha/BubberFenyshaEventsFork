@@ -29,8 +29,60 @@ const formatEnum = (value: string | undefined | null) => {
   }
 
   return value
+    .replace(/^rw_(elevation|climate|biome|subbiome)_/i, '')
     .replaceAll('_', ' ')
     .replace(/\b\w/g, (character) => character.toUpperCase());
+};
+
+const formatTerrain = (value: string | undefined | null) => {
+  if (!value) {
+    return '—';
+  }
+
+  const key = value.toLowerCase().replace(/^rw_elevation_/, '').replaceAll('_', ' ');
+  const terrainNames: Record<string, string> = {
+    ocean: 'Open ocean',
+    coast: 'Coastal shelf',
+    lowland: 'Lowlands and plains',
+    highland: 'Highlands and hills',
+    mountain: 'Mountain range',
+    snow: 'Snow-capped peaks',
+  };
+
+  return terrainNames[key] ?? formatEnum(value);
+};
+
+const formatClimateLevel = (value: string | undefined | null) => {
+  if (!value) {
+    return '—';
+  }
+
+  const key = value.toLowerCase().replace(/^rw_climate_/, '');
+  const levels: Record<string, string> = {
+    low: 'Low',
+    medium: 'Moderate',
+    high: 'High',
+  };
+
+  return levels[key] ?? formatEnum(value);
+};
+
+const formatTemperature = (value: number | undefined | null) => {
+  if (value == null || Number.isNaN(value)) {
+    return '—';
+  }
+
+  return `${value.toFixed(1)} °C`;
+};
+
+const formatWind = (tile: SelectedPlanetTile) => {
+  if (tile.windSpeed == null || Number.isNaN(tile.windSpeed)) {
+    return '—';
+  }
+
+  const direction = tile.windDirection || 'Variable';
+  const strength = tile.windStrength ? ` · ${tile.windStrength}` : '';
+  return `${direction}, ${Math.round(tile.windSpeed)} km/h${strength}`;
 };
 
 export const TileDetails = ({
@@ -76,24 +128,39 @@ export const TileDetails = ({
           {formatPercent(tile.sunIntensity)}
         </LabeledList.Item>
 
-        <LabeledList.Item label="Elevation">
-          {formatEnum(tile.elevation)}
+        <LabeledList.Item label="Terrain">
+          {formatTerrain(tile.elevation)}
         </LabeledList.Item>
 
         <LabeledList.Item label="Material">
           {formatEnum(tile.material)}
         </LabeledList.Item>
 
-        <LabeledList.Item label="Temperature">
-          {formatNumber(tile.temperature, 4)}
+        <LabeledList.Item label="Current temperature">
+          {formatTemperature(tile.temperature)}
         </LabeledList.Item>
 
-        <LabeledList.Item label="Heat">
-          {formatEnum(tile.heat)}
+        <LabeledList.Item label="Annual mean temperature">
+          {formatTemperature(tile.annualMeanTemperature)}
         </LabeledList.Item>
 
-        <LabeledList.Item label="Humidity">
-          {formatEnum(tile.humidity)}
+        <LabeledList.Item label="Weather">
+          {formatEnum(tile.weatherType)}
+          {tile.weatherIntensity != null && tile.weatherIntensity > 0
+            ? ` (${Math.round(tile.weatherIntensity * 100)}%)`
+            : ''}
+        </LabeledList.Item>
+
+        <LabeledList.Item label="Wind">
+          {formatWind(tile)}
+        </LabeledList.Item>
+
+        <LabeledList.Item label="Heat zone">
+          {formatClimateLevel(tile.heat)}
+        </LabeledList.Item>
+
+        <LabeledList.Item label="Humidity zone">
+          {formatClimateLevel(tile.humidity)}
         </LabeledList.Item>
 
         <LabeledList.Item label="Precipitation">

@@ -3,7 +3,7 @@ GLOBAL_LIST_EMPTY(rw_market_value_overrides)
 
 /// Base market value stored on the type (initial()). Prefer this over hardcoding in procs.
 /atom
-	var/rw_base_value = 0
+	VAR_PROTECTED/rw_base_value = 0
 
 /atom/proc/get_rw_market_value()
 	if(rw_base_value)
@@ -29,6 +29,11 @@ GLOBAL_LIST_EMPTY(rw_market_value_overrides)
 		var/obj/item/stack/S = src
 		var/unit = rw_base_value || GLOB.rw_market_value_overrides[type] || 1
 		return max(0, unit * S.amount)
+	return .
+
+/obj/item/stack/get_rw_market_value()
+	. = ..()
+	. *= amount
 	return .
 
 /obj/structure/get_rw_market_value()

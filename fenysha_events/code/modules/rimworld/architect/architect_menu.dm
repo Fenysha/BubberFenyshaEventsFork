@@ -58,15 +58,17 @@
 
 		var/list/app = bp.get_ghost_appearance()
 		var/list/extra = list()
-		for(var/mat in bp.materials)
+		var/list/needs = bp.get_needs(bp.is_stuffed() ? rw_default_stuff_for(bp) : null)
+		for(var/mat in needs)
 			var/mat_name = "[mat]"
-			if(ispath(mat))
-				var/atom/M = mat
+			if(ispath(mat, /obj/item))
+				var/obj/item/M = mat
 				mat_name = initial(M.name)
 			extra += list(list(
 				"path" = "[mat]",
 				"name" = mat_name,
-				"amount" = bp.materials[mat],
+				"amount" = needs[mat],
+				"iconSrc" = rw_get_recipe_item_icon_src(mat),
 			))
 
 		var/list/stuff_cats = list()
@@ -92,25 +94,25 @@
 			"from_faction" = !(id in default_ids),
 		))
 
-		blueprints += list(list(
-			"id" = "__cancel__",
-			"name" = "Cancel Blueprints",
-			"desc" = "Remove existing construction holograms and frames by selection or dragging.",
-			"tab" = RW_ARCHITECT_TAB_MISC,
-			"can_rotate" = FALSE,
-			"is_multiblock" = FALSE,
-			"construction_time" = 0,
-			"build_steps" = 0,
-			"icon" = "icons/hud/buildmode.dmi",
-			"icon_state" = "buildmode_delete",
-			"extra_costs" = list(),
-			"stuffed" = FALSE,
-			"stuff_cost" = 0,
-			"stuff_categories" = list(),
-			"default_stuff" = null,
-			"from_faction" = FALSE,
-			"is_cancel" = TRUE,
-		))
+	blueprints += list(list(
+		"id" = "__cancel__",
+		"name" = "Cancel Blueprints",
+		"desc" = "Remove existing construction holograms and frames by selection or dragging.",
+		"tab" = RW_ARCHITECT_TAB_MISC,
+		"can_rotate" = FALSE,
+		"is_multiblock" = FALSE,
+		"construction_time" = 0,
+		"build_steps" = 0,
+		"icon" = "icons/hud/buildmode.dmi",
+		"icon_state" = "buildmode_delete",
+		"extra_costs" = list(),
+		"stuffed" = FALSE,
+		"stuff_cost" = 0,
+		"stuff_categories" = list(),
+		"default_stuff" = null,
+		"from_faction" = FALSE,
+		"is_cancel" = TRUE,
+	))
 
 	data["blueprints"] = blueprints
 	return data

@@ -4,7 +4,7 @@
 #define RIMWORLD_STUFF_LEATHERY		"Leathery"
 #define RIMWORLD_STUFF_FABRIC		"Fabric"
 #define RIMWORLD_STUFF_BIOFERRITE	"Bioferrite"
-
+#define RIMWORLD_STUFF_OTHER		"Other"
 
 #define RIMWORLD_STAT_BEAUTY_FACTOR		"beauty_factor"
 #define RIMWORLD_STAT_BEAUTY_OFFSET		"beauty_offset"
