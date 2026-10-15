@@ -206,6 +206,12 @@ GLOBAL_LIST_EMPTY(rw_stuff_sheets)
 	if(!dying && steps_done >= steps)
 		finish(user)
 
+/datum/rw_construction_site/proc/complete_instantly(mob/living/user)
+	if(dying || working)
+		return
+	steps_done = max(1, blueprint.build_steps)
+	finish(user)
+
 /datum/rw_construction_site/proc/apply_material(atom/A, share = 1)
 	var/datum/material/mat = get_material()
 	if(!mat || !istype(A))

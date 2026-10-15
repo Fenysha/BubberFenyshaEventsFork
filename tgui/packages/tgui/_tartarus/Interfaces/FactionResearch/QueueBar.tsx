@@ -19,6 +19,8 @@ type Props = {
   benchText: string;
   act: (action: string, payload?: object) => void;
   onSelect: (id: string) => void;
+  factionName?: string | null;
+  factionColor?: string | null;
 };
 
 export const QueueBar = (props: Props) => {
@@ -32,6 +34,8 @@ export const QueueBar = (props: Props) => {
     benchText,
     act,
     onSelect,
+    factionName,
+    factionColor,
   } = props;
 
   const currentNode = current ? byId.get(current) : undefined;
@@ -44,7 +48,24 @@ export const QueueBar = (props: Props) => {
 
   return (
     <Section
-      title="Current research"
+      title={
+        <Box inline>
+          Current research
+          {factionName && (
+            <Box
+              inline
+              ml={1}
+              style={{
+                color: factionColor || '#aaa',
+                fontWeight: 'normal',
+                fontSize: '0.9em',
+              }}
+            >
+              — {factionName}
+            </Box>
+          )}
+        </Box>
+      }
       buttons={
         !!currentNode && (
           <Button

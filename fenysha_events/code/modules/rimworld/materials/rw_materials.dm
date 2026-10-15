@@ -1,5 +1,16 @@
+/datum/material/rimworld_material
+	name = "rimworld material"
+	desc = "A material from the Rim."
+	init_flags = MATERIAL_INIT_MAPLOAD
+	value_per_unit = 1
+
+// ========================
+// METALS
+// ========================
+
 /datum/material/rimworld_material/steel
 	name = "steel"
+	id = "rimworld_steel"
 	desc = "A common, versatile metal. The backbone of any colony."
 	color = "#7F7F7F"
 	greyscale_color = "#7F7F7F"
@@ -18,11 +29,11 @@
 		RIMWORLD_STAT_INSULATION_COLD = 3,
 		RIMWORLD_STAT_MARKET_VALUE = 1.9,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/steel
 
 /datum/material/rimworld_material/copper
 	name = "Copper"
+	id = "rimworld_copper"
 	desc = "A lightweight metal that is ideal for electrical components."
 	color = "#aa6c0f"
 	greyscale_color = "#aa6c0f"
@@ -41,9 +52,11 @@
 		RIMWORLD_STAT_INSULATION_COLD = 1,
 		RIMWORLD_STAT_MARKET_VALUE = 1.9,
 	)
+	sheet_type = /obj/item/stack/sheet/rimworld/copper
 
 /datum/material/rimworld_material/plasteel
 	name = "plasteel"
+	id = "rimworld_plasteel"
 	desc = "An advanced composite metal. Extremely tough and light."
 	color = "#5B8CFF"
 	greyscale_color = "#5B8CFF"
@@ -63,11 +76,11 @@
 		RIMWORLD_STAT_INSULATION_COLD = 3,
 		RIMWORLD_STAT_MARKET_VALUE = 9,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/plasteel
 
 /datum/material/rimworld_material/uranium
 	name = "uranium"
+	id = "rimworld_uranium"
 	desc = "A dense, heavy radioactive metal. Excellent for armor and blunt weapons."
 	color = "#4A5A2A"
 	greyscale_color = "#4A5A2A"
@@ -87,11 +100,11 @@
 		RIMWORLD_STAT_INSULATION_COLD = 3,
 		RIMWORLD_STAT_MARKET_VALUE = 6,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/uranium
 
 /datum/material/rimworld_material/gold
 	name = "gold"
+	id = "rimworld_gold"
 	desc = "The most seductive metal. Soft, beautiful, never tarnishes."
 	color = "#FFD700"
 	greyscale_color = "#FFD700"
@@ -112,11 +125,11 @@
 		RIMWORLD_STAT_INSULATION_COLD = 3,
 		RIMWORLD_STAT_MARKET_VALUE = 10,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/gold
 
 /datum/material/rimworld_material/silver
 	name = "silver"
+	id = "rimworld_silver"
 	desc = "A precious metal. Soft but beautiful."
 	color = "#C0C0C0"
 	greyscale_color = "#C0C0C0"
@@ -136,11 +149,11 @@
 		RIMWORLD_STAT_INSULATION_COLD = 3,
 		RIMWORLD_STAT_MARKET_VALUE = 1,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/silver
 
 /datum/material/rimworld_material/bioferrite
 	name = "bioferrite"
+	id = "rimworld_bioferrite"
 	desc = "An exotic metal-like fibrous substance with organic and metallic properties."
 	color = "#8B4513"
 	greyscale_color = "#8B4513"
@@ -160,7 +173,6 @@
 		RIMWORLD_STAT_INSULATION_COLD = 2.5,
 		RIMWORLD_STAT_MARKET_VALUE = 0.75,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/bioferrite
 
 // ========================
@@ -169,6 +181,7 @@
 
 /datum/material/rimworld_material/granite
 	name = "granite"
+	id = "rimworld_granite"
 	desc = "A very hard stone. Excellent for durable structures."
 	color = "#6B6B6B"
 	greyscale_color = "#6B6B6B"
@@ -185,11 +198,11 @@
 		RIMWORLD_STAT_MELEE_COOLDOWN = 1.3,
 		RIMWORLD_STAT_MARKET_VALUE = 0.9,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/granite
 
 /datum/material/rimworld_material/marble
 	name = "marble"
+	id = "rimworld_marble"
 	desc = "A soft, beautiful stone, known for being easy to sculpt."
 	color = "#F5F5F5"
 	greyscale_color = "#F5F5F5"
@@ -206,11 +219,11 @@
 		RIMWORLD_STAT_MELEE_COOLDOWN = 1.3,
 		RIMWORLD_STAT_MARKET_VALUE = 0.9,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/marble
 
 /datum/material/rimworld_material/limestone
 	name = "limestone"
+	id = "rimworld_limestone"
 	desc = "Blocks of solid limestone."
 	color = "#D2B48C"
 	value_per_unit = 0.9
@@ -224,11 +237,11 @@
 		RIMWORLD_STAT_MELEE_BLUNT = 1,
 		RIMWORLD_STAT_MARKET_VALUE = 0.9,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/limestone
 
 /datum/material/rimworld_material/sandstone
 	name = "sandstone"
+	id = "rimworld_sandstone"
 	desc = "A relatively soft rock that chips easily."
 	color = "#C2B280"
 	value_per_unit = 0.9
@@ -241,11 +254,11 @@
 		RIMWORLD_STAT_MELEE_SHARP = 0.5,
 		RIMWORLD_STAT_MARKET_VALUE = 0.9,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/sandstone
 
 /datum/material/rimworld_material/slate
 	name = "slate"
+	id = "rimworld_slate"
 	desc = "A dull-looking rock that chips easily."
 	color = "#2F4F4F"
 	value_per_unit = 0.9
@@ -258,11 +271,11 @@
 		RIMWORLD_STAT_MELEE_SHARP = 0.6,
 		RIMWORLD_STAT_MARKET_VALUE = 0.9,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/slate
 
 /datum/material/rimworld_material/jade
 	name = "jade"
+	id = "rimworld_jade"
 	desc = "A hard, green stone. Beautiful and dense. Great for blunt weapons and decorations."
 	color = "#00A86B"
 	greyscale_color = "#00A86B"
@@ -284,11 +297,11 @@
 		RIMWORLD_STAT_INSULATION_COLD = 3,
 		RIMWORLD_STAT_MARKET_VALUE = 5,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/jade
 
 /datum/material/rimworld_material/obsidian
 	name = "obsidian"
+	id = "rimworld_obsidian"
 	desc = "A dark, glossy volcanic rock. Brittle but extremely sharp."
 	color = "#1C1C1C"
 	greyscale_color = "#1C1C1C"
@@ -310,11 +323,15 @@
 		RIMWORLD_STAT_INSULATION_COLD = 3,
 		RIMWORLD_STAT_MARKET_VALUE = 5,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/obsidian
+
+// ========================
+// WOOD
+// ========================
 
 /datum/material/rimworld_material/wood
 	name = "wood"
+	id = "rimworld_wood"
 	desc = "Wood from trees. Lightweight, flammable, and easy to work with."
 	color = "#8B4513"
 	greyscale_color = "#8B4513"
@@ -334,15 +351,15 @@
 		RIMWORLD_STAT_INSULATION_HEAT = 4,
 		RIMWORLD_STAT_MARKET_VALUE = 1.2,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/wood
 
 // ========================
-// CLOTH
+// CLOTH / FABRIC
 // ========================
 
 /datum/material/rimworld_material/cloth
 	name = "cloth"
+	id = "rimworld_cloth"
 	desc = "Basic woven fabric."
 	color = "#F5F5DC"
 	value_per_unit = 1.5
@@ -358,11 +375,11 @@
 		RIMWORLD_STAT_INSULATION_HEAT = 18,
 		RIMWORLD_STAT_MARKET_VALUE = 1.5,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/cloth
 
 /datum/material/rimworld_material/devilstrand
 	name = "devilstrand"
+	id = "rimworld_devilstrand"
 	desc = "A tough, heat-resistant fabric grown from devilstrand mushrooms."
 	color = "#8B0000"
 	value_per_unit = 5.5
@@ -379,11 +396,11 @@
 		RIMWORLD_STAT_INSULATION_HEAT = 24,
 		RIMWORLD_STAT_MARKET_VALUE = 5.5,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/devilstrand
 
 /datum/material/rimworld_material/hyperweave
 	name = "hyperweave"
+	id = "rimworld_hyperweave"
 	desc = "An ultra-advanced synthetic fabric of incredible strength and beauty."
 	color = "#4B0082"
 	value_per_unit = 9
@@ -400,11 +417,11 @@
 		RIMWORLD_STAT_INSULATION_HEAT = 26,
 		RIMWORLD_STAT_MARKET_VALUE = 9,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/hyperweave
 
 /datum/material/rimworld_material/synthread
 	name = "synthread"
+	id = "rimworld_synthread"
 	desc = "A synthetic fabric with balanced properties."
 	color = "#708090"
 	value_per_unit = 4
@@ -420,11 +437,15 @@
 		RIMWORLD_STAT_INSULATION_HEAT = 22,
 		RIMWORLD_STAT_MARKET_VALUE = 4,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/synthread
+
+// ========================
+// LEATHER
+// ========================
 
 /datum/material/rimworld_material/plainleather
 	name = "plainleather"
+	id = "rimworld_plainleather"
 	desc = "Standard leather."
 	color = "#8B4513"
 	value_per_unit = 2.1
@@ -440,11 +461,11 @@
 		RIMWORLD_STAT_INSULATION_HEAT = 16,
 		RIMWORLD_STAT_MARKET_VALUE = 2.1,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/plainleather
 
 /datum/material/rimworld_material/thrumbofur
 	name = "thrumbofur"
+	id = "rimworld_thrumbofur"
 	desc = "Incredibly tough and insulating fur from a thrumbo."
 	color = "#F5F5F5"
 	value_per_unit = 14
@@ -461,11 +482,11 @@
 		RIMWORLD_STAT_INSULATION_HEAT = 22,
 		RIMWORLD_STAT_MARKET_VALUE = 14,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/thrumbofur
 
 /datum/material/rimworld_material/human_leather
 	name = "human leather"
+	id = "rimworld_human_leather"
 	desc = "Leather made from human skin. Controversial, but functional."
 	color = "#C4A484"
 	value_per_unit = 4.2
@@ -480,15 +501,19 @@
 		RIMWORLD_STAT_INSULATION_HEAT = 12,
 		RIMWORLD_STAT_MARKET_VALUE = 4.2,
 	)
-
 	sheet_type = /obj/item/stack/sheet/rimworld/human_leather
 
+// ========================
+// OTHER
+// ========================
 
 /datum/material/rimworld_material/coal
 	name = "Coal"
+	id = "rimworld_coal"
 	desc = "Coal, which is excellent as a fuel."
 	color = "#242424"
 	greyscale_color = "#242424"
 	value_per_unit = 1
 	stuff_category = RIMWORLD_STUFF_OTHER
 	rimworld_stats = list()
+	sheet_type = /obj/item/stack/sheet/rimworld/coal

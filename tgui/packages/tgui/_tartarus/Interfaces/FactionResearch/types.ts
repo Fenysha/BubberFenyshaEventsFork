@@ -14,9 +14,17 @@ export type NodeEntry = {
   flags: string[];
   rewards: Reward[];
   era: string;
-  group: string;
+  group?: string;
   ui_x: number;
   ui_y: number;
+};
+
+export type FactionOption = {
+  id: string;
+  name: string;
+  color?: string;
+  researched_count?: number;
+  total_nodes?: number;
 };
 
 export type ResearchData = {
@@ -28,4 +36,11 @@ export type ResearchData = {
   can_manage: boolean;
   bench_ready: boolean;
   bench_text: string;
+  /** Admin-only fields */
+  is_admin?: boolean;
+  admin_view?: boolean;
+  factions?: FactionOption[];
+  current_faction_id?: string | null;
+  current_faction_name?: string | null;
+  current_faction_color?: string | null;
 };

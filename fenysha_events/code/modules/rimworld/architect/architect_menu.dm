@@ -1,5 +1,7 @@
 /datum/rw_architect_menu
 	var/mob/living/owner
+	/// Item typepaths whose carried amount the UI needs (all non-material costs).
+	var/list/tracked_paths = list()
 
 /datum/rw_architect_menu/New(mob/living/user)
 	owner = user
@@ -20,6 +22,7 @@
 	data["tabs"] = RW_ARCHITECT_TABS
 
 	SSresearch.init_rw_registries()
+	tracked_paths = list()
 
 	var/list/materials = list()
 	var/list/categories = list()
@@ -42,6 +45,7 @@
 			"armor_blunt" = mat.get_armor_blunt(),
 			"armor_heat" = mat.get_armor_heat(),
 			"value" = mat.get_market_value(),
+			"iconSrc" = rw_get_recipe_item_icon_src(rw_get_sheet_for_material(mat_path)),
 		))
 	data["materials"] = materials
 	data["material_categories"] = categories
@@ -57,17 +61,19 @@
 			continue
 
 		var/list/app = bp.get_ghost_appearance()
+
+		// Only the fixed costs. The stuff (sheet) cost is shown separately, per chosen material.
 		var/list/extra = list()
-		var/list/needs = bp.get_needs(bp.is_stuffed() ? rw_default_stuff_for(bp) : null)
-		for(var/mat in needs)
+		for(var/mat in bp.materials)
 			var/mat_name = "[mat]"
 			if(ispath(mat, /obj/item))
 				var/obj/item/M = mat
 				mat_name = initial(M.name)
+				tracked_paths |= mat
 			extra += list(list(
 				"path" = "[mat]",
 				"name" = mat_name,
-				"amount" = needs[mat],
+				"amount" = bp.materials[mat],
 				"iconSrc" = rw_get_recipe_item_icon_src(mat),
 			))
 
@@ -128,11 +134,24 @@
 	data["planning_material"] = plan?.material_path ? "[plan.material_path]" : null
 	data["has_faction"] = !!(istype(L.rw_faction, /datum/rw_faction/player))
 
+	// Admin instant build. Re-validated on the server every time it matters.
+	data["is_admin"] = L.rw_can_instant_build()
+	data["instant_build"] = L.rw_instant_build_active()
+
+	var/list/contents = L.get_all_contents()
+
+	// Carried material sheets, keyed by material path.
 	var/list/stock = list()
-	for(var/obj/item/stack/sheet/rimworld/S in L.get_all_contents())
-		if(S.rimworld_mat_type)
+	for(var/obj/item/stack/sheet/rimworld/S in contents)
+		if(S.rimworld_mat_type && rw_item_is_available(L, S))
 			stock["[S.rimworld_mat_type]"] += S.amount
 	data["stock"] = stock
+
+	// Carried amounts of every fixed-cost item, keyed by typepath.
+	var/list/inventory = list()
+	for(var/path in tracked_paths)
+		inventory["[path]"] = rw_count_items_of_type(L, path, contents)
+	data["inventory"] = inventory
 	return data
 
 /datum/rw_architect_menu/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
@@ -169,4 +188,6 @@
 			return L.rw_rotate_build_plan()
 		if("cancel_mode")
 			return L.rw_start_cancel_plan()
+		if("toggle_instant")
+			return L.rw_toggle_instant_build()
 	return FALSE

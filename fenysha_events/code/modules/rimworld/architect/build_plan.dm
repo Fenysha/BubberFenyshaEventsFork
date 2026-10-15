@@ -1,19 +1,36 @@
+/// Pixel size of the little resource icons and the gap between them.
+#define RW_PLAN_COST_ICON_SCALE 0.5
+#define RW_PLAN_COST_STEP 17
+#define RW_PLAN_COST_PER_ROW 6
+/// How often the "can I afford this" tint is re-checked while hovering.
+#define RW_PLAN_RESOURCE_REFRESH (1 SECONDS)
+
 /datum/component/rw_build_plan
 	dupe_mode = COMPONENT_DUPE_UNIQUE
 
 	var/datum/building_blueprint/blueprint
 	var/dir = NORTH
 	var/turf/hover_turf
-	var/placement_valid = FALSE
-	var/list/image/ghost_images = list()
-	var/list/image/projection_images = list()
-	var/list/obj/effect/rw_build_projection/projections = list()
-	var/list/turf/projection_targets = list()
-	var/obj/effect/rw_build_cost_panel/cost_panel
-	var/turf/cost_panel_target
-	var/image/cost_panel_image
-	var/list/image/cost_icon_images = list()
 	var/material_path
+
+	/// Placement is physically possible on the hovered turf.
+	var/placement_valid = FALSE
+	/// The user currently carries everything the blueprint needs (or is in admin instant mode).
+	var/can_afford = TRUE
+
+	/**
+	 * Everything below is a client image attached directly to a turf. Nothing is spawned in the
+	 * world, nothing is animated per mouse move - the projection simply hops from turf to turf,
+	 * so it is always snapped to the grid and never jitters.
+	 */
+	var/list/image/projection_images = list()
+	var/list/image/cost_images = list()
+	/// One entry per cost icon: path, amount, ok, plate/icon/text images.
+	var/list/list/cost_slots = list()
+	var/turf/cost_anchor
+	var/cost_built = FALSE
+	var/image/cancel_marker
+	var/next_resource_check = 0
 
 	var/atom/movable/screen/fullscreen/cursor_catcher/catcher
 	var/last_mouse_params
@@ -69,11 +86,11 @@
 		• LMB — place / select corners<br>\
 		• <b>Alt + RMB</b> — toggle Place ↔ Fill<br>\
 		• Alt + LMB — rotate<br>\
-		• RMB — cancel"))
+		• RMB — cancel[L.rw_instant_build_active() ? "<br>• <b>Instant build is ON</b>" : ""]"))
 
 /datum/component/rw_build_plan/Destroy(force)
 	STOP_PROCESSING(SSsuperfast_process, src)
-	clear_ghosts()
+	clear_visuals()
 	clear_region_preview()
 
 	var/mob/living/L = parent
@@ -84,6 +101,7 @@
 	catcher = null
 	blueprint = null
 	hover_turf = null
+	cost_anchor = null
 	last_mouse_params = null
 	corner_a = null
 	corner_b = null
@@ -109,14 +127,13 @@
 	if(!under_cursor)
 		return
 
+	// Only a change of turf does any work. Sub-tile mouse movement is ignored on purpose.
 	if(under_cursor != hover_turf)
 		set_hover_turf(under_cursor)
-
-	if(mode == RW_BUILD_MODE_CANCEL)
 		return
 
-	update_projection_motion()
-	update_cost_panel_motion()
+	if(mode != RW_BUILD_MODE_CANCEL && world.time >= next_resource_check)
+		refresh_affordability()
 
 
 /datum/component/rw_build_plan/proc/on_clicked(atom/source, atom/clicked_on, modifiers)
@@ -233,24 +250,24 @@
 		L?.balloon_alert(L, "removed")
 
 
-/datum/component/rw_build_plan/proc/clear_ghosts()
+// =====================================================================
+// VISUALS
+// =====================================================================
+
+/// Removes every image this component put on the client.
+/datum/component/rw_build_plan/proc/clear_visuals()
 	var/mob/living/L = parent
-	if(L?.client && length(ghost_images))
-		L.client.images -= ghost_images
-	ghost_images.Cut()
+	if(L?.client)
+		L.client.images -= projection_images
+		L.client.images -= cost_images
+		if(cancel_marker)
+			L.client.images -= cancel_marker
 	projection_images.Cut()
-	cost_icon_images.Cut()
-	cost_panel_image = null
-
-	for(var/obj/effect/rw_build_projection/P as anything in projections)
-		if(!QDELETED(P))
-			qdel(P)
-	projections.Cut()
-	projection_targets.Cut()
-
-	if(cost_panel && !QDELETED(cost_panel))
-		qdel(cost_panel)
-	cost_panel = null
+	cost_images.Cut()
+	cost_slots.Cut()
+	cost_anchor = null
+	cost_built = FALSE
+	cancel_marker = null
 
 /datum/component/rw_build_plan/proc/check_placement(turf/origin)
 	if(mode == RW_BUILD_MODE_CANCEL)
@@ -273,204 +290,238 @@
 		return
 	hover_turf = T
 
+	var/mob/living/L = parent
+	if(!L?.client)
+		return
+
 	if(mode == RW_BUILD_MODE_CANCEL)
-		clear_ghosts()
-		var/mob/living/L = parent
-		if(L?.client)
-			var/image/I = image('icons/turf/overlays.dmi', T, "redOverlay")
-			I.plane = ABOVE_LIGHTING_PLANE
-			ghost_images += I
-			L.client.images |= I
+		if(!cancel_marker)
+			cancel_marker = image('icons/turf/overlays.dmi', T, "redOverlay")
+			cancel_marker.plane = ABOVE_LIGHTING_PLANE
+			L.client.images |= cancel_marker
+		else
+			cancel_marker.loc = T
 		return
 
 	placement_valid = check_placement(T)
-	set_projection_targets(T)
-	update_projection_color()
+	update_projection(T)
+	refresh_affordability(force = TRUE)
 
-/datum/component/rw_build_plan/proc/set_projection_targets(turf/origin, force_recreate = FALSE)
-	if(!origin || !blueprint)
-		return
-
-	var/list/raw_entries = blueprint.get_cell_entries(origin, dir)
+/// Cell entries of the blueprint at `origin`, without cells that fall outside the map.
+/datum/component/rw_build_plan/proc/get_entries(turf/origin)
 	var/list/entries = list()
-	for(var/list/entry as anything in raw_entries)
+	for(var/list/entry as anything in blueprint.get_cell_entries(origin, dir))
 		if(entry["turf"])
 			entries += list(entry)
+	return entries
 
+/datum/component/rw_build_plan/proc/update_projection(turf/origin, force_rebuild = FALSE)
+	var/mob/living/L = parent
+	if(!L?.client || !blueprint || !origin)
+		return
+
+	var/list/entries = get_entries(origin)
 	if(!length(entries))
-		clear_ghosts()
+		clear_visuals()
 		return
 
-	if(force_recreate || length(projections) != length(entries))
-		clear_ghosts()
-		var/mob/living/L = parent
-		if(!L?.client)
-			return
+	if(force_rebuild || length(projection_images) != length(entries))
+		rebuild_projection(entries)
+	else
+		// Same shape, new place: just move the existing images onto the new turfs.
+		for(var/i in 1 to length(entries))
+			var/image/I = projection_images[i]
+			var/list/entry = entries[i]
+			I.loc = entry["turf"]
 
-		var/datum/material/mat = material_path ? GET_MATERIAL_REF(material_path) : null
-		var/ghost_color = mat?.color ? mat.color : "#ffffff"
-		ghost_color = color_interpolate(ghost_color, placement_valid ? "#4987e4" : "#fa4444", 0.3)
+	update_cost_icons(entries)
 
-		for(var/list/entry as anything in entries)
-			var/turf/T = entry["turf"]
-			if(!T)
-				continue
-			var/obj/effect/rw_build_projection/P = new(T)
-			P.base_pixel_x = P.pixel_x
-			P.base_pixel_y = P.pixel_y
-			projections += P
-			projection_targets += T
+/datum/component/rw_build_plan/proc/rebuild_projection(list/entries)
+	var/mob/living/L = parent
+	L.client.images -= projection_images
+	projection_images.Cut()
 
-			var/image/I = image(entry["icon"], P, entry["icon_state"], MOB_LAYER + 0.1)
-			I.plane = MOB_PLANE
-			I.dir = dir
-			I.alpha = RW_HOLOGRAM_ALPHA
-			I.color = ghost_color
-			I.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-			projection_images += I
-			ghost_images += I
-			L.client.images |= I
-
-		create_cost_panel(entries)
-		return
-
-	projection_targets.Cut()
 	for(var/list/entry as anything in entries)
-		projection_targets += entry["turf"]
-	set_cost_panel_target(entries)
+		var/image/I = image(entry["icon"], entry["turf"], entry["icon_state"], MOB_LAYER + 0.1)
+		I.plane = MOB_PLANE
+		I.dir = dir
+		I.alpha = RW_HOLOGRAM_ALPHA
+		I.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+		projection_images += I
+		L.client.images |= I
+
+	update_projection_color()
+
+/// Blue = fine, red = can't place here, amber = placeable but you don't carry the resources, violet = admin instant.
+/datum/component/rw_build_plan/proc/get_state_color()
+	var/mob/living/L = parent
+	if(!placement_valid)
+		return RW_PLAN_COLOR_BAD
+	if(L.rw_instant_build_active())
+		return RW_PLAN_COLOR_ADMIN
+	if(!can_afford)
+		return RW_PLAN_COLOR_NO_RES
+	return RW_PLAN_COLOR_OK
 
 /datum/component/rw_build_plan/proc/update_projection_color()
 	var/datum/material/mat = material_path ? GET_MATERIAL_REF(material_path) : null
 	var/ghost_color = mat?.color ? mat.color : "#ffffff"
-	ghost_color = color_interpolate(ghost_color, placement_valid ? "#4987e4" : "#fa4444", 0.3)
+	ghost_color = color_interpolate(ghost_color, get_state_color(), 0.45)
 	for(var/image/I as anything in projection_images)
 		I.color = ghost_color
 
-/datum/component/rw_build_plan/proc/update_projection_motion()
-	if(!catcher || !length(projections) || length(projections) != length(projection_targets))
+
+// ---- resource icons ----------------------------------------------------
+
+/// The turf the cost row hangs above: the middle tile of the top row of the projection.
+/datum/component/rw_build_plan/proc/get_cost_anchor(list/entries)
+	var/max_y = 0
+	var/min_x = 0
+	var/max_x = 0
+	for(var/list/entry as anything in entries)
+		var/turf/T = entry["turf"]
+		if(T.y > max_y)
+			max_y = T.y
+			min_x = T.x
+			max_x = T.x
+		else if(T.y == max_y)
+			min_x = min(min_x, T.x)
+			max_x = max(max_x, T.x)
+
+	var/target_x = round((min_x + max_x) / 2)
+	var/turf/best
+	for(var/list/entry as anything in entries)
+		var/turf/T = entry["turf"]
+		if(T.y != max_y)
+			continue
+		if(!best || abs(T.x - target_x) < abs(best.x - target_x))
+			best = T
+	return best
+
+/datum/component/rw_build_plan/proc/update_cost_icons(list/entries)
+	if(!cost_built)
+		build_cost_icons(entries)
 		return
 
-	for(var/i in 1 to length(projections))
-		var/obj/effect/rw_build_projection/P = projections[i]
-		var/turf/target_turf = projection_targets[i]
-		if(QDELETED(P) || !target_turf)
-			continue
+	var/turf/anchor = get_cost_anchor(entries)
+	if(!anchor || anchor == cost_anchor)
+		return
+	cost_anchor = anchor
+	for(var/image/I as anything in cost_images)
+		I.loc = anchor
 
-		if(P.loc == target_turf)
-			var/pixel_target_x = P.base_pixel_x + catcher.given_x - world.icon_size / 2
-			var/pixel_target_y = P.base_pixel_y + catcher.given_y - world.icon_size / 2
-			if(P.pixel_x != pixel_target_x || P.pixel_y != pixel_target_y)
-				animate(P, time = 0.2 SECONDS, pixel_x = pixel_target_x, pixel_y = pixel_target_y)
-			continue
-
-		var/turf/turf_to_move = get_step_towards(P, target_turf)
-		if(!turf_to_move)
-			continue
-		var/direction = get_dir(P, turf_to_move)
-		if(!direction || !P.Move(turf_to_move, direction, 4))
-			continue
-
-		var/pixel_x_change = 0
-		var/pixel_y_change = 0
-		if(direction & NORTH)
-			pixel_y_change = world.icon_size / 2
-		else if(direction & SOUTH)
-			pixel_y_change = -world.icon_size / 2
-		if(direction & EAST)
-			pixel_x_change = world.icon_size / 2
-		else if(direction & WEST)
-			pixel_x_change = -world.icon_size / 2
-
-		animate(P, time = 0.1 SECONDS, pixel_x = P.base_pixel_x + pixel_x_change, pixel_y = P.base_pixel_y + pixel_y_change)
-
-/datum/component/rw_build_plan/proc/create_cost_panel(list/entries)
+/// Builds the row of tiny resource icons (icon + availability plate + amount). No names, no walls of text.
+/datum/component/rw_build_plan/proc/build_cost_icons(list/entries)
 	var/mob/living/L = parent
-	if(!L?.client || !blueprint || mode == RW_BUILD_MODE_CANCEL)
-		return
-
-	set_cost_panel_target(entries)
-	var/turf/panel_turf = cost_panel_target
-	if(!panel_turf)
-		return
+	cost_built = TRUE
 
 	var/list/needs = blueprint.get_needs(material_path)
 	if(!length(needs))
 		return
+	var/turf/anchor = get_cost_anchor(entries)
+	if(!anchor)
+		return
+	cost_anchor = anchor
 
-	cost_panel = new(panel_turf)
-	cost_panel.base_pixel_x = world.icon_size
-	cost_panel.base_pixel_y = 0
-	var/list/lines = list()
-	var/row_index = 0
+	var/total = 0
 	for(var/path in needs)
-		var/atom/item_type = path
-		var/item_name = ispath(path, /obj/item) ? initial(item_type.name) : "[path]"
-		var/amount = needs[path]
-		lines += "<div style='height:18px; color:#e9f5ff;'>&nbsp;&nbsp;[amount]x [html_encode(item_name)]</div>"
+		if(ispath(path, /obj/item))
+			total++
 
-		if(ispath(path, /obj/item) && initial(item_type.icon))
-			var/image/I = image(initial(item_type.icon), cost_panel, initial(item_type.icon_state), MOB_LAYER + 0.2)
-			I.plane = MOB_PLANE
-			I.transform = matrix() * 0.5
-			I.pixel_x = 2
-			I.pixel_y = max(12, (length(needs) * 18 + 24) - 34 - (row_index * 18))
-			I.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-			cost_icon_images += I
-			ghost_images += I
-			L.client.images |= I
-		row_index++
-
-	cost_panel_image = image(null, cost_panel)
-	cost_panel_image.plane = MOB_PLANE
-	cost_panel_image.layer = MOB_LAYER + 0.2
-	cost_panel_image.maptext_width = 196
-	cost_panel_image.maptext_height = max(42, length(needs) * 18 + 24)
-	cost_panel_image.maptext_x = 0
-	cost_panel_image.maptext_y = 0
-	var/resource_lines = jointext(lines, "")
-	cost_panel_image.maptext = "<div style='background-color:#111923; border:1px solid #5186b6; padding:3px;'><div style='font-size:11px; color:#8cc8ff; height:18px;'>REQUIRED RESOURCES</div>[resource_lines]</div>"
-	ghost_images += cost_panel_image
-	L.client.images |= cost_panel_image
-
-/datum/component/rw_build_plan/proc/set_cost_panel_target(list/entries)
-	var/turf/rightmost_turf
-	for(var/list/entry as anything in entries)
-		var/turf/T = entry["turf"]
-		if(!T)
+	var/index = 0
+	for(var/path in needs)
+		if(!ispath(path, /obj/item))
 			continue
-		if(!rightmost_turf || T.x > rightmost_turf.x)
-			rightmost_turf = T
-	cost_panel_target = rightmost_turf
+		var/obj/item/item_type = path
 
-/datum/component/rw_build_plan/proc/update_cost_panel_motion()
-	if(!catcher || !cost_panel || QDELETED(cost_panel) || !cost_panel_target)
-		return
+		var/row = round(index / RW_PLAN_COST_PER_ROW)
+		var/col = index % RW_PLAN_COST_PER_ROW
+		var/in_row = min(RW_PLAN_COST_PER_ROW, total - row * RW_PLAN_COST_PER_ROW)
+		var/px = round((col - (in_row - 1) / 2) * RW_PLAN_COST_STEP)
+		// 25px lifts the 16px icon just above the top edge of the tile.
+		var/py = 25 + row * RW_PLAN_COST_STEP
+		index++
 
-	if(cost_panel.loc == cost_panel_target)
-		var/pixel_target_x = cost_panel.base_pixel_x + catcher.given_x - world.icon_size / 2
-		var/pixel_target_y = cost_panel.base_pixel_y + catcher.given_y - world.icon_size / 2
-		if(cost_panel.pixel_x != pixel_target_x || cost_panel.pixel_y != pixel_target_y)
-			animate(cost_panel, time = 0.2 SECONDS, pixel_x = pixel_target_x, pixel_y = pixel_target_y)
-		return
+		var/matrix/small = matrix().Scale(RW_PLAN_COST_ICON_SCALE)
 
-	var/turf/turf_to_move = get_step_towards(cost_panel, cost_panel_target)
-	if(!turf_to_move)
-		return
-	var/direction = get_dir(cost_panel, turf_to_move)
-	if(!direction || !cost_panel.Move(turf_to_move, direction, 4))
-		return
+		var/image/plate = image('icons/turf/overlays.dmi', anchor, "greenOverlay", MOB_LAYER + 0.2)
+		plate.plane = MOB_PLANE
+		plate.transform = small
+		plate.pixel_x = px
+		plate.pixel_y = py
+		plate.alpha = 150
+		plate.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
-	var/pixel_x_change = 0
-	var/pixel_y_change = 0
-	if(direction & NORTH)
-		pixel_y_change = world.icon_size / 2
-	else if(direction & SOUTH)
-		pixel_y_change = -world.icon_size / 2
-	if(direction & EAST)
-		pixel_x_change = world.icon_size / 2
-	else if(direction & WEST)
-		pixel_x_change = -world.icon_size / 2
-	animate(cost_panel, time = 0.1 SECONDS, pixel_x = cost_panel.base_pixel_x + pixel_x_change, pixel_y = cost_panel.base_pixel_y + pixel_y_change)
+		var/image/icon_img = image(initial(item_type.icon), anchor, initial(item_type.icon_state), MOB_LAYER + 0.3)
+		icon_img.plane = MOB_PLANE
+		icon_img.transform = small
+		icon_img.pixel_x = px
+		icon_img.pixel_y = py
+		icon_img.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+
+		var/image/text_img = image(null, anchor, null, MOB_LAYER + 0.4)
+		text_img.plane = MOB_PLANE
+		text_img.pixel_x = px
+		text_img.pixel_y = py
+		text_img.maptext_width = 32
+		text_img.maptext_height = 10
+		// Right-aligned inside the little icon's lower right corner.
+		text_img.maptext_x = -8
+		text_img.maptext_y = 8
+		text_img.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
+
+		cost_slots += list(list(
+			"path" = path,
+			"amount" = needs[path],
+			"ok" = null,
+			"plate" = plate,
+			"icon" = icon_img,
+			"text" = text_img,
+		))
+		cost_images += plate
+		cost_images += icon_img
+		cost_images += text_img
+		L.client.images |= plate
+		L.client.images |= icon_img
+		L.client.images |= text_img
+
+/// Re-checks what the user carries and recolours the cost icons and the projection.
+/datum/component/rw_build_plan/proc/refresh_affordability(force = FALSE)
+	if(mode == RW_BUILD_MODE_CANCEL || !blueprint)
+		return
+	next_resource_check = world.time + RW_PLAN_RESOURCE_REFRESH
+
+	var/mob/living/L = parent
+	var/instant = L.rw_instant_build_active()
+	var/list/contents = instant ? null : L.get_all_contents()
+	var/all_ok = TRUE
+
+	for(var/list/slot as anything in cost_slots)
+		var/amount = slot["amount"]
+		var/have = instant ? amount : rw_count_items_of_type(L, slot["path"], contents)
+		var/ok = have >= amount
+		if(!ok)
+			all_ok = FALSE
+		if(!force && slot["ok"] == ok)
+			continue
+		slot["ok"] = ok
+
+		var/image/plate = slot["plate"]
+		plate.icon_state = ok ? "greenOverlay" : "redOverlay"
+		var/image/icon_img = slot["icon"]
+		icon_img.alpha = ok ? 255 : 170
+		var/image/text_img = slot["text"]
+		// A lone item needs no number.
+		var/count_color = ok ? "#a6ffa6" : "#ff8c8c"
+		if(amount > 1)
+			text_img.maptext = "<div align='right' style='font-family: Small Fonts; font-size: 6px; -dm-text-outline: 1px #000; color: [count_color];'>[amount]</div>"
+		else
+			text_img.maptext = ""
+
+	var/old = can_afford
+	can_afford = all_ok
+	if(force || old != can_afford)
+		update_projection_color()
 
 /datum/component/rw_build_plan/proc/rotate()
 	if(mode == RW_BUILD_MODE_CANCEL || !blueprint?.can_rotate)
@@ -480,7 +531,7 @@
 	L?.balloon_alert(L, dir2text(dir))
 	if(hover_turf)
 		placement_valid = check_placement(hover_turf)
-		set_projection_targets(hover_turf, force_recreate = TRUE)
+		update_projection(hover_turf, force_rebuild = TRUE)
 		update_projection_color()
 
 /datum/component/rw_build_plan/proc/try_place(turf/target, silent = FALSE)
@@ -504,7 +555,13 @@
 		if(P.site)
 			return FALSE
 
-	new /datum/rw_construction_site(blueprint, target, dir, material_path)
+	var/datum/rw_construction_site/site = new /datum/rw_construction_site(blueprint, target, dir, material_path)
+
+	// Admin instant build: re-checked here, not only in the UI.
+	if(L?.rw_instant_build_active())
+		site.complete_instantly(L)
+		return TRUE
+
 	if(!silent)
 		L?.balloon_alert(L, "placed")
 	return TRUE
@@ -537,35 +594,34 @@
 	region_preview.Cut()
 
 
+// =====================================================================
+// MOB HELPERS
+// =====================================================================
 
-/obj/effect/rw_build_projection
-	name = "construction projection"
-	icon = null
-	icon_state = ""
-	anchored = FALSE
-	density = FALSE
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	invisibility = INVISIBILITY_ABSTRACT
-
-	base_pixel_x = 0
-	base_pixel_y = 0
-
-/obj/effect/rw_build_cost_panel
-	name = "construction resource projection"
-	icon = null
-	icon_state = ""
-	anchored = FALSE
-	density = FALSE
-	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	invisibility = INVISIBILITY_ABSTRACT
-
-	base_pixel_x = 0
-	base_pixel_y = 0
-
+/mob/living
+	/// Admin toggle: planned buildings complete immediately and cost nothing.
+	var/rw_instant_build = FALSE
 
 /mob/living/proc/rw_get_build_plan()
 	RETURN_TYPE(/datum/component/rw_build_plan)
 	return GetComponent(/datum/component/rw_build_plan)
+
+/mob/living/proc/rw_can_instant_build()
+	return rw_is_skill_admin(src)
+
+/mob/living/proc/rw_instant_build_active()
+	return rw_instant_build && rw_can_instant_build()
+
+/mob/living/proc/rw_toggle_instant_build()
+	if(!rw_can_instant_build())
+		rw_instant_build = FALSE
+		return FALSE
+	rw_instant_build = !rw_instant_build
+	balloon_alert(src, rw_instant_build ? "instant build: ON" : "instant build: OFF")
+	log_game("[key_name(src)] turned RW instant build [rw_instant_build ? "on" : "off"].")
+	var/datum/component/rw_build_plan/plan = rw_get_build_plan()
+	plan?.refresh_affordability(force = TRUE)
+	return TRUE
 
 /mob/living/proc/rw_start_build_plan(blueprint_id, material_path = null, mode = RW_BUILD_MODE_PLACE)
 	var/datum/building_blueprint/bp = null

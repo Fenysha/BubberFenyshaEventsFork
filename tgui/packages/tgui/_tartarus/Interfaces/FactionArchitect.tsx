@@ -9,12 +9,14 @@ import {
   NoticeBox,
   Section,
   Stack,
+  Tooltip,
 } from 'tgui-core/components';
 
 type CostEntry = {
   path: string;
   name: string;
   amount: number;
+  iconSrc?: string | null;
 };
 
 type StuffMaterial = {
@@ -30,6 +32,7 @@ type StuffMaterial = {
   armor_blunt: number;
   armor_heat: number;
   value: number;
+  iconSrc?: string | null;
 };
 
 type BlueprintEntry = {
@@ -49,6 +52,7 @@ type BlueprintEntry = {
   stuff_categories: string[];
   default_stuff: string | null;
   from_faction: boolean;
+  is_cancel?: boolean;
 };
 
 type ArchitectData = {
@@ -60,16 +64,80 @@ type ArchitectData = {
   planning_dir: string | null;
   planning_material: string | null;
   has_faction: boolean;
+  is_admin: boolean;
+  instant_build: boolean;
   materials: StuffMaterial[];
   material_categories: string[];
   stock: Record<string, number>;
+  inventory: Record<string, number>;
 };
 
 const GRID_STYLE: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))',
   gap: '8px',
 };
+
+const COLOR_BG = '#333333';
+const COLOR_CARD = '#444444';
+const COLOR_CARD_SELECTED = '#666666';
+const COLOR_ACTIVE = '#2d6a4f';
+const COLOR_OK = '#8fe08f';
+const COLOR_BAD = '#ff8c8c';
+const COLOR_ADMIN = '#b46cff';
+
+const toSrc = (src?: string | null) =>
+  src ? `data:image/png;base64,${src}` : undefined;
+
+/** A small pixel-art icon from a base64 PNG. Renders an empty slot if there is none. */
+function ItemIcon(props: { src?: string | null; size?: number }) {
+  const { src, size = 32 } = props;
+  const url = toSrc(src);
+  if (!url) {
+    return <Box inline width={`${size}px`} height={`${size}px`} />;
+  }
+  return (
+    <img
+      src={url}
+      width={size}
+      height={size}
+      style={{ imageRendering: 'pixelated', verticalAlign: 'middle' }}
+    />
+  );
+}
+
+/** Icon + "have / need", coloured by availability. */
+function CostChip(props: {
+  iconSrc?: string | null;
+  name: string;
+  need: number;
+  have: number;
+  admin?: boolean;
+}) {
+  const { iconSrc, name, need, have, admin } = props;
+  const ok = admin || have >= need;
+  return (
+    <Tooltip content={`${name}: need ${need}, you carry ${have}`}>
+      <Box
+        inline
+        mr={1}
+        mb={1}
+        px={0.5}
+        py={0.25}
+        style={{
+          border: `1px solid ${ok ? '#3f7a3f' : '#8a3a3a'}`,
+          borderRadius: '4px',
+          backgroundColor: ok ? '#243324' : '#3a2424',
+        }}
+      >
+        <ItemIcon src={iconSrc} size={28} />
+        <Box as="span" ml={0.5} bold color={ok ? COLOR_OK : COLOR_BAD}>
+          {admin ? need : `${Math.min(have, 999)}/${need}`}
+        </Box>
+      </Box>
+    </Tooltip>
+  );
+}
 
 export function FactionArchitect() {
   const { act, data } = useBackend<ArchitectData>();
@@ -81,8 +149,11 @@ export function FactionArchitect() {
     planning_name,
     planning_dir,
     has_faction,
+    is_admin,
+    instant_build,
     materials = [],
     stock = {},
+    inventory = {},
   } = data;
 
   const [tab, setTab] = useState(tabs[0] || 'Structure');
@@ -92,17 +163,30 @@ export function FactionArchitect() {
   const [matCategory, setMatCategory] = useState<string>('All');
 
   const normalizedSearch = search.trim().toLowerCase();
+  const searching = normalizedSearch.length > 0;
 
-  const visible = useMemo(() => {
-    return blueprints.filter((bp) => {
-      if (bp.tab !== tab) return false;
-      if (!normalizedSearch) return true;
-      return (
-        bp.name.toLowerCase().includes(normalizedSearch) ||
-        bp.desc.toLowerCase().includes(normalizedSearch)
-      );
-    });
-  }, [blueprints, tab, normalizedSearch]);
+  const matches = (bp: BlueprintEntry) =>
+    bp.name.toLowerCase().includes(normalizedSearch) ||
+    bp.desc.toLowerCase().includes(normalizedSearch);
+
+  // While searching, look through every category at once.
+  const visible = useMemo(
+    () =>
+      blueprints.filter((bp) => {
+        if (searching) return matches(bp);
+        return bp.tab === tab;
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [blueprints, tab, normalizedSearch],
+  );
+
+  const tabCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const bp of blueprints) {
+      counts[bp.tab] = (counts[bp.tab] || 0) + 1;
+    }
+    return counts;
+  }, [blueprints]);
 
   const selected = blueprints.find((b) => b.id === selectedId);
 
@@ -123,6 +207,19 @@ export function FactionArchitect() {
       allowedMaterials[0]
     : undefined;
 
+  /** Can the user pay for this blueprint right now, with the given material? */
+  const canAfford = (bp: BlueprintEntry, mat?: StuffMaterial) => {
+    if (instant_build) return true;
+    for (const c of bp.extra_costs) {
+      if ((inventory[c.path] || 0) < c.amount) return false;
+    }
+    if (bp.stuffed) {
+      const path = mat?.path || bp.default_stuff;
+      if (!path || (stock[path] || 0) < bp.stuff_cost) return false;
+    }
+    return true;
+  };
+
   const selectBlueprint = (id: string) => {
     setSelectedId(id);
     setMaterialPath(null);
@@ -136,15 +233,24 @@ export function FactionArchitect() {
     });
   const fallback = <Box width="48px" height="48px" />;
 
+  const selectedAffordable = selected
+    ? canAfford(selected, effectiveMaterial)
+    : true;
+
   return (
     <Window width={1000} height={700} title="Architect">
-      <Window.Content style={{ backgroundColor: '#333333' }}>
+      <Window.Content style={{ backgroundColor: COLOR_BG }}>
         <Stack vertical fill>
           {!!planning && (
             <Stack.Item>
               <NoticeBox info>
                 Planning: <b>{planning_name}</b>
                 {planning_dir ? ` · ${planning_dir}` : ''}
+                {!!instant_build && (
+                  <Box as="span" ml={1} bold color={COLOR_ADMIN}>
+                    · INSTANT
+                  </Box>
+                )}
                 <Button ml={1} icon="sync" onClick={() => act('rotate')}>
                   Rotate
                 </Button>
@@ -161,12 +267,29 @@ export function FactionArchitect() {
           )}
 
           <Stack.Item>
-            <Input
-              fluid
-              placeholder="Search blueprints..."
-              value={search}
-              onChange={setSearch}
-            />
+            <Stack>
+              <Stack.Item grow>
+                <Input
+                  fluid
+                  placeholder="Search all blueprints..."
+                  value={search}
+                  onChange={setSearch}
+                />
+              </Stack.Item>
+              {!!is_admin && (
+                <Stack.Item>
+                  <Button
+                    icon={instant_build ? 'bolt' : 'hammer'}
+                    selected={instant_build}
+                    color={instant_build ? 'purple' : 'default'}
+                    tooltip="Admin only. When on, planned buildings are completed instantly and cost nothing."
+                    onClick={() => act('toggle_instant')}
+                  >
+                    Instant build: {instant_build ? 'ON' : 'OFF'}
+                  </Button>
+                </Stack.Item>
+              )}
+            </Stack>
           </Stack.Item>
 
           <Stack.Item grow>
@@ -178,32 +301,54 @@ export function FactionArchitect() {
                       key={t}
                       fluid
                       mb={0.5}
-                      color={tab === t ? 'grey' : 'transparent'}
-                      onClick={() => setTab(t)}
+                      color={!searching && tab === t ? 'grey' : 'transparent'}
+                      onClick={() => {
+                        setSearch('');
+                        setTab(t);
+                      }}
                     >
                       {t}
+                      <Box as="span" ml={1} color="#999999">
+                        {tabCounts[t] || 0}
+                      </Box>
                     </Button>
                   ))}
                 </Section>
               </Stack.Item>
 
               <Stack.Item grow>
-                <Section fill scrollable title={tab}>
+                <Section
+                  fill
+                  scrollable
+                  title={searching ? `Search: "${search}"` : tab}
+                >
                   <Box style={GRID_STYLE}>
                     {visible.map((bp) => {
                       const isSelected = selectedId === bp.id;
                       const isActive = planning_id === bp.id;
+                      const affordable =
+                        bp.is_cancel || canAfford(bp, undefined);
                       return (
                         <Box key={bp.id}>
                           <Button
-                            tooltip={`${bp.name}${bp.from_faction ? ' (faction)' : ''}`}
+                            fluid
+                            tooltip={`${bp.name}${bp.from_faction ? ' (faction)' : ''}${
+                              affordable ? '' : ' — you lack resources'
+                            }`}
                             backgroundColor={
                               isActive
-                                ? '#2d6a4f'
+                                ? COLOR_ACTIVE
                                 : isSelected
-                                  ? '#666666'
-                                  : '#444444'
+                                  ? COLOR_CARD_SELECTED
+                                  : COLOR_CARD
                             }
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'center',
+                              borderBottom: `3px solid ${
+                                affordable ? 'transparent' : '#8a3a3a'
+                              }`,
+                            }}
                             onClick={() => selectBlueprint(bp.id)}
                             onDoubleClick={() => {
                               selectBlueprint(bp.id);
@@ -218,9 +363,6 @@ export function FactionArchitect() {
                               icon_state={bp.icon_state}
                               width="64px"
                               fallback={fallback}
-                              backgroundColor={
-                                isSelected ? '#666666' : '#444444'
-                              }
                             />
                           </Button>
                           <Box
@@ -242,186 +384,216 @@ export function FactionArchitect() {
                   </Box>
                   {!visible.length && (
                     <Box color="#888888" textAlign="center" py={4}>
-                      No blueprints in this category
+                      {searching
+                        ? 'Nothing found'
+                        : 'No blueprints in this category'}
                     </Box>
                   )}
                 </Section>
               </Stack.Item>
 
-              <Stack.Item basis="300px">
-                <Section title="Selected" mb={2}>
-                  {selected ? (
-                    <Stack vertical>
-                      <DmIcon
-                        icon={selected.icon}
-                        icon_state={selected.icon_state}
-                        width="96px"
-                        fallback={fallback}
-                      />
-                      <Box
-                        height="4px"
-                        width="96px"
-                        backgroundColor={
-                          effectiveMaterial?.color || 'transparent'
+              <Stack.Item basis="320px">
+                <Stack vertical fill>
+                  <Stack.Item grow>
+                    <Section fill scrollable title="Selected">
+                      {selected ? (
+                        <Stack vertical>
+                          <Stack.Item>
+                            <Stack>
+                              <Stack.Item>
+                                <DmIcon
+                                  icon={selected.icon}
+                                  icon_state={selected.icon_state}
+                                  width="96px"
+                                  fallback={fallback}
+                                />
+                                <Box
+                                  height="4px"
+                                  width="96px"
+                                  backgroundColor={
+                                    effectiveMaterial?.color || 'transparent'
+                                  }
+                                />
+                              </Stack.Item>
+                              <Stack.Item grow ml={1}>
+                                <Box fontWeight="bold">
+                                  {effectiveMaterial
+                                    ? `${effectiveMaterial.name} ${selected.name}`
+                                    : selected.name}
+                                </Box>
+                                <Box color="#aaaaaa" fontSize="12px" mt={0.5}>
+                                  {selected.is_multiblock
+                                    ? 'Multi-tile'
+                                    : 'Single tile'}
+                                  {selected.can_rotate ? ' · Rotatable' : ''}
+                                  {selected.from_faction
+                                    ? ' · Faction tech'
+                                    : ''}
+                                </Box>
+                              </Stack.Item>
+                            </Stack>
+                          </Stack.Item>
+                          <Stack.Item>
+                            <Box color="#b0b0b0">{selected.desc || '—'}</Box>
+                          </Stack.Item>
+
+                          <Stack.Item>
+                            <Box color="#d2d2d2" mb={0.5}>
+                              Cost
+                              {!!instant_build && (
+                                <Box as="span" ml={1} color={COLOR_ADMIN}>
+                                  (free — instant build)
+                                </Box>
+                              )}
+                            </Box>
+                            <Box>
+                              {selected.stuffed && (
+                                <CostChip
+                                  iconSrc={effectiveMaterial?.iconSrc}
+                                  name={effectiveMaterial?.name || 'material'}
+                                  need={selected.stuff_cost}
+                                  have={stock[effectiveMaterial?.path || ''] || 0}
+                                  admin={instant_build}
+                                />
+                              )}
+                              {selected.extra_costs.map((c) => (
+                                <CostChip
+                                  key={c.path}
+                                  iconSrc={c.iconSrc}
+                                  name={c.name}
+                                  need={c.amount}
+                                  have={inventory[c.path] || 0}
+                                  admin={instant_build}
+                                />
+                              ))}
+                            </Box>
+                            {!selected.stuffed &&
+                              !selected.extra_costs.length && (
+                                <Box color="#888888">Free</Box>
+                              )}
+                            <Box color="#888888" fontSize="12px">
+                              {instant_build
+                                ? 'Completes instantly'
+                                : `Time: ${(selected.construction_time / 10).toFixed(1)}s · ${selected.build_steps} steps`}
+                            </Box>
+                          </Stack.Item>
+
+                          {!!selected.stuffed && (
+                            <Stack.Item>
+                              <Box color="#d2d2d2" mb={0.5}>
+                                Made of
+                              </Box>
+                              <Box mb={0.5}>
+                                {['All', ...allowedCategories].map((c) => (
+                                  <Button
+                                    key={c}
+                                    compact
+                                    mr={0.5}
+                                    color={
+                                      matCategory === c ? 'grey' : 'transparent'
+                                    }
+                                    onClick={() => setMatCategory(c)}
+                                  >
+                                    {c}
+                                  </Button>
+                                ))}
+                              </Box>
+                              <Box
+                                style={{ maxHeight: '190px', overflowY: 'auto' }}
+                              >
+                                {shownMaterials.map((m) => {
+                                  const have = stock[m.path] || 0;
+                                  const enough =
+                                    instant_build ||
+                                    have >= selected.stuff_cost;
+                                  return (
+                                    <Button
+                                      key={m.path}
+                                      fluid
+                                      mb={0.5}
+                                      selected={
+                                        effectiveMaterial?.path === m.path
+                                      }
+                                      color="transparent"
+                                      tooltip={`${m.desc} HP ×${m.hp} · Beauty ×${m.beauty} · Flammability ${Math.round(
+                                        m.flammability * 100,
+                                      )}% · Armor ${m.armor_sharp}/${m.armor_blunt}/${m.armor_heat} · Value ${m.value}`}
+                                      onClick={() => setMaterialPath(m.path)}
+                                    >
+                                      <Box
+                                        as="span"
+                                        inline
+                                        mr={1}
+                                        width="10px"
+                                        height="10px"
+                                        backgroundColor={m.color}
+                                        style={{ border: '1px solid #000' }}
+                                      />
+                                      {m.name}
+                                      <Box
+                                        as="span"
+                                        ml={1}
+                                        color={enough ? COLOR_OK : '#888'}
+                                      >
+                                        ({have})
+                                      </Box>
+                                    </Button>
+                                  );
+                                })}
+                              </Box>
+                            </Stack.Item>
+                          )}
+                        </Stack>
+                      ) : (
+                        <Box color="#aaaaaa">
+                          Select a blueprint. Double-click to plan it at once.
+                        </Box>
+                      )}
+                      {!has_faction && (
+                        <Box color="#888888" fontSize="12px" mt={2}>
+                          Join a faction to unlock additional blueprints via
+                          research.
+                        </Box>
+                      )}
+                    </Section>
+                  </Stack.Item>
+
+                  <Stack.Item>
+                    <Section>
+                      <Button
+                        fluid
+                        icon="pencil-alt"
+                        color={
+                          instant_build
+                            ? 'purple'
+                            : selectedAffordable
+                              ? 'good'
+                              : 'average'
                         }
-                      />
-                      <Stack.Item>
-                        <Box fontWeight="bold">
-                          {effectiveMaterial
-                            ? `${effectiveMaterial.name} ${selected.name}`
-                            : selected.name}
-                        </Box>
-                      </Stack.Item>
-                      <Stack.Item>
-                        <Box color="#b0b0b0">{selected.desc || '—'}</Box>
-                      </Stack.Item>
-                      <Stack.Item>
-                        <Box color="#aaaaaa" fontSize="12px">
-                          {selected.is_multiblock
-                            ? 'Multi-tile'
-                            : 'Single tile'}
-                          {selected.can_rotate ? ' · Rotatable' : ''}
-                          {selected.from_faction ? ' · Faction tech' : ''}
-                        </Box>
-                      </Stack.Item>
-                    </Stack>
-                  ) : (
-                    <Box color="#aaaaaa">Nothing selected</Box>
-                  )}
-                </Section>
-
-                <Section title="Build settings" mb={2}>
-                  {selected ? (
-                    <Stack vertical>
-                      <Stack.Item>
-                        <Box color="#d2d2d2" mb={0.5}>
-                          Cost
-                        </Box>
-                        {selected.stuffed && (
-                          <Box
-                            color={
-                              (stock[effectiveMaterial?.path || ''] || 0) >=
-                              selected.stuff_cost
-                                ? '#cccccc'
-                                : '#ff8888'
-                            }
-                          >
-                            {effectiveMaterial?.name || 'material'} ×{' '}
-                            {selected.stuff_cost}
-                            <Box as="span" color="#888888">
-                              {' '}
-                              (have {stock[effectiveMaterial?.path || ''] || 0})
-                            </Box>
-                          </Box>
-                        )}
-                        {selected.extra_costs.map((m) => (
-                          <Box key={m.path} color="#cccccc">
-                            {m.name} × {m.amount}
-                          </Box>
-                        ))}
-                        {!selected.stuffed && !selected.extra_costs.length && (
-                          <Box color="#888888">Free</Box>
-                        )}
-                      </Stack.Item>
-                      <Stack.Item>
-                        <Box color="#888888" fontSize="12px">
-                          Time: {(selected.construction_time / 10).toFixed(1)}s
-                          · {selected.build_steps} steps
-                        </Box>
-                      </Stack.Item>
-                    </Stack>
-                  ) : (
-                    <Box color="#888888">Select a blueprint</Box>
-                  )}
-                </Section>
-
-                {!!selected?.stuffed && (
-                  <Section title="Made of" mb={2}>
-                    <Box mb={0.5}>
-                      {['All', ...allowedCategories].map((c) => (
+                        disabled={!selected}
+                        tooltip={
+                          selected && !selectedAffordable
+                            ? 'You can plan it, but you do not carry all resources yet.'
+                            : undefined
+                        }
+                        onClick={() => selected && plan(selected)}
+                      >
+                        {instant_build ? 'Plan (instant)' : 'Plan'}
+                      </Button>
+                      {!!planning && (
                         <Button
-                          key={c}
-                          compact
-                          mr={0.5}
-                          color={matCategory === c ? 'grey' : 'transparent'}
-                          onClick={() => setMatCategory(c)}
+                          fluid
+                          mt={1}
+                          icon="times"
+                          color="bad"
+                          onClick={() => act('cancel')}
                         >
-                          {c}
+                          Cancel planning
                         </Button>
-                      ))}
-                    </Box>
-                    <Box style={{ maxHeight: '170px', overflowY: 'auto' }}>
-                      {shownMaterials.map((m) => {
-                        const have = stock[m.path] || 0;
-                        return (
-                          <Button
-                            key={m.path}
-                            fluid
-                            mb={0.5}
-                            selected={effectiveMaterial?.path === m.path}
-                            color="transparent"
-                            tooltip={`${m.desc} HP ×${m.hp} · Beauty ×${m.beauty} · Flammability ${Math.round(
-                              m.flammability * 100,
-                            )}% · Armor ${m.armor_sharp}/${m.armor_blunt}/${m.armor_heat} · Value ${m.value}`}
-                            onClick={() => setMaterialPath(m.path)}
-                          >
-                            <Box
-                              as="span"
-                              inline
-                              mr={1}
-                              width="10px"
-                              height="10px"
-                              backgroundColor={m.color}
-                              style={{ border: '1px solid #000' }}
-                            />
-                            {m.name}
-                            <Box
-                              as="span"
-                              ml={1}
-                              color={
-                                have >= selected.stuff_cost ? '#8f8' : '#888'
-                              }
-                            >
-                              ({have})
-                            </Box>
-                          </Button>
-                        );
-                      })}
-                    </Box>
-                  </Section>
-                )}
-
-                {!has_faction && (
-                  <Section mb={2}>
-                    <Box color="#888888" fontSize="12px">
-                      Join a faction to unlock additional blueprints via
-                      research.
-                    </Box>
-                  </Section>
-                )}
-
-                <Section>
-                  <Button
-                    fluid
-                    icon="pencil-alt"
-                    color="good"
-                    disabled={!selected}
-                    onClick={() => selected && plan(selected)}
-                  >
-                    Plan
-                  </Button>
-                  {!!planning && (
-                    <Button
-                      fluid
-                      mt={1}
-                      icon="times"
-                      color="bad"
-                      onClick={() => act('cancel')}
-                    >
-                      Cancel planning
-                    </Button>
-                  )}
-                </Section>
+                      )}
+                    </Section>
+                  </Stack.Item>
+                </Stack>
               </Stack.Item>
             </Stack>
           </Stack.Item>

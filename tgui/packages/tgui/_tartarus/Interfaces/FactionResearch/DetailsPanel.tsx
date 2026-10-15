@@ -1,6 +1,13 @@
-import { Box, Button, LabeledList, Section, Stack } from 'tgui-core/components';
+import {
+  Box,
+  Button,
+  Divider,
+  LabeledList,
+  Section,
+  Stack,
+} from 'tgui-core/components';
 
-import { STATUS_COLOR, STATUS_LABEL, type Status } from './constants';
+import { ERA_COLORS, STATUS_COLOR, STATUS_LABEL, type Status } from './constants';
 import type { NodeEntry } from './types';
 
 type Props = {
@@ -11,6 +18,7 @@ type Props = {
   queue: Set<string>;
   progress: Record<string, number>;
   canManage: boolean;
+  isAdmin?: boolean;
   act: (action: string, payload?: object) => void;
   onSelect: (id: string) => void;
 };
@@ -37,6 +45,7 @@ export const DetailsPanel = (props: Props) => {
     queue,
     progress,
     canManage,
+    isAdmin = false,
     act,
     onSelect,
   } = props;
@@ -44,7 +53,9 @@ export const DetailsPanel = (props: Props) => {
   if (!node) {
     return (
       <Section fill title="Details">
-        <Box color="label">Select a technology to see details.</Box>
+        <Box color="label" italic>
+          Select a technology on the tree to inspect it.
+        </Box>
       </Section>
     );
   }
@@ -53,6 +64,7 @@ export const DetailsPanel = (props: Props) => {
   const nodeProgress = progress[node.id] ?? 0;
   const unlocks = nodes.filter((n) => n.prereqs.includes(node.id));
   const nameOf = (id: string) => nodes.find((n) => n.id === id)?.name ?? id;
+  const eraColor = ERA_COLORS[node.era] || '#aaa';
 
   const canEnqueue =
     status === 'available' || status === 'locked'
@@ -67,43 +79,112 @@ export const DetailsPanel = (props: Props) => {
   return (
     <Stack fill vertical>
       <Stack.Item grow>
-        <Section fill scrollable title="Details">
+        <Section
+          fill
+          scrollable
+          title="Details"
+          buttons={
+            <Box
+              inline
+              style={{
+                color: eraColor,
+                fontSize: '11px',
+                fontWeight: 'bold',
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {node.era || '—'}
+            </Box>
+          }
+        >
           <Stack vertical>
             <Stack.Item>
-              <Box bold fontSize="1.15em" color={STATUS_COLOR[status]}>
+              <Box
+                bold
+                fontSize="1.2em"
+                color={STATUS_COLOR[status]}
+                style={{ lineHeight: 1.25 }}
+              >
                 {node.name}
               </Box>
-              <Box color="label" italic>
+              <Box
+                mt={0.4}
+                style={{
+                  display: 'inline-block',
+                  padding: '1px 8px',
+                  borderRadius: '3px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  background:
+                    status === 'researched'
+                      ? 'rgba(39,174,96,0.25)'
+                      : status === 'current'
+                        ? 'rgba(52,152,219,0.3)'
+                        : status === 'queued'
+                          ? 'rgba(142,68,173,0.25)'
+                          : status === 'available'
+                            ? 'rgba(255,255,255,0.08)'
+                            : 'rgba(80,80,80,0.35)',
+                  color:
+                    status === 'researched'
+                      ? '#2ecc71'
+                      : status === 'current'
+                        ? '#5dade2'
+                        : status === 'queued'
+                          ? '#bb8fce'
+                          : status === 'available'
+                            ? '#ddd'
+                            : '#999',
+                }}
+              >
                 {STATUS_LABEL[status]}
               </Box>
             </Stack.Item>
 
-            <Stack.Item>{node.desc}</Stack.Item>
+            <Stack.Item>
+              <Box color="label" style={{ lineHeight: 1.4 }}>
+                {node.desc}
+              </Box>
+            </Stack.Item>
 
             <Stack.Item>
               <LabeledList>
                 <LabeledList.Item label="Cost">
-                  {status === 'researched'
-                    ? node.cost
-                    : `${Math.floor(nodeProgress)} / ${node.cost}`}
-                </LabeledList.Item>
-
-                <LabeledList.Item label="Era">
-                  {node.era || '—'}
+                  {status === 'researched' ? (
+                    node.cost
+                  ) : (
+                    <Box inline>
+                      <Box
+                        inline
+                        bold
+                        color={
+                          nodeProgress >= node.cost ? 'good' : undefined
+                        }
+                      >
+                        {Math.floor(nodeProgress)}
+                      </Box>
+                      {' / '}
+                      {node.cost}
+                    </Box>
+                  )}
                 </LabeledList.Item>
 
                 <LabeledList.Item label="Requires">
                   {node.prereqs.length ? (
-                    node.prereqs.map((p) => (
-                      <Button
-                        key={p}
-                        compact
-                        color={researched.has(p) ? 'good' : 'bad'}
-                        onClick={() => onSelect(p)}
-                      >
-                        {nameOf(p)}
-                      </Button>
-                    ))
+                    <Stack wrap>
+                      {node.prereqs.map((p) => (
+                        <Stack.Item key={p}>
+                          <Button
+                            compact
+                            color={researched.has(p) ? 'good' : 'bad'}
+                            onClick={() => onSelect(p)}
+                          >
+                            {nameOf(p)}
+                          </Button>
+                        </Stack.Item>
+                      ))}
+                    </Stack>
                   ) : (
                     <Box color="label">—</Box>
                   )}
@@ -111,16 +192,19 @@ export const DetailsPanel = (props: Props) => {
 
                 <LabeledList.Item label="Leads to">
                   {unlocks.length ? (
-                    unlocks.map((u) => (
-                      <Button
-                        key={u.id}
-                        compact
-                        color="transparent"
-                        onClick={() => onSelect(u.id)}
-                      >
-                        {u.name}
-                      </Button>
-                    ))
+                    <Stack wrap>
+                      {unlocks.map((u) => (
+                        <Stack.Item key={u.id}>
+                          <Button
+                            compact
+                            color="transparent"
+                            onClick={() => onSelect(u.id)}
+                          >
+                            {u.name}
+                          </Button>
+                        </Stack.Item>
+                      ))}
+                    </Stack>
                   ) : (
                     <Box color="label">—</Box>
                   )}
@@ -133,14 +217,23 @@ export const DetailsPanel = (props: Props) => {
                 </LabeledList.Item>
 
                 <LabeledList.Item label="Attachments">
-                  {node.attachments.length ? node.attachments.join(', ') : '—'}
+                  {node.attachments.length
+                    ? node.attachments.join(', ')
+                    : '—'}
                 </LabeledList.Item>
 
                 <LabeledList.Item label="Unlocks">
                   {node.rewards.length ? (
                     node.rewards.map((r, i) => (
                       <Box key={i}>
-                        {r.kind === 'blueprint' ? 'Building' : 'Recipe'}:{' '}
+                        <Box
+                          inline
+                          color={r.kind === 'blueprint' ? 'blue' : 'average'}
+                          bold
+                          mr={0.5}
+                        >
+                          {r.kind === 'blueprint' ? 'Building' : 'Recipe'}
+                        </Box>
                         {r.name}
                       </Box>
                     ))
@@ -190,7 +283,9 @@ export const DetailsPanel = (props: Props) => {
                         disabled={!canManage || !canEnqueue}
                         tooltip={
                           tip ??
-                          (canEnqueue ? undefined : 'Prerequisites are missing')
+                          (canEnqueue
+                            ? undefined
+                            : 'Prerequisites are missing')
                         }
                         onClick={() => act('enqueue', { id: node.id })}
                       >
@@ -211,6 +306,68 @@ export const DetailsPanel = (props: Props) => {
                         onClick={() => act('start_now', { id: node.id })}
                       >
                         Start now
+                      </Button>
+                    </Stack.Item>
+                  )}
+                </Stack>
+              </Stack.Item>
+            )}
+
+            {isAdmin && (
+              <Stack.Item>
+                <Divider />
+                <Box
+                  mb={0.75}
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    color: '#bb8fce',
+                  }}
+                >
+                  Admin tools
+                </Box>
+                <Stack wrap>
+                  {status !== 'researched' && (
+                    <Stack.Item>
+                      <Button
+                        icon="unlock"
+                        color="purple"
+                        tooltip="Instantly unlock this node for the viewed faction (ignores prerequisites)"
+                        onClick={() =>
+                          act('admin_force_research', { id: node.id })
+                        }
+                      >
+                        Force research
+                      </Button>
+                    </Stack.Item>
+                  )}
+                  {status === 'researched' && (
+                    <Stack.Item>
+                      <Button
+                        icon="lock"
+                        color="bad"
+                        tooltip="Remove this node from researched (does not cascade)"
+                        onClick={() =>
+                          act('admin_force_unresearch', { id: node.id })
+                        }
+                      >
+                        Force unresearch
+                      </Button>
+                    </Stack.Item>
+                  )}
+                  {status !== 'researched' && status !== 'current' && (
+                    <Stack.Item>
+                      <Button
+                        icon="bolt"
+                        color="average"
+                        tooltip="Set as current research and fill progress to almost complete"
+                        onClick={() =>
+                          act('admin_force_progress', { id: node.id })
+                        }
+                      >
+                        Force near-complete
                       </Button>
                     </Stack.Item>
                   )}

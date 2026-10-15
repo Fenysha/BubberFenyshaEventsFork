@@ -345,6 +345,35 @@
 	return list("ready" = FALSE, "text" = "No working research workbench.")
 
 
+/// Returns TRUE if the user is a full admin (adjust rank check to your codebase).
+/datum/techweb/faction/proc/is_research_admin(mob/user)
+	if(!user?.client)
+		return FALSE
+	// Common tgstation-style check — change if your admin ranks differ.
+	return !!user.client.holder && check_rights_for(user.client, R_ADMIN)
+
+/// Build the list of factions that expose a techweb for the admin browser.
+/datum/techweb/faction/proc/get_admin_faction_options()
+	var/list/options = list()
+	for(var/datum/rw_faction/faction as anything in SSfactions.get_all_factions())
+		if(QDELETED(faction))
+			continue
+		// Prefer player factions that actually own a techweb.
+		var/datum/rw_faction/player/pf = faction
+		if(!istype(pf) || !pf.techweb)
+			continue
+		var/researched_count = 0
+		for(var/node_id in pf.techweb.researched_nodes)
+			if(pf.techweb.researched_nodes[node_id])
+				researched_count++
+		options += list(list(
+			"id" = faction.id,
+			"name" = faction.name,
+			"color" = faction.color || "#FFFFFF",
+			"researched_count" = researched_count,
+		))
+	return options
+
 /datum/techweb/faction/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -352,9 +381,12 @@
 		ui.open()
 
 /datum/techweb/faction/ui_state(mob/user)
+	if(is_research_admin(user))
+		return GLOB.always_state
 	if(owner_faction?.is_member(user))
 		return GLOB.not_incapacitated_state
 	return GLOB.never_state
+
 
 /datum/techweb/faction/ui_static_data(mob/user)
 	var/list/data = list()
@@ -402,6 +434,8 @@
 
 	data["nodes"] = nodes
 	return data
+
+
 /datum/techweb/faction/ui_data(mob/user)
 	var/list/data = list()
 
@@ -418,7 +452,20 @@
 	var/list/bench_status = get_bench_status()
 	data["bench_ready"] = bench_status["ready"]
 	data["bench_text"] = bench_status["text"]
+
+	var/admin = is_research_admin(user)
+	data["is_admin"] = admin
+	data["admin_view"] = admin
+	data["current_faction_id"] = owner_faction?.id
+	data["current_faction_name"] = owner_faction?.name
+	data["current_faction_color"] = owner_faction?.color
+	if(admin)
+		data["factions"] = get_admin_faction_options()
+	else
+		data["factions"] = list()
+
 	return data
+
 
 /datum/techweb/faction/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
@@ -426,7 +473,80 @@
 		return
 
 	var/mob/living/user = ui.user
-	if(!owner_faction?.can_manage_research(user))
+	var/is_admin = is_research_admin(user)
+
+	// Admin-only actions (no membership required)
+	if(is_admin)
+		switch(action)
+			if("admin_select_faction")
+				var/faction_id = params["id"]
+				if(!istext(faction_id))
+					return FALSE
+				var/datum/rw_faction/player/target = SSfactions.get_faction(faction_id)
+				if(!istype(target) || !target.techweb)
+					user.balloon_alert(user, "faction has no techweb!")
+					return FALSE
+				// Re-open UI on the selected faction's techweb
+				target.techweb.ui_interact(user)
+				// Close the previous window if still open
+				if(ui)
+					ui.close()
+				return TRUE
+
+			if("admin_force_research")
+				var/node_id = params["id"]
+				if(!istext(node_id))
+					return FALSE
+				var/datum/techweb_node/rw/node = get_rw_node(node_id)
+				if(!node)
+					return FALSE
+				if(researched_nodes[node_id])
+					return FALSE
+				// Bypass prerequisites / visibility / queue
+				apply_node(node)
+				research_progress -= node_id
+				if(current_research_id == node_id)
+					current_research_id = null
+					advance_queue()
+				research_queue -= node_id
+				if(owner_faction)
+					for(var/mob/living/M in owner_faction.members)
+						to_chat(M, span_boldnotice("\[Admin\] Research unlocked: [node.display_name]"))
+				return TRUE
+
+			if("admin_force_unresearch")
+				var/node_id = params["id"]
+				if(!istext(node_id))
+					return FALSE
+				if(!researched_nodes[node_id])
+					return FALSE
+				researched_nodes -= node_id
+				// Note: blueprints/recipes stay unlocked intentionally (safer for live rounds).
+				// Cascade-remove is left as a deliberate non-feature.
+				if(current_research_id == node_id)
+					current_research_id = null
+					advance_queue()
+				research_queue -= node_id
+				research_progress -= node_id
+				return TRUE
+
+			if("admin_force_progress")
+				var/node_id = params["id"]
+				if(!istext(node_id))
+					return FALSE
+				var/datum/techweb_node/rw/node = get_rw_node(node_id)
+				if(!node || researched_nodes[node_id])
+					return FALSE
+				// Make it the current research and nearly complete
+				if(current_research_id && current_research_id != node_id)
+					research_queue.Insert(1, current_research_id)
+				current_research_id = node_id
+				research_queue -= node_id
+				research_progress[node_id] = max(0, node.research_cost - 1)
+				return TRUE
+
+	// Regular researcher actions
+	if(!owner_faction?.can_manage_research(user) && !is_admin)
 		user.balloon_alert(user, "researchers only!")
 		return FALSE
 
@@ -449,3 +569,20 @@
 			return clear_queue()
 
 	return FALSE
+
+
+
+ADMIN_VERB(faction_research_view, R_ADMIN, "\[RW\] Faction Research Browser", "Open factions research overview.", ADMIN_CATEGORY_EVENTS)
+	var/list/choices = list()
+	for(var/datum/rw_faction/player/f as anything in SSfactions.get_all_player_factions())
+		if(QDELETED(f) || !f.techweb)
+			continue
+		choices[f.name] = f
+	if(!length(choices))
+		to_chat(src, span_warning("No player factions with a techweb."))
+		return
+	var/pick = tgui_input_list(usr, "Select faction techweb", "Research Browser", choices)
+	if(!pick)
+		return
+	var/datum/rw_faction/player/chosen = choices[pick]
+	chosen.techweb.ui_interact(usr)

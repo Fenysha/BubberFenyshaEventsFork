@@ -13,6 +13,15 @@
 	var/list/blueprint_ids = list()
 	var/list/recipe_ids = list()
 
+	/// Skill used (and trained) while researching this node.
+	var/required_skill = RW_SKILL_INTELLECTUAL
+	/// Minimum skill level needed to work on this node at all.
+	var/min_skill_level = 0
+	/// Skill level at which one research cycle takes exactly RW_RESEARCH_CYCLE_TIME.
+	var/ideal_skill = RW_RESEARCH_IDEAL_SKILL
+	/// XP granted to the researcher per finished cycle.
+	var/research_skill_xp = 2
+
 	var/tech_era = RW_TECH_ERA_NEOLITHIC
 	var/group_id = "general"
 

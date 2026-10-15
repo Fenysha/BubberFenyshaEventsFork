@@ -37,6 +37,32 @@
 	result_amount = 2
 	requirements = list(/obj/item/stack/sheet/iron = 1)
 	required_bench = /obj/machinery/rw_workbench/crafting
+	// Type 1: bring the ingredients to the bench, then one timed craft runs.
+	craft_type = RW_CRAFT_TYPE_DELIVER
+	crafting_time = 3 SECONDS
+	min_skill = 0
+
+/// Example of a workpiece recipe: ingredients turn into a workpiece you keep working on.
+/// Swap result_path for any item that exists in your codebase.
+/datum/rw_crafting_recipe/forged_crowbar
+	id = "rw_forged_crowbar"
+	name = "Forged Crowbar"
+	desc = "Hammer iron and rods into a sturdy crowbar. Needs several rounds of work."
+	category = "Metalworking"
+	result_path = /obj/item/crowbar
+	requirements = list(
+		/obj/item/stack/sheet/iron = 2,
+		/obj/item/stack/rods = 2,
+	)
+	required_bench = /obj/machinery/rw_workbench/crafting
+	// Type 2: ingredients are absorbed into a workpiece, then worked on step by step.
+	craft_type = RW_CRAFT_TYPE_WORKPIECE
+	crafting_time = 10 SECONDS
+	work_steps = 5
+	required_skill = RW_SKILL_CRAFTING
+	min_skill = 3
+	ideal_skill = 8
+	skill_xp = 2
 
 /// Example category-restricted station. Add this subtype to maps where metalworking is needed.
 /obj/machinery/rw_workbench/crafting/metalworking
@@ -87,7 +113,8 @@
 	tech_era = RW_TECH_ERA_NEOLITHIC
 	group_id = "metal"
 	workbench_types = list(/obj/machinery/rw_workbench/research)
-	recipe_ids = list("rw_iron_rods")
+	recipe_ids = list("rw_iron_rods", "rw_forged_crowbar")
+	min_skill_level = 2
 
 /datum/techweb_node/rw/simple_weapons
 	id = "RW_SIMPLE_WEAPONS"
@@ -126,6 +153,7 @@
 	group_id = "tools"
 	workbench_types = list(/obj/machinery/rw_workbench/research)
 	required_attachments = list(/obj/structure/rw_bench_attachment/analyzer)
+	min_skill_level = 4
 	rw_flags = RW_RESEARCH_HIDDEN
 
 /datum/techweb_node/rw/stone_masonry
@@ -145,6 +173,7 @@
 	research_cost = 1200
 	tech_era = RW_TECH_ERA_MEDIEVAL
 	group_id = "metal"
+	min_skill_level = 5
 
 /datum/techweb_node/rw/medicine_herbal
 	id = "RW_MEDICINE_HERBAL"
@@ -163,6 +192,7 @@
 	research_cost = 2000
 	tech_era = RW_TECH_ERA_INDUSTRIAL
 	group_id = "power"
+	min_skill_level = 6
 
 /datum/techweb_node/rw/machining
 	id = "RW_MACHINING"
@@ -172,6 +202,7 @@
 	research_cost = 2200
 	tech_era = RW_TECH_ERA_INDUSTRIAL
 	group_id = "tools"
+	min_skill_level = 7
 
 /datum/techweb_node/rw/gunpowder
 	id = "RW_GUNPOWDER"
@@ -199,6 +230,7 @@
 	research_cost = 3000
 	tech_era = RW_TECH_ERA_SPACER
 	group_id = "electronics"
+	min_skill_level = 9
 
 /datum/techweb_node/rw/space_suits
 	id = "RW_SPACE_SUITS"
@@ -227,6 +259,7 @@
 	research_cost = 5000
 	tech_era = RW_TECH_ERA_ULTRATECH
 	group_id = "power"
+	min_skill_level = 12
 
 /datum/techweb_node/rw/ai_basics
 	id = "RW_AI_BASICS"
@@ -236,6 +269,7 @@
 	research_cost = 5500
 	tech_era = RW_TECH_ERA_ULTRATECH
 	group_id = "electronics"
+	min_skill_level = 13
 
 /datum/techweb_node/rw/teleportation
 	id = "RW_TELEPORTATION"
@@ -245,3 +279,5 @@
 	research_cost = 8000
 	tech_era = RW_TECH_ERA_ULTRATECH
 	group_id = "space"
+
+	min_skill_level = 15
