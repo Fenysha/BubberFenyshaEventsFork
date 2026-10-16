@@ -14,12 +14,16 @@
 	// Mapload builds every neighbor before anyone should look at edges.
 	// A per-turf refresh here redraws the same corner once per adjacent tile.
 	if(!mapload)
-		update_edges()
-		refresh_blend_neighbors()
+		if(SSturf_edges?.edges_enabled)
+			update_edges()
+			refresh_blend_neighbors()
+		else if(SSturf_edges)
+			SSturf_edges.queue_edges(src)
 
 	. = ..()
 
 /turf/open/Destroy()
+	SSturf_edges?.remove_from_queues(src)
 	clear_edge_overlays()
 	return ..()
 
@@ -45,29 +49,28 @@
 	return cardinal_edges_only
 
 
+/// Bitmask of the edge states this turf can provide (cached per icon file, cardinal limit applied).
+/turf/open/proc/get_edge_mask()
+	var/mask = get_icon_edge_mask(icon)
+	if(cardinal_edges_only)
+		mask &= TURF_EDGE_MASK_CARDINAL
+	return mask
+
+
 /// Returns TRUE if this turf has a valid icon that can provide the requested edge state.
 /turf/open/proc/has_edge_state(direction)
 	if(!icon || !direction)
 		return FALSE
-
-	if(cardinal_edges_only && (direction & (direction - 1)))
+	var/bit = GLOB.turf_edge_bit_by_dir[direction]
+	if(!bit)
 		return FALSE
-
-	var/edge_state = TURF_EDGE_STATE_FOR_DIR(direction)
-	if(!edge_state)
-		return FALSE
-
-	return icon_exists(icon, edge_state)
+	return !!(get_edge_mask() & bit)
 
 
 /// Returns TRUE if this turf can actually contribute an edge overlay.
 /turf/open/proc/can_provide_edge(direction)
 	if(!icon || isnull(edge_priority))
 		return FALSE
-
-	if(cardinal_edges_only && (direction & (direction - 1)))
-		return FALSE
-
 	return has_edge_state(direction)
 
 
@@ -89,8 +92,10 @@
 	edge_overlays = new_overlays
 
 
-/// Rebuilds all edge overlays for this turf.
 /turf/open/proc/update_edges(turf/from)
+	if(SSturf_edges && !SSturf_edges.edges_enabled)
+		SSturf_edges.queue_edges(src)
+		return
 	rebuild_edges(from)
 
 
@@ -104,57 +109,52 @@
 		neighbor.update_edges(src)
 
 
-/// Rebuilds the overlays contributed by higher-priority neighboring turfs.
 /turf/open/proc/rebuild_edges(turf/from)
-	if(!icon)
-		clear_edge_overlays()
-		return
-
 	var/src_priority = get_blend_priority()
-	if(isnull(src_priority))
+	if(!icon || isnull(src_priority))
 		clear_edge_overlays()
 		return
 
-	clear_edge_overlays()
-
-	var/list/new_overlays = list()
+	var/list/new_overlays
+	var/list/states = GLOB.turf_edge_state_by_dir
+	var/list/bits = GLOB.turf_edge_bit_by_dir
+	var/base_layer = layer + 0.01
 
 	for(var/direction in GLOB.alldirs)
-		if(!direction)
-			continue
-
-		var/turf/open/neighbor = turf_wrap_step(src, direction)
+		// Fast path: only wrap around the planet border when get_step runs off the map.
+		var/turf/open/neighbor = get_step(src, direction) || turf_wrap_step(src, direction)
 		if(!neighbor || neighbor == src || !istype(neighbor, /turf/open))
 			continue
 
 		var/neighbor_priority = neighbor.get_blend_priority()
 		if(isnull(neighbor_priority) || neighbor_priority <= src_priority)
 			continue
-		if(istype(src, /turf/open/rimworld/grass) && istype(neighbor, /turf/open/rimworld/grass))
+
+		// Same concrete type: no edge (identical grass variants stay seamless).
+		// Different grass subtypes (or any different open types) still blend.
+		if(neighbor.type == type)
 			continue
 
 		var/bleed_dir = REVERSE_DIR(direction)
-
-		if(neighbor.uses_cardinal_edges_only() && (bleed_dir & (bleed_dir - 1)))
+		if(!neighbor.icon || isnull(neighbor.edge_priority))
 			continue
-
-		if(!neighbor.can_provide_edge(bleed_dir))
-			continue
-
-		var/edge_state = TURF_EDGE_STATE_FOR_DIR(bleed_dir)
-		if(!edge_state || !icon_exists(neighbor.icon, edge_state))
+		// One cached mask lookup instead of three icon_exists() calls per neighbour.
+		if(!(neighbor.get_edge_mask() & bits[bleed_dir]))
 			continue
 
 		var/mutable_appearance/edge = mutable_appearance(
 			neighbor.icon,
-			edge_state,
-			layer + 0.01 + (neighbor_priority * 0.0001),
+			states[bleed_dir],
+			base_layer + (neighbor_priority * 0.0001),
 			appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 		)
-
 		edge.color = neighbor.color
-		new_overlays += edge
+		LAZYADD(new_overlays, edge)
 
-	if(length(new_overlays))
+	// Touch the overlay system only when something actually changes.
+	if(!new_overlays && !edge_overlays)
+		return
+	clear_edge_overlays()
+	if(new_overlays)
 		add_overlay(new_overlays)
 		store_edge_overlays(new_overlays)

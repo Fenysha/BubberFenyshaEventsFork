@@ -8,6 +8,65 @@
 	(dir) == SOUTHEAST ? "edge_SE" : \
 	(dir) == SOUTHWEST ? "edge_SW" : null)
 
+/// Edge bit layout (shared with the Rust stamp: bit n of `edge_mask`).
+/// N S E W NE NW SE SW -> 1 2 4 8 16 32 64 128
+#define TURF_EDGE_MASK_CARDINAL (1|2|4|8)
+
+/// Edge icon states in bit order.
+GLOBAL_LIST_INIT(turf_edge_states_in_order, list("edge_N", "edge_S", "edge_E", "edge_W", "edge_NE", "edge_NW", "edge_SE", "edge_SW"))
+
+/// dir (1..10) -> edge icon state. Indexed directly, no ternary chain.
+GLOBAL_LIST_INIT(turf_edge_state_by_dir, init_turf_edge_state_by_dir())
+/// dir (1..10) -> edge bit.
+GLOBAL_LIST_INIT(turf_edge_bit_by_dir, init_turf_edge_bit_by_dir())
+/// icon file -> bitmask of edge states it contains. icon_exists() is slow, so it runs once per file.
+GLOBAL_LIST_EMPTY(turf_edge_mask_cache)
+
+/proc/init_turf_edge_state_by_dir()
+	var/list/out = new /list(10)
+	out[NORTH] = "edge_N"
+	out[SOUTH] = "edge_S"
+	out[EAST] = "edge_E"
+	out[WEST] = "edge_W"
+	out[NORTHEAST] = "edge_NE"
+	out[NORTHWEST] = "edge_NW"
+	out[SOUTHEAST] = "edge_SE"
+	out[SOUTHWEST] = "edge_SW"
+	return out
+
+/proc/init_turf_edge_bit_by_dir()
+	var/list/out = new /list(10)
+	for(var/i in 1 to 10)
+		out[i] = 0
+	out[NORTH] = 1
+	out[SOUTH] = 2
+	out[EAST] = 4
+	out[WEST] = 8
+	out[NORTHEAST] = 16
+	out[NORTHWEST] = 32
+	out[SOUTHEAST] = 64
+	out[SOUTHWEST] = 128
+	return out
+
+/// Which of the 8 edge states exist in this icon file (cached per file).
+/proc/get_icon_edge_mask(icon_file)
+	if(!icon_file)
+		return 0
+	var/cacheable = isfile(icon_file)
+	if(cacheable)
+		var/cached = GLOB.turf_edge_mask_cache[icon_file]
+		if(!isnull(cached))
+			return cached
+	var/mask = 0
+	var/bit = 1
+	for(var/state in GLOB.turf_edge_states_in_order)
+		if(icon_exists(icon_file, state))
+			mask |= bit
+		bit <<= 1
+	if(cacheable)
+		GLOB.turf_edge_mask_cache[icon_file] = mask
+	return mask
+
 #define TURF_CORNER_CCW 1
 #define TURF_CORNER_DIAG 2
 #define TURF_CORNER_CW 4

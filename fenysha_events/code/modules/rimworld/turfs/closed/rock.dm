@@ -5,7 +5,7 @@
 	smoothing_groups = SMOOTH_GROUP_CLOSED_TURFS + SMOOTH_GROUP_MINERAL_WALLS
 	canSmoothWith = SMOOTH_GROUP_MINERAL_WALLS
 	smoothing_flags = SMOOTH_BITMASK | SMOOTH_BORDER
-	baseturfs = /turf/open/bottom_or_region
+	baseturfs = /turf/open/rimworld/rock/auto
 	opacity = TRUE
 	density = TRUE
 

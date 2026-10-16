@@ -580,6 +580,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 		mapload_arg = list(TRUE)
 		SSatoms.set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, mapload_source)
 
+	// Suppress runtime edge rebuilds until the smooth pass — neighbours are incomplete.
+	SSturf_edges.disable_edges()
+
 	while(local_y <= generator.height)
 		while(local_x <= generator.width)
 			var/turf/new_turf = generator.place_sub_level_turf(
@@ -643,6 +646,10 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!(new_turf.flags_1 & INITIALIZED_1))
 		SSatoms.InitAtom(new_turf, TRUE, mapload_arg)
 	SSicon_smooth.remove_from_queues(new_turf)
+
+	// After Init — stamp edges survive. Must follow placement order for the cursor.
+	if(generator?.has_stamp && generator.last_stamp_index && istype(new_turf, /turf/open))
+		generator.apply_stamp_edges(new_turf, generator.last_stamp_index)
 
 	for(var/atom/movable/content as anything in new_turf)
 		if(content.flags_1 & INITIALIZED_1)
@@ -772,6 +779,9 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 				thing.smoothing_flags &= ~SMOOTH_QUEUED
 		SSicon_smooth.deferred_by_source -= source
 
+	// Edge work stays deferred until RW_CELL_JOB_SMOOTH explicitly releases it.
+	// Do not discard here — process_smoothing owns the flush.
+
 	if(late_init)
 		var/list/late_loaders = SSatoms.late_loaders
 		for(var/atom/late as anything in late_loaders)
@@ -786,30 +796,31 @@ SUBSYSTEM_DEF(rimworld_sublevel_loader)
 	if(!generator || QDELETED(generator))
 		return RW_CELL_LOAD_FAILED
 
-	var/turf_count = generator.get_generated_turf_count()
-	var/processed = 0
+	if(smooth_index == 1)
+		SSturf_edges.enable_edges()
+		var/edge_source = mapload_source || "rw_cell_[cell.x]_[cell.y]_[REF(src)]"
+		if(SSturf_edges.deferred_by_source[edge_source])
+			SSturf_edges.discard_deferred(edge_source)
 
-	while(smooth_index <= turf_count)
+		// Rust already produced the edges of every stamped open turf (grass and subtypes included);
+		// only turfs without stamp edges still need the generic rebuild.
+		var/stamp_has_edges = generator.has_stamp && islist(generator.stamp_edges) && length(generator.stamp_edges)
+		var/list/edge_queue = SSturf_edges.queue
+		for(var/turf/T as anything in generator.generated_turfs)
+			if(!istype(T, /turf/open))
+				continue
+			if(stamp_has_edges && istype(T, /turf/open/rimworld/grass))
+				continue
+			edge_queue[T] = TRUE
+		smooth_index = 2
+
+	if(length(SSturf_edges.queue))
 		if(cancel_requested)
 			return RW_CELL_LOAD_FAILED
-
-		var/turf/T = generator.get_generated_turf(smooth_index)
-		smooth_index++
-
-		if(istype(T, /turf/open) && !istype(T, /turf/open/rimworld/grass))
-			var/turf/open/open_turf = T
-			open_turf.update_edges()
-
-		processed++
-
-		if(
-			processed >= RW_SUBLEVEL_SMOOTH_BUDGET \
-			|| (!ignore_lag && TICK_CHECK)
-		)
+		if(!SSturf_edges.process_budget(RW_SUBLEVEL_SMOOTH_BUDGET))
 			return RW_CELL_LOAD_CONTINUE
 
 	phase = RW_CELL_JOB_STRUCTURES
-
 	return RW_CELL_LOAD_CONTINUE
 
 /datum/rimworld_sublevel_load_job/proc/process_structures()

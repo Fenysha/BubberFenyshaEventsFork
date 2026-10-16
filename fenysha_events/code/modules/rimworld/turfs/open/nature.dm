@@ -469,7 +469,7 @@
 	if(!stamp_visual)
 		set_regional_effects()
 
-/turf/open/rimworld/rock/auto/proc/set_regional_effects()
+/turf/open/rimworld/rock/proc/set_regional_effects()
 	var/datum/planet_cell/my_cell = get_planet_cell(src)
 	if(!my_cell)
 		return FALSE
@@ -478,3 +478,10 @@
 	if(!my_mat)
 		return FALSE
 	return apply_material(my_mat)
+
+/turf/open/rimworld/rock/from_material
+
+/turf/open/rimworld/rock/from_material/Initialize(mapload, datum/material/rimworld_material/mat)
+	. = ..()
+	if(mat && istype(mat))
+		apply_material(mat)

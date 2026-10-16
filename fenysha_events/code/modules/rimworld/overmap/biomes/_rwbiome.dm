@@ -493,6 +493,9 @@
 	return list("path" = "[path]", "weight" = weight, "color" = foliage, "variants" = variants)
 
 
+/// path text -> meta list. Everything in it is static per turf type, so build it once per round, not per cell load.
+GLOBAL_LIST_EMPTY(rw_stamp_turf_meta_cache)
+
 /datum/biome/rimworld/proc/note_stamp_turf(path, list/turf_meta, list/seen)
 	if(!ispath(path))
 		return
@@ -500,6 +503,14 @@
 	if(seen[key])
 		return
 	seen[key] = TRUE
+	var/list/cached = GLOB.rw_stamp_turf_meta_cache[key]
+	if(!cached)
+		cached = build_stamp_turf_meta(path, key)
+		GLOB.rw_stamp_turf_meta_cache[key] = cached
+	turf_meta += list(cached)
+
+
+/datum/biome/rimworld/proc/build_stamp_turf_meta(path, key)
 	var/nature = 0
 	var/blend = 0
 	var/color = ""
@@ -510,18 +521,14 @@
 	var/rock = 0
 	var/variants = 0
 	var/water = 0
+	var/closed = 0
 	if(ispath(path, /turf/open))
 		var/turf/open/open_sample = path
 		edge_priority = initial(open_sample.edge_priority)
 		if(initial(open_sample.cardinal_edges_only))
 			cardinal = 1
-		var/sample_icon = initial(open_sample.icon)
-		var/bit = 1
-		for(var/direction in list(NORTH, SOUTH, EAST, WEST, NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWEST))
-			var/edge_state = TURF_EDGE_STATE_FOR_DIR(direction)
-			if(sample_icon && edge_state && icon_exists(sample_icon, edge_state))
-				edge_mask |= bit
-			bit *= 2
+		// Cached per icon file; same bit order as before (N S E W NE NW SE SW).
+		edge_mask = get_icon_edge_mask(initial(open_sample.icon))
 	if(ispath(path, /turf/open/rimworld))
 		var/turf/open/rimworld/sample = path
 		if(initial(sample.rw_turf_flags) & SUPPORTS_NATURE)
@@ -542,13 +549,14 @@
 	if(ispath(path, /turf/open/water))
 		water = 1
 	if(ispath(path, /turf/closed))
+		closed = 1
 		var/turf/closed/closed_sample = path
 		if(initial(closed_sample.smoothing_flags) & SMOOTH_BITMASK)
 			smooth = 1
 	// 2: joins only more of itself, so the kerbs follow the road's own edge
 	if(ispath(path, /turf/open/rimworld/asphalt_road))
 		smooth = 2
-	turf_meta += list(list(
+	return list(
 		"path" = key,
 		"nature" = nature,
 		"blend" = blend,
@@ -560,7 +568,8 @@
 		"rock" = rock,
 		"variants" = variants,
 		"water" = water,
-	))
+		"closed" = closed,
+	)
 
 
 /datum/biome/rimworld/land

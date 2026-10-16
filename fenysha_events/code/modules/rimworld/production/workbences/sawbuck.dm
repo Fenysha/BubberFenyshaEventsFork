@@ -62,4 +62,4 @@
 
 /obj/machinery/rw_workbench/crafting/sawbuck/Initialize(mapload)
 	. = ..()
-	SET_BASE_PIXEL(-16, 0)
+	SET_BASE_PIXEL(-8, 0)

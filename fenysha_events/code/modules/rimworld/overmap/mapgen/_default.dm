@@ -91,6 +91,11 @@
 	var/list/stamp_edges
 	var/list/stamp_junctions
 	var/stamp_edge_cursor = 1
+	/// Per-palette caches for apply_stamp_edges (null until first use).
+	var/list/stamp_edge_icons
+	var/list/stamp_edge_layers
+	var/list/stamp_edge_colors
+	var/last_stamp_index = 0
 	var/stamp_hemisphere = "north"
 	var/list/stamp_path_cache
 
@@ -355,6 +360,9 @@
 	stamp_edges = export["edges"]
 	stamp_junctions = export["junctions"]
 	stamp_edge_cursor = 1
+	stamp_edge_icons = null
+	stamp_edge_layers = null
+	stamp_edge_colors = null
 	has_stamp = islist(stamp_turf_palette) \
 		&& islist(stamp_turf_ids) \
 		&& length(stamp_turf_ids) == width * height \
@@ -613,6 +621,8 @@
 
 	if(has_stamp)
 		apply_stamp_junction(new_turf, index)
+		// Edges applied AFTER InitAtom — Initialize can wipe overlays added too early.
+		last_stamp_index = index
 
 	if(has_stamp && stamp_content_id > 0 && islist(stamp_content_palette))
 		var/content_type = stamp_type(stamp_content_palette, stamp_content_id)
@@ -695,49 +705,95 @@
 	wall.icon_state = "[wall.base_icon_state]-[junction]"
 
 
+/// Per-palette edge data (icon / layer offset / default color), built once per stamp.
+/datum/map_generator/sub_level/proc/prepare_stamp_edge_cache()
+	var/palette_len = length(stamp_turf_palette)
+	stamp_edge_icons = new /list(palette_len)
+	stamp_edge_layers = new /list(palette_len)
+	stamp_edge_colors = new /list(palette_len)
+	for(var/palette_id in 1 to palette_len)
+		var/neighbor_type = stamp_type(stamp_turf_palette, palette_id)
+		if(!ispath(neighbor_type, /turf/open))
+			continue
+		var/turf/open/sample = neighbor_type
+		stamp_edge_icons[palette_id] = initial(sample.icon)
+		stamp_edge_layers[palette_id] = initial(sample.edge_priority) * 0.0001
+		stamp_edge_colors[palette_id] = initial(sample.color)
+
+
 /datum/map_generator/sub_level/proc/apply_stamp_edges(turf/new_turf, index)
-	if(!islist(stamp_edges) || !istype(new_turf, /turf/open))
+	var/list/edges = stamp_edges
+	if(!islist(edges) || !istype(new_turf, /turf/open))
 		return
-	var/list/overlays = list()
-	while(stamp_edge_cursor + 2 <= length(stamp_edges))
-		var/edge_tile = stamp_edges[stamp_edge_cursor]
+	if(!stamp_edge_icons)
+		prepare_stamp_edge_cache()
+
+	var/edge_len = length(edges)
+	var/cursor = stamp_edge_cursor
+
+	// Drop triples that belong to tiles we never stamped as open (walls, failed tiles).
+	// A strict `!=` here used to stall the cursor on the first wall and silently
+	// disabled every edge after it.
+	while(cursor + 2 <= edge_len)
+		var/stale_tile = edges[cursor]
+		if(!isnum(stale_tile))
+			stale_tile = text2num(stale_tile)
+		if(stale_tile >= index)
+			break
+		cursor += 3
+
+	var/list/overlays
+	var/list/state_by_dir = GLOB.turf_edge_state_by_dir
+	var/list/palette_ids = stamp_turf_ids
+	var/list/colors = stamp_colors
+	var/colors_len = islist(colors) ? length(colors) : 0
+	var/ids_len = length(palette_ids)
+	var/base_layer = new_turf.layer + 0.01
+
+	while(cursor + 2 <= edge_len)
+		var/edge_tile = edges[cursor]
 		if(!isnum(edge_tile))
 			edge_tile = text2num(edge_tile)
 		if(edge_tile != index)
 			break
-		var/direction = stamp_edges[stamp_edge_cursor + 1]
-		var/neighbor_index = stamp_edges[stamp_edge_cursor + 2]
-		stamp_edge_cursor += 3
+		var/direction = edges[cursor + 1]
+		var/neighbor_index = edges[cursor + 2]
+		cursor += 3
 		if(!isnum(direction))
 			direction = text2num(direction)
 		if(!isnum(neighbor_index))
 			neighbor_index = text2num(neighbor_index)
-		if(!neighbor_index || neighbor_index > length(stamp_turf_ids))
+		if(!neighbor_index || neighbor_index > ids_len)
 			continue
-		var/neighbor_type = stamp_type(stamp_turf_palette, stamp_turf_ids[neighbor_index])
-		if(!ispath(neighbor_type, /turf/open))
+
+		var/palette_id = palette_ids[neighbor_index]
+		if(!isnum(palette_id))
+			palette_id = text2num(palette_id)
+		var/neighbor_icon = stamp_edge_icons[palette_id]
+		if(!neighbor_icon)
 			continue
-		var/turf/open/neighbor = neighbor_type
-		var/bleed_dir = REVERSE_DIR(direction)
-		var/edge_state = TURF_EDGE_STATE_FOR_DIR(bleed_dir)
-		var/neighbor_icon = initial(neighbor.icon)
-		if(!edge_state || !neighbor_icon)
+		var/edge_state = state_by_dir[REVERSE_DIR(direction)]
+		if(!edge_state)
 			continue
+
 		var/neighbor_color = null
-		if(islist(stamp_colors) && neighbor_index <= length(stamp_colors))
-			neighbor_color = stamp_colors[neighbor_index]
+		if(neighbor_index <= colors_len)
+			neighbor_color = colors[neighbor_index]
 		if(!istext(neighbor_color) || length(neighbor_color) < 7)
-			neighbor_color = initial(neighbor.color)
+			neighbor_color = stamp_edge_colors[palette_id]
+
 		var/mutable_appearance/edge = mutable_appearance(
 			neighbor_icon,
 			edge_state,
-			new_turf.layer + 0.01 + (initial(neighbor.edge_priority) * 0.0001),
+			base_layer + stamp_edge_layers[palette_id],
 			offset_spokesman = new_turf,
 			appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM | KEEP_APART
 		)
 		edge.color = neighbor_color
-		overlays += edge
-	if(!length(overlays))
+		LAZYADD(overlays, edge)
+
+	stamp_edge_cursor = cursor
+	if(!overlays)
 		return
 	new_turf.add_overlay(overlays)
 	var/turf/open/open_turf = new_turf

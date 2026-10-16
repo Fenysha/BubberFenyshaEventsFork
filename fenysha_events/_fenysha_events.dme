@@ -550,6 +550,7 @@
 #include "code\modules\triggers\trigger_types\take_damage.dm"
 #include "code\modules\triggers\trigger_types\time.dm"
 #include "code\modules\turf_edges\_edges.dm"
+#include "code\modules\turf_edges\SSturf_edges.dm"
 #include "code\modules\verb_search\verb_search.dm"
 #include "code\modules\weather\SSweather_sounds.dm"
 #include "code\modules\whitelist\whitelist_db.dm"
