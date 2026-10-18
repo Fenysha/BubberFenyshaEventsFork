@@ -422,7 +422,16 @@ SUBSYSTEM_DEF(object_net)
 	SSobject_net.power_set(connected_node, POWER_SLOT_DEMAND, total)
 
 /datum/component/onet/consumer/proc/update_power_state()
-	last_powered = has_power()
+	var/now = has_power()
+	if(now == last_powered)
+		return
+	last_powered = now
+	if(parent)
+		SEND_SIGNAL(src, COMSIG_OBJECT_NET_POWER_FLIP, now)
+		SEND_SIGNAL(parent, COMSIG_OBJECT_NET_POWER_FLIP, now)
+
+/datum/component/onet/consumer/proc/set_demand(watts)
+	consume(watts)
 
 /// Base implementation – no visual beam.
 /datum/component/onet/consumer/proc/try_connect()

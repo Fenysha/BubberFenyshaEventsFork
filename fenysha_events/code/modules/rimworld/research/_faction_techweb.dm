@@ -124,14 +124,14 @@
 	var/list/unlocked_blueprints = list()
 	var/list/unlocked_recipes = list()
 
-	var/list/obj/machinery/rw_workbench/benches = list()
+	var/list/obj/building/benches = list()
 
 /datum/techweb/faction/New()
 	. = ..()
 	grant_starting_nodes()
 
 /datum/techweb/faction/Destroy()
-	for(var/obj/machinery/rw_workbench/bench as anything in benches)
+	for(var/obj/building/bench as anything in benches)
 		bench.owner_faction = null
 	benches.Cut()
 	owner_faction = null
@@ -326,8 +326,8 @@
 		return list("ready" = FALSE, "text" = "The faction has no workbenches.")
 
 	var/list/missing
-	for(var/obj/machinery/rw_workbench/bench as anything in benches)
-		var/obj/machinery/rw_workbench/research/research_bench = bench
+	for(var/obj/building/bench as anything in benches)
+		var/obj/building/production/research/research_bench = bench
 		if(!istype(research_bench))
 			continue
 		if(research_bench.can_research(node))

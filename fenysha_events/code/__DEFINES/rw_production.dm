@@ -1,5 +1,13 @@
 #define RW_RECEPIE_CATEGORY_WOODWORK 	"rw_woodwork"
+#define RW_RECEPIE_CATEGORY_STONECUTING "rw_stonecuring"
+#define RW_RECEPIE_CATEGORY_ARTWORK 	"rw_artwok"
+#define RW_RECEPIE_CATEGORY_PRIMITIVE	"rw_primitive"
 
+#define RW_RECEPIE_CATEGORY_COMPONENTS_BASIC 	"rw_components_basic"
+#define RW_RECEPIE_CATEGORY_COMPONENTS_ADVANCED	"rw_components_advanced"
+
+#define RW_RECEPIE_CATEGORY_ELECTIC_BASIC 		"rw_electric_basic"
+#define RW_RECEPIE_CATEGORY_ELECTIC_ADVANCED 	"rw_electric_advanced"
 
 #define RW_ARCHITECT_TAB_STRUCTURE		"Structure"
 #define RW_ARCHITECT_TAB_FURNITURE		"Furniture"
