@@ -16,11 +16,7 @@
 	icon = 'icons/obj/clothing/modsuit/mod_modules.dmi'
 	icon_state = "shooting_assistant"
 	sharpness = SHARP_POINTY //this is just so that you can poke things with your poke finger really
-	///Object basetypes which the powercord is allowed to connect to.
-	var/static/list/synth_charge_whitelist = typecacheof(list(
-		/obj/item/stock_parts/power_store,
-		/obj/machinery/power/apc,
-	))
+
 
 // Attempt to charge from an object by using them on the power cord.
 /obj/item/synth_powercord/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
@@ -58,6 +54,12 @@
 
 /// Returns TRUE or FALSE depending on if the target object can be used as a power source.
 /obj/item/synth_powercord/proc/can_power_draw(obj/target, mob/user)
+	///Object basetypes which the powercord is allowed to connect to.
+	var/static/list/synth_charge_whitelist = typecacheof(list(
+		/obj/item/stock_parts/power_store,
+		/obj/machinery/power/apc,
+	))
+
 	return ishuman(user) && is_type_in_typecache(target, synth_charge_whitelist)
 
 /// Attempts to start using an object as a power source.

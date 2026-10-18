@@ -279,78 +279,78 @@
 	recommended_species = list(SPECIES_TESHARI)
 
 /datum/sprite_accessory/ears/mutant/teshari/regular
-	name = "Teshari Regular"
+	name = "Avali Regular"
 	icon_state = "teshari_regular"
 
 /datum/sprite_accessory/ears/mutant/teshari/regularalt
-	name = "Teshari Regular Alt"
+	name = "Avali Regular Alt"
 	icon_state = "teshari_feathers_regalt"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_bushy
-	name = "Teshari Feathers Bushy"
+	name = "Avali Feathers Bushy"
 	icon_state = "teshari_feathers_bushy"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_mohawk
-	name = "Teshari Feathers Mohawk"
+	name = "Avali Feathers Mohawk"
 	icon_state = "teshari_feathers_mohawk"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_spiky
-	name = "Teshari Feathers Spiky"
+	name = "Avali Feathers Spiky"
 	icon_state = "teshari_feathers_spiky"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_pointy
-	name = "Teshari Feathers Pointy"
+	name = "Avali Feathers Pointy"
 	icon_state = "teshari_feathers_pointy"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_upright
-	name = "Teshari Feathers Upright"
+	name = "Avali Feathers Upright"
 	icon_state = "teshari_feathers_upright"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_mane
-	name = "Teshari Feathers Mane"
+	name = "Avali Feathers Mane"
 	icon_state = "teshari_feathers_mane"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_maneless
-	name = "Teshari Feathers Mane Fluffless"
+	name = "Avali Feathers Mane Fluffless"
 	icon_state = "teshari_feathers_maneless"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_droopy
-	name = "Teshari Feathers Droopy"
+	name = "Avali Feathers Droopy"
 	icon_state = "teshari_feathers_droopy"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_longway
-	name = "Teshari Feathers Longway"
+	name = "Avali Feathers Longway"
 	icon_state = "teshari_feathers_longway"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_tree
-	name = "Teshari Feathers Tree"
+	name = "Avali Feathers Tree"
 	icon_state = "teshari_feathers_tree"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_ponytail
-	name = "Teshari Feathers Ponytail"
+	name = "Avali Feathers Ponytail"
 	icon_state = "teshari_feathers_ponytail"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_mushroom
-	name = "Teshari Feathers Mushroom"
+	name = "Avali Feathers Mushroom"
 	icon_state = "teshari_feathers_mushroom"
 	color_src = USE_ONE_COLOR
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_backstrafe
-	name = "Teshari Feathers Backstrafe"
+	name = "Avali Feathers Backstrafe"
 	icon_state = "teshari_feathers_backstrafe"
 	color_src = USE_ONE_COLOR
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_thin
-	name = "Teshari Feathers Thin"
+	name = "Avali Feathers Thin"
 	icon_state = "teshari_feathers_thin"
 	color_src = USE_ONE_COLOR
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_thinmane
-	name = "Teshari Feathers Thin Mane"
+	name = "Avali Feathers Thin Mane"
 	icon_state = "teshari_feathers_thinmane"
 
 /datum/sprite_accessory/ears/mutant/teshari/feathers_thinmaneless
-	name = "Teshari Feathers Thin Mane Fluffless"
+	name = "Avali Feathers Thin Mane Fluffless"
 	icon_state = "teshari_feathers_thinmaneless"
 
 /datum/sprite_accessory/ears/mutant/deer2

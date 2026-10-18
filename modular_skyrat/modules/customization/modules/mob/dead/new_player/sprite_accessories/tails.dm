@@ -422,14 +422,14 @@
 */
 
 /datum/sprite_accessory/tails/mammal/teshari/default
-	name = "Teshari (Default)"
+	name = "Avali (Default)"
 	icon_state = "teshari_default"
 
 /datum/sprite_accessory/tails/mammal/teshari/fluffy
-	name = "Teshari (Fluffy)"
+	name = "Avali (Fluffy)"
 	icon_state = "teshari_fluffy"
 /datum/sprite_accessory/tails/mammal/teshari/thin
-	name = "Teshari (Thin)"
+	name = "Avali (Thin)"
 	icon_state = "teshari_thin"
 
 /datum/sprite_accessory/tails/mammal/wagging/tiger

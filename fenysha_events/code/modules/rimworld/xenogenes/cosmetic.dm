@@ -2,6 +2,11 @@
 	id = RW_XENOGENE_HAIR
 	name = "Hair"
 	desc = "Grows scalp hair. Style is chosen in Persona."
+
+	incompatible_with = list(
+		RW_XENOGENE_AVALI_BODY,
+	)
+
 	option_kind = RW_XENOGENE_OPTION_NONE
 	ui_icon = RW_XENOGENE_ICONS
 	icon_bg = "bg"
@@ -47,6 +52,7 @@
 	icon_bg = "bg"
 	icon_state = "lizard_eyes"
 
+// MARK: Avali genes
 /datum/rw_xenogene/cosmetic/avali_eyes
 	id = RW_XENOGENE_AVALI_EYES
 	name = "Avali eyes"
@@ -57,11 +63,89 @@
 	icon_bg = "bg"
 	icon_state = "avali_eyes"
 
+/datum/rw_xenogene/cosmetic/avali_body
+	id = RW_XENOGENE_AVALI_BODY
+	name = "Avali Body"
+	desc = "Base Avali body structure. Marker gene with no additional properties."
+	option_kind = RW_XENOGENE_OPTION_NONE
+	ui_icon = RW_XENOGENE_ICONS
+	incompatibility_group = RW_XENOGENE_GROUP_BODY_TYPE
+	icon_bg = "bg"
+	icon_state = "avali_body"
+
+
+/datum/rw_xenogene/cosmetic/avali_tail
+	id = RW_XENOGENE_AVALI_TAIL
+	name = "Avali Tail"
+	desc = "Avali-specific tail. Right-click to pick a style."
+	option_key = FEATURE_TAIL_GENERIC
+	incompatibility_group = RW_XENOGENE_GROUP_TAIL
+	option_kind = RW_XENOGENE_OPTION_CHOICED
+	default_option = "Avali (Default)"
+	option_choices = list(
+		"Avali (Default)",
+		"Avali (Fluffy)",
+		"Avali (Thin)"
+	)
+	toggle_pref_type = /datum/preference/toggle/mutant_toggle/tail
+	value_pref_type = /datum/preference/choiced/mutant_choice/tail
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "avali_tail"
+
+
+/datum/rw_xenogene/cosmetic/avali_ears
+	id = RW_XENOGENE_AVALI_EARS
+	name = "Avali Ears"
+	desc = "Avali-specific ears. Right-click to pick a style."
+	option_key = FEATURE_EARS
+	option_kind = RW_XENOGENE_OPTION_CHOICED
+	incompatibility_group = RW_XENOGENE_GROUP_EARS
+	default_option = "Avali Regular"
+	option_choices = list(
+		"Avali Regular",
+		"Avali Regular Alt",
+		"Avali Feathers Bushy",
+		"Avali Feathers Mohawk",
+		"Avali Feathers Spiky",
+		"Avali Feathers Pointy",
+		"Avali Feathers Upright",
+		"Avali Feathers Mane",
+		"Avali Feathers Mane Fluffless",
+		"Avali Feathers Droopy",
+		"Avali Feathers Longway",
+		"Avali Feathers Tree",
+		"Avali Feathers Ponytail",
+		"Avali Feathers Mushroom",
+		"Avali Feathers Backstrafe",
+		"Avali Feathers Thin",
+		"Avali Feathers Thin Mane",
+		"Avali Feathers Thin Mane Fluffless"
+	)
+	toggle_pref_type = /datum/preference/toggle/mutant_toggle/ears
+	value_pref_type = /datum/preference/choiced/mutant_choice/ears
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "avali_ears"
+
+/datum/rw_xenogene/cosmetic/avali_legs
+	id = RW_XENOGENE_AVALI_LEGS
+	name = "Avali legs"
+	desc = "Avali digitigrade legs."
+	incompatibility_group = RW_XENOGENE_GROUP_LEGS
+	option_kind = RW_XENOGENE_OPTION_NONE
+	ui_icon = RW_XENOGENE_ICONS
+	icon_bg = "bg"
+	icon_state = "avali_legs"
+
+
+
 /datum/rw_xenogene/cosmetic/ears
 	id = RW_XENOGENE_EARS
 	name = "Ears"
 	desc = "External ears. Right-click to pick a style."
 	option_key = FEATURE_EARS
+	incompatibility_group = RW_XENOGENE_GROUP_EARS
 	default_option = "Fox"
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/ears
 	value_pref_type = /datum/preference/choiced/mutant_choice/ears
@@ -74,6 +158,7 @@
 	name = "Tail"
 	desc = "A tail. Right-click to pick a style."
 	option_key = FEATURE_TAIL_GENERIC
+	incompatibility_group = RW_XENOGENE_GROUP_TAIL
 	default_option = "Smooth"
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/tail
 	value_pref_type = /datum/preference/choiced/mutant_choice/tail
@@ -97,6 +182,11 @@
 	name = "Body fur"
 	desc = "Fluff, fur or down covering the body. Right-click to pick a style."
 	option_key = FEATURE_FLUFF
+
+	incompatible_with = list(
+		RW_XENOGENE_AVALI_BODY,
+	)
+
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/fluff
 	value_pref_type = /datum/preference/choiced/mutant_choice/fluff
 	ui_icon = RW_XENOGENE_ICONS
@@ -109,6 +199,7 @@
 	desc = "Plantigrade or digitigrade legs."
 	option_kind = RW_XENOGENE_OPTION_CHOICED
 	option_key = FEATURE_LEGS
+	incompatibility_group = RW_XENOGENE_GROUP_LEGS
 	option_choices = list(NORMAL_LEGS, DIGITIGRADE_LEGS)
 	default_option = NORMAL_LEGS
 	value_pref_type = /datum/preference/choiced/digitigrade_legs
@@ -174,6 +265,11 @@
 	desc = "A muzzle. Right-click to pick a style."
 	option_key = FEATURE_SNOUT
 	default_option = "Sharp + Light"
+
+	incompatible_with = list(
+		RW_XENOGENE_AVALI_BODY,
+	)
+
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/snout
 	value_pref_type = /datum/preference/choiced/mutant_choice/snout
 	ui_icon = RW_XENOGENE_ICONS
@@ -186,6 +282,11 @@
 	desc = "Head horns. Right-click to pick a style."
 	option_key = FEATURE_HORNS
 	default_option = "Simple"
+
+	incompatible_with = list(
+		RW_XENOGENE_AVALI_BODY,
+	)
+
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/horns
 	value_pref_type = /datum/preference/choiced/mutant_choice/horns
 	ui_icon = RW_XENOGENE_ICONS

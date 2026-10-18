@@ -24,29 +24,7 @@
 	/// TRUE while blacked out. Set at CONSCIOUSNESS_BLACKOUT, cleared at CONSCIOUSNESS_WAKE.
 	var/consciousness_blackout = FALSE
 
-	/// Multipliers applied when calculating the final medical state.
-	var/pain_mod = 1.0
-	var/shock_mod = 1.0
-	var/consciousness_mod = 1.0
-
-	/// Maximum allowed values after medical modifiers are applied.
-	var/pain_limit = PAIN_MAX
-	var/shock_limit = SHOCK_MAX
-
-	/// Recovery-rate multipliers for shock and temporary consciousness loss.
-	var/shock_recovery_mod = 1.0
-	var/consciousness_recovery_mod = 1.0
-
-	/// Active sources modifying pain, shock, consciousness, or their recovery.
-	var/list/pain_modifiers
-	var/list/shock_modifiers
-	var/list/consciousness_modifiers
-	var/list/shock_recovery_modifiers
-	var/list/consciousness_recovery_modifiers
-
-	/// Active sources modifying the maximum pain and shock limits.
-	var/list/pain_limit_modifiers
-	var/list/shock_limit_modifiers
+	// Medical multipliers, recovery rates, caps and their sources live on /datum/physiology (see medical_modifiers.dm).
 
 	/// Current systemic blood pressure.
 	var/blood_pressure = BP_NORMAL

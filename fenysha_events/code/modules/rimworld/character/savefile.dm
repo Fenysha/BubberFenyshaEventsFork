@@ -219,8 +219,8 @@
 		xenogene_inheritable = list()
 	var/static/list/legacy = list(
 		"vulp_ears" = list(RW_XENOGENE_EARS, "Fox"),
-		"teshari_ears" = list(RW_XENOGENE_EARS, "Teshari Regular"),
-		"teshari_tail" = list(RW_XENOGENE_TAIL, "Teshari (Default)"),
+		"teshari_ears" = list(RW_XENOGENE_EARS, "Avali Regular"),
+		"teshari_tail" = list(RW_XENOGENE_TAIL, "Avali (Default)"),
 		"lizard_tail" = list(RW_XENOGENE_TAIL, "Smooth"),
 		"lizard_snout" = list(RW_XENOGENE_SNOUT, "Sharp + Light"),
 		"lizard_horns" = list(RW_XENOGENE_HORNS, "Simple"),

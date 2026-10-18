@@ -104,10 +104,6 @@
 	apply_backstory_modifiers()
 	recalculate_mood()
 	persona_loaded = TRUE
-	// Genes are applied before psychology exists, so mood and speed have to be pushed again here.
-	if(iscarbon(owner))
-		var/mob/living/carbon/pawn = owner
-		pawn.refresh_rw_xenogene_passives()
 
 /**
  * Applies permanent modifiers from selected traits (e.g. sanguine +12 mood, iron_willed lower thresholds).

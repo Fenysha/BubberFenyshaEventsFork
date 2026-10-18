@@ -33,6 +33,9 @@
 #define RW_XENOGENE_GROUP_EYES "eyes"
 #define RW_XENOGENE_GROUP_HAIR_STYLE "hair_style"
 #define RW_XENOGENE_GROUP_BODY_TYPE "body_type"
+#define RW_XENOGENE_GROUP_TAIL "tail"
+#define RW_XENOGENE_GROUP_EARS "ears"
+#define RW_XENOGENE_GROUP_LEGS "legs"
 #define RW_XENOGENE_GROUP_IMMUNITY "immunity"
 #define RW_XENOGENE_GROUP_WOUND_HEALING "wound_healing"
 #define RW_XENOGENE_GROUP_PSYCHIC_SENSITIVITY "psychic_sensitivity"
@@ -50,9 +53,11 @@
 #define RW_XENOGENE_GROUP_APT_MINING "apt_mining"
 #define RW_XENOGENE_GROUP_APT_COOKING "apt_cooking"
 #define RW_XENOGENE_GROUP_APT_PLANTS "apt_plants"
+#define RW_XENOGENE_GROUP_APT_CRAFTING "apt_crafting"
+#define RW_XENOGENE_GROUP_APT_ARTISTIC "apt_artistic"
+#define RW_XENOGENE_GROUP_APT_MEDICAL "apt_medical"
 #define RW_XENOGENE_GROUP_APT_SOCIAL "apt_social"
 #define RW_XENOGENE_GROUP_APT_INTELLECTUAL "apt_intellectual"
-#define RW_XENOGENE_GROUP_APT_CRAFTING "apt_crafting"
 
 // --- Icons ---
 /// Shared 64x64 xenogene sheet. Add a new state named after the gene id, then set ui_icon/icon_bg/icon_state on that datum.
@@ -68,6 +73,12 @@
 #define RW_XENOGENE_HUMAN_EYES "human_eyes"
 #define RW_XENOGENE_LIZARD_EYES "lizard_eyes"
 #define RW_XENOGENE_AVALI_EYES "avali_eyes"
+#define RW_XENOGENE_AVALI_BODY "avali_body"
+#define RW_XENOGENE_AVALI_TAIL "avali_tail"
+#define RW_XENOGENE_AVALI_EARS "avali_ears"
+#define RW_XENOGENE_AVALI_LEGS "avali_legs"
+#define RW_XENOGENE_LIZARD_BODY "lizard_body"
+#define RW_XENOGENE_LIZARD_TAIL "lizard_tail"
 #define RW_XENOGENE_EARS "ears"
 #define RW_XENOGENE_TAIL "tail"
 #define RW_XENOGENE_WINGS "wings"
@@ -199,24 +210,74 @@
 // =============================================================================
 // Gene IDs — Aptitude
 // =============================================================================
+// Animals
 #define RW_XENOGENE_AWFUL_ANIMALS "awful_animals"
 #define RW_XENOGENE_POOR_ANIMALS "poor_animals"
 #define RW_XENOGENE_STRONG_ANIMALS "strong_animals"
 #define RW_XENOGENE_GREAT_ANIMALS "great_animals"
+
+// Melee
 #define RW_XENOGENE_AWFUL_MELEE "awful_melee"
 #define RW_XENOGENE_POOR_MELEE "poor_melee"
 #define RW_XENOGENE_STRONG_MELEE "strong_melee"
 #define RW_XENOGENE_GREAT_MELEE "great_melee"
+
+// Shooting
 #define RW_XENOGENE_AWFUL_SHOOTING "awful_shooting"
 #define RW_XENOGENE_POOR_SHOOTING "poor_shooting"
 #define RW_XENOGENE_STRONG_SHOOTING "strong_shooting"
 #define RW_XENOGENE_GREAT_SHOOTING "great_shooting"
+
+// Construction
 #define RW_XENOGENE_AWFUL_CONSTRUCTION "awful_construction"
+#define RW_XENOGENE_POOR_CONSTRUCTION "poor_construction"
+#define RW_XENOGENE_STRONG_CONSTRUCTION "strong_construction"
 #define RW_XENOGENE_GREAT_CONSTRUCTION "great_construction"
+
+// Mining
 #define RW_XENOGENE_AWFUL_MINING "awful_mining"
+#define RW_XENOGENE_POOR_MINING "poor_mining"
+#define RW_XENOGENE_STRONG_MINING "strong_mining"
 #define RW_XENOGENE_GREAT_MINING "great_mining"
+
+// Cooking
 #define RW_XENOGENE_AWFUL_COOKING "awful_cooking"
+#define RW_XENOGENE_POOR_COOKING "poor_cooking"
+#define RW_XENOGENE_STRONG_COOKING "strong_cooking"
+#define RW_XENOGENE_GREAT_COOKING "great_cooking"
+
+// Plants
 #define RW_XENOGENE_AWFUL_PLANTS "awful_plants"
-#define RW_XENOGENE_AWFUL_SOCIAL "awful_social"
-#define RW_XENOGENE_GREAT_INTELLECTUAL "great_intellectual"
+#define RW_XENOGENE_POOR_PLANTS "poor_plants"
+#define RW_XENOGENE_STRONG_PLANTS "strong_plants"
+#define RW_XENOGENE_GREAT_PLANTS "great_plants"
+
+// Crafting
+#define RW_XENOGENE_AWFUL_CRAFTING "awful_crafting"
+#define RW_XENOGENE_POOR_CRAFTING "poor_crafting"
+#define RW_XENOGENE_STRONG_CRAFTING "strong_crafting"
 #define RW_XENOGENE_GREAT_CRAFTING "great_crafting"
+
+// Artistic
+#define RW_XENOGENE_AWFUL_ARTISTIC "awful_artistic"
+#define RW_XENOGENE_POOR_ARTISTIC "poor_artistic"
+#define RW_XENOGENE_STRONG_ARTISTIC "strong_artistic"
+#define RW_XENOGENE_GREAT_ARTISTIC "great_artistic"
+
+// Medical
+#define RW_XENOGENE_AWFUL_MEDICAL "awful_medical"
+#define RW_XENOGENE_POOR_MEDICAL "poor_medical"
+#define RW_XENOGENE_STRONG_MEDICAL "strong_medical"
+#define RW_XENOGENE_GREAT_MEDICAL "great_medical"
+
+// Social
+#define RW_XENOGENE_AWFUL_SOCIAL "awful_social"
+#define RW_XENOGENE_POOR_SOCIAL "poor_social"
+#define RW_XENOGENE_STRONG_SOCIAL "strong_social"
+#define RW_XENOGENE_GREAT_SOCIAL "great_social"
+
+// Intellectual
+#define RW_XENOGENE_AWFUL_INTELLECTUAL "awful_intellectual"
+#define RW_XENOGENE_POOR_INTELLECTUAL "poor_intellectual"
+#define RW_XENOGENE_STRONG_INTELLECTUAL "strong_intellectual"
+#define RW_XENOGENE_GREAT_INTELLECTUAL "great_intellectual"

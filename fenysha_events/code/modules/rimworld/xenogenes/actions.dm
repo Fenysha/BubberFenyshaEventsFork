@@ -196,9 +196,8 @@
 	var/mob/living/carbon/pawn = carbon_owner()
 	if(!pawn)
 		return FALSE
-	var/datum/rw_xenogene/gene = pawn.dna?.get_rw_xenogene(RW_XENOGENE_DEATHREST)
-	if(gene)
-		gene.last_deathrest = world.time
+	var/datum/rw_xenogene/hemogen/deathrest/gene = pawn.dna?.get_rw_xenogene(RW_XENOGENE_DEATHREST)
+	gene?.mark_deathrested()
 	pawn.Immobilize(25 SECONDS)
 	pawn.adjust_brute_loss(-20)
 	pawn.adjust_fire_loss(-20)

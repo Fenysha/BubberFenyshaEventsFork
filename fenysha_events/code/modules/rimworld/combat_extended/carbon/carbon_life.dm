@@ -76,7 +76,7 @@
 	)
 
 	shock_base = max(
-		shock_base - SHOCK_RECOVERY_RATE * shock_recovery_mod * seconds_per_tick,
+		shock_base - SHOCK_RECOVERY_RATE * get_shock_recovery_mod() * seconds_per_tick,
 		0
 	)
 
@@ -86,7 +86,7 @@
 	shock_base = max(shock_base, get_hypovolemic_shock_floor())
 
 	consciousness_stun = max(
-		consciousness_stun - CONSCIOUSNESS_STUN_RECOVERY_RATE * consciousness_recovery_mod * seconds_per_tick,
+		consciousness_stun - CONSCIOUSNESS_STUN_RECOVERY_RATE * get_consciousness_recovery_mod() * seconds_per_tick,
 		0
 	)
 
@@ -105,15 +105,15 @@
 
 /mob/living/carbon/proc/recalculate_medical_state()
 	pain = clamp(
-		(pain_base + pain_misc + acute_pain) * pain_mod,
+		(pain_base + pain_misc + acute_pain) * get_pain_mod(),
 		0,
-		pain_limit
+		get_pain_limit()
 	)
 
 	shock = clamp(
-		shock_base * shock_mod,
+		shock_base * get_shock_mod(),
 		0,
-		shock_limit
+		get_shock_limit()
 	)
 	update_psychology_pain_factor()
 #endif

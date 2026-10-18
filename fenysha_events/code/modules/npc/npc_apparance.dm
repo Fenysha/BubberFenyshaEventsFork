@@ -14,7 +14,7 @@
 					),
 					list(
 						ARG_FEATURE = FEATURE_TAIL_GENERIC,
-						ARG_FEATURE_NAME = "Teshari (Default)",
+						ARG_FEATURE_NAME = "Avali (Default)",
 					),
 				)
 			add_hair = FALSE

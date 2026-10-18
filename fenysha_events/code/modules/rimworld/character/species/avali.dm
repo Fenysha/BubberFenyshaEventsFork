@@ -47,28 +47,53 @@
 	rw_default_xenotype_id = "baseline_avali"
 	rw_innate_xenogenes = list(
 		RW_XENOGENE_AVALI_EYES,
-		RW_XENOGENE_EARS,
-		RW_XENOGENE_TAIL,
-		RW_XENOGENE_LEGS,
-		RW_XENOGENE_BODY_SIZE,
+		RW_XENOGENE_AVALI_BODY,
+		RW_XENOGENE_AVALI_EYES,
+		RW_XENOGENE_AVALI_TAIL,
+		RW_XENOGENE_AVALI_LEGS,
+		RW_XENOGENE_DELICATE,
 		RW_XENOGENE_MUTANT_COLORS,
+		RW_XENOGENE_HEAT_WEAKNESS,
+		RW_XENOGENE_COLD_SUPER_TOLERANT,
 	)
 	rw_innate_xenogene_values = list(
-		RW_XENOGENE_EARS = "Teshari Regular",
-		RW_XENOGENE_TAIL = "Teshari (Default)",
-		RW_XENOGENE_LEGS = NORMAL_LEGS,
-		RW_XENOGENE_BODY_SIZE = BODY_SIZE_MIN,
+		RW_XENOGENE_AVALI_EYES = "Avali Regular",
+		RW_XENOGENE_AVALI_TAIL = "Avali (Default)",
 	)
 
 /datum/species/avali/get_default_mutant_bodyparts()
 	return list(
-		"tail" = list("Teshari (Default)", TRUE),
-		"ears" = list("Teshari Regular", TRUE),
+		"tail" = list("Avali (Default)", TRUE),
+		"ears" = list("Avali Regular", TRUE),
 		"legs" = list("Normal Legs", FALSE),
 	)
 
 /datum/species/avali/get_species_description()
-	return list("Avali are a Rimworld-mode base race. Sprites are a teshari stand-in until unique assets land.")
+	return list(
+		"Avali are a small, highly social race of feathered raptors from a frozen world. \
+		They live in tight-knit packs, possess advanced genetics and nanotechnology, \
+		and their bodies are perfectly adapted to extreme cold."
+	)
 
 /datum/species/avali/get_species_lore()
-	return list("Placeholder lore. Avali exist here for BODY_TYPE, not as a station roundstart race.")
+	return list(
+		"Avali originated on a frozen planet of endless snow and ice fields. \
+		Harsh climate and scarce resources forced them to develop extreme social dependence — \
+		an individual Avali can barely survive without their pack. Loyalty to the pack \
+		overrides family, nation, and even self-preservation.",
+
+		"Physically, Avali are light, fast, and extremely agile. Their bodies are covered \
+		in dense feathers and down that provide excellent insulation, but make them highly \
+		vulnerable to heat. Large eyes are adapted for twilight and blizzards, while long \
+		feathered ears and tails serve both communication and balance.",
+
+		"Technologically, Avali have always been ahead of most races. They were among the \
+		first to master deep genetic engineering and nanotechnology, freely modifying their \
+		own bodies. Many Avali consider an unmodified member of their species already outdated — \
+		self-improvement through xenogenes is a normal part of life.",
+
+		"Avali culture values quick thinking, absolute pack loyalty, and the ability to work \
+		as a unit. Solitude is almost pathological to them. They are curious, talkative, \
+		sometimes overly confident in their technological superiority, but rarely truly \
+		malicious toward those they consider their own."
+	)

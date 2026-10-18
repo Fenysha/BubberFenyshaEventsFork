@@ -3,7 +3,7 @@
 /mob/living/carbon/proc/apply_consciousness_impulse(amount, source = null)
 	if(amount <= 0 || stat == DEAD)
 		return
-	consciousness = max(consciousness - amount * consciousness_mod, 0)
+	consciousness = max(consciousness - amount * get_consciousness_mod(), 0)
 	update_blackout_state()
 	refresh_medical_feedback()
 
@@ -18,7 +18,7 @@
  * Critical loss of brain perfusion can independently cause syncope.
  */
 /mob/living/carbon/proc/get_consciousness_target()
-	var/target = get_physiological_consciousness_cap() - get_consciousness_soft_loss() * consciousness_mod
+	var/target = get_physiological_consciousness_cap() - get_consciousness_soft_loss() * get_consciousness_mod()
 	return clamp(target, 0, CONSCIOUSNESS_MAX)
 
 /mob/living/carbon/proc/step_consciousness(seconds_per_tick = 1)

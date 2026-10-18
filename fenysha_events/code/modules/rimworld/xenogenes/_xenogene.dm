@@ -237,7 +237,6 @@
 	if(!holder || QDELETED(holder))
 		return PROCESS_KILL
 	on_life(seconds_per_tick, holder)
-	tick_gameplay(seconds_per_tick, holder)
 
 
 /datum/rw_xenogene/proc/on_lose(mob/living/new_holder)
@@ -437,13 +436,19 @@
 	category = RW_XENOGENE_CATEGORY_ARCHITE
 	complexity = 3
 
+/// Skill bonuses and passion changes (aptitude.dm).
 /datum/rw_xenogene/aptitude
 	abstract_type = /datum/rw_xenogene/aptitude
 	category = RW_XENOGENE_CATEGORY_APTITUDE
+	/// Skill whose passion this gene sets. A null grant means the gene does not touch passion.
+	var/passion_skill
+	var/passion_grant
 
+/// Permanent baseline mood offset (mood.dm).
 /datum/rw_xenogene/mood
 	abstract_type = /datum/rw_xenogene/mood
 	category = RW_XENOGENE_CATEGORY_MOOD
+	var/mood_offset = 0
 
 /datum/rw_xenogene/movement
 	abstract_type = /datum/rw_xenogene/movement
@@ -453,18 +458,25 @@
 	abstract_type = /datum/rw_xenogene/temperature
 	category = RW_XENOGENE_CATEGORY_TEMPERATURE
 
+/// Damage/environment resistances. UV sensitivity ticks here (resistance.dm).
 /datum/rw_xenogene/resistance
 	abstract_type = /datum/rw_xenogene/resistance
 	category = RW_XENOGENE_CATEGORY_RESISTANCE
+	/// Burn per second in bright outdoors. Needs RW_XENOGEN_PROCESSING.
+	var/uv_burn = 0
 
 /datum/rw_xenogene/healing
 	abstract_type = /datum/rw_xenogene/healing
 	category = RW_XENOGENE_CATEGORY_HEALING
 
+/// Psychic sensitivity genes and bonding (psychic.dm).
 /datum/rw_xenogene/psychic
 	abstract_type = /datum/rw_xenogene/psychic
 	category = RW_XENOGENE_CATEGORY_PSYCHIC
+	/// Null = this gene does not touch sensitivity. 0 = deaf.
+	var/psychic_sensitivity
 
+/// Hemogen economy: regen, drain, deathrest, hemogen-fuelled abilities (hemogen.dm).
 /datum/rw_xenogene/hemogen
 	abstract_type = /datum/rw_xenogene/hemogen
 	category = RW_XENOGENE_CATEGORY_HEMOGEN
