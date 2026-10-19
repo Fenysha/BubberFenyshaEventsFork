@@ -36,6 +36,9 @@ export function XenotypeBrowser(props: BrowserProps) {
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newIconGene, setNewIconGene] = useState('');
+  const [collapsedGeneGroups, setCollapsedGeneGroups] = useState<
+    Record<string, boolean>
+  >({});
   const xenotypes = data.xenotypes || [];
   const genes = data.xenogeneDefs || [];
   const pinnedIds = data.pinnedGenes || [];
@@ -87,6 +90,12 @@ export function XenotypeBrowser(props: BrowserProps) {
   const pinned = pinnedIds
     .map((id) => byId.get(id))
     .filter((gene): gene is RwBrowserGene => !!gene);
+  const pinnedGrouped = new Map<string, RwBrowserGene[]>();
+  for (const gene of pinned) {
+    const group = pinnedGrouped.get(gene.category) || [];
+    group.push(gene);
+    pinnedGrouped.set(gene.category, group);
+  }
 
   const saveCurrent = () => {
     if (!newName.trim()) return;
@@ -251,24 +260,54 @@ export function XenotypeBrowser(props: BrowserProps) {
             Pinned genes · visible to everyone
           </Box>
           <div className="RimworldCharacterEditor__xenotypeGeneGrid">
-            {pinned.map((gene) => (
-              <div
-                className="RimworldCharacterEditor__xenotypeGeneCard"
-                key={gene.id}
-                title={gene.desc}
-              >
-                <GeneIcon gene={gene} />
-                <span>{gene.name}</span>
-                {isAdmin && (
+            {[...pinnedGrouped.entries()].map(([category, categoryGenes]) => {
+              const groupKey = `pinned:${category}`;
+              const isCollapsed = !!collapsedGeneGroups[groupKey];
+              return (
+                <section
+                  className="RimworldCharacterEditor__xenotypeCategory"
+                  key={groupKey}
+                >
                   <Button
+                    fluid
                     compact
-                    icon="thumbtack"
-                    tooltip="Unpin gene for all players"
-                    onClick={() => act('toggle_gene_pin', { id: gene.id })}
-                  />
-                )}
-              </div>
-            ))}
+                    icon={isCollapsed ? 'chevron-right' : 'chevron-down'}
+                    onClick={() =>
+                      setCollapsedGeneGroups((current) => ({
+                        ...current,
+                        [groupKey]: !current[groupKey],
+                      }))
+                    }
+                  >
+                    {categoryName(category)} ({categoryGenes.length})
+                  </Button>
+                  {!isCollapsed && (
+                    <div className="RimworldCharacterEditor__xenotypeGeneGrid">
+                      {categoryGenes.map((gene) => (
+                        <div
+                          className="RimworldCharacterEditor__xenotypeGeneCard"
+                          key={gene.id}
+                          title={gene.desc}
+                        >
+                          <GeneIcon gene={gene} />
+                          <span>{gene.name}</span>
+                          {isAdmin && (
+                            <Button
+                              compact
+                              icon="thumbtack"
+                              tooltip="Unpin gene for all players"
+                              onClick={() =>
+                                act('toggle_gene_pin', { id: gene.id })
+                              }
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
         </Stack.Item>
       )}
@@ -325,41 +364,56 @@ export function XenotypeBrowser(props: BrowserProps) {
               </Stack.Item>
             </Stack>
             <div className="RimworldCharacterEditor__xenotypeDetailGrid">
-              {[...grouped.entries()].map(([category, categoryGenes]) => (
-                <section
-                  className="RimworldCharacterEditor__xenotypeCategory"
-                  key={category}
-                >
-                  <Box className="RimworldCharacterEditor__sectionTitle">
-                    {categoryName(category)}
-                  </Box>
-                  {categoryGenes.map((gene) => (
-                    <div
-                      className="RimworldCharacterEditor__xenotypeGeneCard"
-                      key={gene.id}
-                      title={gene.desc}
+              {[...grouped.entries()].map(([category, categoryGenes]) => {
+                const groupKey = `detail:${category}`;
+                const isCollapsed = !!collapsedGeneGroups[groupKey];
+                return (
+                  <section
+                    className="RimworldCharacterEditor__xenotypeCategory"
+                    key={groupKey}
+                  >
+                    <Button
+                      fluid
+                      compact
+                      icon={isCollapsed ? 'chevron-right' : 'chevron-down'}
+                      onClick={() =>
+                        setCollapsedGeneGroups((current) => ({
+                          ...current,
+                          [groupKey]: !current[groupKey],
+                        }))
+                      }
                     >
-                      <GeneIcon gene={gene} />
-                      <span>{gene.name}</span>
-                      {isAdmin && (
-                        <Button
-                          compact
-                          icon="thumbtack"
-                          selected={pinnedIds.includes(gene.id)}
-                          tooltip={
-                            pinnedIds.includes(gene.id)
-                              ? 'Unpin for all players'
-                              : 'Pin for all players'
-                          }
-                          onClick={() =>
-                            act('toggle_gene_pin', { id: gene.id })
-                          }
-                        />
-                      )}
-                    </div>
-                  ))}
-                </section>
-              ))}
+                      {categoryName(category)} ({categoryGenes.length})
+                    </Button>
+                    {!isCollapsed &&
+                      categoryGenes.map((gene) => (
+                        <div
+                          className="RimworldCharacterEditor__xenotypeGeneCard"
+                          key={gene.id}
+                          title={gene.desc}
+                        >
+                          <GeneIcon gene={gene} />
+                          <span>{gene.name}</span>
+                          {isAdmin && (
+                            <Button
+                              compact
+                              icon="thumbtack"
+                              selected={pinnedIds.includes(gene.id)}
+                              tooltip={
+                                pinnedIds.includes(gene.id)
+                                  ? 'Unpin for all players'
+                                  : 'Pin for all players'
+                              }
+                              onClick={() =>
+                                act('toggle_gene_pin', { id: gene.id })
+                              }
+                            />
+                          )}
+                        </div>
+                      ))}
+                  </section>
+                );
+              })}
               {!selectedGenes.length && (
                 <Box color="label">This xenotype has no active genes.</Box>
               )}

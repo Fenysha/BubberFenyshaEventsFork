@@ -11,6 +11,8 @@ PROCESSING_SUBSYSTEM_DEF(xenogenes)
 	var/list/saved_xenotypes = list()
 	/// Admin-pinned gene ids shown above the normal catalog for every player.
 	var/list/pinned_genes = list()
+	/// Encoded shared background states; every gene reuses one of these images.
+	var/list/icon_background_cache = list()
 	var/xenotype_save_path = "data/rimworld_xenotypes.json"
 	var/next_xenotype_id = 1
 
@@ -44,7 +46,7 @@ PROCESSING_SUBSYSTEM_DEF(xenogenes)
 				continue
 			genes += gene_id
 			var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
-			if(!icon_gene_id && (gene.icon_state || gene.icon_bg))
+			if(!icon_gene_id && gene.icon_state)
 				icon_gene_id = gene_id
 			var/option_value = species.rw_innate_xenogene_values?[gene_id]
 			if(gene.option_kind != RW_XENOGENE_OPTION_NONE)
@@ -218,7 +220,7 @@ PROCESSING_SUBSYSTEM_DEF(xenogenes)
 		var/icon_bg_src
 		if(icon_gene)
 			icon_src = icon_gene.compile_icon_png(icon_gene.icon_state)
-			icon_bg_src = icon_gene.compile_icon_png(icon_gene.icon_bg)
+			icon_bg_src = icon_gene.compile_icon_background_png()
 		compiled += list(list(
 			"id" = xenotype_id,
 			"name" = entry["name"],
@@ -382,7 +384,7 @@ PROCESSING_SUBSYSTEM_DEF(xenogenes)
 			"metabolicEfficiency" = gene.metabolic_efficiency,
 			"negative" = gene.negative,
 			"iconSrc" = gene.compile_icon_png(gene.icon_state),
-			"iconBgSrc" = gene.compile_icon_png(gene.icon_bg),
+			"iconBgSrc" = gene.compile_icon_background_png(),
 		))
 	return rows
 

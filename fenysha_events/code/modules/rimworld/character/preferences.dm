@@ -367,11 +367,26 @@ GLOBAL_LIST_INIT(rw_nicknames, world.file2list("strings/names/rw_nicknames.txt")
 	rw_set_pref(/datum/preference/toggle/allow_mismatched_parts, TRUE, force = TRUE)
 	if(!islist(xenogene_values))
 		xenogene_values = list()
+	// Genes can share one toggle/value pref (avali_tail and tail both drive the tail prefs). A disabled
+	// gene must never reset a pref that an enabled gene owns, so disabled genes go first and skip claimed prefs.
+	var/list/claimed = list()
+	for(var/gene_id in xenogenes)
+		var/datum/rw_xenogene/owned = GLOB.all_rw_xenogenes[gene_id]
+		if(owned?.toggle_pref_type)
+			claimed += owned.toggle_pref_type
+		if(owned?.value_pref_type)
+			claimed += owned.value_pref_type
 	for(var/gene_id in GLOB.all_rw_xenogenes)
-		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
-		if(!gene)
+		if(gene_id in xenogenes)
 			continue
-		gene.apply_to_preferences(src, (gene_id in xenogenes), xenogene_values[gene_id])
+		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(!gene || (gene.toggle_pref_type in claimed) || (gene.value_pref_type in claimed))
+			continue
+		gene.apply_to_preferences(src, FALSE, xenogene_values[gene_id])
+	for(var/gene_id in xenogenes)
+		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(gene)
+			gene.apply_to_preferences(src, TRUE, xenogene_values[gene_id])
 
 /datum/rimworld_preferences/proc/uses_skintones()
 	var/datum/species/species = GLOB.species_prototypes[rw_species()]

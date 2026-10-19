@@ -9,7 +9,6 @@
 
 	option_kind = RW_XENOGENE_OPTION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "hair"
 
 /datum/rw_xenogene/cosmetic/smooth_skin
@@ -19,7 +18,6 @@
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_SKIN
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "smooth_skin"
 
 /datum/rw_xenogene/cosmetic/scaled_skin
@@ -29,7 +27,6 @@
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_SKIN
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "scale_skin"
 
 /datum/rw_xenogene/cosmetic/human_eyes
@@ -39,7 +36,6 @@
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_EYES
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "human_eyes"
 
 /datum/rw_xenogene/cosmetic/lizard_eyes
@@ -49,7 +45,6 @@
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_EYES
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "lizard_eyes"
 
 // MARK: Avali genes
@@ -60,7 +55,6 @@
 	option_kind = RW_XENOGENE_OPTION_NONE
 	incompatibility_group = RW_XENOGENE_GROUP_EYES
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "avali_eyes"
 
 /datum/rw_xenogene/cosmetic/avali_body
@@ -70,7 +64,6 @@
 	option_kind = RW_XENOGENE_OPTION_NONE
 	ui_icon = RW_XENOGENE_ICONS
 	incompatibility_group = RW_XENOGENE_GROUP_BODY_TYPE
-	icon_bg = "bg"
 	icon_state = "avali_body"
 
 
@@ -90,7 +83,6 @@
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/tail
 	value_pref_type = /datum/preference/choiced/mutant_choice/tail
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "avali_tail"
 
 
@@ -125,7 +117,6 @@
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/ears
 	value_pref_type = /datum/preference/choiced/mutant_choice/ears
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "avali_ears"
 
 /datum/rw_xenogene/cosmetic/avali_legs
@@ -135,7 +126,6 @@
 	incompatibility_group = RW_XENOGENE_GROUP_LEGS
 	option_kind = RW_XENOGENE_OPTION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "avali_legs"
 
 
@@ -150,7 +140,6 @@
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/ears
 	value_pref_type = /datum/preference/choiced/mutant_choice/ears
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "ears"
 
 /datum/rw_xenogene/cosmetic/tail
@@ -163,7 +152,6 @@
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/tail
 	value_pref_type = /datum/preference/choiced/mutant_choice/tail
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "generic_tail"
 
 /datum/rw_xenogene/cosmetic/wings
@@ -174,7 +162,6 @@
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/wings
 	value_pref_type = /datum/preference/choiced/mutant_choice/wings
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "wings"
 
 /datum/rw_xenogene/cosmetic/fluff
@@ -190,7 +177,6 @@
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/fluff
 	value_pref_type = /datum/preference/choiced/mutant_choice/fluff
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "fur"
 
 /datum/rw_xenogene/cosmetic/legs
@@ -204,7 +190,6 @@
 	default_option = NORMAL_LEGS
 	value_pref_type = /datum/preference/choiced/digitigrade_legs
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "leg_normal"
 
 /datum/rw_xenogene/cosmetic/legs/apply_to_preferences(datum/rimworld_preferences/prefs, enabled, value)
@@ -243,7 +228,6 @@
 	default_option = list("#C0965F", "#C0965F", "#C0965F")
 	value_pref_type = /datum/preference/tri_color/mutant_colors
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "mutant_color"
 
 /datum/rw_xenogene/cosmetic/mutant_colors/apply_visual(mob/living/new_holder, adding, forced_style)
@@ -273,7 +257,6 @@
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/snout
 	value_pref_type = /datum/preference/choiced/mutant_choice/snout
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "snout"
 
 /datum/rw_xenogene/cosmetic/horns
@@ -290,5 +273,4 @@
 	toggle_pref_type = /datum/preference/toggle/mutant_toggle/horns
 	value_pref_type = /datum/preference/choiced/mutant_choice/horns
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "horns"

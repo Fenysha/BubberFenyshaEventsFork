@@ -8,7 +8,6 @@
 	psychic_sensitivity = 0
 	incompatibility_group = RW_XENOGENE_GROUP_PSYCHIC_SENSITIVITY
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "psychically_dull"
 
 /datum/rw_xenogene/psychic/psychically_dull
@@ -20,7 +19,6 @@
 	psychic_sensitivity = 0.5
 	incompatibility_group = RW_XENOGENE_GROUP_PSYCHIC_SENSITIVITY
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "psychically_dull"
 
 /datum/rw_xenogene/psychic/psy_sensitive
@@ -32,7 +30,6 @@
 	psychic_sensitivity = 1.5
 	incompatibility_group = RW_XENOGENE_GROUP_PSYCHIC_SENSITIVITY
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "psy_sensitive"
 
 /datum/rw_xenogene/psychic/super_psy_sensitive
@@ -44,7 +41,6 @@
 	psychic_sensitivity = 2
 	incompatibility_group = RW_XENOGENE_GROUP_PSYCHIC_SENSITIVITY
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "super_psy_sensitive"
 
 /datum/rw_xenogene/psychic/psychic_bonding
@@ -56,7 +52,6 @@
 	xenogen_flags = RW_XENOGEN_PROCESSING
 	var/mob/living/psychic_bond
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "psychic_bonding"
 
 /// Product of every sensitivity gene; 1 when none is present.

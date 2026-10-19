@@ -8,7 +8,6 @@
 	var/hemogen_regen = 0.002
 	incompatibility_group = RW_XENOGENE_GROUP_HEMOGEN_BASE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "hemogenic"
 
 /datum/rw_xenogene/hemogen/bloodfeeder
@@ -19,7 +18,6 @@
 	metabolic_efficiency = 0
 	ability_path = /datum/action/cooldown/rw_xenogene/bloodfeed
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "bloodfeeder"
 
 /datum/rw_xenogene/hemogen/coagulate
@@ -30,7 +28,6 @@
 	metabolic_efficiency = 0
 	ability_path = /datum/action/cooldown/rw_xenogene/coagulate
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "coagulate"
 
 /datum/rw_xenogene/hemogen/deathrest
@@ -43,7 +40,6 @@
 	var/last_deathrest = 0
 	ability_path = /datum/action/cooldown/rw_xenogene/deathrest
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "deathrest"
 
 /datum/rw_xenogene/hemogen/longjump_legs
@@ -54,7 +50,6 @@
 	metabolic_efficiency = 0
 	ability_path = /datum/action/cooldown/rw_xenogene/longjump
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "longjump_legs"
 
 /datum/rw_xenogene/hemogen/piercing_spine
@@ -65,7 +60,6 @@
 	metabolic_efficiency = 0
 	ability_path = /datum/action/cooldown/rw_xenogene/piercing_spine
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "piercing_spine"
 
 /datum/rw_xenogene/hemogen/hemogen_drain
@@ -78,7 +72,6 @@
 	xenogen_flags = RW_XENOGEN_PROCESSING
 	var/hemogen_drain_range = 4
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "hemogen_drain"
 
 /mob/living/carbon

@@ -45,13 +45,13 @@
 			"category" = gene.category,
 			"negative" = gene.negative,
 			"iconSrc" = gene.compile_icon_png(gene.icon_state),
-			"iconBgSrc" = gene.compile_icon_png(gene.icon_bg),
+			"iconBgSrc" = gene.compile_icon_background_png(),
 		)
 		gene_rows += list(row)
 		if(gene_id == icon_gene)
 			icon_data = list(
 				"src" = gene.compile_icon_png(gene.icon_state),
-				"background" = gene.compile_icon_png(gene.icon_bg),
+				"background" = gene.compile_icon_background_png(),
 			)
 	if(!islist(icon_data) && length(gene_rows))
 		var/list/first = gene_rows[1]

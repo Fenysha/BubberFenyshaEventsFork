@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   Box,
@@ -113,9 +114,39 @@ export function GeneArt(props: { gene: RwXenogeneDef }) {
   const { gene } = props;
   if (gene.iconBgSrc || gene.iconSrc) {
     return (
-      <span className="RimworldCharacterEditor__geneArt">
-        {!!gene.iconBgSrc && <img src={toPngSrc(gene.iconBgSrc)} alt="" />}
-        {!!gene.iconSrc && <img src={toPngSrc(gene.iconSrc)} alt="" />}
+      <span
+        style={{
+          position: 'relative',
+          display: 'inline-block',
+          width: 40,
+          height: 40,
+          flexShrink: 0,
+        }}
+      >
+        {!!gene.iconBgSrc && (
+          <img
+            src={toPngSrc(gene.iconBgSrc)}
+            alt=""
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          />
+        )}
+        {!!gene.iconSrc && (
+          <img
+            src={toPngSrc(gene.iconSrc)}
+            alt=""
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          />
+        )}
       </span>
     );
   }
@@ -124,9 +155,9 @@ export function GeneArt(props: { gene: RwXenogeneDef }) {
   }
   return (
     <svg
-      className="RimworldCharacterEditor__geneArt"
       viewBox="0 0 32 32"
       aria-hidden
+      style={{ width: 40, height: 40, flexShrink: 0 }}
     >
       <ellipse
         cx="16"
@@ -186,21 +217,10 @@ export function GeneTile(props: {
     innate && 'RimworldCharacterEditor__gene--innate',
     disabled && 'RimworldCharacterEditor__gene--disabled',
     inheritable && 'RimworldCharacterEditor__gene--inheritable',
-    gene.negative && 'RimworldCharacterEditor__gene--negative',
   ]);
   const body = (
     <>
-      <span className="RimworldCharacterEditor__geneFrame">
-        <span
-          className={classes([
-            'RimworldCharacterEditor__geneGlyph',
-            gene.negative
-              ? 'RimworldCharacterEditor__geneGlyph--negative'
-              : 'RimworldCharacterEditor__geneGlyph--positive',
-          ])}
-        />
-        <GeneArt gene={gene} />
-      </span>
+      <GeneArt gene={gene} />
       {!compact && (
         <span className="RimworldCharacterEditor__geneName">{gene.name}</span>
       )}
@@ -521,6 +541,61 @@ export function RacePane() {
   );
 }
 
+function GeneGroupList(props: {
+  genes: RwXenogeneDef[];
+  renderGene: (gene: RwXenogeneDef) => ReactNode;
+  emptyMessage: string;
+}) {
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const grouped = new Map<string, RwXenogeneDef[]>();
+  for (const gene of props.genes) {
+    const group = grouped.get(gene.category) || [];
+    group.push(gene);
+    grouped.set(gene.category, group);
+  }
+  const categories = [
+    ...XENOGENE_CATEGORIES.filter((entry) => grouped.has(entry)),
+    ...[...grouped.keys()]
+      .filter((entry) => !XENOGENE_CATEGORIES.includes(entry))
+      .sort(),
+  ];
+
+  if (!props.genes.length) {
+    return <Box color="label">{props.emptyMessage}</Box>;
+  }
+
+  return (
+    <div className="RimworldCharacterEditor__geneGroups">
+      {categories.map((entry) => {
+        const categoryGenes = grouped.get(entry) || [];
+        const isCollapsed = !!collapsed[entry];
+        return (
+          <section key={entry} className="RimworldCharacterEditor__geneGroup">
+            <Button
+              fluid
+              compact
+              icon={isCollapsed ? 'chevron-right' : 'chevron-down'}
+              onClick={() =>
+                setCollapsed((current) => ({
+                  ...current,
+                  [entry]: !current[entry],
+                }))
+              }
+            >
+              {entry ? `${entry[0].toUpperCase()}${entry.slice(1)}` : 'Other'} ({categoryGenes.length})
+            </Button>
+            {!isCollapsed && (
+              <div className="RimworldCharacterEditor__geneGrid">
+                {categoryGenes.map(props.renderGene)}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 export function XenogenePane() {
   const { act, data } = useBackend<RimworldCharacterEditorData>();
   const innateIds = data.innateXenogenes || [];
@@ -607,77 +682,67 @@ export function XenogenePane() {
           ))}
         </div>
         <Box className="RimworldCharacterEditor__sectionTitle">From race</Box>
-        {fromRace.length ? (
-          <div className="RimworldCharacterEditor__geneGrid">
-            {fromRace.map((gene) => (
-              <GeneTile
-                key={gene.id}
-                gene={gene}
-                selected={inspected?.id === gene.id}
-                innate
-                inheritable={inheritableIds.includes(gene.id)}
-                onClick={() => setInspectedId(gene.id)}
-                onConfigure={() => setInspectedId(gene.id)}
-              />
-            ))}
-          </div>
-        ) : (
-          <Box color="label" mb={1}>
-            None
-          </Box>
-        )}
+        <GeneGroupList
+          genes={fromRace}
+          emptyMessage="None"
+          renderGene={(gene) => (
+            <GeneTile
+              key={gene.id}
+              gene={gene}
+              selected={inspected?.id === gene.id}
+              innate
+              inheritable={inheritableIds.includes(gene.id)}
+              onClick={() => setInspectedId(gene.id)}
+              onConfigure={() => setInspectedId(gene.id)}
+            />
+          )}
+        />
         <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
           Equipped
         </Box>
-        {equipped.length ? (
-          <div className="RimworldCharacterEditor__geneGrid">
-            {equipped.map((gene) => (
+        <GeneGroupList
+          genes={equipped}
+          emptyMessage="None"
+          renderGene={(gene) => (
+            <GeneTile
+              key={gene.id}
+              gene={gene}
+              selected={inspected?.id === gene.id}
+              inheritable={inheritableIds.includes(gene.id)}
+              onClick={() => setInspectedId(gene.id)}
+              onConfigure={() => setInspectedId(gene.id)}
+            />
+          )}
+        />
+        <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
+          Available ({filteredAvailable.length})
+        </Box>
+        <GeneGroupList
+          genes={filteredAvailable}
+          emptyMessage={
+            available.length
+              ? 'No xenogenes match the current search and category.'
+              : 'None'
+          }
+          renderGene={(gene) => {
+            const conflicted =
+              conflictingGeneIds(gene, innateIds, data.xenogeneDefs).length >
+              0;
+            const unaffordable =
+              (gene.pointCost ?? 0) > 0 &&
+              data.budgetRemaining < (gene.pointCost ?? 0);
+            return (
               <GeneTile
                 key={gene.id}
                 gene={gene}
                 selected={inspected?.id === gene.id}
-                inheritable={inheritableIds.includes(gene.id)}
+                disabled={conflicted || unaffordable}
                 onClick={() => setInspectedId(gene.id)}
                 onConfigure={() => setInspectedId(gene.id)}
               />
-            ))}
-          </div>
-        ) : (
-          <Box color="label" mb={1}>
-            None
-          </Box>
-        )}
-        <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
-          Available ({filteredAvailable.length})
-        </Box>
-        {filteredAvailable.length ? (
-          <div className="RimworldCharacterEditor__geneGrid">
-            {filteredAvailable.map((gene) => {
-              const conflicted =
-                conflictingGeneIds(gene, innateIds, data.xenogeneDefs).length >
-                0;
-              const unaffordable =
-                (gene.pointCost ?? 0) > 0 &&
-                data.budgetRemaining < (gene.pointCost ?? 0);
-              return (
-                <GeneTile
-                  key={gene.id}
-                  gene={gene}
-                  selected={inspected?.id === gene.id}
-                  disabled={conflicted || unaffordable}
-                  onClick={() => setInspectedId(gene.id)}
-                  onConfigure={() => setInspectedId(gene.id)}
-                />
-              );
-            })}
-          </div>
-        ) : (
-          <Box color="label">
-            {available.length
-              ? 'No xenogenes match the current search and category.'
-              : 'None'}
-          </Box>
-        )}
+            );
+          }}
+        />
         <GeneStats genes={allActive} />
         <Box className="RimworldCharacterEditor__sectionTitle" mt={1}>
           Save current xenotype

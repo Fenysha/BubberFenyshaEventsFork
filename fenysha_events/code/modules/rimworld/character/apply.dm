@@ -24,6 +24,8 @@
 	// xenogenes so they cannot leak into this one (including via the species baseline hook).
 	if(is_dummy && target.dna)
 		target.dna.purge_rw_xenogenes()
+		// Parts of the previous race (ears, tails...) must not survive into the next one.
+		target.dna.mutant_bodyparts = list()
 	if(target.dna && force_species)
 		var/list/features
 		var/list/mutantparts
@@ -55,6 +57,7 @@
 				var/datum/rw_xenogene/live_gene = target.dna.rw_xenogenes[gene_id]
 				if(live_gene)
 					live_gene.inheritable = islist(xenogene_inheritable) && (gene_id in xenogene_inheritable)
+	refresh_visual_organs(target, force_species)
 	// Psychology owns skill initialization and persona effects.
 	if(!visuals_only && !istype(target, /mob/living/carbon/human/dummy))
 		apply_psychology_to(target)
@@ -116,18 +119,38 @@
 	if(!islist(xenogene_values))
 		xenogene_values = list()
 	// Palette first so every part reads the final mutant colors.
-	var/list/ordered_genes = list()
-	if(GLOB.all_rw_xenogenes[RW_XENOGENE_MUTANT_COLORS])
-		ordered_genes += RW_XENOGENE_MUTANT_COLORS
+	if((RW_XENOGENE_MUTANT_COLORS in xenogenes) && GLOB.all_rw_xenogenes[RW_XENOGENE_MUTANT_COLORS])
+		var/datum/rw_xenogene/palette = GLOB.all_rw_xenogenes[RW_XENOGENE_MUTANT_COLORS]
+		palette.apply_visual(target, TRUE, xenogene_values[RW_XENOGENE_MUTANT_COLORS])
+	// Slots (option_key) filled by a gene this character has. A gene it does not have must not clear or
+	// reset such a slot: avali_tail and the generic tail share FEATURE_TAIL_GENERIC, same for ears.
+	var/list/claimed_keys = list()
+	for(var/gene_id in xenogenes)
+		var/datum/rw_xenogene/owned = GLOB.all_rw_xenogenes[gene_id]
+		if(owned?.option_key && (owned.xenogen_flags & RW_XENOGEN_VISUAL))
+			claimed_keys += owned.option_key
 	for(var/gene_id in GLOB.all_rw_xenogenes)
-		if(gene_id != RW_XENOGENE_MUTANT_COLORS)
-			ordered_genes += gene_id
-	for(var/gene_id in ordered_genes)
+		if(gene_id in xenogenes)
+			continue
 		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
 		if(!gene || !(gene.xenogen_flags & RW_XENOGEN_VISUAL))
 			continue
-		gene.apply_visual(target, (gene_id in xenogenes), xenogene_values[gene_id])
-	if(!target.dna.species)
+		if(gene.option_key && (gene.option_key in claimed_keys))
+			continue
+		gene.apply_visual(target, FALSE, xenogene_values[gene_id])
+	for(var/gene_id in xenogenes)
+		if(gene_id == RW_XENOGENE_MUTANT_COLORS)
+			continue
+		var/datum/rw_xenogene/gene = GLOB.all_rw_xenogenes[gene_id]
+		if(!gene || !(gene.xenogen_flags & RW_XENOGEN_VISUAL))
+			continue
+		gene.apply_visual(target, TRUE, xenogene_values[gene_id])
+
+/// Rebuild visual organs from the final dna.mutant_bodyparts. Must run AFTER set_rw_xenogenes, otherwise the
+/// organs are built from stale parts (white / missing tail and ears). Live pawns are only rebuilt when their
+/// species was just replaced: the innate genes were added during species gain, before the real colors were known.
+/datum/rimworld_preferences/proc/refresh_visual_organs(mob/living/carbon/human/target, rebuilt_species = FALSE)
+	if(!istype(target) || !target.dna?.species)
 		return
 	var/is_dummy = istype(target, /mob/living/carbon/human/dummy)
-	target.dna.species.regenerate_organs(target, null, is_dummy, null, is_dummy, TRUE)
+	target.dna.species.regenerate_organs(target, null, is_dummy || rebuilt_species, null, is_dummy, TRUE)

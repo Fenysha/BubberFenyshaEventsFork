@@ -6,7 +6,6 @@
 	metabolic_efficiency = 0
 	physiology_multipliers = list("wound_heal_mod" = 3)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "scarless"
 
 /datum/rw_xenogene/archite/gene_implanter
@@ -17,7 +16,6 @@
 	metabolic_efficiency = 0
 	ability_path = /datum/action/cooldown/rw_xenogene/gene_implanter
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "gene_implanter"
 
 /datum/rw_xenogene/archite/perfect_immunity
@@ -30,7 +28,6 @@
 	gameplay_traits = list(TRAIT_VIRUSIMMUNE)
 	incompatibility_group = RW_XENOGENE_GROUP_IMMUNITY
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "perfect_immunity"
 
 /datum/rw_xenogene/archite/non_senescent
@@ -40,7 +37,6 @@
 	complexity = 3
 	metabolic_efficiency = 0
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "non_senescent"
 
 /mob/living/carbon/human/CanContractDisease(datum/disease/disease)
@@ -55,7 +51,6 @@
 	complexity = 3
 	metabolic_efficiency = 0
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "ageless"
 
 /datum/rw_xenogene/archite/deathless
@@ -67,7 +62,6 @@
 	xenogen_flags = RW_XENOGEN_PROCESSING
 	var/deathless_coma = FALSE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "deathless"
 
 /datum/rw_xenogene/archite/archite_metabolism
@@ -77,7 +71,6 @@
 	complexity = 6
 	metabolic_efficiency = 6
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "archite_metabolism"
 
 /datum/rw_xenogene/archite/breathless
@@ -89,7 +82,6 @@
 	physiology_multipliers = list("tox_taken_mod" = 0)
 	gameplay_traits = list(TRAIT_NOBREATH, TRAIT_TOXIMMUNE, TRAIT_RESISTLOWPRESSURE)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "breathless"
 
 /datum/scar/generate(obj/item/bodypart/BP, datum/wound/W, add_to_scars = TRUE)

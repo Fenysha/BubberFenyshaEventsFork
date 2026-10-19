@@ -8,7 +8,6 @@
 	physiology_additive = list("cold_limit_mod" = 25)
 	incompatibility_group = RW_XENOGENE_GROUP_COLD
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "cold_weakness"
 
 /datum/rw_xenogene/temperature/cold_tolerant
@@ -20,7 +19,6 @@
 	physiology_additive = list("cold_limit_mod" = -40)
 	incompatibility_group = RW_XENOGENE_GROUP_COLD
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "cold_tolerant"
 
 /datum/rw_xenogene/temperature/cold_super_tolerant
@@ -33,7 +31,6 @@
 	gameplay_traits = list(TRAIT_RESISTCOLD)
 	incompatibility_group = RW_XENOGENE_GROUP_COLD
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "cold_super_tolerant"
 
 /datum/rw_xenogene/temperature/heat_weakness
@@ -46,7 +43,6 @@
 	physiology_additive = list("heat_limit_mod" = -25)
 	incompatibility_group = RW_XENOGENE_GROUP_HEAT
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "heat_weakness"
 
 /datum/rw_xenogene/temperature/heat_tolerant
@@ -58,7 +54,6 @@
 	physiology_additive = list("heat_limit_mod" = 40)
 	incompatibility_group = RW_XENOGENE_GROUP_HEAT
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "heat_tolerant"
 
 /datum/rw_xenogene/temperature/heat_super_tolerant
@@ -71,5 +66,4 @@
 	gameplay_traits = list(TRAIT_RESISTHEAT)
 	incompatibility_group = RW_XENOGENE_GROUP_HEAT
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "heat_super_tolerant"

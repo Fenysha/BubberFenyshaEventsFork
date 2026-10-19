@@ -50,7 +50,14 @@
 
 /datum/species/on_species_gain(mob/living/carbon/human/human_who_gained_species, datum/species/old_species, pref_load, regenerate_icons = TRUE)
 	if(length(rw_innate_xenogenes) && ishuman(human_who_gained_species) && human_who_gained_species.dna && !istype(human_who_gained_species, /mob/living/carbon/human/dummy))
+		// Palette first, so innate parts (tail, ears...) are created with the mutant colors and not white.
+		var/list/ordered_genes = list()
+		if(RW_XENOGENE_MUTANT_COLORS in rw_innate_xenogenes)
+			ordered_genes += RW_XENOGENE_MUTANT_COLORS
 		for(var/gene_id in rw_innate_xenogenes)
+			if(gene_id != RW_XENOGENE_MUTANT_COLORS)
+				ordered_genes += gene_id
+		for(var/gene_id in ordered_genes)
 			var/option_value
 			if(islist(rw_innate_xenogene_values))
 				option_value = rw_innate_xenogene_values[gene_id]

@@ -8,7 +8,6 @@
 	physiology_additive = list("movespeed_slowdown" = 0.7)
 	incompatibility_group = RW_XENOGENE_GROUP_MOVE_SPEED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "slow_runner"
 
 /datum/rw_xenogene/movement/fast_runner
@@ -20,7 +19,6 @@
 	physiology_additive = list("movespeed_slowdown" = -0.25)
 	incompatibility_group = RW_XENOGENE_GROUP_MOVE_SPEED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "fast_runner"
 
 /datum/rw_xenogene/movement/very_fast_runner
@@ -32,7 +30,6 @@
 	physiology_additive = list("movespeed_slowdown" = -0.45)
 	incompatibility_group = RW_XENOGENE_GROUP_MOVE_SPEED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "very_fast_runner"
 
 /datum/rw_xenogene/movement/naked_speed
@@ -45,7 +42,6 @@
 	var/naked_movespeed = -0.4
 	var/naked_speed_active = FALSE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "naked_speed"
 
 /datum/rw_xenogene/movement/naked_speed/proc/wearing_little(mob/living/carbon/pawn)

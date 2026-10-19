@@ -67,8 +67,6 @@ export type RwXenogeneDef = {
   complexity?: number;
   metabolicEfficiency?: number;
   icon?: string | null;
-  iconState?: string | null;
-  iconBg?: string | null;
   iconSrc?: string | null;
   iconBgSrc?: string | null;
   negative?: boolean;

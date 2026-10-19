@@ -11,7 +11,6 @@
 	)
 
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "cold_blooded"
 
 /datum/rw_xenogene/stat/body_size
@@ -31,7 +30,6 @@
 	option_step = 0.01
 	value_pref_type = /datum/preference/numeric/body_size
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "body_size"
 
 /datum/rw_xenogene/stat/body_size/apply_to_preferences(datum/rimworld_preferences/prefs, enabled, value)
@@ -48,7 +46,6 @@
 	metabolic_efficiency = -1
 	physiology_multipliers = list("maxhealth_mod" = 0.8, "brute_taken_mod" = 1.15)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "frail"
 
 /datum/rw_xenogene/stat/delicate
@@ -60,7 +57,6 @@
 	negative = TRUE
 	physiology_multipliers = list("brute_taken_mod" = 1.3, "burn_taken_mod" = 1.3)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "delicate"
 
 /datum/rw_xenogene/stat/robust
@@ -71,7 +67,6 @@
 	metabolic_efficiency = -1
 	physiology_multipliers = list("brute_taken_mod" = 0.75, "burn_taken_mod" = 0.75)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "robust"
 
 /datum/rw_xenogene/stat/extra_pain
@@ -83,7 +78,6 @@
 	negative = TRUE
 	physiology_multipliers = list("pain_mod" = 1.5)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "extra_pain"
 
 /datum/rw_xenogene/stat/reduced_pain
@@ -94,7 +88,6 @@
 	metabolic_efficiency = -1
 	physiology_multipliers = list("pain_mod" = 0.55)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "reduced_pain"
 
 /datum/rw_xenogene/stat/strong_melee_damage
@@ -105,7 +98,6 @@
 	metabolic_efficiency = -1
 	physiology_multipliers = list("melee_damage_mod" = 1.3)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_melee_damage"
 
 /datum/rw_xenogene/stat/weak_melee_damage
@@ -117,7 +109,6 @@
 	negative = TRUE
 	physiology_multipliers = list("melee_damage_mod" = 0.7)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "weak_melee_damage"
 
 /datum/rw_xenogene/stat/nearsighted
@@ -129,7 +120,6 @@
 	negative = TRUE
 	physiology_multipliers = list("ranged_spread_mod" = 1.65)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "nearsighted"
 
 /datum/rw_xenogene/stat/strong_stomach
@@ -139,7 +129,6 @@
 	complexity = 1
 	metabolic_efficiency = 0
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_stomach"
 
 /datum/rw_xenogene/stat/robust_digestion
@@ -150,7 +139,6 @@
 	metabolic_efficiency = 0
 	var/raw_nutrition_bonus = 8
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "robust_digestion"
 
 /datum/rw_xenogene/stat/unstoppable
@@ -161,7 +149,6 @@
 	metabolic_efficiency = -1
 	physiology_multipliers = list("shock_mod" = 0)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "unstoppable"
 
 /datum/rw_xenogene/stat/kill_thirst
@@ -174,7 +161,6 @@
 	xenogen_flags = RW_XENOGEN_PROCESSING
 	var/last_kill_time = 0
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "kill_thirst"
 
 /datum/rw_xenogene/stat/violence_disabled
@@ -186,7 +172,6 @@
 	negative = TRUE
 	gameplay_traits = list(TRAIT_PACIFISM)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "violence_disabled"
 
 /datum/rw_xenogene/stat/dead_calm
@@ -196,7 +181,6 @@
 	complexity = 1
 	metabolic_efficiency = 0
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "dead_calm"
 
 /datum/rw_xenogene/stat/indoor_dweller
@@ -208,7 +192,6 @@
 	xenogen_flags = RW_XENOGEN_PROCESSING
 	var/outdoor_mood = -8
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "dead_calm"
 
 /datum/rw_xenogene/stat/dark_vision
@@ -219,7 +202,6 @@
 	metabolic_efficiency = -1
 	gameplay_traits = list(TRAIT_NIGHT_VISION)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "dark_vision"
 
 /datum/rw_xenogene/stat/trotter_hands
@@ -231,7 +213,6 @@
 	negative = TRUE
 	physiology_multipliers = list("manipulation_mod" = 0.55)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "trotter_hands"
 
 /datum/rw_xenogene/stat/elongated_fingers
@@ -242,7 +223,6 @@
 	metabolic_efficiency = -1
 	physiology_multipliers = list("manipulation_mod" = 1.25)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "elongated_fingers"
 
 /datum/rw_xenogene/stat/cold_blooded/on_life(seconds_per_tick, mob/living/new_holder)

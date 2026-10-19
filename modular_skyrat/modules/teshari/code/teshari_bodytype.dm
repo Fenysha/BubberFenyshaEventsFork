@@ -22,7 +22,10 @@
 	. = ..()
 	if(.)
 		return
+	return generate_teshari_style_worn_icon(item_slot, item, human_owner)
 
+/// Teshari-sized worn sprites: fancy fallback first, then offsetted snouted sprites. Shared with Avali.
+/datum/species/proc/generate_teshari_style_worn_icon(item_slot, obj/item/item, mob/living/carbon/human/human_owner)
 	// Use the fancy fallback sprites.
 	. = generate_custom_worn_icon_fallback(item_slot, item, human_owner)
 	if(.)

@@ -8,7 +8,6 @@
 	physiology_multipliers = list("immunity_mod" = 0.55)
 	incompatibility_group = RW_XENOGENE_GROUP_IMMUNITY
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "weak_immunity"
 
 /datum/rw_xenogene/healing/strong_immunity
@@ -20,7 +19,6 @@
 	physiology_multipliers = list("immunity_mod" = 1.6)
 	incompatibility_group = RW_XENOGENE_GROUP_IMMUNITY
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_immunity"
 
 /datum/rw_xenogene/healing/super_immunity
@@ -32,7 +30,6 @@
 	physiology_multipliers = list("immunity_mod" = 2.6)
 	incompatibility_group = RW_XENOGENE_GROUP_IMMUNITY
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "super_immunity"
 
 /datum/rw_xenogene/healing/slow_wound_healing
@@ -45,7 +42,6 @@
 	physiology_multipliers = list("wound_heal_mod" = 0.5)
 	incompatibility_group = RW_XENOGENE_GROUP_WOUND_HEALING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "slow_wound_healing"
 
 /datum/rw_xenogene/healing/fast_wound_healing
@@ -57,7 +53,6 @@
 	physiology_multipliers = list("wound_heal_mod" = 1.6)
 	incompatibility_group = RW_XENOGENE_GROUP_WOUND_HEALING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "fast_wound_healing"
 
 /datum/rw_xenogene/healing/superfast_wound_healing
@@ -69,7 +64,6 @@
 	physiology_multipliers = list("wound_heal_mod" = 3)
 	incompatibility_group = RW_XENOGENE_GROUP_WOUND_HEALING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "superfast_wound_healing"
 
 /datum/rw_xenogene/healing/superclotting
@@ -80,5 +74,4 @@
 	metabolic_efficiency = -1
 	physiology_multipliers = list("bleed_rate_mod" = 0.15)
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "superfast_wound_healing"

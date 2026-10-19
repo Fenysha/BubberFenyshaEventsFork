@@ -8,7 +8,6 @@
 	mood_offset = -12
 	incompatibility_group = RW_XENOGENE_GROUP_MOOD
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "very_unhappy"
 
 /datum/rw_xenogene/mood/unhappy
@@ -21,7 +20,6 @@
 	mood_offset = -6
 	incompatibility_group = RW_XENOGENE_GROUP_MOOD
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "unhappy"
 
 /datum/rw_xenogene/mood/happy
@@ -33,7 +31,6 @@
 	mood_offset = 6
 	incompatibility_group = RW_XENOGENE_GROUP_MOOD
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "happy"
 
 /datum/rw_xenogene/mood/very_happy
@@ -45,7 +42,6 @@
 	mood_offset = 12
 	incompatibility_group = RW_XENOGENE_GROUP_MOOD
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "very_happy"
 
 /datum/rw_xenogene/mood/apply_gameplay(mob/living/target)

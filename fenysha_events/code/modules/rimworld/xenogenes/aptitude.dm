@@ -12,7 +12,6 @@
 	passion_skill = RW_SKILL_ANIMALS
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_animals"
 
 /datum/rw_xenogene/aptitude/poor_animals
@@ -26,7 +25,6 @@
 	skill_bonuses = list(RW_SKILL_ANIMALS = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_ANIMALS
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_animals"
 
 /datum/rw_xenogene/aptitude/strong_animals
@@ -39,7 +37,6 @@
 	skill_bonuses = list(RW_SKILL_ANIMALS = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_ANIMALS
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_animals"
 
 /datum/rw_xenogene/aptitude/great_animals
@@ -54,7 +51,6 @@
 	passion_skill = RW_SKILL_ANIMALS
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_animals"
 
 // ========== MELEE ==========
@@ -71,7 +67,6 @@
 	passion_skill = RW_SKILL_MELEE
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_melee"
 
 /datum/rw_xenogene/aptitude/poor_melee
@@ -85,7 +80,6 @@
 	skill_bonuses = list(RW_SKILL_MELEE = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_MELEE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_melee"
 
 /datum/rw_xenogene/aptitude/strong_melee
@@ -98,7 +92,6 @@
 	skill_bonuses = list(RW_SKILL_MELEE = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_MELEE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_melee"
 
 /datum/rw_xenogene/aptitude/great_melee
@@ -113,7 +106,6 @@
 	passion_skill = RW_SKILL_MELEE
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_melee"
 
 // ========== SHOOTING ==========
@@ -130,7 +122,6 @@
 	passion_skill = RW_SKILL_RANGED
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_shooting"
 
 /datum/rw_xenogene/aptitude/poor_shooting
@@ -144,7 +135,6 @@
 	skill_bonuses = list(RW_SKILL_SHOOTING = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_SHOOTING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_shooting"
 
 /datum/rw_xenogene/aptitude/strong_shooting
@@ -157,7 +147,6 @@
 	skill_bonuses = list(RW_SKILL_SHOOTING = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_SHOOTING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_shooting"
 
 /datum/rw_xenogene/aptitude/great_shooting
@@ -172,7 +161,6 @@
 	passion_skill = RW_SKILL_RANGED
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_shooting"
 
 // ========== CONSTRUCTION ==========
@@ -189,7 +177,6 @@
 	passion_skill = RW_SKILL_CONSTRUCTION
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_construction"
 
 /datum/rw_xenogene/aptitude/poor_construction
@@ -203,7 +190,6 @@
 	skill_bonuses = list(RW_SKILL_CONSTRUCTION = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_CONSTRUCTION
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_construction"
 
 /datum/rw_xenogene/aptitude/strong_construction
@@ -216,7 +202,6 @@
 	skill_bonuses = list(RW_SKILL_CONSTRUCTION = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_CONSTRUCTION
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_construction"
 
 /datum/rw_xenogene/aptitude/great_construction
@@ -231,7 +216,6 @@
 	passion_skill = RW_SKILL_CONSTRUCTION
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_construction"
 
 // ========== MINING ==========
@@ -248,7 +232,6 @@
 	passion_skill = RW_SKILL_MINING
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_mining"
 
 /datum/rw_xenogene/aptitude/poor_mining
@@ -262,7 +245,6 @@
 	skill_bonuses = list(RW_SKILL_MINING = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_MINING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_mining"
 
 /datum/rw_xenogene/aptitude/strong_mining
@@ -275,7 +257,6 @@
 	skill_bonuses = list(RW_SKILL_MINING = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_MINING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_mining"
 
 /datum/rw_xenogene/aptitude/great_mining
@@ -290,7 +271,6 @@
 	passion_skill = RW_SKILL_MINING
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_mining"
 
 // ========== COOKING ==========
@@ -307,7 +287,6 @@
 	passion_skill = RW_SKILL_COOKING
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_cooking"
 
 /datum/rw_xenogene/aptitude/poor_cooking
@@ -321,7 +300,6 @@
 	skill_bonuses = list(RW_SKILL_COOKING = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_COOKING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_cooking"
 
 /datum/rw_xenogene/aptitude/strong_cooking
@@ -334,7 +312,6 @@
 	skill_bonuses = list(RW_SKILL_COOKING = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_COOKING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_cooking"
 
 /datum/rw_xenogene/aptitude/great_cooking
@@ -349,7 +326,6 @@
 	passion_skill = RW_SKILL_COOKING
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_cooking"
 
 // ========== PLANTS ==========
@@ -366,7 +342,6 @@
 	passion_skill = RW_SKILL_PLANTS
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_plants"
 
 /datum/rw_xenogene/aptitude/poor_plants
@@ -380,7 +355,6 @@
 	skill_bonuses = list(RW_SKILL_PLANTS = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_PLANTS
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_plants"
 
 /datum/rw_xenogene/aptitude/strong_plants
@@ -393,7 +367,6 @@
 	skill_bonuses = list(RW_SKILL_PLANTS = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_PLANTS
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_plants"
 
 /datum/rw_xenogene/aptitude/great_plants
@@ -408,7 +381,6 @@
 	passion_skill = RW_SKILL_PLANTS
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_plants"
 
 // ========== CRAFTING ==========
@@ -425,7 +397,6 @@
 	passion_skill = RW_SKILL_CRAFTING
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_crafting"
 
 /datum/rw_xenogene/aptitude/poor_crafting
@@ -439,7 +410,6 @@
 	skill_bonuses = list(RW_SKILL_CRAFTING = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_CRAFTING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_crafting"
 
 /datum/rw_xenogene/aptitude/strong_crafting
@@ -452,7 +422,6 @@
 	skill_bonuses = list(RW_SKILL_CRAFTING = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_CRAFTING
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_crafting"
 
 /datum/rw_xenogene/aptitude/great_crafting
@@ -467,7 +436,6 @@
 	passion_skill = RW_SKILL_CRAFTING
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_crafting"
 
 // ========== ARTISTIC ==========
@@ -484,7 +452,6 @@
 	passion_skill = RW_SKILL_ARTISTIC
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_artistic"
 
 /datum/rw_xenogene/aptitude/poor_artistic
@@ -498,7 +465,6 @@
 	skill_bonuses = list(RW_SKILL_ARTISTIC = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_ARTISTIC
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_artistic"
 
 /datum/rw_xenogene/aptitude/strong_artistic
@@ -511,7 +477,6 @@
 	skill_bonuses = list(RW_SKILL_ARTISTIC = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_ARTISTIC
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_artistic"
 
 /datum/rw_xenogene/aptitude/great_artistic
@@ -526,7 +491,6 @@
 	passion_skill = RW_SKILL_ARTISTIC
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_artistic"
 
 // ========== MEDICAL ==========
@@ -543,7 +507,6 @@
 	passion_skill = RW_SKILL_MEDICAL
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_medical"
 
 /datum/rw_xenogene/aptitude/poor_medical
@@ -557,7 +520,6 @@
 	skill_bonuses = list(RW_SKILL_MEDICAL = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_MEDICAL
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_medical"
 
 /datum/rw_xenogene/aptitude/strong_medical
@@ -570,7 +532,6 @@
 	skill_bonuses = list(RW_SKILL_MEDICAL = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_MEDICAL
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_medical"
 
 /datum/rw_xenogene/aptitude/great_medical
@@ -585,7 +546,6 @@
 	passion_skill = RW_SKILL_MEDICAL
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_medical"
 
 // ========== SOCIAL ==========
@@ -602,7 +562,6 @@
 	passion_skill = RW_SKILL_SOCIAL
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_social"
 
 /datum/rw_xenogene/aptitude/poor_social
@@ -616,7 +575,6 @@
 	skill_bonuses = list(RW_SKILL_SOCIAL = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_SOCIAL
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_social"
 
 /datum/rw_xenogene/aptitude/strong_social
@@ -629,7 +587,6 @@
 	skill_bonuses = list(RW_SKILL_SOCIAL = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_SOCIAL
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_social"
 
 /datum/rw_xenogene/aptitude/great_social
@@ -644,7 +601,6 @@
 	passion_skill = RW_SKILL_SOCIAL
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_social"
 
 // ========== INTELLECTUAL ==========
@@ -661,7 +617,6 @@
 	passion_skill = RW_SKILL_INTELLECTUAL
 	passion_grant = RW_PASSION_NONE
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "awful_intellectual"
 
 /datum/rw_xenogene/aptitude/poor_intellectual
@@ -675,7 +630,6 @@
 	skill_bonuses = list(RW_SKILL_INTELLECTUAL = -4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_INTELLECTUAL
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "poor_intellectual"
 
 /datum/rw_xenogene/aptitude/strong_intellectual
@@ -688,7 +642,6 @@
 	skill_bonuses = list(RW_SKILL_INTELLECTUAL = 4)
 	incompatibility_group = RW_XENOGENE_GROUP_APT_INTELLECTUAL
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "strong_intellectual"
 
 /datum/rw_xenogene/aptitude/great_intellectual
@@ -703,7 +656,6 @@
 	passion_skill = RW_SKILL_INTELLECTUAL
 	passion_grant = RW_PASSION_INTERESTED
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "great_intellectual"
 
 /datum/rw_xenogene/aptitude/apply_gameplay(mob/living/target)

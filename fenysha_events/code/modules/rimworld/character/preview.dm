@@ -35,6 +35,8 @@
 	return character_preview_view
 
 /datum/rimworld_preferences/proc/update_preview()
+	if(preview_dummy && !QDELETED(preview_dummy) && preview_dummy.dna?.species && preview_dummy.dna.species.type != rw_species())
+		QDEL_NULL(preview_dummy)
 	var/mob/living/carbon/human/dummy/mannequin = ensure_preview_dummy()
 	mannequin.wipe_state()
 	apply_to_human(mannequin, TRUE)

@@ -6,7 +6,6 @@
 	metabolic_efficiency = -2
 	ability_path = /datum/action/cooldown/rw_xenogene/fire_spew
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "fire_spew"
 
 /datum/rw_xenogene/ability/foam_spray
@@ -17,7 +16,6 @@
 	metabolic_efficiency = -2
 	ability_path = /datum/action/cooldown/rw_xenogene/foam_spray
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "foam_spray"
 
 /datum/rw_xenogene/ability/animal_warcall
@@ -28,7 +26,6 @@
 	metabolic_efficiency = -1
 	ability_path = /datum/action/cooldown/rw_xenogene/animal_warcall
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "animal_warcall"
 
 /datum/rw_xenogene/ability/acid_spray
@@ -39,5 +36,4 @@
 	metabolic_efficiency = -2
 	ability_path = /datum/action/cooldown/rw_xenogene/acid_spray
 	ui_icon = RW_XENOGENE_ICONS
-	icon_bg = "bg"
 	icon_state = "acid_spray"

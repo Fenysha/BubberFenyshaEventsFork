@@ -24,7 +24,7 @@
 	var/complexity = 1
 	/// Positive = eats less. Negative = eats more. Summed on the colonist.
 	var/metabolic_efficiency = 0
-	/// Red decagon in the editor. Neutral/positive genes are blue hexagons.
+	/// Negative genes use the negative TGUI background state.
 	var/negative = FALSE
 
 	/// Character-point cost to add this gene. 0 = free until a gene is priced for balance.
@@ -39,11 +39,9 @@
 	var/incompatibility_group
 
 	/// TGUI DmIcon file path, e.g. RW_XENOGENE_ICON_FILE. Do not name this `icon` — that is the /icon type.
-	/// Background and glyph are separate 64x64 states, stacked as two DmIcons.
-	/// Copy Hair: ui_icon, icon_bg, icon_state after adding a state to xenogenes.dmi.
+	/// TGUI glyph. Backgrounds are selected centrally by gene type.
 	var/ui_icon
 	var/icon_state
-	var/icon_bg
 
 	var/option_kind = RW_XENOGENE_OPTION_NONE
 	var/option_key
@@ -179,8 +177,6 @@
 	if(!length(state))
 		return null
 	switch(state)
-		if("bg")
-			return RW_XENOGENE_PNG_BG
 		if("hair")
 			return RW_XENOGENE_PNG_HAIR
 	if(!length(ui_icon))
@@ -193,6 +189,30 @@
 	var/encoded = icon2base64(sheet)
 	if(!istext(encoded) || !length(encoded))
 		return null
+	return encoded
+
+
+/datum/rw_xenogene/proc/compile_icon_background_png()
+	var/background_state = "bg_normal"
+	if(category == RW_XENOGENE_CATEGORY_ARCHITE)
+		background_state = "bg_archite"
+	else if(negative)
+		background_state = "bg_negative"
+
+	var/list/background_cache = SSxenogenes?.icon_background_cache
+	if(islist(background_cache))
+		var/cached = background_cache[background_state]
+		if(istext(cached) && length(cached))
+			return cached
+
+	var/icon/sheet = icon(RW_XENOGENE_ICONS, background_state, SOUTH, 1)
+	if(!icon_has_pixels(sheet))
+		return null
+	var/encoded = icon2base64(sheet)
+	if(!istext(encoded) || !length(encoded))
+		return null
+	if(islist(background_cache))
+		background_cache[background_state] = encoded
 	return encoded
 
 
@@ -371,6 +391,19 @@
 	apply_visual(new_holder, FALSE)
 	return ..()
 
+/// Part colors = the holder's current mutant palette; white only while no palette exists yet.
+/datum/rw_xenogene/cosmetic/proc/get_part_colors(mob/living/carbon/human/human_holder)
+	var/main_color
+	if(islist(human_holder.dna?.features))
+		main_color = human_holder.dna.features[FEATURE_MUTANT_COLOR]
+	if(!main_color)
+		return list("#FFFFFF", "#FFFFFF", "#FFFFFF")
+	return list(
+		main_color,
+		human_holder.dna.features[FEATURE_MUTANT_COLOR_TWO] || main_color,
+		human_holder.dna.features[FEATURE_MUTANT_COLOR_THREE] || main_color,
+	)
+
 /datum/rw_xenogene/cosmetic/apply_visual(mob/living/new_holder, adding = FALSE, forced_style = null)
 	if(!option_key || !ishuman(new_holder))
 		return
@@ -381,19 +414,9 @@
 		human_holder.dna.mutant_bodyparts = list()
 	var/style_name = sanitize_option(isnull(forced_style) ? option_value : forced_style)
 	if(adding && style_name)
-		var/list/colors = list("#FFFFFF", "#FFFFFF", "#FFFFFF")
-		var/main_color
-		if(islist(human_holder.dna.features))
-			main_color = human_holder.dna.features[FEATURE_MUTANT_COLOR]
-		if(main_color)
-			colors = list(
-				main_color,
-				human_holder.dna.features[FEATURE_MUTANT_COLOR_TWO] || main_color,
-				human_holder.dna.features[FEATURE_MUTANT_COLOR_THREE] || main_color,
-			)
 		human_holder.dna.mutant_bodyparts[option_key] = list(
 			MUTANT_INDEX_NAME = style_name,
-			MUTANT_INDEX_COLOR_LIST = colors,
+			MUTANT_INDEX_COLOR_LIST = get_part_colors(human_holder),
 			MUTANT_INDEX_EMISSIVE_LIST = list(FALSE, FALSE, FALSE),
 		)
 		if(option_key == FEATURE_SNOUT)
@@ -411,7 +434,7 @@
 		if(islist(part_info) && length(part_info) && part_info[1] && part_info[1] != SPRITE_ACCESSORY_NONE)
 			human_holder.dna.mutant_bodyparts[option_key] = list(
 				MUTANT_INDEX_NAME = part_info[1],
-				MUTANT_INDEX_COLOR_LIST = list("#FFFFFF", "#FFFFFF", "#FFFFFF"),
+				MUTANT_INDEX_COLOR_LIST = get_part_colors(human_holder),
 				MUTANT_INDEX_EMISSIVE_LIST = list(FALSE, FALSE, FALSE),
 			)
 			return
