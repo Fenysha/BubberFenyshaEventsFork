@@ -83,7 +83,7 @@ export const SettlementSetup = () => {
       ? 350
       : isJoin
         ? 400
-        : 640;
+        : 710;
 
   const joinMode = data.joinMode || 'free';
   const scenarioId = data.scenarioId || 'crashlanding';
