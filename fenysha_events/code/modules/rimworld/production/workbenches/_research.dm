@@ -7,6 +7,10 @@
 	can_do_crafting = FALSE
 
 	var/research_power = 1
+	/// Minigame offered in place of the plain cycle, null for plain cycles only
+	var/research_minigame = /datum/minigame/synthesis
+	/// Whoever is mid-session here
+	var/mob/living/session_user
 
 /obj/building/production/research/proc/is_valid_for_node(datum/techweb_node/rw/node)
 	if(research_power <= 0)
@@ -51,6 +55,9 @@
 	try_research(user)
 
 /obj/building/production/research/proc/try_research(mob/living/user)
+	// Spawned or mapped benches have no owner; the first faction member to use one claims it
+	if(!owner_faction && istype(user.rw_faction, /datum/rw_faction/player))
+		set_owner_faction(user.rw_faction)
 	if(!owner_faction)
 		balloon_alert(user, "no faction assigned!")
 		return
@@ -82,7 +89,10 @@
 	if(!check_skill(user, node.required_skill, node.min_skill_level))
 		return
 
-	do_research_cycle(user, web, node)
+	if(research_minigame)
+		do_research_session(user, web, node)
+	else
+		do_research_cycle(user, web, node)
 
 /obj/building/production/research/proc/do_research_cycle(mob/living/user, datum/techweb/faction/web, datum/techweb_node/rw/node)
 	var/mult = get_research_multiplier(node)
@@ -115,6 +125,70 @@
 	web.add_research_progress(progress_gain)
 	balloon_alert(user, "+[progress_gain] research")
 	to_chat(user, span_notice("You make progress on [node.display_name]."))
+
+
+/// Runs the bench's minigame; its score becomes research. Declining falls back to a plain cycle.
+/obj/building/production/research/proc/do_research_session(mob/living/user, datum/techweb/faction/web, datum/techweb_node/rw/node)
+	if(session_user)
+		balloon_alert(user, "in use!")
+		return
+	var/mult = get_research_multiplier(node)
+	if(mult <= 0)
+		return
+
+	var/per_point = mult / RW_RESEARCH_INSIGHT_PER_POINT
+	var/skill_name = rw_get_skill_name(node.required_skill)
+	var/skill = rw_get_skill(user, node.required_skill)
+	var/datum/minigame/game = new research_minigame(src)
+	game.context = list(
+		list("label" = "Project", "value" = node.display_name, "chips" = list(list("text" = capitalize(node.tech_era)))),
+		list("label" = "Bench", "value" = name, "chips" = list(list("text" = "research x[mult]", "color" = mult > 1 ? "good" : (mult < 1 ? "bad" : null)))),
+		list("label" = "Researcher", "value" = "[user.name], [skill_name] [skill]", "chips" = list(list(
+			"text" = skill >= node.ideal_skill ? "at or above ideal" : "below ideal",
+			"color" = skill >= node.ideal_skill ? "good" : "bad",
+		))),
+	)
+	game.progress = list(
+		"label" = "Node progress",
+		"title" = node.display_name,
+		"value" = web.research_progress[node.id] || 0,
+		"max" = max(1, node.research_cost),
+		"per_point" = per_point,
+		"abandon_ratio" = RW_RESEARCH_ABANDON_RATIO,
+	)
+	game.modifiers += list(list("text" = "Bench: research x[mult]", "color" = mult > 1 ? "good" : null))
+	game.decline_text = "Plain cycle"
+	game.decline_hint = "Declining runs a normal research cycle instead."
+	if(istype(game, /datum/minigame/synthesis))
+		var/datum/minigame/synthesis/synthesis = game
+		synthesis.apply_skill(skill_name, skill, node.ideal_skill)
+
+	session_user = user
+	begin_work()
+	var/datum/minigame_result/result = tgui_minigame(user, game, game.time_limit ? game.time_limit + 3 MINUTES : 0)
+	if(!QDELETED(src))
+		end_work()
+	session_user = null
+	if(!result)
+		return
+	if(result.outcome == MINIGAME_DECLINED)
+		if(!QDELETED(src) && !QDELETED(web) && web.current_research_id == node.id)
+			do_research_cycle(user, web, node)
+		return
+
+	var/ratio = result.outcome == MINIGAME_COMPLETED ? 1 : RW_RESEARCH_ABANDON_RATIO
+	var/gain = round(result.score * per_point * ratio, 0.1)
+	if(gain <= 0)
+		return
+	if(QDELETED(src) || QDELETED(web) || web.current_research_id != node.id)
+		to_chat(user, span_warning("The research changed while you worked. Your notes no longer apply."))
+		return
+
+	web.add_research_progress(gain)
+	var/merges = result.stats["merges"] || 0
+	rw_train_skill(user, node.required_skill, clamp(round(merges / 3), node.research_skill_xp, 30))
+	balloon_alert(user, "+[gain] research")
+	to_chat(user, span_notice("You file your notes on [node.display_name]: +[gain] research."))
 
 
 /obj/building/production/research/simple

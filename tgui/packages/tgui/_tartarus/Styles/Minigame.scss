@@ -1,0 +1,371 @@
+// Fullscreen minigames: a dimming backdrop over the greyed map with the game centred on it
+
+.MinigameHost {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.MinigameHost__backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    hsla(0, 0%, 2%, 0.4),
+    hsla(0, 0%, 2%, 0.78)
+  );
+  animation: MinigameHost-fade 0.35s ease-out;
+}
+
+.MinigameHost__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1em;
+}
+
+.MinigameHost__panel {
+  width: 100%;
+  max-width: 78em;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 0.5em;
+  color: var(--color-text);
+  background-color: var(--tartarus-bg-deep, var(--color-base));
+  background-image:
+    linear-gradient(hsla(0, 0%, 100%, 0.024) 1px, transparent 1px),
+    linear-gradient(90deg, hsla(0, 0%, 100%, 0.02) 1px, transparent 1px);
+  background-size: 32px 32px;
+  border: 1px solid var(--tartarus-gray-4, var(--color-border));
+  box-shadow:
+    0 0 0 1px #000,
+    0 1.5em 4em #000;
+  animation: MinigameHost-rise 0.4s cubic-bezier(0.2, 1.2, 0.4, 1);
+
+  .Section {
+    margin-bottom: 0.5em;
+  }
+}
+
+@keyframes MinigameHost-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes MinigameHost-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.5em) scale(0.98);
+  }
+}
+
+.MinigameChip {
+  display: inline-block;
+  margin: 0 0.25em 0.15em 0;
+  padding: 0 0.4em;
+  font-size: 0.9em;
+  color: var(--tartarus-gray-1, var(--color-text));
+  border: 1px solid var(--tartarus-gray-4, var(--color-border));
+}
+
+.MinigameChip--good {
+  color: hsl(95, 62.5%, 60%);
+  border-color: var(--color-good);
+}
+
+.MinigameChip--bad {
+  color: hsl(0, 72.5%, 65%);
+  border-color: var(--color-bad);
+}
+
+.MinigameLabel {
+  color: var(--color-label);
+}
+
+.MinigameHint {
+  color: var(--color-text-translucent);
+}
+
+.MinigameGrade {
+  font-size: 3.5em;
+  font-weight: bold;
+  line-height: 1;
+  text-align: center;
+  color: var(--tartarus-white, var(--color-text));
+  text-shadow: 0 0 0.4em hsla(60, 10%, 95%, 0.35);
+
+  .MinigameLabel {
+    font-size: 0.25em;
+    font-weight: normal;
+    text-shadow: none;
+  }
+}
+
+.MinigameProgress {
+  overflow: hidden;
+}
+
+.MinigameProgress__pending {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    hsla(60, 10%, 95%, 0.35) 0 6px,
+    hsla(60, 10%, 95%, 0.1) 6px 12px
+  );
+  transition:
+    left 0.18s,
+    width 0.18s;
+}
+
+// Effects layered over everything
+
+.MinigameFx-floater {
+  position: fixed;
+  z-index: 300;
+  pointer-events: none;
+  white-space: nowrap;
+  font-weight: bold;
+  text-shadow:
+    0 2px 0 #000,
+    0 0 0.6em hsla(60, 10%, 95%, 0.4);
+}
+
+.MinigameFx-orb {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 300;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  pointer-events: none;
+  background: var(--tartarus-white, #fff);
+  box-shadow: 0 0 10px var(--tartarus-white, #fff);
+}
+
+.MinigameFx-spark {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 300;
+  width: 3px;
+  height: 3px;
+  margin: -1.5px;
+  pointer-events: none;
+}
+
+.MinigameShake {
+  animation: MinigameShake 0.35s;
+}
+
+@keyframes MinigameShake {
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+// Insight Synthesis board
+
+.Synthesis__game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.Synthesis__board {
+  position: relative;
+  width: 100%;
+  max-width: 34em;
+  aspect-ratio: 1;
+  padding: 4px;
+  touch-action: none;
+  container-type: inline-size;
+  background: var(--input-background, #101010);
+  border: 1px solid var(--color-border);
+}
+
+.Synthesis__cells,
+.Synthesis__tiles {
+  position: absolute;
+  inset: 4px;
+}
+
+.Synthesis__slot,
+.Synthesis__tile {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 25%;
+  height: 25%;
+}
+
+.Synthesis__slot::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: hsla(0, 0%, 100%, 0.025);
+  border: 1px solid var(--color-border);
+}
+
+.Synthesis__tile {
+  z-index: 2;
+  transition: transform 110ms ease-out;
+}
+
+.Synthesis__tile--under {
+  z-index: 1;
+}
+
+.Synthesis__tileInner {
+  position: absolute;
+  inset: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #fff;
+  box-shadow: inset 0 -3px 0 hsla(0, 0%, 0%, 0.3);
+  animation: Synthesis-spawn 0.18s ease-out;
+}
+
+.Synthesis__glyph {
+  font-size: clamp(16px, 9cqw, 40px);
+  line-height: 1;
+  font-weight: bold;
+}
+
+.Synthesis__name {
+  font-size: clamp(8px, 2.4cqw, 11px);
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.Synthesis__tileInner--pop {
+  animation: Synthesis-pop 0.22s ease-out;
+}
+
+.Synthesis__tileInner--gone {
+  animation: Synthesis-gone 0.3s ease-in forwards;
+}
+
+.Synthesis__tileInner--cash {
+  animation: Synthesis-cash 0.48s ease-in forwards;
+}
+
+@keyframes Synthesis-spawn {
+  from {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes Synthesis-pop {
+  40% {
+    transform: scale(1.24);
+  }
+}
+
+@keyframes Synthesis-gone {
+  30% {
+    transform: scale(1.15);
+  }
+  to {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes Synthesis-cash {
+  30% {
+    transform: scale(1.4);
+    filter: brightness(2);
+  }
+  to {
+    transform: scale(0.1) rotate(120deg);
+    opacity: 0;
+  }
+}
+
+.Synthesis--t0 {
+  color: hsla(0, 70%, 70%, 0.85);
+  background: repeating-linear-gradient(
+    -45deg,
+    hsl(0, 22%, 16%) 0 6px,
+    hsl(0, 22%, 12%) 6px 12px
+  );
+  box-shadow: inset 0 0 0 1px hsla(0, 72.5%, 50%, 0.45);
+}
+
+.Synthesis--t1 {
+  color: hsla(0, 0%, 100%, 0.85);
+  background: hsl(0, 0%, 26%);
+}
+
+.Synthesis--t2 {
+  background: hsl(28, 38%, 33%);
+}
+
+.Synthesis--t3 {
+  background: var(--color-blue);
+}
+
+.Synthesis--t4 {
+  background: var(--color-teal);
+}
+
+.Synthesis--t5 {
+  background: var(--color-violet);
+}
+
+.Synthesis--t6 {
+  color: #1d1400;
+  background: var(--color-gold);
+}
+
+.Synthesis--t7 {
+  color: #2a1a00;
+  background: hsl(40, 100%, 70%);
+  box-shadow: 0 0 14px var(--color-gold);
+  animation: Synthesis-glow 0.35s infinite alternate;
+}
+
+@keyframes Synthesis-glow {
+  to {
+    filter: brightness(1.25);
+  }
+}
+
+.Synthesis__clarity {
+  width: 100%;
+  max-width: 34em;
+}
+
+.Synthesis__legendSwatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4em;
+  height: 1.4em;
+  margin-right: 0.5em;
+  font-size: 0.85em;
+  font-weight: bold;
+  vertical-align: middle;
+}

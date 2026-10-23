@@ -221,6 +221,12 @@ GLOBAL_LIST_EMPTY(rw_stuff_sheets)
 	if(!(A.material_flags & MATERIAL_COLOR))
 		A.add_atom_colour(mat.color, FIXED_COLOUR_PRIORITY)
 
+/datum/rw_construction_site/proc/assign_faction(atom/A, mob/living/user)
+	if(!istype(A, /obj/building) || !istype(user?.rw_faction, /datum/rw_faction/player))
+		return
+	var/obj/building/building = A
+	building.set_owner_faction(user.rw_faction)
+
 /datum/rw_construction_site/proc/finish(mob/living/user)
 	var/datum/building_blueprint/bp = blueprint
 	var/turf/pivot = origin
@@ -240,12 +246,14 @@ GLOBAL_LIST_EMPTY(rw_stuff_sheets)
 			var/count = max(1, length(inst.members))
 			for(var/atom/A as anything in inst.members)
 				apply_material(A, 1 / count)
+				assign_faction(A, user)
 	else if(bp.build_path)
 		var/atom/A = new bp.build_path(pivot)
 		if(isobj(A))
 			var/obj/O = A
 			O.dir = final_dir
 		apply_material(A)
+		assign_faction(A, user)
 		success = TRUE
 
 	if(success)

@@ -40,6 +40,11 @@
 
 /// A tgui that renders inside the map area instead of a pop-up. Falls back to a pop-up without a chat panel.
 /datum/tgui/map_embedded
+	/// Id of the map pane control this renders into
+	var/host_id = MAP_UI_BROWSER
+
+/datum/tgui/map_embedded/proc/get_host_window(datum/tgui_panel/panel)
+	return panel.get_map_ui_window()
 
 /datum/tgui/map_embedded/open()
 	var/datum/tgui_panel/panel = user.client?.tgui_panel
@@ -51,7 +56,7 @@
 	if(status < UI_UPDATE)
 		return FALSE
 	// Mirrors /datum/tgui/open(), with the host window in place of a pooled one
-	window = panel.get_map_ui_window()
+	window = get_host_window(panel)
 	opened_at = world.time
 	window.acquire_lock(src)
 	if(!window.is_ready())
@@ -67,16 +72,16 @@
 		with_data = TRUE,
 		with_static_data = TRUE))
 	SStgui.on_open(src)
-	winset(user.client, MAP_UI_BROWSER, "is-visible=true;focus=true")
+	winset(user.client, host_id, "is-visible=true;focus=true")
 	return TRUE
 
 /datum/tgui/map_embedded/close(can_be_suspended = TRUE)
 	var/client/viewer = user?.client
-	var/embedded = window?.id == MAP_UI_BROWSER
+	var/embedded = window?.id == host_id
 	. = ..()
 	if(!embedded || !viewer)
 		return
-	winset(viewer, MAP_UI_BROWSER, "is-visible=false")
+	winset(viewer, host_id, "is-visible=false")
 	winset(viewer, SKIN_MAPWINDOW_MAP, "focus=true")
 	// Keys released while the map UI had focus never reached the map
 	viewer.reset_held_keys()

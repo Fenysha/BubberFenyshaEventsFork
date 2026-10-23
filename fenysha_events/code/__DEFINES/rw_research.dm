@@ -29,3 +29,7 @@
 #define RW_RESEARCH_BASE_PROGRESS		1
 #define RW_RESEARCH_CYCLE_TIME			12 SECONDS
 #define RW_RESEARCH_IDEAL_SKILL			8
+/// Minigame score worth one research point at a 1x bench
+#define RW_RESEARCH_INSIGHT_PER_POINT	8
+/// Share of the score kept when a research minigame is abandoned
+#define RW_RESEARCH_ABANDON_RATIO		0.5
