@@ -13,6 +13,7 @@ SUBSYSTEM_DEF(factions)
 	known_fractions = list()
 
 	ensure_default_factions()
+	rebuild_raid_faction_defs()
 	return SS_INIT_SUCCESS
 
 

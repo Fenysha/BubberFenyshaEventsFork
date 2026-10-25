@@ -1,5 +1,11 @@
 /mob/living
 	var/datum/raid_group/rw_raid_group
+	var/datum/weakref/rw_raid_loop_ref
+	/// Goal the last JPS search could not reach
+	var/datum/weakref/rw_raid_dead_end_ref
+	/// Wall or obstacle being broken because the target has no path
+	var/datum/weakref/rw_raid_breach_ref
+	var/rw_raid_next_probe = 0
 
 /datum/raid_group
 	var/static/next_id = 0
@@ -135,6 +141,13 @@
 /datum/raid_group/proc/on_member_qdel(datum/source, force)
 	SIGNAL_HANDLER
 	members -= source
+
+/datum/raid_group/proc/count_breach_claims(atom/breach, mob/living/except)
+	var/datum/weakref/ref = WEAKREF(breach)
+	. = 0
+	for(var/mob/living/pawn as anything in members)
+		if(pawn != except && pawn.rw_raid_breach_ref == ref)
+			.++
 
 /datum/raid_group/proc/set_state(new_state)
 	state = new_state
@@ -300,18 +313,159 @@ SUBSYSTEM_DEF(raid_groups)
 	if(!combat_mode)
 		set_combat_mode(TRUE, TRUE)
 	if(dist <= 1 || (uses_gun && dist <= 7 && (target in view(7, src))))
-		walk(src, 0)
+		rw_raid_stop_moving()
 		face_atom(target)
 		ClickOn(target)
 		return
-	walk_to(src, target, uses_gun ? 4 : 1, 2)
+
+	var/atom/breach = rw_raid_breach_ref?.resolve()
+	// Broken through (a destroyed object or a wall turned to floor no longer resolves): retry the target
+	if(rw_raid_breach_ref && (!breach || rw_raid_breachable(get_turf(breach)) != breach))
+		breach = null
+		rw_raid_breach_ref = null
+		rw_raid_dead_end_ref = null
+	var/atom/dead_end = rw_raid_dead_end_ref?.resolve()
+	if(breach && dead_end == breach)
+		breach = null
+		rw_raid_breach_ref = null
+	else if(!breach && dead_end == target)
+		breach = rw_raid_find_breach(target)
+		rw_raid_breach_ref = breach ? WEAKREF(breach) : null
+	if(!breach)
+		rw_raid_path_to(target, uses_gun ? 4 : 1)
+		return
+	// Keep hitting, but drop the wall as soon as the target can be reached another way
+	if(world.time >= rw_raid_next_probe)
+		rw_raid_next_probe = world.time + RAID_BREACH_RECHECK + rand(0, 1 SECONDS)
+		SSpathfinder.pathfind(src, target, RAID_MAX_PATH_LENGTH, uses_gun ? 4 : 1, null, FALSE, null, TRUE, DIAGONAL_REMOVE_CLUNKY, list(CALLBACK(src, PROC_REF(rw_raid_on_probe))))
+	if(Adjacent(breach))
+		rw_raid_stop_moving()
+		rw_raid_hit_breach(breach)
+		return
+	rw_raid_path_to(breach, 1)
 
 /// Called every second while the raider retreats.
 /mob/living/proc/rw_raid_move_to(turf/destination, stop_distance = 0)
 	if(!destination || incapacitated)
 		return
-	walk_to(src, destination, stop_distance, 2)
+	rw_raid_path_to(destination, stop_distance)
+
+/// JPS instead of walk_to, whose search box is about view-sized and gives up on long detours.
+/// Same target keeps the running loop; it repaths once the target leaves the end of the path.
+/mob/living/proc/rw_raid_path_to(atom/target, min_distance)
+	var/datum/move_loop/has_target/jps/loop = GLOB.move_manager.jps_move(src,
+		target,
+		RAID_STEP_DELAY,
+		repath_delay = 1 SECONDS,
+		max_path_length = RAID_MAX_PATH_LENGTH,
+		minimum_distance = min_distance,
+		simulated_only = FALSE,
+		diagonal_handling = DIAGONAL_REMOVE_CLUNKY,
+	)
+	if(!istype(loop))
+		return
+	if(rw_raid_loop_ref?.resolve() != loop)
+		rw_raid_loop_ref = WEAKREF(loop)
+		RegisterSignal(loop, COMSIG_MOVELOOP_JPS_FINISHED_PATHING, PROC_REF(rw_raid_on_path_finished))
+	if(loop.is_pathing)
+		return
+	var/list/path = loop.movement_path
+	if(length(path) && get_dist(path[length(path)], target) <= max(1, min_distance))
+		return
+	INVOKE_ASYNC(loop, TYPE_PROC_REF(/datum/move_loop/has_target/jps, recalculate_path))
+
+/mob/living/proc/rw_raid_on_path_finished(datum/move_loop/has_target/jps/source, list/path)
+	SIGNAL_HANDLER
+	if(length(path) || get_dist(src, source.target) <= max(1, source.minimum_distance))
+		if(rw_raid_dead_end_ref?.resolve() == source.target)
+			rw_raid_dead_end_ref = null
+		return
+	rw_raid_dead_end_ref = WEAKREF(source.target)
+
+/// The thing on T a raider can break: a RimWorld wall, or a dense object with integrity.
+/proc/rw_raid_breachable(turf/T)
+	if(!T)
+		return null
+	if(istype(T, /turf/closed/rw_wall))
+		return T
+	if(T.density)
+		return null
+	for(var/obj/thing in T)
+		if(thing.density && thing.uses_integrity && !(thing.resistance_flags & INDESTRUCTIBLE))
+			return thing
+	return null
+
+/mob/living/proc/rw_raid_on_probe(list/path)
+	if(!length(path) || !rw_raid_breach_ref)
+		return
+	rw_raid_breach_ref = null
+	rw_raid_dead_end_ref = null
+
+/// A breach near where the straight line to target first hits something, spread across the
+/// wall face so the group doesn't queue on one tile. Null if nothing there can be broken.
+/mob/living/proc/rw_raid_find_breach(atom/target)
+	var/turf/start = get_turf(src)
+	var/turf/goal = get_turf(target)
+	if(!start || !goal || start.z != goal.z)
+		return null
+	var/turf/impact
+	for(var/turf/T as anything in get_line(start, goal))
+		if(T == start)
+			continue
+		if(T == goal)
+			return null
+		if(T.is_blocked_turf(exclude_mobs = TRUE))
+			impact = T
+			break
+	if(!impact)
+		return null
+
+	var/atom/best
+	var/best_score = INFINITY
+	for(var/turf/T as anything in RANGE_TURFS(RAID_BREACH_SPREAD, impact))
+		var/atom/candidate = rw_raid_breachable(T)
+		if(!candidate || !rw_raid_outer_face(T, goal))
+			continue
+		var/claims = rw_raid_group ? rw_raid_group.count_breach_claims(candidate, src) : 0
+		var/score = get_dist(T, impact) * 2 + get_dist(start, T)
+		if(claims >= RAID_BREACH_PER_TILE)
+			score += 100
+		if(score < best_score)
+			best_score = score
+			best = candidate
+	return best
+
+/// TRUE if T has an open cardinal neighbour on the far side from goal, i.e. it faces us.
+/proc/rw_raid_outer_face(turf/T, turf/goal)
+	var/goal_dist = get_dist(T, goal)
+	for(var/dir in GLOB.cardinals)
+		var/turf/side = get_step(T, dir)
+		if(side && get_dist(side, goal) > goal_dist && !side.is_blocked_turf(exclude_mobs = TRUE))
+			return TRUE
+	return FALSE
+
+/mob/living/proc/rw_raid_hit_breach(atom/breach)
+	face_atom(breach)
+	var/obj/item/held = get_active_held_item()
+	if(held && !istype(held, /obj/item/gun) && held.force >= 10)
+		ClickOn(breach)
+		return
+	// Unarmed or a gun: bare hands do nothing to walls, so damage it directly
+	do_attack_animation(breach)
+	playsound(breach, 'sound/items/weapons/genhit.ogg', 50, TRUE)
+	if(istype(breach, /turf/closed/rw_wall))
+		var/turf/closed/rw_wall/wall = breach
+		wall.take_brute_damage(RAID_BREACH_DAMAGE, src, src)
+	else if(isobj(breach))
+		var/obj/thing = breach
+		thing.take_damage(RAID_BREACH_DAMAGE, BRUTE, MELEE, TRUE, get_dir(thing, src))
+
+/mob/living/proc/rw_raid_stop_moving()
+	GLOB.move_manager.stop_looping(src)
 
 /// Called when the raider leaves its group (dead, retreated, raid over).
 /mob/living/proc/rw_raid_released()
-	walk(src, 0)
+	rw_raid_stop_moving()
+	rw_raid_loop_ref = null
+	rw_raid_dead_end_ref = null
+	rw_raid_breach_ref = null

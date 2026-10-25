@@ -12,8 +12,9 @@
  */
 
 GLOBAL_LIST_INIT(raid_pawn_kinds, init_raid_pawn_kinds())
-/// id -> /datum/raid_faction_def (thin wrapper around the live /datum/rw_faction)
-GLOBAL_LIST_INIT(raid_faction_defs, init_raid_faction_defs())
+/// id -> /datum/raid_faction_def (thin wrapper around the live /datum/rw_faction).
+/// Filled by SSfactions.Initialize(): factions don't exist yet when globals initialise.
+GLOBAL_LIST_EMPTY(raid_faction_defs)
 
 /proc/init_raid_pawn_kinds()
 	var/list/result = list()

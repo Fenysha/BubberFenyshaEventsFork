@@ -160,6 +160,11 @@ SUBSYSTEM_DEF(area_rust)
 	if(zone_sync_enabled && hascall(src, "sync_zone_for_turf"))
 		sync_zone_for_turf(T)
 
+/datum/controller/subsystem/area_rust/proc/update_turfs(list/turfs)
+	for(var/turf/T in turfs)
+		if(initialised_z["[T.z]"])
+			update_turf(T)
+
 /datum/controller/subsystem/area_rust/proc/flush_batches()
 	for(var/z_str in pending_batches)
 		var/z = text2num(z_str)
@@ -311,7 +316,39 @@ SUBSYSTEM_DEF(area_rust)
 			SSarea_rust.update_turf(replacement)
 
 /obj/machinery/door/Destroy(force)
-	var/turf/T = loc
+	var/list/turfs = locs.Copy()
 	. = ..()
-	if(isturf(T) && SSarea_rust?.initialised_z["[T.z]"])
-		SSarea_rust.update_turf(T)
+	SSarea_rust?.update_turfs(turfs)
+
+// light_blocking keeps opacity_sources current for every opaque movable that spawns, moves or is deleted
+/turf/add_opacity_source(atom/movable/new_source)
+	. = ..()
+	if(SSarea_rust?.initialised_z["[z]"])
+		SSarea_rust.update_turf(src)
+
+/turf/remove_opacity_source(atom/movable/old_source)
+	. = ..()
+	if(SSarea_rust?.initialised_z["[z]"])
+		SSarea_rust.update_turf(src)
+
+// Mapped and cell-loaded room edges arrive with the batch snapshot; these cover the ones built later
+/obj/machinery/door/Initialize(mapload)
+	. = ..()
+	if(!mapload)
+		SSarea_rust?.update_turfs(locs)
+
+/obj/structure/window/Initialize(mapload, direct)
+	. = ..()
+	if(!mapload)
+		SSarea_rust?.update_turfs(locs)
+
+/obj/structure/window/Moved(atom/old_loc, movement_dir, forced, list/old_locs, momentum_change = TRUE)
+	. = ..()
+	SSarea_rust?.update_turfs(old_locs || list(old_loc))
+	SSarea_rust?.update_turfs(locs)
+
+// The parent clears density while the window is still on its tile, so re-read once it has left
+/obj/structure/window/Destroy()
+	var/list/turfs = locs.Copy()
+	. = ..()
+	SSarea_rust?.update_turfs(turfs)

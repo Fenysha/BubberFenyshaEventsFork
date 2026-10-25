@@ -61,9 +61,13 @@
 				kind = is_window ? AREA_KIND_WINDOW : AREA_KIND_GRILLE
 				type_path = path_str
 
-		// Only objects that really block sight make the tile opaque. Mobs never do.
-		if(AM.opacity && isobj(AM) && !is_window && !is_grille)
+	// Only objects that really block sight make the tile opaque. Mobs never do.
+	// Read from opacity_sources: it is already current when an object is leaving or being deleted.
+	for(var/atom/movable/source as anything in T.opacity_sources)
+		var/source_path = "[source.type]"
+		if(source.opacity && isobj(source) && !findtext(source_path, "/window") && !findtext(source_path, "/grille"))
 			opaque = TRUE
+			break
 
 	if(!is_boundary && kind != AREA_KIND_WINDOW && kind != AREA_KIND_GRILLE)
 		kind = AREA_KIND_FLOOR

@@ -77,5 +77,17 @@
 #define RAID_NO_TARGET_GRACE (60 SECONDS)
 /// Raiders closer than this to the exit edge are despawned while retreating.
 #define RAID_EXIT_DISTANCE 2
+/// Deciseconds per raider step.
+#define RAID_STEP_DELAY 2
+/// JPS search cap in steps; long enough to walk a colony maze from the map edge.
+#define RAID_MAX_PATH_LENGTH 250
+/// Damage per second a raider without a usable melee weapon does to a wall or door it is breaching.
+#define RAID_BREACH_DAMAGE 10
+/// Raiders spread their breaches over wall tiles this far either side of where their line hits.
+#define RAID_BREACH_SPREAD 3
+/// Raiders sharing one breach tile before others prefer a neighbouring one.
+#define RAID_BREACH_PER_TILE 2
+/// How often a breaching raider checks whether the target became reachable without the wall.
+#define RAID_BREACH_RECHECK (4 SECONDS)
 /// Placeholder body for every raid_pawn_kind until real mob types are assigned.
 #define RAID_FALLBACK_MOB /mob/living/carbon/human
