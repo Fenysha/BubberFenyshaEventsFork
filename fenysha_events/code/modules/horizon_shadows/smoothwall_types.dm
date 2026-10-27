@@ -151,11 +151,35 @@ SUBSYSTEM_DEF(shadow)
 	if(!(shadow_flags & ATOM_SHADOW_USE_ICON_STATE) || QDELETED(shadow))
 		return
 
-	var/new_state = "[shadow_base_icon_state]-[get_shadow_junction_from_icon()]"
+	var/junction = get_shadow_junction_from_icon()
+	if(isturf(src))
+		var/turf/self = src
+		junction = self.solid_shadow_junction(junction)
+	var/new_state = "[shadow_base_icon_state]-[junction]"
 	// don't touch the appearance when nothing changed - every set is a client-side appearance update
 	if(shadow.icon_state == new_state)
 		return
 	shadow.icon_state = new_state
+
+/**
+ * A wall's own junction only counts walls of its smoothing group and leaves a notch at inner
+ * corners. Both leave see-through gaps in the shadow, so join every shadow-casting wall next to
+ * us and fill every corner whose two sides are joined.
+ */
+/turf/proc/solid_shadow_junction(junction)
+	for(var/dir in GLOB.cardinals)
+		var/turf/side = get_step(src, dir)
+		if(side && (side.shadow_flags & ATOM_SHADOW_USE_ICON_STATE))
+			junction |= dir
+	if((junction & NORTH_JUNCTION) && (junction & EAST_JUNCTION))
+		junction |= NORTHEAST_JUNCTION
+	if((junction & SOUTH_JUNCTION) && (junction & EAST_JUNCTION))
+		junction |= SOUTHEAST_JUNCTION
+	if((junction & SOUTH_JUNCTION) && (junction & WEST_JUNCTION))
+		junction |= SOUTHWEST_JUNCTION
+	if((junction & NORTH_JUNCTION) && (junction & WEST_JUNCTION))
+		junction |= NORTHWEST_JUNCTION
+	return junction
 
 /atom/proc/remove_shadow()
 	QDEL_NULL(shadow)
